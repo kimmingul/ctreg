@@ -1,0 +1,7 @@
+{
+  "protocolSection": {
+    "identificationModule": { "nctId": "NCT00000001", "briefTitle": "Sparse Study" },
+    "statusModule": {},
+    "conditionsModule": { "conditions": ["Some Condition"] }
+  }
+}
