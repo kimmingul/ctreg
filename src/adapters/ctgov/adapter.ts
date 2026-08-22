@@ -24,6 +24,7 @@ export const CTGOV_CAPABILITY: Capability = {
     location: true,
     id: true,
     patient: true,
+    outcomeQuery: true,
     geo: true,
     geoNeedsCoords: true,
     status: true,

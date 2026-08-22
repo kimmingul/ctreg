@@ -32,6 +32,16 @@ describe('인자 파싱', () => {
     expect(a.query.status).toEqual(['recruiting', 'completed']);
   });
 
+  it('phase 도 other 를 거부한다 — status 와 같은 형식의 힌트를 낸다', () => {
+    expectUsage(() => parseCliArgs(['search', '--phase', 'other']), 'phase_3');
+  });
+
+  it('study-type 도 other 를 거부한다 — other 는 매핑 결과이지 필터 입력이 아니다', () => {
+    expect(parseCliArgs(['search', '--study-type', 'interventional']).query.studyType).toBe('interventional');
+    expectUsage(() => parseCliArgs(['search', '--study-type', 'other']), 'interventional');
+    expectUsage(() => parseCliArgs(['search', '--study-type', 'bogus']));
+  });
+
   it('--near 는 좌표만 받는다 — 지명은 exit 2', () => {
     expect(parseCliArgs(['search', '--near', '37.5665,126.978']).query.near).toEqual({ lat: 37.5665, lon: 126.978 });
     expectUsage(() => parseCliArgs(['search', '--near', 'Seoul']), '좌표');

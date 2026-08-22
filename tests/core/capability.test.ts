@@ -8,6 +8,7 @@ const cap = {
   search: {
     condition: true, intervention: true, term: true, title: true,
     sponsor: true, lead: true, location: true, id: true, patient: true,
+    outcomeQuery: true,
     geo: true, geoNeedsCoords: true,
     status: true, phase: true, studyType: true, dateRange: true,
   },

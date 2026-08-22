@@ -38,3 +38,8 @@ export function isFilterableStatus(v: string): v is TrialStatus {
 export function isFilterablePhase(v: string): v is TrialPhase {
   return !NOT_FILTERABLE.has(v) && (TRIAL_PHASE as readonly string[]).includes(v);
 }
+
+/** studyType 도 마찬가지다 — `other` 는 매핑 결과이지 필터 입력이 아니다. */
+export function isFilterableStudyType(v: string): v is StudyType {
+  return !NOT_FILTERABLE.has(v) && (STUDY_TYPE as readonly string[]).includes(v);
+}

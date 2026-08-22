@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util';
 import { CAPS, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
 import { REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
-  STUDY_TYPE, isFilterablePhase, isFilterableStatus,
+  isFilterablePhase, isFilterableStatus, isFilterableStudyType,
   type StudyType, type TrialPhase, type TrialStatus,
 } from '../core/vocab.js';
 import { usageError } from '../runtime/errors.js';
@@ -128,15 +128,20 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     return s as TrialStatus;
   });
   const phase = (v.phase ?? []).map((p) => {
-    if (!isFilterablePhase(p)) throw usageError(`--phase 값이 잘못되었습니다: '${p}'`, '예: phase_3');
+    if (!isFilterablePhase(p)) {
+      throw usageError(`--phase 값이 잘못되었습니다: '${p}'`, "소문자 공통 어휘를 쓰세요 (예: phase_3). 'other' 는 검색 조건이 아닙니다.");
+    }
     return p as TrialPhase;
   });
   let studyType: StudyType | undefined;
   if (v['study-type']) {
-    if (!(STUDY_TYPE as readonly string[]).includes(v['study-type'])) {
-      throw usageError(`--study-type 값이 잘못되었습니다: '${v['study-type']}'`, `가능: ${STUDY_TYPE.join(', ')}`);
+    if (!isFilterableStudyType(v['study-type'])) {
+      throw usageError(
+        `--study-type 값이 잘못되었습니다: '${v['study-type']}'`,
+        "소문자 공통 어휘를 쓰세요 (예: interventional). 'other' 는 검색 조건이 아닙니다.",
+      );
     }
-    studyType = v['study-type'] as StudyType;
+    studyType = v['study-type'];
   }
 
   // --- 지오 ---

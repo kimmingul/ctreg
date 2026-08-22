@@ -18,6 +18,7 @@ export const CapabilitySchema = z.strictObject({
     location: z.boolean(),
     id: z.boolean(),
     patient: z.boolean(),
+    outcomeQuery: z.boolean(),
     geo: z.boolean(),
     geoNeedsCoords: z.boolean(),
     status: z.boolean(),

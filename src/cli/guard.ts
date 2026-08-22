@@ -17,6 +17,7 @@ export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: Fetc
     ['lead', q.lead !== undefined],
     ['id', q.id !== undefined],
     ['patient', q.patient !== undefined],
+    ['outcomeQuery', q.outcomeQuery !== undefined],
     ['status', (q.status?.length ?? 0) > 0],
     ['phase', (q.phase?.length ?? 0) > 0],
     ['studyType', q.studyType !== undefined],
