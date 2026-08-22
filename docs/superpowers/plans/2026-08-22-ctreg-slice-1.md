@@ -1954,7 +1954,10 @@ Expected: FAIL — 모듈 없음
 `src/adapters/ctgov/vocab.ts`:
 
 ```ts
-import type { StudyType, TrialPhase, TrialStatus } from '../../core/vocab.js';
+import {
+  isFilterablePhase, isFilterableStatus,
+  type StudyType, type TrialPhase, type TrialStatus,
+} from '../../core/vocab.js';
 import { usageError } from '../../runtime/errors.js';
 
 const STATUS_IN: Record<string, TrialStatus> = {
@@ -1969,9 +1972,18 @@ const STATUS_IN: Record<string, TrialStatus> = {
   UNKNOWN: 'unknown',
 };
 
-/** 역매핑은 정방향에서 파생한다 — 두 테이블이 어긋나는 사고를 원천 차단한다. */
+/**
+ * 역매핑은 정방향에서 파생한다 — 두 테이블이 어긋나는 사고를 원천 차단한다.
+ * 단, 뒤집기 전에 `isFilterableStatus` 로 거른다. STATUS_IN 은 UNKNOWN→'unknown' 을
+ * 담고 있어서 무조건 뒤집으면 STATUS_OUT['unknown']='UNKNOWN' 이 되고,
+ * fromStatus('unknown') 이 던지는 대신 값을 반환해 "unknown/other 는 필터 입력이
+ * 될 수 없다" 규칙이 무너진다. 거르고 뒤집으면 나중에 정방향 표에 unknown/other 값을
+ * 가진 행이 추가돼도 역방향 표에 구조적으로 나타나지 않는다.
+ */
 const STATUS_OUT = Object.fromEntries(
-  Object.entries(STATUS_IN).map(([k, v]) => [v, k]),
+  Object.entries(STATUS_IN)
+    .filter(([, v]) => isFilterableStatus(v))
+    .map(([k, v]) => [v, k]),
 ) as Record<TrialStatus, string | undefined>;
 
 export function toStatus(raw?: string): { status: TrialStatus; statusRaw?: string } {
@@ -1999,8 +2011,11 @@ const PHASE_IN: Record<string, TrialPhase> = {
   PHASE4: 'phase_4',
   NA: 'na',
 };
+/** STATUS_OUT 과 같은 이유로 거른 뒤 뒤집는다 (PHASE_IN 에는 오늘 해당 항목이 없지만 같은 위험이다). */
 const PHASE_OUT = Object.fromEntries(
-  Object.entries(PHASE_IN).map(([k, v]) => [v, k]),
+  Object.entries(PHASE_IN)
+    .filter(([, v]) => isFilterablePhase(v))
+    .map(([k, v]) => [v, k]),
 ) as Record<TrialPhase, string | undefined>;
 
 export function toPhases(raw?: string[]): { phase?: TrialPhase[]; phaseRaw?: string[] } {
