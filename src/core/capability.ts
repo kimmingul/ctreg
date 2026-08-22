@@ -3,12 +3,12 @@ import type { NormalizedQuery, FetchOpts, ResultsOpts } from './query.js';
 import type { TrialRecord, TrialResults } from './record.js';
 import { REGISTRY_KEYS, type RegistryKey } from './registry.js';
 
-export const CapabilitySchema = z.object({
+export const CapabilitySchema = z.strictObject({
   key: z.enum(REGISTRY_KEYS),
   name: z.string(),
   region: z.string(),
   /** 모든 축을 명시적으로 신고한다. 빠뜨리면 "미지원"인지 "선언 누락"인지 알 수 없다. */
-  search: z.object({
+  search: z.strictObject({
     condition: z.boolean(),
     intervention: z.boolean(),
     term: z.boolean(),
@@ -25,14 +25,14 @@ export const CapabilitySchema = z.object({
     studyType: z.boolean(),
     dateRange: z.boolean(),
   }),
-  detail: z.object({
+  detail: z.strictObject({
     eligibilityText: z.boolean(),
     outcomes: z.boolean(),
     contacts: z.boolean(),
   }),
   results: z.boolean(),
   count: z.boolean(),
-  limits: z.object({
+  limits: z.strictObject({
     maxPageSize: z.number(),
     ratePerSec: z.number(),
     maxBatchIds: z.number(),

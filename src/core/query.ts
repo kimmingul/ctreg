@@ -29,10 +29,12 @@ export type NormalizedQuery = {
   completionAfter?: string;
   completionBefore?: string;
 
-  page?: number;
   pageSize?: number;
   sort?: string;
-  /** CT.gov 등은 페이지 번호가 아니라 불투명 커서로 페이지네이션한다 — §5.1. */
+  /**
+   * 불투명 커서. CT.gov 를 비롯해 페이지 번호 파라미터가 아예 없는 레지스트리가
+   * 흔하므로 `page: number` 는 계약에 두지 않는다 — §5.1.
+   */
   pageToken?: string;
 };
 

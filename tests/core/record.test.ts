@@ -47,4 +47,10 @@ describe('TrialRecord 계약', () => {
     });
     expect(r.eligibility?.criteriaTruncated).toBe(true);
   });
+
+  it('스키마에 없는 필드는 거부한다 — 오타가 조용히 사라지면 안 된다', () => {
+    // locationsTotal 오타(locationTotal)를 흘려보내면, 필드가 optional 이라
+    // 그냥 무시되고 "이 시험은 사이트가 없다"로 오독될 수 있다.
+    expect(() => TrialRecordSchema.parse({ ...minimal, locationTotal: 42 })).toThrow();
+  });
 });

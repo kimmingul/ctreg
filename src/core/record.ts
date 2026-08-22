@@ -5,24 +5,24 @@ import { STUDY_TYPE, TRIAL_PHASE, TRIAL_STATUS } from './vocab.js';
 const RegistryKeySchema = z.enum(REGISTRY_KEYS);
 const StatusSchema = z.enum(TRIAL_STATUS);
 
-export const TrialLocationSchema = z.object({
+export const TrialLocationSchema = z.strictObject({
   facility: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
   status: StatusSchema.optional(),
   statusRaw: z.string().optional(),
-  geo: z.object({ lat: z.number(), lon: z.number() }).optional(),
+  geo: z.strictObject({ lat: z.number(), lon: z.number() }).optional(),
   distanceKm: z.number().optional(),
 });
 export type TrialLocation = z.infer<typeof TrialLocationSchema>;
 
-export const TrialRecordSchema = z.object({
+export const TrialRecordSchema = z.strictObject({
   // 신원
   id: z.string(),
   registry: RegistryKeySchema,
   registryId: z.string(),
-  crossIds: z.array(z.object({ registry: z.string(), id: z.string() })).optional(),
+  crossIds: z.array(z.strictObject({ registry: z.string(), id: z.string() })).optional(),
   url: z.string(),
 
   // core
@@ -35,7 +35,7 @@ export const TrialRecordSchema = z.object({
   studyType: z.enum(STUDY_TYPE).optional(),
   studyTypeRaw: z.string().optional(),
   conditions: z.array(z.string()),
-  interventions: z.array(z.object({ type: z.string().optional(), name: z.string() })).optional(),
+  interventions: z.array(z.strictObject({ type: z.string().optional(), name: z.string() })).optional(),
   sponsor: z
     .object({ lead: z.string().optional(), collaborators: z.array(z.string()).optional() })
     .optional(),
@@ -71,7 +71,7 @@ export const TrialRecordSchema = z.object({
     .optional(),
   outcomes: z
     .array(
-      z.object({
+      z.strictObject({
         type: z.enum(['primary', 'secondary', 'other']),
         measure: z.string(),
         timeFrame: z.string().optional(),
@@ -81,7 +81,7 @@ export const TrialRecordSchema = z.object({
     .optional(),
   contacts: z
     .array(
-      z.object({
+      z.strictObject({
         name: z.string().optional(),
         role: z.string().optional(),
         email: z.string().optional(),
@@ -96,16 +96,16 @@ export const TrialRecordSchema = z.object({
 });
 export type TrialRecord = z.infer<typeof TrialRecordSchema>;
 
-export const OutcomeResultSchema = z.object({
+export const OutcomeResultSchema = z.strictObject({
   type: z.enum(['primary', 'secondary', 'other']),
   measure: z.string(),
   timeFrame: z.string().optional(),
   description: z.string().optional(),
-  groups: z.array(z.object({ title: z.string(), value: z.string().optional() })).optional(),
+  groups: z.array(z.strictObject({ title: z.string(), value: z.string().optional() })).optional(),
 });
 export type OutcomeResult = z.infer<typeof OutcomeResultSchema>;
 
-export const AdverseEventSchema = z.object({
+export const AdverseEventSchema = z.strictObject({
   organ: z.string().optional(),
   term: z.string(),
   serious: z.boolean().optional(),
@@ -114,11 +114,11 @@ export const AdverseEventSchema = z.object({
 });
 export type AdverseEvent = z.infer<typeof AdverseEventSchema>;
 
-export const TrialResultsSchema = z.object({
+export const TrialResultsSchema = z.strictObject({
   id: z.string(),
   registry: RegistryKeySchema,
   hasResults: z.boolean(),
-  sections: z.object({
+  sections: z.strictObject({
     outcomes: z
       .object({ total: z.number(), expanded: z.number(), items: z.array(OutcomeResultSchema) })
       .optional(),
@@ -127,14 +127,14 @@ export const TrialResultsSchema = z.object({
         total: z.number(),
         expanded: z.number(),
         byOrgan: z.array(
-          z.object({ organ: z.string(), events: z.number(), expanded: z.boolean() }),
+          z.strictObject({ organ: z.string(), events: z.number(), expanded: z.boolean() }),
         ),
         items: z.array(AdverseEventSchema),
       })
       .optional(),
     // flow / baseline 은 레지스트리마다 구조가 달라 정규화하지 않고 원문을 통과시킨다.
-    flow: z.object({ total: z.number(), items: z.array(z.unknown()) }).optional(),
-    baseline: z.object({ total: z.number(), items: z.array(z.unknown()) }).optional(),
+    flow: z.strictObject({ total: z.number(), items: z.array(z.unknown()) }).optional(),
+    baseline: z.strictObject({ total: z.number(), items: z.array(z.unknown()) }).optional(),
   }),
   fetchedAt: z.string(),
 });
