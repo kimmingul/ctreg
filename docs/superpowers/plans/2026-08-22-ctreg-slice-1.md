@@ -271,10 +271,12 @@ describe('폐쇄 어휘', () => {
     expect(TRIAL_STATUS).toContain('other');
   });
 
-  it('phase 에는 결합 값(phase_1_2)을 두지 않는다 — 배열로 무손실 보존하기 때문', () => {
+  it('phase 는 스펙 §2.3 의 7개 값으로 고정된다 — Task 8 의 PHASE_IN 이 정확히 이 집합을 덮어야 한다', () => {
+    expect(TRIAL_PHASE).toEqual([
+      'early_phase_1', 'phase_1', 'phase_2', 'phase_3', 'phase_4', 'na', 'other',
+    ]);
+    // 결합 값을 어휘에 두지 않는 것은 설계 결정이다 — 배열로 무손실 보존한다.
     expect(TRIAL_PHASE).not.toContain('phase_1_2');
-    expect(TRIAL_PHASE).toContain('phase_1');
-    expect(TRIAL_PHASE).toContain('na');
   });
 
   it('studyType 은 4개 값이다', () => {
