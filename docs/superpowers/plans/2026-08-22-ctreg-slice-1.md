@@ -717,6 +717,12 @@ describe('TrialRecord 계약', () => {
     expect(r.locations).toHaveLength(1);
   });
 
+  it('스키마에 없는 필드는 거부한다 — 오타가 조용히 사라지면 안 된다', () => {
+    // locationsTotal 오타(locationTotal)를 흘려보내면, 필드가 optional 이라
+    // 그냥 무시되고 "이 시험은 사이트가 없다"로 오독될 수 있다.
+    expect(() => TrialRecordSchema.parse({ ...minimal, locationTotal: 42 })).toThrow();
+  });
+
   it('eligibility 절단은 플래그로 드러난다', () => {
     const r = TrialRecordSchema.parse({
       ...minimal,
@@ -782,7 +788,7 @@ import { STUDY_TYPE, TRIAL_PHASE, TRIAL_STATUS } from './vocab.js';
 const RegistryKeySchema = z.enum(REGISTRY_KEYS);
 const StatusSchema = z.enum(TRIAL_STATUS);
 
-export const TrialLocationSchema = z.object({
+export const TrialLocationSchema = z.strictObject({
   facility: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -794,7 +800,7 @@ export const TrialLocationSchema = z.object({
 });
 export type TrialLocation = z.infer<typeof TrialLocationSchema>;
 
-export const TrialRecordSchema = z.object({
+export const TrialRecordSchema = z.strictObject({
   // 신원
   id: z.string(),
   registry: RegistryKeySchema,
@@ -926,7 +932,7 @@ import type { NormalizedQuery, FetchOpts, ResultsOpts } from './query.js';
 import type { TrialRecord, TrialResults } from './record.js';
 import { REGISTRY_KEYS, type RegistryKey } from './registry.js';
 
-export const CapabilitySchema = z.object({
+export const CapabilitySchema = z.strictObject({
   key: z.enum(REGISTRY_KEYS),
   name: z.string(),
   region: z.string(),
@@ -970,7 +976,10 @@ export type AdapterResult<T> = { data: T; warnings: Warning[] };
 export interface RegistryAdapter {
   readonly key: RegistryKey;
   capability(): Capability;
-  search(q: NormalizedQuery, o: FetchOpts): Promise<AdapterResult<TrialRecord[]> & { total?: number }>;
+  search(
+    q: NormalizedQuery,
+    o: FetchOpts,
+  ): Promise<AdapterResult<TrialRecord[]> & { total?: number; nextPageToken?: string }>;
   get(ids: string[], o: FetchOpts): Promise<AdapterResult<TrialRecord[]>>;
   results(id: string, o: ResultsOpts): Promise<AdapterResult<TrialResults>>;
   count(q: NormalizedQuery, o: FetchOpts): Promise<AdapterResult<number>>;
@@ -1011,9 +1020,14 @@ export type NormalizedQuery = {
   completionAfter?: string;
   completionBefore?: string;
 
-  page?: number;
   pageSize?: number;
   sort?: string;
+  /**
+   * 페이지네이션은 번호가 아니라 불투명 커서다 — CT.gov 가 pageToken 을 쓰고
+   * 다른 레지스트리도 커서형이 흔하다. `page: number` 는 계약에 두지 않는다:
+   * 어느 어댑터도 채울 수 없는 필드는 중복이 아니라 지킬 수 없는 약속이다.
+   */
+  pageToken?: string;
 };
 
 export type FetchOpts = {
@@ -1021,6 +1035,8 @@ export type FetchOpts = {
   caps: { locations: number; eligibilityChars: number; outcomes: number };
   cacheMode: 'use' | 'refresh' | 'off';
   raw: boolean;
+  /** 조회 옵션이지 검색 필터가 아니다 — 매퍼가 사이트별 거리를 붙이고 근접 순으로 정렬할 때 쓴다. */
+  near?: { lat: number; lon: number };
   signal?: AbortSignal;
 };
 
