@@ -11,6 +11,9 @@
 
 ### 1. `FetchOpts.caps` 가 캡 정책을 나르지 않는다 (최종 리뷰 I3)
 
+> **해소됨 — 커밋 `c1481f8`.** 정책을 `args.ts` 로 옮기고 매퍼는 `o.caps.*` 만 읽는다.
+> `map.ts` 의 `CAPS.` 직접 참조 0개. 아래는 당시의 진단으로 남긴다.
+
 `caps.outcomes` 는 아무도 읽지 않고, `caps.locations` 는 어댑터가 덮어쓴다. 문서화된 채널을
 성실히 따르는 어댑터 #2 는 스펙 §5.2 를 양방향으로 어긴다. `CAPS.outcomes.default` 가 죽은
 상수인 것(이연 #16)이 같은 문제의 증상이다 — 상수만 지우면 채널이 망가졌다는 증거가 사라지므로
@@ -19,6 +22,11 @@
 관련: `src/cli/args.ts`(caps 조립), `src/adapters/ctgov/map.ts`(캡 적용), `src/core/query.ts`.
 
 ### 2. 선언되었으나 소비자가 없는 `limits` (최종 리뷰 I5)
+
+> **해소됨 — 커밋 `5ad8450`.** `ratePerSec` 는 어댑터 선언값을 쓰고 env 는 오버라이드가 됐다.
+> `maxPageSize` 는 `guard.ts` 의 `applyLimits` 가 레지스트리별로 적용하고 `page_size_clamped` 로 알린다.
+> `geoNeedsCoords` 는 **지웠다** — 아래 「`search.geoNeedsCoords` 를 지웠다」 절 참조.
+> 아래는 당시의 진단으로 남긴다.
 
 `limits.maxPageSize`, `limits.ratePerSec`, `search.geoNeedsCoords` 는 capability 에 선언되지만
 코드 어디에서도 읽히지 않는다. 특히 `ratePerSec` — 스펙 §6.2 는 레지스트리마다 예산이 다르다고
