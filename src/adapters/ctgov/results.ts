@@ -52,7 +52,8 @@ export function extractResults(
       (o.aeOrganFilter ? has(e.organSystem, [o.aeOrganFilter]) : false) ||
       (o.aeTermFilter ? has(e.term, [o.aeTermFilter]) : false);
 
-    const items: AdverseEvent[] = raw.filter(keep).map((e) => ({
+    const kept = raw.filter(keep);
+    const items: AdverseEvent[] = kept.map((e) => ({
       term: e.term,
       ...(e.organSystem ? { organ: e.organSystem } : {}),
       serious: e.serious,
@@ -65,14 +66,20 @@ export function extractResults(
     }));
 
     // 롤업은 전개 여부와 무관하게 항상 낸다 — 전개 없이도 형태를 파악할 수 있어야 한다.
-    const expandedTerms = new Set(items.map((i) => i.term));
+    // 전개 여부는 organ+term 복합키로 판정한다 — term 만으로 키를 잡으면 서로 다른
+    // 기관계에 동일한 term(MedDRA 코드 특성상 실제로 발생한다)이 있을 때 필터링되지
+    // 않은 기관계까지 잘못 "전개됨"으로 표시된다. JSON.stringify 로 구조적으로 묶어 값 자체가
+    // 구분자를 위조할 수 없게 한다 (cache.ts 의 cacheKey 와 같은 이유).
+    const organOf = (e: any) => e.organSystem ?? '(미분류)';
+    const rollupKey = (organ: string, term: string) => JSON.stringify([organ, term]);
+    const expandedKeys = new Set(kept.map((e) => rollupKey(organOf(e), e.term)));
     const byOrganMap = new Map<string, { events: number; expanded: boolean }>();
     for (const e of raw) {
-      const organ = e.organSystem ?? '(미분류)';
+      const organ = organOf(e);
       const cur = byOrganMap.get(organ) ?? { events: 0, expanded: false };
       byOrganMap.set(organ, {
         events: cur.events + 1,
-        expanded: cur.expanded || expandedTerms.has(e.term),
+        expanded: cur.expanded || expandedKeys.has(rollupKey(organ, e.term)),
       });
     }
     const byOrgan = [...byOrganMap.entries()].map(([organ, v]) => ({ organ, ...v }));
