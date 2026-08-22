@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
 import { CapabilitySchema, type Capability, type RegistryAdapter } from '../../src/core/capability.js';
 import { CAPS, type FetchOpts, type NormalizedQuery, type ResultsOpts } from '../../src/core/query.js';
@@ -47,6 +48,23 @@ export type AdapterUnderTest = {
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+/**
+ * `haystack` 안 어딘가(자기 자신, 배열 원소, 오브젝트 프로퍼티 값을 재귀적으로)에
+ * `needle` 과 깊이 동등한 값이 있는지 본다. 업스트림 본문의 정확한 모양(목록이
+ * `studies` 에 있는지 `results` 에 있는지 등)은 레지스트리마다 다르므로, 필드명을
+ * 하드코딩하지 않고 트리 전체를 훑어 "이 조각이 원문 어딘가에서 그대로 왔는가" 를
+ * 묻는다. 얕게 좁힌 source(예: `{ id }` 하나만 남긴 객체)는 원문 트리의 어떤
+ * 지점과도 깊이 같을 수 없으므로 이 검사에 걸린다.
+ */
+function containsDeepEqual(haystack: unknown, needle: unknown): boolean {
+  if (isDeepStrictEqual(haystack, needle)) return true;
+  if (Array.isArray(haystack)) return haystack.some((item) => containsDeepEqual(item, needle));
+  if (haystack !== null && typeof haystack === 'object') {
+    return Object.values(haystack).some((v) => containsDeepEqual(v, needle));
+  }
+  return false;
+}
 
 const argsFor = (key: RegistryKey, over: Partial<ParsedArgs> = {}): ParsedArgs => ({
   command: 'count',
@@ -158,6 +176,34 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       expect(Array.isArray(r.warnings)).toBe(true);
     });
 
+    /**
+     * 경고 배열이 있다는 사실(shape)과 실제로 경고가 들어있다는 사실(존재)은 다르다
+     * — 앞의 두 테스트는 모양만 보므로, 경고를 전부 `[]` 로 버리는 어댑터도 통과한다.
+     * `locationsTotal`(정규화된 스키마 필드, 레지스트리 무관) 이 `locations.length` 보다
+     * 큰 레코드는 정의상 장소가 잘린 것이므로, 그런 레코드가 하나라도 있다면
+     * `locations_truncated` 경고가 반드시 동반돼야 한다. 표본 응답(`under.respond`) 이
+     * CAPS.locations.default 를 넘는 장소를 담은 레코드를 내지 않으면 이 검사는 아무것도
+     * 확인하지 못하고 공허하게 통과하므로, 먼저 절단이 실제로 일어났는지부터 못박는다.
+     */
+    it('장소가 잘리면 locations_truncated 경고가 반드시 딸려온다 — 경고 배열이 있다는 것만으론 부족하다', async () => {
+      const { adapter } = ok();
+      const r = await adapter.get([under.sampleId], fetchOpts);
+      const truncated = r.data.filter(
+        (rec) => rec.locationsTotal !== undefined && rec.locations !== undefined && rec.locationsTotal > rec.locations.length,
+      );
+      expect(
+        truncated.length,
+        `respond() 의 표본이 장소 절단을 유발하지 않습니다 — CAPS.locations.default(${CAPS.locations.default})를 ` +
+          '넘는 장소를 담은 레코드를 포함하도록 respond() 를 조정하세요.',
+      ).toBeGreaterThan(0);
+      for (const rec of truncated) {
+        expect(
+          r.warnings.some((w) => w.code === 'locations_truncated'),
+          `${rec.id} 는 장소가 잘렸는데(locationsTotal=${rec.locationsTotal}, locations=${rec.locations!.length}) locations_truncated 경고가 없습니다.`,
+        ).toBe(true);
+      }
+    });
+
     it('count 는 개수를 낸다 — 레코드가 아니라 수 하나다', async () => {
       const { adapter, calls } = ok();
       const r = await adapter.count({ condition: 'x' } as NormalizedQuery, fetchOpts);
@@ -180,11 +226,26 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       expect(Array.isArray(r.warnings)).toBe(true);
     });
 
-    it('raw 를 요청하면 레코드에 원문을 실어 낸다 — 유일한 탈출구가 비어 있으면 안 된다', async () => {
-      const { adapter } = ok();
+    /**
+     * `.toBeDefined()` 만으로는 source 를 얕게 좁힌 어댑터(예: `{ id: rec.registryId }`
+     * 만 남기는 것)를 못 잡는다 — 뭔가 있기만 하면 통과했다. 하네스의 `respond(url)` 이
+     * 이미 이 호출이 받았을 업스트림 본문을 쥐고 있으므로, source 가 그 본문 어딘가와
+     * 깊이 동등한지 요구하면 좁혀진 source 는 원문 트리의 어떤 지점과도 일치하지 못해
+     * 걸린다.
+     */
+    it('raw 를 요청하면 레코드에 원문을 실어 낸다 — 유일한 탈출구가 비어 있거나 좁혀져 있으면 안 된다', async () => {
+      const { adapter, calls } = ok();
       const r = await adapter.search({ condition: 'x' } as NormalizedQuery, { ...fetchOpts, raw: true });
       expect(r.data.length).toBeGreaterThan(0);
-      for (const rec of r.data) expect(rec.source).toBeDefined();
+      expect(calls.length).toBeGreaterThan(0);
+      for (const rec of r.data) {
+        expect(rec.source).toBeDefined();
+        const foundUpstream = calls.some((url) => containsDeepEqual(under.respond(url), rec.source));
+        expect(
+          foundUpstream,
+          `${rec.id} 의 source 가 이 호출이 받은 업스트림 본문 어디에도 깊이 동등한 조각으로 없습니다 — source 가 좁혀졌을 수 있습니다.`,
+        ).toBe(true);
+      }
     });
 
     /**
