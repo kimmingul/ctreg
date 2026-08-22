@@ -1,6 +1,6 @@
 # ctreg 필드 테스트 — ClinicalTrials.gov
 
-실행: 2026-08-22T02:17:11.760Z
+실행: 2026-08-22T02:22:33.639Z
 대상: https://clinicaltrials.gov/api/v2
 
 스펙 `docs/superpowers/specs/2026-08-22-ctreg-design.md` §7.4 의 미검증 문법을 실제 API 로 확인한 결과.
@@ -37,4 +37,5 @@
 - ❌ 항목은 어댑터에서 해당 플래그를 노출하지 않거나, 확인된 문법으로 고친다.
 - ⚠️ 항목은 확정이 아니다 — 추가 검사 없이 플래그를 새로 열지 않는다.
 - `filter.ids` 실측 상한이 잠정값 50 미만으로 확인되면 `CTGOV_CAPABILITY.limits.maxBatchIds` 를 낮춘다.
+- **`filter.ids` 실측 상한이 잠정값(50)보다 훨씬 위(이 실행에서는 500까지 확인)라고 해서 `maxBatchIds` 를 그만큼 올리면 안 된다.** `get()` 은 배치당 요청을 한 번만 보내고 응답을 페이지네이션하지 않는다 — `buildIdsParams` 가 `pageSize` 를 `CAPS.pageSize.max`(200)로 캡핑하므로, `maxBatchIds` 가 200을 넘으면 그 초과분은 요청은 되지만 응답엔 실리지 않고 조용히 사라진다(경고도 안 남는다 — `get()` 입장에선 아무것도 실패하지 않았기 때문). 이 불변식은 이제 계약 스위트(`tests/contract/adapter-contract.ts`)가 `maxBatchIds ≤ CAPS.pageSize.max` 로 강제한다. 올리려면 먼저 `get()` 에 배치 내부 페이지네이션을 구현하거나, 페이지네이션 없이 안전한 상한인 `CAPS.pageSize.max`(200)에서 멈춰야 한다 — 이는 슬라이스 2 결정이다.
 - HasResults 문법이 유효해도 슬라이스 2 까지는 필터로 노출하지 않는다. 레코드 필드로만 낸다.

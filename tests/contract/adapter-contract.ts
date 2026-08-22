@@ -33,6 +33,28 @@ export function runAdapterContract(name: string, makeAdapter: () => RegistryAdap
       expect(l.maxBatchIds).toBeGreaterThan(0);
     });
 
+    /**
+     * get() 은 배치 하나당 요청을 딱 한 번만 보내고 그 응답을 페이지네이션하지
+     * 않는다(review 발견, task-16a). CT.gov 의 filter.ids 자체는 500개 이상도
+     * 받지만, buildIdsParams 가 pageSize 를 Math.min(ids.length, CAPS.pageSize.max)
+     * 로 잡으므로 배치가 CAPS.pageSize.max 보다 크면 그 초과분이 요청은 됐지만
+     * 응답에는 실리지 않은 채 조용히 사라진다 — get() 입장에서는 아무것도
+     * 실패하지 않았으니 warnings 도 안 남는다. maxBatchIds 가 이 상한을 넘는
+     * 순간 capability 의 "한 번에 N개 처리 가능" 선언이 거짓이 된다.
+     */
+    it('maxBatchIds 는 한 페이지로 전부 읽을 수 있는 범위를 넘지 않는다', () => {
+      const l = makeAdapter().capability().limits;
+      if (l.maxBatchIds > CAPS.pageSize.max) {
+        expect.fail(
+          `maxBatchIds(${l.maxBatchIds}) 가 CAPS.pageSize.max(${CAPS.pageSize.max}) 를 초과합니다. ` +
+            `get() 은 배치당 요청을 한 번만 보내고 응답을 페이지네이션하지 않으므로, 이 값을 올리면 ` +
+            `pageSize 상한을 넘는 ID 들이 조용히 응답에서 빠집니다 — 호출자는 실패 신호나 경고 없이 ` +
+            `부분 결과를 전체로 오인합니다. get() 이 배치 내부 페이지네이션을 구현하기 전까지는 ` +
+            `maxBatchIds 를 CAPS.pageSize.max 이하로 유지하세요.`,
+        );
+      }
+    });
+
     it('신고하지 않은 축으로 요청하면 빈 결과가 아니라 exit 3 이 나온다', () => {
       const cap = makeAdapter().capability();
 
