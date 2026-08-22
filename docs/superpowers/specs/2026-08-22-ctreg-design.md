@@ -167,6 +167,7 @@ type Warning = { code: string; message: string; id?: string; at?: number }
   "search": {
     "condition": true, "intervention": true, "term": true, "title": true,
     "sponsor": true, "lead": true, "location": true, "id": true, "patient": true,
+    "outcomeQuery": true,
     "geo": true, "geoNeedsCoords": true,
     "status": true, "phase": true, "studyType": true, "dateRange": true
   },
@@ -435,15 +436,15 @@ capability 선언 덤프. 네트워크를 치지 않는다. `--registry <key>` �
 
 업스트림 `geo-helpers.ts` 의 하버사인은 그대로 쓰되 마일 결과를 km로 변환해 `distanceKm` 으로 낸다. `--radius` 는 `km`/`mi` 접미사를 받고, 접미사가 없으면 CT.gov가 미터로 읽으므로 **접미사를 필수로 강제한다**(exit 2).
 
-### 7.4 필드 테스트에서 검증할 것
+### 7.4 필드 테스트에서 검증할 것 — 검증 완료 (2026-08-22)
 
-아래는 문서·코드 근거는 있으나 **실제 응답으로 확인하기 전에는 확정하지 않는다.** 슬라이스 1의 게이트다.
+Task 16a 에서 `scripts/field-test.ts` 로 실제 ClinicalTrials.gov API(`https://clinicaltrials.gov/api/v2`) 를 호출해 아래 5개 항목을 모두 확인했다. 원본 기록은 `docs/field-test-2026-08-22.md`.
 
-1. `query.lead` / `query.id` / `query.patient` 의 실제 동작과 매칭 범위
-2. `AREA[LastUpdatePostDate]RANGE[2025-01-01,MAX]` 형태의 정확한 Essie 문법
-3. `filter.ids` 의 배치 상한 (`maxBatchIds: 50` 은 잠정값) 및 URL 길이 한계
-4. `--phase` / `--study-type` 을 `filter.advanced` 로 거는 것과 `query.term` 에 섞는 것 중 어느 쪽이 정확한가
-5. `hasResults` 필터 문법 — 확인 전까지 **필터로 노출하지 않는다**. 레코드 필드로만 낸다.
+1. **`query.lead` / `query.id` / `query.patient` 의 실제 동작과 매칭 범위** — 셋 다 200 을 반환하고 매칭한다. `query.lead`(예: `Merck Sharp & Dohme`)와 `query.id`(예: `NCT04280705`)는 기대한 대로 작동한다. `query.patient` 는 자유서술 텍스트를 받아 매칭하는 게 확인됐다(`lung cancer`→20,183건, `woman with breast cancer`→6,746건) — 단, 필드 테스트 스크립트의 예시 문구(`62 year old woman with EGFR positive lung cancer`)는 과도하게 구체적이어서 0건이 나왔다. 이는 파라미터 자체의 결함이 아니라 그 예시 문구가 안 맞은 것이며, 별도로 짧은 문구 두 개로 재확인했다. 세 축 모두 노출을 유지한다.
+2. **`AREA[LastUpdatePostDate]RANGE[2025-01-01, MAX]` 형태의 Essie 문법** — 확인됨. 그대로 200 을 반환하고 totalCount 가 나온다. `dateRange()` 의 현재 구현(`src/adapters/ctgov/query.ts`)을 그대로 유지한다.
+3. **`filter.ids` 의 배치 상한 및 URL 길이 한계** — 50개, 200개 배치 모두 200 을 반환했다(URL 길이 문제 없음). 즉 실측 상한은 잠정값 50 보다 낮지 않다 — 오히려 최소 200 까지는 열려 있다. `CTGOV_CAPABILITY.limits.maxBatchIds: 50` 은 보수적으로 유지한다(변경 불필요 — 실측이 잠정값보다 낮게 나온 경우에만 낮추기로 했었다).
+4. **`--phase` / `--study-type` 을 `filter.advanced` 로 거는 것과 `query.term` 에 섞는 것 중 어느 쪽이 정확한가** — `filter.advanced` 로 거는 현재 구현(`AREA[Phase]PHASE3`, `AREA[StudyType]INTERVENTIONAL`)이 맞다. 둘 다 200 + 정합적인 totalCount 로 확인됨.
+5. **`hasResults` 필터 문법** — `AREA[HasResults]true` 형태가 실제로 200 을 반환하고(totalCount=79,794) 문법 자체는 유효한 것으로 확인됐다. 그럼에도 **슬라이스 1 에서는 필터로 노출하지 않는다** — 새 CLI 표면을 여는 것은 슬라이스 2 범위라는 프로젝트 판단(Task 16 지시)에 따른 것이지, 문법이 불확실해서가 아니다. 레코드 필드(`hasResults: boolean`)로는 계속 낸다.
 
 ---
 
