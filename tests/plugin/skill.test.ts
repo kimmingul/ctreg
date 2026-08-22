@@ -7,6 +7,12 @@ const MANIFEST = JSON.parse(
   readFileSync(join(__dirname, '../../.claude-plugin/plugin.json'), 'utf8'),
 );
 
+const BODY = (() => {
+  const m = /^---\n[\s\S]*?\n---\n([\s\S]*)$/.exec(SKILL);
+  if (!m) throw new Error('SKILL.md 에 프론트매터가 없다');
+  return m[1]!;
+})();
+
 describe('플러그인 매니페스트', () => {
   it('스킬만 싣는다 — MCP 서버는 CLI 로 대체했다', () => {
     expect(MANIFEST.name).toBe('ctreg');
@@ -51,5 +57,25 @@ describe('SKILL.md 는 얇다', () => {
 
   it('한 페이지를 넘지 않는다', () => {
     expect(SKILL.split('\n').length).toBeLessThan(60);
+  });
+
+  it('본문의 라틴 토큰은 허용 목록뿐이다 — 커맨드명·플래그명은 접두사 유무와 무관하게 걸린다', () => {
+    const allowed = new Set(['ctreg', 'help', 'registries']);
+    const found = [...BODY.matchAll(/[A-Za-z][A-Za-z0-9_-]*/g)].map((m) => m[0].toLowerCase());
+    expect([...new Set(found)].filter((w) => !allowed.has(w))).toEqual([]);
+  });
+
+  it('본문에 아라비아 숫자가 없다 — exit code 를 한국어로 풀어 써도 걸린다', () => {
+    expect(BODY.match(/[0-9]/g)).toBeNull();
+  });
+
+  it('출력 형식을 설명하는 한국어 어휘가 없다', () => {
+    const banned = ['표준 출력', '표준 에러', '표준출력', '표준에러', '파싱', '직렬화'];
+    expect(banned.filter((w) => BODY.includes(w))).toEqual([]);
+  });
+
+  it('절 구성이 고정되어 있다 — 새 절을 만들어 지식을 부어넣을 수 없다', () => {
+    const headings = [...BODY.matchAll(/^##\s+(.+?)\s*$/gm)].map((m) => m[1]);
+    expect(headings).toEqual(['시작하기 전에', '출력을 읽는 법', '한계']);
   });
 });
