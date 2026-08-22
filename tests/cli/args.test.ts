@@ -58,6 +58,18 @@ describe('인자 파싱', () => {
     expectUsage(() => parseCliArgs(['search', '--radius', '100km']), '--near');
   });
 
+  /**
+   * I2 회귀. `--location` 을 파싱해 `query.location` 에 담는 것과 매퍼가 읽는
+   * `fetch.locationTerm` 으로 실어 보내는 것은 다른 자리다 — 후자를 빼먹어도
+   * `query.location` 쪽 검사만으로는 안 걸린다. F1(`--location Seoul` 로 걸린 시험의
+   * 근거 장소가 응답에 남는지)의 유일한 CLI 이음매가 이 배선이므로, 값이 실린다는
+   * 것과 없으면 키 자체가 없다(absent-means-absent)는 것을 둘 다 못박는다.
+   */
+  it('--location 은 fetch.locationTerm 으로 실려 매퍼까지 간다', () => {
+    expect(parseCliArgs(['search', '--location', 'Seoul']).fetch.locationTerm).toBe('Seoul');
+    expect(parseCliArgs(['search']).fetch).not.toHaveProperty('locationTerm');
+  });
+
   it('--include 는 알려진 섹션만 받는다', () => {
     expect(parseCliArgs(['search', '--include', 'eligibility']).fetch.include).toContain('eligibility');
     expectUsage(() => parseCliArgs(['search', '--include', 'everything']));

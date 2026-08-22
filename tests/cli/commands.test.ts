@@ -269,6 +269,41 @@ describe('search 커맨드 — 레지스트리별 페이지 크기 상한', () =
   });
 });
 
+/**
+ * I1 회귀. search.ts 는 위에서 이미 고정돼 있지만, count.ts 의 `applyLimits` 호출은
+ * 통째로 지워도 걸리는 테스트가 없었다 — search 만 이 이음매를 검사했다. 같은 모양으로
+ * count 에도 못박는다: 상한이 낮은 레지스트리만 클램프되고 경고가 붙는지, 상한이 높은
+ * 다음 레지스트리는 원래 요청값을 그대로 받는지.
+ */
+describe('count 커맨드 — 레지스트리별 페이지 크기 상한', () => {
+  it('상한이 낮은 레지스트리를 먼저 처리해도, 상한이 높은 다음 레지스트리는 원래 요청값을 받는다', async () => {
+    const narrowCap: Capability = { ...CTGOV_CAPABILITY, key: 'narrow' as RegistryKey, name: '좁은 레지스트리', limits: { ...CTGOV_CAPABILITY.limits, maxPageSize: 50 } };
+    const wideCap: Capability = { ...CTGOV_CAPABILITY, key: 'wide' as RegistryKey, name: '넓은 레지스트리', limits: { ...CTGOV_CAPABILITY.limits, maxPageSize: 200 } };
+    const narrow = stubAdapter({}, narrowCap).ctgov;
+    const wide = stubAdapter({}, wideCap).ctgov;
+    const adapters = { narrow, wide } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = {
+      ...parseCliArgs(['count', '--condition', 'X', '--page-size', '200']),
+      registries: ['narrow', 'wide'] as unknown as RegistryKey[],
+    };
+
+    const env = await runCount(args, adapters);
+
+    expect(narrow.count).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 50 }), expect.anything());
+    expect(wide.count).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 200 }), expect.anything());
+    expect(args.query.pageSize).toBe(200); // 원본 쿼리도 훼손되지 않는다
+    expect(env.warnings).toEqual([
+      expect.objectContaining({ code: 'page_size_clamped', registry: 'narrow' }),
+    ]);
+  });
+
+  it('아무도 깎이지 않으면 page_size_clamped 경고를 내지 않는다', async () => {
+    const adapters = stubAdapter();
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X', '--page-size', '10']), adapters);
+    expect(env.warnings.map((w) => w.code)).not.toContain('page_size_clamped');
+  });
+});
+
 describe('get 커맨드 — 라우팅과 가드', () => {
   it('어댑터가 없는 레지스트리의 ID 하나가 요청 전체를 가라앉히지 않는다', async () => {
     const adapters = stubAdapter();
