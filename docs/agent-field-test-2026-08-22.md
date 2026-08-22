@@ -150,8 +150,8 @@ CLI-FIX 다"라고 정해두었고, 그것이 항목을 CLI-FIX 로 미는 힘�
 ## 부록 — 에이전트가 실행한 커맨드
 
 스펙 §7 이 요구하는 시나리오별 커맨드 목록이다. 전사에서 실제 실행된 `ctreg` 호출만 뽑았다
-(환경변수 접두사·파이프·중복 제거, `--help` 출력의 사용법 줄은 제외). 전사 원문은
-`.superpowers/fieldtest/` 에 있다.
+(환경변수 접두사·파이프·리다이렉션·중복 제거, `--help` 출력의 사용법 줄과 산문 언급은 제외).
+전사 원문은 `.superpowers/fieldtest/` 에 있다.
 
 **S1 서울 근처 모집중 NSCLC** — 14개
 
@@ -186,10 +186,15 @@ ctreg count --term "pembrolizumab"
 ctreg count --intervention "Keytruda"
 ```
 
-**S3 NCT04280705 유해사례, 심장 관련** — 1개
+**S3 NCT04280705 유해사례, 심장 관련** — 6개
 
 ```
+ctreg --help
 ctreg registries
+ctreg results NCT04280705
+ctreg results NCT04280705 --ae-organ "Cardiac disorders"
+ctreg get NCT04280705
+ctreg results NCT04280705 --ae-organ "Cardiac disorders" --full
 ```
 
 **S4 세 NCT 정리 (하나는 없는 ID)** — 4개
@@ -213,9 +218,10 @@ ctreg get "2020-000001-11"
 ctreg search --term "2020-000001-11"
 ```
 
-**S6 결과 게시된 완료 당뇨 시험** — 8개
+**S6 결과 게시된 완료 당뇨 시험** — 9개
 
 ```
+ctreg --help
 ctreg registries
 ctreg search --help
 ctreg search --condition diabetes --status COMPLETED --page-size 5
@@ -244,7 +250,7 @@ ctreg registries
 ctreg get NCT04280705 NCT00000102 NCT99999999 --format json
 ```
 
-합계 51개 호출.
+합계 57개 호출.
 
 ## 근거를 다시 확인하려면
 
