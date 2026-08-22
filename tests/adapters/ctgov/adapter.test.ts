@@ -213,4 +213,29 @@ describe('CT.gov 어댑터', () => {
     },
     15_000, // reserveSlot 의 락 재시도 상한(500ms) x 10회 재시도라 실시간으로 몇 초 걸린다.
   );
+
+  /**
+   * I1(`count.ts` → `applyLimits`)·I2(`args.ts` → `locationTerm`)와 같은 형태의 세 번째
+   * 인스턴스(R1). `createCtgovAdapter` 는 `makeClient(cfg, CTGOV_CAPABILITY.limits.ratePerSec,
+   * deps)` 를 부른다고 주석이 말하지만, 그 배선을 검사하는 테스트가 없었다 — 이 줄을
+   * `makeClient(cfg, 1, deps)` 로 하드코딩해도 스위트가 조용했다. `cfg.ratePerSec`(전역
+   * 오버라이드, http.ts 참고)가 있으면 그게 이겨서 선언값이 실제로 쓰이는지 가려지므로
+   * 이 테스트만 그것을 끈다. 기대 간격은 숫자를 적지 않고 `CTGOV_CAPABILITY.limits.ratePerSec`
+   * 에서 유도한다 — 그래야 선언이 바뀌어도 이 테스트가 같이 따라가고, 배선이 끊긴
+   * 순간(하드코딩)만 잡는다.
+   */
+  it('선언한 ratePerSec 의 간격만큼 연속 요청 사이에 실제로 대기한다', async () => {
+    cfg.ratePerSec = undefined; // 전역 오버라이드를 끄고 어댑터가 넘긴 선언값이 쓰이는지 본다
+    const waits: number[] = [];
+    const sleep = async (ms: number) => { waits.push(ms); };
+    const now = () => 1_000_000; // 고정 시각 — 매 호출마다 예약된 슬롯만큼 그대로 대기해야 한다
+    const f = respond({ ...page, totalCount: 1 });
+    const a = createCtgovAdapter(cfg, { fetchImpl: f as unknown as typeof fetch, sleep, now });
+
+    await a.search({ condition: 'x' }, opts);
+    await a.search({ condition: 'x' }, opts);
+
+    const expectedIntervalMs = Math.ceil(1000 / CTGOV_CAPABILITY.limits.ratePerSec);
+    expect(waits).toContain(expectedIntervalMs);
+  });
 });
