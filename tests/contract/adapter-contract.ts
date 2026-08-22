@@ -220,7 +220,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       };
 
       const unsupported = (Object.keys(cap.search) as (keyof Capability['search'])[])
-        .filter((k) => k !== 'geoNeedsCoords' && cap.search[k] === false);
+        .filter((k) => cap.search[k] === false);
 
       if (unsupported.length === 0) {
         // 전부 지원하는 어댑터라면 반대 방향으로 검증한다: 가짜로 하나를 끄면 반드시 걸려야 한다.

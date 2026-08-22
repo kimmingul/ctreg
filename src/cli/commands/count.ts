@@ -2,7 +2,7 @@ import type { RegistryAdapter, Warning } from '../../core/capability.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError, unsupportedError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { assertSupported } from '../guard.js';
+import { applyLimits, assertSupported } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -40,7 +40,12 @@ export async function runCount(
           'ctreg search 로 결과를 직접 받아 보세요. ctreg registries 로 지원 여부를 확인할 수 있습니다.',
         );
       }
-      const r = await adapter.count(args.query, args.fetch);
+      // count 자체는 pageSize 를 안 쓰지만(ctgov 는 pageSize:0 으로 개수만 받는다),
+      // args.query 는 search 와 이 루프를 공유하므로 여기서도 같은 규칙을 적용해 둔다 —
+      // 그래야 어떤 레지스트리를 먼저 도느냐에 따라 클램프 여부가 갈리지 않는다.
+      const limited = applyLimits(cap, args.query);
+      warnings.push(...limited.warnings);
+      const r = await adapter.count(limited.query, args.fetch);
       warnings.push(...r.warnings);
       total += r.data;
       registries.push({ registry: key, status: 'ok', total: r.data });

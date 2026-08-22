@@ -58,7 +58,7 @@ describe('run()', () => {
     expect(f).not.toHaveBeenCalled();
     const parsed = JSON.parse(c.out());
     expect(parsed.data[0].key).toBe('ctgov');
-    expect(parsed.data[0].search.geoNeedsCoords).toBe(true);
+    expect(parsed.data[0].search.geo).toBe(true);
   });
 
   it('count 는 개수만 낸다', async () => {

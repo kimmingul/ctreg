@@ -41,7 +41,6 @@ const deps = (f: ReturnType<typeof respond>) => ({ fetchImpl: f as unknown as ty
 describe('CT.gov 어댑터', () => {
   it('capability 선언이 계약 스키마를 통과한다', () => {
     expect(() => CapabilitySchema.parse(CTGOV_CAPABILITY)).not.toThrow();
-    expect(CTGOV_CAPABILITY.search.geoNeedsCoords).toBe(true);
   });
 
   it('search 는 레코드·총계·다음 커서를 낸다', async () => {

@@ -27,6 +27,7 @@ const opts = (cacheMode: 'use' | 'refresh' | 'off' = 'use') => ({
   path: '/studies',
   params: { 'query.cond': 'NSCLC', pageSize: 2 },
   cacheMode,
+  ratePerSec: 1000, // 테스트에서 실제 대기를 없앤다 — cfg.ratePerSec 가 없을 때의 기본 경로다
 });
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -106,7 +107,7 @@ describe('HTTP 클라이언트', () => {
     const f = vi.fn(async (url: unknown) => { seen.push(String(url)); return json({}); });
     await getJson(cfg, {
       registry: 'ctgov', baseUrl: cfg.ctgovBaseUrl, path: '/studies',
-      params: { a: 'x', b: undefined }, cacheMode: 'off',
+      params: { a: 'x', b: undefined }, cacheMode: 'off', ratePerSec: 1000,
     }, deps(f as unknown as typeof fetch));
     expect(seen[0]).toContain('a=x');
     expect(seen[0]).not.toContain('b=');
@@ -219,5 +220,56 @@ describe('HTTP 클라이언트', () => {
     const again = await getJson<{ from: string }>(cfg, opts(), deps(vi.fn() as unknown as typeof fetch));
     expect(again.cached).toBe(true);
     expect(again.value).toEqual({ from: 'A' });
+  });
+
+  describe('레지스트리별 요청률 예산', () => {
+    /**
+     * sleep 호출을 실제로 기다리지 않고 기록만 한다 — 결정적이고 빠르다. `now` 도
+     * 고정한다: 실제 벽시계를 쓰면 두 호출 사이에 흐르는 실제 몇 ms 가 간격 계산에
+     * 섞여 들어와 waitedMs 가 기대한 간격에서 살짝 어긋난다.
+     */
+    function sleepSpy() {
+      const waits: number[] = [];
+      return { waits, sleep: async (ms: number) => { waits.push(ms); }, now: () => 1_000_000 };
+    }
+
+    it('cfg.ratePerSec 가 없으면(전역 오버라이드 미설정) 이 레지스트리가 선언한 ratePerSec 를 쓴다', async () => {
+      cfg.ratePerSec = undefined; // 이 테스트만 전역 오버라이드를 끈다
+      const s = sleepSpy();
+      const f = vi.fn(async () => json({ ok: true }));
+      const callOpts = { ...opts('off'), ratePerSec: 2 }; // 간격 500ms
+      await getJson(cfg, callOpts, { fetchImpl: f as unknown as typeof fetch, sleep: s.sleep, now: s.now });
+      await getJson(cfg, callOpts, { fetchImpl: f as unknown as typeof fetch, sleep: s.sleep, now: s.now });
+      expect(s.waits).toContain(500);
+    });
+
+    it('두 레지스트리가 서로 다른 ratePerSec 를 선언하면 각자의 간격로 독립적으로 스로틀된다 — 하나가 느려도 다른 하나가 막히지 않는다', async () => {
+      cfg.ratePerSec = undefined;
+      const slow = sleepSpy();
+      const fast = sleepSpy();
+      const f = vi.fn(async () => json({ ok: true }));
+      const slowOpts = { ...opts('off'), registry: 'slow-reg', ratePerSec: 1 }; // 간격 1000ms
+      const fastOpts = { ...opts('off'), registry: 'fast-reg', ratePerSec: 10 }; // 간격 100ms
+
+      await getJson(cfg, slowOpts, { fetchImpl: f as unknown as typeof fetch, sleep: slow.sleep, now: slow.now });
+      await getJson(cfg, slowOpts, { fetchImpl: f as unknown as typeof fetch, sleep: slow.sleep, now: slow.now });
+      await getJson(cfg, fastOpts, { fetchImpl: f as unknown as typeof fetch, sleep: fast.sleep, now: fast.now });
+      await getJson(cfg, fastOpts, { fetchImpl: f as unknown as typeof fetch, sleep: fast.sleep, now: fast.now });
+
+      expect(slow.waits).toContain(1000);
+      expect(fast.waits).toContain(100);
+      expect(fast.waits).not.toContain(1000);
+    });
+
+    it('cfg.ratePerSec 가 명시적으로 설정되면(전역 오버라이드) 레지스트리 선언값보다 우선한다', async () => {
+      cfg.ratePerSec = 4; // 간격 250ms — 운영자의 명시적 개입
+      const s = sleepSpy();
+      const f = vi.fn(async () => json({ ok: true }));
+      const callOpts = { ...opts('off'), ratePerSec: 1 }; // 선언값은 1000ms 간격이지만 무시돼야 한다
+      await getJson(cfg, callOpts, { fetchImpl: f as unknown as typeof fetch, sleep: s.sleep, now: s.now });
+      await getJson(cfg, callOpts, { fetchImpl: f as unknown as typeof fetch, sleep: s.sleep, now: s.now });
+      expect(s.waits).toContain(250);
+      expect(s.waits).not.toContain(1000);
+    });
   });
 });

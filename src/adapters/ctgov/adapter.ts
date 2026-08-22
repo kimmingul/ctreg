@@ -26,7 +26,6 @@ export const CTGOV_CAPABILITY: Capability = {
     patient: true,
     outcomeQuery: true,
     geo: true,
-    geoNeedsCoords: true,
     status: true,
     phase: true,
     studyType: true,
@@ -67,7 +66,7 @@ function mapStudySafely(
 }
 
 export function createCtgovAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAdapter {
-  const client = makeClient(cfg, deps);
+  const client = makeClient(cfg, CTGOV_CAPABILITY.limits.ratePerSec, deps);
 
   const toRegistryIds = (ids: string[]) =>
     ids.map((raw) => {

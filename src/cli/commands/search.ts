@@ -3,7 +3,7 @@ import type { TrialRecord } from '../../core/record.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { assertSupported } from '../guard.js';
+import { applyLimits, assertSupported } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -28,7 +28,12 @@ export async function runSearch(
     try {
       // 가드가 먼저다. 미지원 축이면 네트워크를 치지 않는다.
       assertSupported(adapter.capability(), args.query, args.fetch);
-      const r = await adapter.search(args.query, args.fetch);
+      // 이 레지스트리의 maxPageSize 로 클램프한다. args.query 자체는 건드리지 않는다 —
+      // 여러 레지스트리가 이 루프에서 같은 객체를 공유하므로, 여기서 낮추면 다음
+      // 레지스트리가 이미 깎인 값을 물려받는다(guard.ts 의 applyLimits 주석 참고).
+      const limited = applyLimits(adapter.capability(), args.query);
+      warnings.push(...limited.warnings);
+      const r = await adapter.search(limited.query, args.fetch);
       warnings.push(...r.warnings);
       data.push(...r.data);
       registries.push({

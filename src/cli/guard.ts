@@ -1,4 +1,4 @@
-import type { Capability } from '../core/capability.js';
+import type { Capability, Warning } from '../core/capability.js';
 import type { FetchOpts, NormalizedQuery } from '../core/query.js';
 import { unsupportedError } from '../runtime/errors.js';
 
@@ -50,4 +50,31 @@ export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: Fetc
       );
     }
   }
+}
+
+/**
+ * 레지스트리별 `limits.maxPageSize` 를 적용한다. exit 2/3 이 아니라 캡이다 — 질의
+ * 자체는 유효하고 이 레지스트리가 더 엄격할 뿐이다(§5.2 의 locations/eligibility/outcomes
+ * 캡과 같은 모양: map.ts 의 `*_truncated` 경고 참고). 연합 조회에서 레지스트리 하나의
+ * 상한이 나머지를 죽이면 안 되므로 던지지 않고 조용히 낮추며 경고를 남긴다.
+ *
+ * 호출자의 `q` 를 그대로 mutate 하지 않는다 — search/count 의 루프가 모든 레지스트리에
+ * **같은** NormalizedQuery 객체를 넘기므로, 여기서 in-place 로 낮추면 상한이 낮은
+ * 레지스트리를 먼저 처리했을 때 사용자가 원래 요청한 값이 이후 레지스트리에서
+ * 영영 사라진다. 항상 새 사본을 반환한다.
+ */
+export function applyLimits(cap: Capability, q: NormalizedQuery): { query: NormalizedQuery; warnings: Warning[] } {
+  if (q.pageSize === undefined || q.pageSize <= cap.limits.maxPageSize) {
+    return { query: q, warnings: [] };
+  }
+  const clamped = cap.limits.maxPageSize;
+  return {
+    query: { ...q, pageSize: clamped },
+    warnings: [{
+      code: 'page_size_clamped',
+      message: `${cap.name} 의 페이지 크기 상한은 ${clamped} 입니다. 요청한 ${q.pageSize} 대신 ${clamped} 을 썼습니다.`,
+      at: clamped,
+      registry: cap.key,
+    }],
+  };
 }

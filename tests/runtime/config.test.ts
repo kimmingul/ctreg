@@ -10,9 +10,12 @@ describe('설정', () => {
     expect(c.cacheTtlSec).toBe(3600);
     expect(c.timeoutMs).toBe(30000);
     expect(c.maxRetries).toBe(3);
-    expect(c.ratePerSec).toBe(1);
     expect(c.ctgovBaseUrl).toBe('https://clinicaltrials.gov/api/v2');
     expect(c.cacheDir).toBe(`${homedir()}/.cache/ctreg`);
+  });
+
+  it('CTREG_RATE_PER_SEC 이 없으면 ratePerSec 는 undefined 다 — 전역 오버라이드가 아니라 각 어댑터의 선언값을 쓰라는 신호다', () => {
+    expect(loadConfig({}).ratePerSec).toBeUndefined();
   });
 
   it('CTREG_CACHE_DIR 이 XDG_CACHE_HOME 보다 우선한다', () => {

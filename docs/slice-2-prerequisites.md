@@ -203,6 +203,33 @@ S3(NCT04280705 유해사례, 심장 관련)에서 드러남. 전개 전과 부�
 다음에 보이면 **반드시 실패 테스트 이름과 출력을 먼저 캡처하라.** 두 번 놓쳤다 —
 `bunx vitest run 2>&1 | tee /tmp/suite.log` 로 돌리면 사후에 볼 수 있다.
 
+## `search.geoNeedsCoords` 를 지웠다 (Task 5)
+
+`limits.maxPageSize`·`limits.ratePerSec`·`search.geoNeedsCoords` 세 값 모두 소비자가 없다는
+게 위 항목 2번의 지적이었다. 앞의 둘은 진짜 소비자를 붙였다(각각 guard.ts 의 레지스트리별
+캡 적용, http.ts 의 레지스트리별 요청률). `geoNeedsCoords` 는 다른 이유로 소비자가 없었다 —
+**소비할 대상이 아직 존재하지 않는다.**
+
+`geoNeedsCoords: false` 가 뜻을 가지려면 좌표 없이 지명만으로 지오 검색을 받아주는(서버가
+직접 지오코딩하는) 레지스트리가 있어야 한다. §7.3 이 명시하듯 ctreg 자체는 지오코딩을 하지
+않기로 했고, ctgov 는 늘 좌표를 요구한다(`geoNeedsCoords: true`). 유일한 값이 늘 참이니
+런타임 어디에도 `false` 분기가 없고, `--near` 에 지명을 주면 exit 2 라는 사실은 `args.ts`
+의 좌표 정규식이 capability 를 보지도 않고 무조건 강제하고 있었다 — capability 필드는 그
+우연히 맞아떨어진 값 옆에서 아무 일도 안 하고 있었을 뿐이다.
+
+이걸 "소비"시키려면 `NormalizedQuery.near` 를 `{lat,lon} | string` 같은 걸로 넓히고,
+args.ts 가 비좌표 `--near` 를 더 이상 즉시 거부하지 않고 guard.ts 까지 원문을 실어 날라야
+한다. 그런데 그 문자열을 실제로 쓸 어댑터가 하나도 없는 지금 그 배선을 놓는 것은, 이
+태스크가 고치려는 병("선언은 있는데 아무도 안 읽는다")을 **가짜 소비자로 감추는 것**과
+같다 — 나중에 진짜 지명 기반 레지스트리가 왔을 때 이미 있던 배선이 그 요구에 맞는지 아무도
+확인할 길이 없다.
+
+그래서 `core/capability.ts` 와 `adapters/ctgov/adapter.ts` 에서 필드를 지웠다.
+
+**되살릴 조건:** 좌표 없이 지명 문자열을 그대로 받아 지오 검색하는 레지스트리 어댑터를 실제로
+붙일 때, 그 어댑터의 요구에 맞춰 `NormalizedQuery.near` 를 문자열도 허용하도록 바꾸면서
+**함께** 되살린다. 그 전에 필드만 먼저 복구하지 않는다 — 이번과 같은 자리에서 다시 막힌다.
+
 ## 두 번째 어댑터 후보
 
 **ISRCTN** 이 1순위다. 인증 없는 공개 REST API 이고, 조사에서 `studyType`·`hasResults`·`crossIds`

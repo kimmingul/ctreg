@@ -30,6 +30,8 @@ type GetJsonOpts = {
   params: Record<string, string | number | undefined>;
   cacheMode: CacheMode;
   signal?: AbortSignal;
+  /** 이 레지스트리가 capability 에 선언한 예산. cfg.ratePerSec 가 없을 때 쓰인다. */
+  ratePerSec: number;
 };
 
 function buildUrl(baseUrl: string, path: string, params: GetJsonOpts['params']): string {
@@ -78,12 +80,16 @@ export async function getJson<T>(
 
   const url = buildUrl(o.baseUrl, o.path, o.params);
   let lastStatus = 0;
+  // cfg.ratePerSec 는 운영자가 명시적으로 준 전역 오버라이드일 때만 존재한다(config.ts 참고).
+  // 없으면 이 레지스트리가 스스로 선언한 예산을 쓴다 — 어댑터 #2 가 다른 예산을 선언하면
+  // 그 값이 그대로 반영된다.
+  const ratePerSec = cfg.ratePerSec ?? o.ratePerSec;
 
   for (let attempt = 0; attempt <= cfg.maxRetries; attempt++) {
     const slot = await reserveSlot({
       dir: cfg.cacheDir,
       registry: o.registry,
-      ratePerSec: cfg.ratePerSec,
+      ratePerSec,
       now,
       sleep,
     });
@@ -135,7 +141,7 @@ export async function getJson<T>(
       const untilMs =
         now() +
         (Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : BASE_BACKOFF_MS * 2 ** attempt);
-      await shareBackoff({ dir: cfg.cacheDir, registry: o.registry, ratePerSec: cfg.ratePerSec }, untilMs);
+      await shareBackoff({ dir: cfg.cacheDir, registry: o.registry, ratePerSec }, untilMs);
     }
 
     if (attempt === cfg.maxRetries) break;

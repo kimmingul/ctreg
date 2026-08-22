@@ -9,6 +9,7 @@
  * 확인하려는 것은 API 가 실제로 무엇을 하는지이지, 초록 표가 아니다.
  */
 import { writeFileSync } from 'node:fs';
+import { CTGOV_CAPABILITY } from '../src/adapters/ctgov/adapter.js';
 import { loadConfig } from '../src/runtime/config.js';
 import { getJson } from '../src/runtime/http.js';
 import { CtregError } from '../src/runtime/errors.js';
@@ -63,6 +64,7 @@ async function collectRealNctIds(minCount: number): Promise<string[]> {
         pageToken,
       },
       cacheMode: 'off',
+      ratePerSec: CTGOV_CAPABILITY.limits.ratePerSec,
     });
     const studies = r.value.studies ?? [];
     for (const s of studies) {
@@ -205,6 +207,7 @@ async function main() {
         path: '/studies',
         params: check.params,
         cacheMode: 'off',
+        ratePerSec: CTGOV_CAPABILITY.limits.ratePerSec,
       });
       result = check.evaluate(r.value);
     } catch (e) {

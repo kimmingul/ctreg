@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
-import { assertSupported } from '../../src/cli/guard.js';
+import { applyLimits, assertSupported } from '../../src/cli/guard.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import { CAPS, type FetchOpts, type NormalizedQuery } from '../../src/core/query.js';
 import type { Capability } from '../../src/core/capability.js';
@@ -19,7 +19,7 @@ const limited: Capability = {
 };
 
 /**
- * `Capability.search` 의 모든 키(geoNeedsCoords 제외)에 대응하는 최소 프로브.
+ * `Capability.search` 의 모든 키에 대응하는 최소 프로브.
  * `never` 소진 검사 덕분에, 스키마에 축이 추가되고 이 스위치가 갱신되지 않으면
  * `bunx tsc --noEmit` 단계에서 즉시 컴파일 에러가 난다 — 리뷰어가 눈치채길 기다리지 않는다.
  */
@@ -40,8 +40,6 @@ function probeFor(axis: keyof Capability['search']): NormalizedQuery {
     case 'studyType': return { studyType: 'interventional' };
     case 'geo': return { near: { lat: 0, lon: 0 } };
     case 'dateRange': return { updatedSince: '2025-01-01' };
-    case 'geoNeedsCoords':
-      throw new Error('geoNeedsCoords 는 가드 축이 아니다 — 호출 전에 걸러야 한다');
     default: {
       const exhaustive: never = axis;
       throw new Error(`'${exhaustive}' 축의 프로브가 guard.test.ts 에 없다 — probeFor 에 추가하라`);
@@ -71,9 +69,8 @@ describe('capability 가드', () => {
     expectUnsupported(() => assertSupported(limited, { outcomeQuery: 'PFS' }, fetchOpts), 'outcomeQuery');
   });
 
-  it('Capability.search 의 모든 검색 축을(geoNeedsCoords 제외) 가드가 개별적으로 다룬다', () => {
-    const axes = (Object.keys(CTGOV_CAPABILITY.search) as (keyof Capability['search'])[])
-      .filter((k) => k !== 'geoNeedsCoords');
+  it('Capability.search 의 모든 검색 축을 가드가 개별적으로 다룬다', () => {
+    const axes = Object.keys(CTGOV_CAPABILITY.search) as (keyof Capability['search'])[];
     for (const axis of axes) {
       const capOff: Capability = { ...CTGOV_CAPABILITY, search: { ...CTGOV_CAPABILITY.search, [axis]: false } };
       expectUnsupported(() => assertSupported(capOff, probeFor(axis), fetchOpts), axis);
@@ -87,7 +84,40 @@ describe('capability 가드', () => {
     );
   });
 
-  it('좌표를 요구하는 어댑터에 지명을 넘길 수 없다는 사실은 인자 파싱이 이미 막는다', () => {
-    expect(CTGOV_CAPABILITY.search.geoNeedsCoords).toBe(true);
+  // `search.geoNeedsCoords` 는 capability 선언에서 지웠다(core/capability.ts) — 좌표를
+  // 요구하는 것은 이미 args.ts 의 `--near` 파싱이 무조건 막고(tests/cli/args.test.ts),
+  // 좌표 없이 지명을 받는 레지스트리가 아직 없어 가드가 따로 소비할 대상이 없었다.
+  // 그런 레지스트리가 생기면 여기서도 되살린다 — docs/slice-2-prerequisites.md 참고.
+});
+
+describe('레지스트리별 페이지 크기 상한', () => {
+  it('상한 이하면 그대로 통과시키고 경고를 남기지 않는다', () => {
+    const r = applyLimits(CTGOV_CAPABILITY, { pageSize: CTGOV_CAPABILITY.limits.maxPageSize });
+    expect(r.query.pageSize).toBe(CTGOV_CAPABILITY.limits.maxPageSize);
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('pageSize 를 아예 안 줬으면 손대지 않는다', () => {
+    const r = applyLimits(CTGOV_CAPABILITY, { condition: 'x' });
+    expect(r.query.pageSize).toBeUndefined();
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('상한을 넘으면 exit 2/3 이 아니라 조용히 낮추고 page_size_clamped 경고를 남긴다', () => {
+    const strict: Capability = { ...CTGOV_CAPABILITY, limits: { ...CTGOV_CAPABILITY.limits, maxPageSize: 50 } };
+    const r = applyLimits(strict, { condition: 'x', pageSize: 200 });
+    expect(r.query.pageSize).toBe(50);
+    expect(r.query.condition).toBe('x'); // 나머지 쿼리는 그대로 보존된다
+    expect(r.warnings).toEqual([
+      expect.objectContaining({ code: 'page_size_clamped', at: 50, registry: 'ctgov' }),
+    ]);
+  });
+
+  it('원본 쿼리 객체를 mutate 하지 않는다 — 연합 조회에서 다음 레지스트리가 낮아진 값을 물려받으면 안 된다', () => {
+    const strict: Capability = { ...CTGOV_CAPABILITY, limits: { ...CTGOV_CAPABILITY.limits, maxPageSize: 50 } };
+    const original: NormalizedQuery = { pageSize: 200 };
+    const r = applyLimits(strict, original);
+    expect(original.pageSize).toBe(200);
+    expect(r.query).not.toBe(original);
   });
 });

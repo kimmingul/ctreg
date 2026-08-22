@@ -9,7 +9,7 @@ const cap = {
     condition: true, intervention: true, term: true, title: true,
     sponsor: true, lead: true, location: true, id: true, patient: true,
     outcomeQuery: true,
-    geo: true, geoNeedsCoords: true,
+    geo: true,
     status: true, phase: true, studyType: true, dateRange: true,
   },
   detail: { eligibilityText: true, outcomes: true, contacts: true },

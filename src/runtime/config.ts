@@ -7,7 +7,16 @@ export type Config = {
   cacheTtlSec: number;
   timeoutMs: number;
   maxRetries: number;
-  ratePerSec: number;
+  /**
+   * 전역 오버라이드. 레지스트리마다 예산이 다르므로(스펙 §6.2) 이 값은 더 이상
+   * "모든 레지스트리의 rate" 가 아니다 — 미설정(undefined)이면 http.ts 가 각
+   * 어댑터의 `capability.limits.ratePerSec` 를 그대로 쓴다. 이 필드가 있는 건
+   * 오직 운영자가 명시적으로 개입할 때뿐이다(공유 네트워크에서 전부 늦추거나,
+   * 특별 허가로 전부 올리거나). 레지스트리별 선언이 전역 기본값에 조용히 지는
+   * 일은 없어야 하므로 기본값 1을 없앴다 — 예전엔 미설정 = 하드코딩 1이었고,
+   * 지금은 미설정 = 어댑터 선언값이다.
+   */
+  ratePerSec?: number;
   ctgovBaseUrl: string;
 };
 
@@ -21,6 +30,11 @@ function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   return parsed;
 }
 
+function optNum(env: NodeJS.ProcessEnv, name: string): number | undefined {
+  if (env[name] === undefined || env[name] === '') return undefined;
+  return num(env, name, 0 /* 사용되지 않음 — 위에서 이미 값이 있음을 확인했다 */);
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const cacheDir =
     env.CTREG_CACHE_DIR ??
@@ -31,7 +45,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     cacheTtlSec: num(env, 'CTREG_CACHE_TTL_SEC', 3600),
     timeoutMs: num(env, 'CTREG_TIMEOUT_MS', 30000),
     maxRetries: num(env, 'CTREG_MAX_RETRIES', 3),
-    ratePerSec: num(env, 'CTREG_RATE_PER_SEC', 1),
+    ratePerSec: optNum(env, 'CTREG_RATE_PER_SEC'),
     ctgovBaseUrl: env.CTREG_CTGOV_BASE_URL ?? 'https://clinicaltrials.gov/api/v2',
   };
 }

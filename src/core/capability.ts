@@ -19,8 +19,12 @@ export const CapabilitySchema = z.strictObject({
     id: z.boolean(),
     patient: z.boolean(),
     outcomeQuery: z.boolean(),
+    /**
+     * 이전엔 여기 `geoNeedsCoords: z.boolean()` 이 있었다 — 좌표 없이 지명만으로 지오
+     * 검색을 받는 레지스트리가 생기면 다시 의미가 생긴다. 그런 레지스트리가 아직 없어
+     * 지웠다. 되살릴 조건과 경위는 docs/slice-2-prerequisites.md 참고.
+     */
     geo: z.boolean(),
-    geoNeedsCoords: z.boolean(),
     status: z.boolean(),
     phase: z.boolean(),
     studyType: z.boolean(),
@@ -41,8 +45,13 @@ export const CapabilitySchema = z.strictObject({
 });
 export type Capability = z.infer<typeof CapabilitySchema>;
 
-/** 비치명적 사실. 치명적 실패는 CtregError 로 던진다. */
-export type Warning = { code: string; message: string; id?: string; at?: number };
+/**
+ * 비치명적 사실. 치명적 실패는 CtregError 로 던진다.
+ * `registry` 는 레지스트리 단위 경고(예: `page_size_clamped`)에만 채운다 — `id` 가
+ * 있는 시험 단위 경고와 달리, 어느 트라이얼이 아니라 어느 레지스트리가 원인인지를
+ * 밝혀야 연합 조회에서 "누가 깎았는지" 를 사용자가 찾을 수 있다.
+ */
+export type Warning = { code: string; message: string; id?: string; at?: number; registry?: RegistryKey };
 export type AdapterResult<T> = { data: T; warnings: Warning[] };
 
 export interface RegistryAdapter {

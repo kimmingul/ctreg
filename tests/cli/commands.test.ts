@@ -232,6 +232,42 @@ describe('search 커맨드 — 부분 실패', () => {
   });
 });
 
+describe('search 커맨드 — 레지스트리별 페이지 크기 상한', () => {
+  /**
+   * 회귀 테스트. args.query 는 이 루프의 모든 레지스트리가 공유하는 같은 객체다.
+   * 상한이 낮은 레지스트리를 먼저 처리하면서 그 객체를 in-place 로 깎으면, 상한이
+   * 높은 다음 레지스트리가 이미 깎인 값을 물려받는다 — 사용자가 원래 요청한 값이
+   * 조용히 사라진다. REGISTRY_KEYS 에는 아직 ctgov 하나뿐이라, 부분 실패 테스트와
+   * 같은 방식(런타임 전용 캐스팅)으로 두 번째 레지스트리를 흉내낸다.
+   */
+  it('상한이 낮은 레지스트리를 먼저 처리해도, 상한이 높은 다음 레지스트리는 원래 요청값을 받는다', async () => {
+    const narrowCap: Capability = { ...CTGOV_CAPABILITY, key: 'narrow' as RegistryKey, name: '좁은 레지스트리', limits: { ...CTGOV_CAPABILITY.limits, maxPageSize: 50 } };
+    const wideCap: Capability = { ...CTGOV_CAPABILITY, key: 'wide' as RegistryKey, name: '넓은 레지스트리', limits: { ...CTGOV_CAPABILITY.limits, maxPageSize: 200 } };
+    const narrow = stubAdapter({}, narrowCap).ctgov;
+    const wide = stubAdapter({}, wideCap).ctgov;
+    const adapters = { narrow, wide } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = {
+      ...parseCliArgs(['search', '--condition', 'X', '--page-size', '200']),
+      registries: ['narrow', 'wide'] as unknown as RegistryKey[],
+    };
+
+    const env = await runSearch(args, adapters);
+
+    expect(narrow.search).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 50 }), expect.anything());
+    expect(wide.search).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 200 }), expect.anything());
+    expect(args.query.pageSize).toBe(200); // 원본 쿼리도 훼손되지 않는다
+    expect(env.warnings).toEqual([
+      expect.objectContaining({ code: 'page_size_clamped', registry: 'narrow' }),
+    ]);
+  });
+
+  it('아무도 깎이지 않으면 page_size_clamped 경고를 내지 않는다 — 매번 붙는 경고는 안 읽힌다', async () => {
+    const adapters = stubAdapter();
+    const env = await runSearch(parseCliArgs(['search', '--condition', 'X', '--page-size', '10']), adapters);
+    expect(env.warnings.map((w) => w.code)).not.toContain('page_size_clamped');
+  });
+});
+
 describe('get 커맨드 — 라우팅과 가드', () => {
   it('어댑터가 없는 레지스트리의 ID 하나가 요청 전체를 가라앉히지 않는다', async () => {
     const adapters = stubAdapter();
