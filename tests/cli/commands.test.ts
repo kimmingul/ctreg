@@ -456,4 +456,72 @@ describe('레지스트리 키는 있는데 아직 어댑터가 없을 때', () =
     expect(env.data).toEqual([]); // 어댑터가 없어 capability 를 낼 수 없는 키는 건너뛴다
     expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
   });
+
+  // 아래 네 개는 fix round 1 — 리뷰가 count/get/results 를 각각 continue 나 조용한
+  // 'ok' 위장으로 사보타주해도 336개 스위트가 전부 통과한다는 것을 확인했다. 코드는
+  // 이미 옳다(위 search/registries 테스트를 쓸 때 이미 다섯 커맨드 모두 구현했다) —
+  // 이 테스트들은 버그를 고치는 게 아니라 그 옳음을 회귀로부터 고정하는 것이 목적이다.
+  // 어댑터 #2 를 붙이는 작업이 정확히 이 코드를 건드리므로, 그때 퇴행이 나면 잡아야 한다.
+
+  it('count: 등록된 키인데 어댑터가 없으면 exit 3 이다', async () => {
+    const adapters: Partial<Record<RegistryKey, RegistryAdapter>> = {};
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X']), adapters);
+
+    expect(env.registries).toEqual([
+      expect.objectContaining({ registry: 'ctgov', status: 'unsupported' }),
+    ]);
+    expect(env.registries[0]?.error?.code).toBe('unsupported');
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+
+  it('count: 연합에서 하나만 어댑터가 없으면, 있는 쪽은 정상 처리되고 exit 5 다', async () => {
+    // count 는 search 와 같은 루프 모양(args.registries 를 도는)이라 같은 연합
+    // 시나리오가 그대로 성립한다.
+    const good = stubAdapter().ctgov;
+    const adapters = { good } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = { ...parseCliArgs(['count', '--condition', 'X']), registries: ['good', 'bad'] as unknown as RegistryKey[] };
+
+    const env = await runCount(args, adapters);
+
+    expect(env.registries.map((r) => r.status)).toEqual(['ok', 'unsupported']);
+    expect(env.registries[1]?.error?.code).toBe('unsupported');
+    expect(exitFor(env)).toBe(EXIT.PARTIAL);
+  });
+
+  it('get: ID 형식은 유효한 등록된 키인데 어댑터가 없으면 exit 3 이다', async () => {
+    // 위 「어댑터가 없는 레지스트리는 여전히 경고로 격하된다」테스트와 다른 경로다 —
+    // 그 테스트의 EUCTR:... 는 REGISTRY_KEYS 에 아예 없어 parseTrialId 단계에서
+    // id_unroutable 로 걸러지고 adapters[key] 조회까지 가지 않는다. 여기서는 NCT
+    // 형식이 유효해 parseTrialId 를 통과하고 byRegistry 에 실제로 라우팅된 뒤,
+    // adapters 맵에 ctgov 가 없다는 사실 자체를 검사한다.
+    const adapters: Partial<Record<RegistryKey, RegistryAdapter>> = {};
+    const env = await runGet(parseCliArgs(['get', 'NCT00000001']), adapters);
+
+    expect(env.registries).toEqual([
+      expect.objectContaining({ registry: 'ctgov', status: 'unsupported' }),
+    ]);
+    expect(env.registries[0]?.error?.code).toBe('unsupported');
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+  // get 에는 연합("하나만 없으면 나머지는 처리") 테스트를 넣지 않는다. get 의
+  // 레지스트리 분기는 args.registries 가 아니라 ID 접두사를 parseTrialId 로 라우팅해
+  // 정해지고, 그 함수는 REGISTRY_KEYS 에 실제로 등록된 키만 인정한다. search/count
+  // 처럼 args.registries 를 직접 덮어써 가짜 두 번째 레지스트리('good'/'bad')를
+  // 흉내낼 방법이 없다 — 가짜 접두사를 담은 ID 는 parseTrialId 자체에서
+  // id_unroutable 로 걸러지고 byRegistry 근처에도 못 간다. 두 번째 진짜 어댑터가
+  // 붙기 전까지는 이 시나리오를 실제 ID 라우팅으로 재현할 방법이 없다.
+
+  it('results: 등록된 키인데 어댑터가 없으면 exit 3 이다', async () => {
+    // results 는 애초에 ID 하나 → 레지스트리 하나만 다룬다(runResults 시그니처가
+    // 그렇다). 연합("하나만 없으면 나머지는 처리")이라는 개념 자체가 성립하지 않는다.
+    const adapters: Partial<Record<RegistryKey, RegistryAdapter>> = {};
+    const env = await runResults(parseCliArgs(['results', 'NCT00000001']), adapters);
+
+    expect(env.registries).toEqual([
+      expect.objectContaining({ registry: 'ctgov', status: 'unsupported' }),
+    ]);
+    expect(env.registries[0]?.error?.code).toBe('unsupported');
+    expect(env.data).toBeNull();
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
 });
