@@ -6,6 +6,7 @@
  * 이 저장소의 NOTICE 를 참고한다.
  */
 import type { Warning } from '../core/capability.js';
+import type { CacheMode } from '../core/query.js';
 import type { Config } from './config.js';
 import { cacheKey, readCache, writeCache } from './cache.js';
 import { CtregError, rateLimitedError, upstreamError } from './errors.js';
@@ -27,7 +28,7 @@ type GetJsonOpts = {
   baseUrl: string;
   path: string;
   params: Record<string, string | number | undefined>;
-  cacheMode: 'use' | 'refresh' | 'off';
+  cacheMode: CacheMode;
   signal?: AbortSignal;
 };
 

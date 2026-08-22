@@ -1,7 +1,6 @@
+import type { CacheMode } from '../../core/query.js';
 import type { Config } from '../../runtime/config.js';
 import { getJson, type HttpDeps } from '../../runtime/http.js';
-
-export type CacheMode = 'use' | 'refresh' | 'off';
 
 export function makeClient(cfg: Config, deps: HttpDeps = {}) {
   const base = { registry: 'ctgov' as const, baseUrl: cfg.ctgovBaseUrl };

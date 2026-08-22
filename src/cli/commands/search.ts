@@ -43,7 +43,7 @@ export async function runSearch(
       registries.push({
         registry: key,
         status: e.code === 'unsupported' ? 'unsupported' : 'error',
-        error: { code: e.code, message: e.message },
+        error: { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) },
       });
     }
   }

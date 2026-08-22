@@ -2,6 +2,14 @@ import type { StudyType, TrialPhase, TrialStatus } from './vocab.js';
 
 export type IncludeSection = 'core' | 'eligibility' | 'outcomes' | 'contacts' | 'locations' | 'all';
 
+/**
+ * 캐시 사용 방식. `--no-cache`/`--refresh` 가 이 세 값으로 접힌다.
+ * 같은 유니온이 FetchOpts, ResultsOpts, http.ts 의 GetJsonOpts, 그리고 어댑터
+ * 클라이언트까지 네 군데에 흩어져 있었고 그중 하나는 자기 사본을 따로 선언하고
+ * 있었다 — 값을 하나 더할 때 네 곳을 같이 고쳐야 하는 병렬 어휘였다.
+ */
+export type CacheMode = 'use' | 'refresh' | 'off';
+
 /** 레지스트리 중립 검색 요청. 어댑터가 자기 문법으로 번역한다. */
 export type NormalizedQuery = {
   condition?: string;
@@ -41,7 +49,7 @@ export type NormalizedQuery = {
 export type FetchOpts = {
   include: IncludeSection[];
   caps: { locations: number; eligibilityChars: number; outcomes: number };
-  cacheMode: 'use' | 'refresh' | 'off';
+  cacheMode: CacheMode;
   raw: boolean;
   signal?: AbortSignal;
   /**
@@ -58,7 +66,7 @@ export type ResultsOpts = {
   aeOrganFilter?: string;
   aeTermFilter?: string;
   full: boolean;
-  cacheMode: 'use' | 'refresh' | 'off';
+  cacheMode: CacheMode;
 };
 
 /** 스펙 §5.2 의 캡. 기본값과 상한. */

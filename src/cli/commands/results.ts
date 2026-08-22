@@ -34,9 +34,9 @@ export async function runResults(
   const query = { id, sections: args.results.sections };
 
   if (!cap.results) {
-    // RegistryStatus.error 에는 hint 를 담을 자리가 없다. 그래서 이 오류의 핵심
-    // 구분("결과가 없는 게 아니라 안 싣는다")은 메시지 안에 있어야 한다 — 힌트로
-    // 미루면 봉투에서 사라진다.
+    // 핵심 구분("결과가 없는 게 아니라 안 싣는다")은 메시지 안에 둔다. hint 자리가
+    // 생겼지만(리뷰 I1), 이 문장은 힌트가 아니라 사실 자체다 — 힌트를 읽지 않는
+    // 호출자에게도 반드시 도달해야 한다. hint 는 다음에 무엇을 하면 되는지를 맡는다.
     return {
       query,
       registries: [
@@ -46,6 +46,7 @@ export async function runResults(
           error: {
             code: 'unsupported',
             message: `${cap.name} 은 결과 데이터를 제공하지 않습니다 (결과가 없는 것이 아니라 레지스트리가 결과를 싣지 않습니다)`,
+            hint: 'ctreg registries 로 이 레지스트리가 싣는 데이터를 확인하세요.',
           },
         },
       ],
@@ -78,7 +79,7 @@ export async function runResults(
     registries.push({
       registry,
       status: e.code === 'unsupported' ? 'unsupported' : 'error',
-      error: { code: e.code, message: e.message },
+      error: { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) },
     });
     return { query: { id }, registries, warnings: [], data: null };
   }

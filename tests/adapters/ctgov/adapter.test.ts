@@ -115,6 +115,53 @@ describe('CT.gov 어댑터', () => {
     expect(r.warnings.some((w) => w.message.length > 0)).toBe(true);
   });
 
+  /**
+   * C1 회귀. `--raw` 의 source 는 정규화기의 작업용 투영이 아니라 업스트림이 실제로
+   * 준 문서여야 한다. fields 를 걸면 source 는 CORE_FIELDS 가 요청한 leaf 만 담게
+   * 되어, 스키마가 담지 못한 것을 보러 온 호출자에게 정확히 스키마가 담은 것만
+   * 돌려준다. 여기서는 투영이 절대 요청하지 않는 모듈(descriptionModule 등)이
+   * source 에 실제로 실려 오는지로 확인한다 — fields 를 다시 채우면 이 테스트가 깨진다.
+   */
+  it('--raw 는 투영이 제외하는 모듈까지 담은 원문을 source 로 낸다', async () => {
+    const seen: string[] = [];
+    const upstream = {
+      studies: [
+        {
+          ...page.studies[0],
+          protocolSection: {
+            ...page.studies[0].protocolSection,
+            // 투영(CORE_FIELDS/SECTION_FIELDS)이 어느 --include 조합으로도 요청하지 않는 모듈.
+            descriptionModule: { briefSummary: 'only present when fields is omitted' },
+          },
+          derivedSection: { miscInfoModule: { versionHolder: '2026-08-22' } },
+        },
+      ],
+    };
+    const f = vi.fn(async (url: unknown) => {
+      seen.push(String(url));
+      return new Response(JSON.stringify(upstream), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    const a = createCtgovAdapter(cfg, deps(f as unknown as ReturnType<typeof respond>));
+    const r = await a.search({ condition: 'NSCLC' }, { ...opts, raw: true });
+
+    expect(seen[0]).not.toContain('fields=');
+    const source = r.data[0]!.source as Record<string, any>;
+    expect(source.protocolSection.descriptionModule.briefSummary).toBe('only present when fields is omitted');
+    expect(source.derivedSection).toBeDefined();
+  });
+
+  it('--raw 없이는 fields 투영을 유지한다 — 기본 경로의 페이로드는 그대로다', async () => {
+    const seen: string[] = [];
+    const f = vi.fn(async (url: unknown) => {
+      seen.push(String(url));
+      return new Response(JSON.stringify(page), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    const a = createCtgovAdapter(cfg, deps(f as unknown as ReturnType<typeof respond>));
+    const r = await a.search({ condition: 'NSCLC' }, opts);
+    expect(seen[0]).toContain('fields=');
+    expect(r.data[0]!.source).toBeUndefined();
+  });
+
   it('get 에서도 매핑 실패한 study 하나가 나머지 결과를 막지 않는다', async () => {
     const good = page.studies[0];
     const malformed = { protocolSection: { identificationModule: {} } };

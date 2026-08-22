@@ -6,7 +6,7 @@
 import type { Warning } from '../../core/capability.js';
 import { CAPS, type FetchOpts, type IncludeSection, type NormalizedQuery } from '../../core/query.js';
 import { usageError } from '../../runtime/errors.js';
-import { fromPhase, fromStatus } from './vocab.js';
+import { fromPhase, fromStatus, fromStudyType } from './vocab.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -112,7 +112,7 @@ export function buildSearchParams(
 
   const advanced: string[] = [];
   if (q.phase?.length) advanced.push(q.phase.map((p) => `AREA[Phase]${fromPhase(p)}`).join(' OR '));
-  if (q.studyType) advanced.push(`AREA[StudyType]${q.studyType.toUpperCase()}`);
+  if (q.studyType) advanced.push(`AREA[StudyType]${fromStudyType(q.studyType)}`);
 
   const ranges = [
     dateRange('LastUpdatePostDate', q.updatedSince, q.updatedBefore),
@@ -134,7 +134,12 @@ export function buildSearchParams(
   if (advanced.length === 1) params['filter.advanced'] = advanced[0];
   else if (advanced.length > 1) params['filter.advanced'] = advanced.map((p) => `(${p})`).join(' AND ');
 
-  params.fields = buildFields(o.include).join('|');
+  // `--raw` 면 투영을 걸지 않는다. source 가 정규화기의 작업용 필드 집합으로 좁혀지면
+  // 설계에 있는 유일한 탈출구(§2.1 — 스키마가 담지 못하는 레지스트리별 값을 보존하는
+  // 자리)가 구조적으로 비게 된다: source 는 정규화기가 이미 요청한 것 이상을 절대
+  // 담을 수 없으니, "레지스트리가 실제로 뭐라고 했나" 라는 질문에 영영 답하지 못한다.
+  // 캐시 키는 파라미터에서 파생하므로 raw 응답과 투영 응답은 저절로 다른 키에 앉는다.
+  if (!o.raw) params.fields = buildFields(o.include).join('|');
   params.pageSize = Math.min(q.pageSize ?? CAPS.pageSize.default, CAPS.pageSize.max);
   params.countTotal = 'true';
   params.pageToken = q.pageToken;
@@ -149,7 +154,8 @@ export function buildIdsParams(
 ): Record<string, string | number | undefined> {
   return {
     'filter.ids': ids.join('|'),
-    fields: buildFields(o.include).join('|'),
+    // buildSearchParams 와 같은 이유로 `--raw` 면 투영을 생략한다.
+    ...(o.raw ? {} : { fields: buildFields(o.include).join('|') }),
     pageSize: Math.min(ids.length, CAPS.pageSize.max),
   };
 }

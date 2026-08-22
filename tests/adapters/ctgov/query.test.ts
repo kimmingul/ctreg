@@ -129,4 +129,21 @@ describe('CT.gov 쿼리 조립', () => {
     const p = buildIdsParams(['NCT01234567', 'NCT07654321'], opts);
     expect(p['filter.ids']).toBe('NCT01234567|NCT07654321');
   });
+
+  /**
+   * `--raw` 는 설계에 있는 유일한 탈출구다 (스펙 §2.1: 정규화 스키마가 담지 못하는
+   * 레지스트리별 값은 `--raw` 의 `source` 로 보존한다). fields 를 실어 보내면 그
+   * source 는 정규화기가 이미 요청한 것 이상을 절대 담을 수 없어, 구조적으로 빈
+   * 탈출구가 된다 — "레지스트리가 실제로 뭐라고 했는데 스키마가 못 담았나" 라는
+   * 질문에 영영 답할 수 없다. 게다가 호출자가 명시적으로 전체를 달라고 한 요청에
+   * 대한 무경고 축소라, 경고 없는 축소를 금지하는 이 프로젝트의 규칙 정면 위반이다.
+   */
+  it('--raw 면 fields 투영을 걸지 않는다 — source 가 진짜 원문이어야 한다', () => {
+    const raw = { ...opts, raw: true };
+    expect(buildSearchParams({ condition: 'NSCLC' }, raw).params.fields).toBeUndefined();
+    expect(buildIdsParams(['NCT01234567'], raw).fields).toBeUndefined();
+    // raw 가 아니면 그대로 투영한다 — 기본 경로의 페이로드 절감은 유지된다.
+    expect(buildSearchParams({ condition: 'NSCLC' }, opts).params.fields).toBeDefined();
+    expect(buildIdsParams(['NCT01234567'], opts).fields).toBeDefined();
+  });
 });

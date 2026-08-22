@@ -3,6 +3,17 @@ import { unsupportedError, usageError } from '../runtime/errors.js';
 export const REGISTRY_KEYS = ['ctgov'] as const;
 export type RegistryKey = (typeof REGISTRY_KEYS)[number];
 
+/**
+ * `--registry` 를 주지 않았을 때 조회할 레지스트리 (스펙 §4.1: `기본 ctgov`).
+ *
+ * 이름 붙인 하나여야 한다 — "등록된 모든 키" 로 두면 어댑터를 하나 붙이는 순간
+ * `--registry` 를 쓴 적 없는 기존 호출자 전원의 기본 동작이 조용히 팬아웃으로
+ * 바뀐다. 어댑터를 더해도 이 심(seam) 위쪽은 그대로여야 한다는 것이 이 설계의
+ * 전제이므로, 그 전제를 깨는 유일한 자리를 여기서 못 박는다. 팬아웃은 호출자가
+ * `--registry a --registry b` 로 명시적으로 요청할 때만 일어난다.
+ */
+export const DEFAULT_REGISTRY: RegistryKey = 'ctgov';
+
 export function isRegistryKey(v: string): v is RegistryKey {
   return (REGISTRY_KEYS as readonly string[]).includes(v);
 }

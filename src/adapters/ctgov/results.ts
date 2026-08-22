@@ -1,6 +1,8 @@
+import { ZodError } from 'zod';
 import type { Warning } from '../../core/capability.js';
 import type { ResultsOpts } from '../../core/query.js';
-import type { AdverseEvent, OutcomeResult, TrialResults } from '../../core/record.js';
+import { TrialResultsSchema, type AdverseEvent, type OutcomeResult, type TrialResults } from '../../core/record.js';
+import { upstreamError } from '../../runtime/errors.js';
 
 const OUTCOME_TYPE: Record<string, OutcomeResult['type']> = {
   PRIMARY: 'primary',
@@ -10,19 +12,55 @@ const OUTCOME_TYPE: Record<string, OutcomeResult['type']> = {
 const has = (hay: string | undefined, needles: string[]) =>
   hay !== undefined && needles.some((n) => hay.toLowerCase().includes(n.toLowerCase()));
 
+/**
+ * 자기 출력을 스스로 검증한다 — mapStudy 가 TrialRecordSchema 로 하는 것과 같은 규율이다.
+ * OutcomeResultSchema/AdverseEventSchema 는 오래도록 타입으로만 존재하고 런타임에는
+ * 한 번도 파싱되지 않아, measure 없는 outcome 과 term 없는 이상반응이 그대로 봉투로
+ * 나갔다. ZodError 를 그대로 던지면 다중 라인 이슈 덤프가 되므로 실패한 필드 경로
+ * 한 줄 요약으로 바꿔 upstreamError 로 다시 던진다.
+ */
+function checked(results: TrialResults, id: string): TrialResults {
+  try {
+    return TrialResultsSchema.parse(results);
+  } catch (e) {
+    if (e instanceof ZodError) {
+      const detail = e.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ');
+      throw upstreamError(
+        `${id} 의 결과가 계약을 만족하지 못했습니다 — ${detail}`,
+        'CT.gov 의 해당 시험 결과 섹션을 확인하세요.',
+      );
+    }
+    throw e;
+  }
+}
+
 export function extractResults(
   study: unknown,
   id: string,
   o: ResultsOpts,
   fetchedAt: string,
 ): { results: TrialResults; warnings: Warning[] } {
+  // 입력을 mapStudy 와 같은 기준으로 검사한다. "이 시험은 결과를 게시하지 않았다" 는
+  // 임상적 주장이고, `null` / `42` / `{}` / 잘린 응답이 조용히 그 주장으로 둔갑하면
+  // 안 된다 — 그 넷은 전부 hasResults:false, 경고 0개로 나갔다. 시험 문서라는 증거
+  // (nctId)가 있어야만 그 시험에 대해 무언가를 단언한다.
+  if (study === null || typeof study !== 'object') {
+    throw upstreamError('CT.gov 결과 응답이 예상한 형태(객체)가 아닙니다.', 'CT.gov API 상태를 확인하세요.');
+  }
+  if (!(study as any)?.protocolSection?.identificationModule?.nctId) {
+    throw upstreamError(
+      `${id} 의 결과 응답에 nctId 가 없습니다 — 시험 문서로 보이지 않습니다.`,
+      '응답이 잘렸거나 미러가 빈 문서를 내주고 있을 수 있습니다. 개별 study 응답을 확인하세요.',
+    );
+  }
+
   const warnings: Warning[] = [];
-  const rs = (study as any)?.resultsSection;
+  const rs = (study as any).resultsSection;
   const sections: TrialResults['sections'] = {};
 
   if (!rs) {
     return {
-      results: { id, registry: 'ctgov', hasResults: false, sections, fetchedAt },
+      results: checked({ id, registry: 'ctgov', hasResults: false, sections, fetchedAt }, id),
       warnings,
     };
   }
@@ -116,5 +154,5 @@ export function extractResults(
     });
   }
 
-  return { results: { id, registry: 'ctgov', hasResults: true, sections, fetchedAt }, warnings };
+  return { results: checked({ id, registry: 'ctgov', hasResults: true, sections, fetchedAt }, id), warnings };
 }

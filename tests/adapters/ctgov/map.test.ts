@@ -219,6 +219,32 @@ describe('CT.gov → TrialRecord 매핑', () => {
     expect(() => TrialRecordSchema.parse(record)).not.toThrow();
   });
 
+  /**
+   * 빈 문자열은 이름이 아니다. 이전 가드(`lead || collaborators`)는 같은 사실에
+   * 두 답을 냈다: 협력사가 없으면 sponsor 객체를 통째로 버리고(리드가 없다는 정보뿐
+   * 아니라 협력사 정보까지 함께 사라진다), 협력사가 있으면 `lead: ""` 를 그대로
+   * 내보냈다 — 있지도 않은 스폰서 이름을 주장하는 필드다. 없는 값은 키를 만들지
+   * 않는다는 defined() 규칙 하나로 통일한다.
+   */
+  it('leadSponsor.name 이 빈 문자열이면 lead 키를 만들지 않고 협력사는 보존한다', () => {
+    const withEmptyLead = (collaborators: { name: string }[]) => ({
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000011', briefTitle: 'Empty lead' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        sponsorCollaboratorsModule: { leadSponsor: { name: '' }, collaborators },
+      },
+    });
+
+    const alone = mapStudy(withEmptyLead([]), opts(), AT).record;
+    expect(alone.sponsor).toBeUndefined();
+
+    const withCollab = mapStudy(withEmptyLead([{ name: 'Collab Co' }]), opts(), AT).record;
+    expect(withCollab.sponsor).toEqual({ collaborators: ['Collab Co'] });
+    expect(withCollab.sponsor).not.toHaveProperty('lead');
+    expect(() => TrialRecordSchema.parse(withCollab)).not.toThrow();
+  });
+
   // I1 — enrollmentInfo 모듈은 있지만 안이 비어 있으면 enrollment 키 자체가 없어야 한다.
   // `{ enrollment: undefined }` 를 스프레드하면 값은 undefined 인데 키는 남는 사고가 났었다.
   it('enrollmentInfo 가 비어 있으면 enrollment 키를 만들지 않는다', () => {

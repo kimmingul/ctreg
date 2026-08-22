@@ -8,7 +8,13 @@ export type RegistryStatus = {
   total?: number;
   returned?: number;
   nextPageToken?: string;
-  error?: { code: string; message: string };
+  /**
+   * `hint` 는 업스트림 오류를 회복 가능한 문장으로 옮긴 것이다 (§5.3). 400 이 날 수
+   * 있는 유일한 경로가 레지스트리별 catch 이므로, 여기에 자리가 없으면 http.ts 가
+   * 업스트림 본문에서 만들어 둔 힌트("Unknown sort field")가 봉투 문턱에서 사라진다 —
+   * 호출자는 무엇을 고쳐야 하는지 모른 채 "400 을 반환했습니다" 만 받는다.
+   */
+  error?: { code: string; message: string; hint?: string };
 };
 
 export type Envelope = {
@@ -52,7 +58,10 @@ export function render(env: Envelope, format: 'json' | 'ndjson' | 'text'): strin
       .filter(Boolean)
       .join(', ');
     lines.push(`[${r.registry}] ${r.status}${counts ? ` — ${counts}` : ''}`);
-    if (r.error) lines.push(`  오류 ${r.error.code}: ${r.error.message}`);
+    if (r.error) {
+      lines.push(`  오류 ${r.error.code}: ${r.error.message}`);
+      if (r.error.hint) lines.push(`    ${r.error.hint}`);
+    }
   }
   if (env.error)
     lines.push(`오류 ${env.error.code}: ${env.error.message}${env.error.hint ? `\n  ${env.error.hint}` : ''}`);

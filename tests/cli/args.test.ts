@@ -85,6 +85,15 @@ describe('인자 파싱', () => {
     expectUsage(() => parseCliArgs(['search', '--registry', 'ictrp']), 'ctreg registries');
   });
 
+  // 중복을 그대로 두면 모든 네트워크 커맨드가 같은 레지스트리를 두 번 돈다.
+  // count 는 정확히 진실의 2배인 수를 경고 없이 사실로 내놓고(리뷰 I4 에서 실측:
+  // 245,472 vs 실제 122,736), search 는 같은 레코드를 두 번 내며, registries[] 는
+  // "레지스트리마다 항목 하나" 라는 봉투의 암묵적 형태 규칙을 깬다.
+  it('--registry 중복은 합쳐진다 — 같은 레지스트리를 두 번 돌지 않는다', () => {
+    expect(parseCliArgs(['count', '--registry', 'ctgov', '--registry', 'ctgov']).registries)
+      .toEqual(['ctgov']);
+  });
+
   it('results 커맨드의 필터를 읽는다', () => {
     const a = parseCliArgs(['results', 'CTGOV:NCT01234567', '--outcome', 'PFS', '--ae-organ', 'cardiac', '--section', 'outcomes']);
     expect(a.positionals).toEqual(['CTGOV:NCT01234567']);

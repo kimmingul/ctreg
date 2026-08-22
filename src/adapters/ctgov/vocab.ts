@@ -7,7 +7,7 @@
  * 없을 때는 `*Raw` 도 만들지 않는다.
  */
 
-import { isFilterablePhase, isFilterableStatus, type StudyType, type TrialPhase, type TrialStatus } from '../../core/vocab.js';
+import { isFilterablePhase, isFilterableStatus, isFilterableStudyType, type StudyType, type TrialPhase, type TrialStatus } from '../../core/vocab.js';
 import { usageError } from '../../runtime/errors.js';
 
 const STATUS_IN: Record<string, TrialStatus> = {
@@ -92,9 +92,34 @@ const STUDY_TYPE_IN: Record<string, StudyType> = {
   EXPANDED_ACCESS: 'expanded_access',
 };
 
+/** status/phase 와 같은 규율 — 역매핑은 정방향에서 파생한다. 손으로 유지하는 두 번째 테이블을 만들지 않는다. */
+const STUDY_TYPE_OUT = Object.fromEntries(
+  Object.entries(STUDY_TYPE_IN)
+    .filter(([, v]) => isFilterableStudyType(v))
+    .map(([k, v]) => [v, k]),
+) as Partial<Record<StudyType, string>>;
+
 /** CT.gov StudyType 원문 → 공통 어휘. 필드가 없으면 아무 키도 만들지 않는다. */
 export function toStudyType(raw?: string): { studyType?: StudyType; studyTypeRaw?: string } {
   if (raw === undefined || raw === '') return {};
   const mapped = STUDY_TYPE_IN[raw];
   return { studyType: mapped ?? 'other', studyTypeRaw: raw };
+}
+
+/**
+ * 공통 어휘 → AREA[StudyType] 필터에 쓸 CT.gov enum 값. `other` 는 검색 조건이 될 수 없다.
+ *
+ * 이전에는 query.ts 가 `.toUpperCase()` 를 인라인으로 썼다 — 공통 어휘 문자열이
+ * CT.gov enum 과 우연히 같다는 사실에만 기댄 것이라, 어휘를 하나 더하는 순간
+ * 존재하지 않는 enum 을 조용히 보내게 된다. 세 폐쇄 어휘 중 여기만 규율 밖이었다.
+ */
+export function fromStudyType(t: StudyType): string {
+  const out = STUDY_TYPE_OUT[t];
+  if (!out) {
+    throw usageError(
+      `'${t}' 로는 필터를 걸 수 없습니다`,
+      "'other' 는 매핑 결과일 뿐 검색 조건이 아닙니다.",
+    );
+  }
+  return out;
 }

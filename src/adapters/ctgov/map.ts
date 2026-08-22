@@ -168,10 +168,16 @@ export function mapStudy(
     ? (defined({ count: enrollmentInfo.count, basis: enrollmentInfo.type?.toLowerCase() }) as TrialRecord['enrollment'])
     : undefined;
 
-  const lead = p.sponsorCollaboratorsModule?.leadSponsor?.name;
+  // 빈 문자열은 이름이 아니다 — `defined()` 가 undefined 를 다루는 것과 같은 규칙을
+  // 여기서 한 번 적용해 두 갈래를 없앤다. 이전 가드(`lead || collaborators`)는 같은
+  // 사실에 두 답을 냈다: 협력사가 없으면 sponsor 를 통째로 버려 협력사 정보까지
+  // 함께 잃었고, 협력사가 있으면 `lead: ""` 라는 있지도 않은 이름을 주장했다.
+  const leadName: string | undefined = p.sponsorCollaboratorsModule?.leadSponsor?.name;
+  const lead = leadName ? leadName : undefined;
   const rawCollaborators: any[] = p.sponsorCollaboratorsModule?.collaborators ?? [];
   const collaborators: string[] | undefined =
     rawCollaborators.length > 0 ? rawCollaborators.map((c: any) => c.name) : undefined;
+  const sponsor = defined({ lead, collaborators }) as TrialRecord['sponsor'];
 
   // 보조 식별자는 type 이 없어도 id 가 있으면 데이터다 — 버리지 않는다. registry 는 우리
   // RegistryKey 가 아니라 업스트림이 붙인 원문 라벨이고, domain 은 같은 id 를 여러 기관이
@@ -204,7 +210,7 @@ export function mapStudy(
     ...(rawInterventions.length > 0
       ? { interventions: rawInterventions.map((i: any) => ({ name: i.name, ...defined({ type: i.type }) })) }
       : {}),
-    ...(lead || collaborators ? { sponsor: defined({ lead, collaborators }) as TrialRecord['sponsor'] } : {}),
+    ...(sponsor ? { sponsor } : {}),
     ...(enrollment ? { enrollment } : {}),
     ...(() => {
       const dates = defined({

@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { CAPS, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
-import { REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
+import { DEFAULT_REGISTRY, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
   isFilterablePhase, isFilterableStatus, isFilterableStudyType,
   type StudyType, type TrialPhase, type TrialStatus,
@@ -23,7 +23,8 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
           --near <lat,lon> --radius <N>km|mi
           --updated-since --updated-before --start-after --start-before
           --completion-after --completion-before   (YYYY-MM-DD)
-출력      --registry <key> --include <section> --page-size <N> --page-token <t>
+출력      --registry <key> (반복 가능, 기본 ctgov) --include <section>
+          --page-size <N> --page-token <t>
           --sort <field> --eligibility-chars <N> --raw
           --format json|ndjson|text --no-cache --refresh
 
@@ -84,7 +85,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 
   if (v.help) {
     return {
-      command: 'registries', positionals: [], registries: [...REGISTRY_KEYS],
+      command: 'registries', positionals: [], registries: [DEFAULT_REGISTRY],
       query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true,
     };
   }
@@ -100,7 +101,12 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   if (v['no-cache'] && v.refresh) throw usageError('--no-cache 와 --refresh 는 함께 쓸 수 없습니다');
   const cacheMode: FetchOpts['cacheMode'] = v['no-cache'] ? 'off' : v.refresh ? 'refresh' : 'use';
 
-  const registries = (v.registry ?? [...REGISTRY_KEYS]) as string[];
+  // 기본값은 등록된 키 전체가 아니라 이름 붙은 하나다 — DEFAULT_REGISTRY 의 주석 참고.
+  // 중복은 합친다: 그냥 두면 모든 네트워크 커맨드가 같은 레지스트리를 두 번 돌아
+  // count 가 정확히 진실의 2배인 수를 경고 없이 사실로 내고(리뷰 I4), search 는 같은
+  // 레코드를 두 번 내며, "레지스트리마다 registries[] 항목 하나" 라는 봉투의 형태
+  // 규칙이 깨진다. 순서는 호출자가 준 순서를 그대로 유지한다.
+  const registries = [...new Set((v.registry ?? [DEFAULT_REGISTRY]) as string[])];
   for (const r of registries) {
     if (!isRegistryKey(r)) {
       throw usageError(`모르는 레지스트리: '${r}'`, 'ctreg registries 로 사용 가능한 키를 확인하세요.');

@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { extractResults } from '../../../src/adapters/ctgov/results.js';
 import { TrialResultsSchema } from '../../../src/core/record.js';
 import type { ResultsOpts } from '../../../src/core/query.js';
+import { EXIT } from '../../../src/cli/exit-codes.js';
+import { CtregError } from '../../../src/runtime/errors.js';
 
 // 결과 추출 픽스처와 Task 10 매핑 픽스처는 의도적으로 같은 시험(study-full.json,
 // NCT04280705)을 쓴다 — 둘 다 실제 응답을 검증에 쓰지만, 별도 파일로 두면 한쪽만
@@ -91,6 +93,7 @@ describe('CT.gov 결과 추출', () => {
     // 서로 다른 기관계에 같은 용어가 실제로 나타날 수 있어 이 픽스처로는 재현되지
     // 않는 케이스를 직접 구성해서 고정한다.
     const synthetic = {
+      protocolSection: { identificationModule: { nctId: 'NCT00000000' } },
       resultsSection: {
         adverseEventsModule: {
           seriousEvents: [],
@@ -133,9 +136,58 @@ describe('CT.gov 결과 추출', () => {
   });
 
   it('결과 섹션이 없는 시험은 hasResults false 를 내고 빈 sections 를 준다', () => {
-    const { results } = extractResults({ protocolSection: {} }, ID, opts(), AT);
+    const noResults = { protocolSection: { identificationModule: { nctId: 'NCT00000000' } } };
+    const { results } = extractResults(noResults, ID, opts(), AT);
     expect(results.hasResults).toBe(false);
     expect(results.sections.outcomes).toBeUndefined();
+  });
+
+  /**
+   * I2 회귀. "이 시험은 결과를 게시하지 않았다" 는 임상적 주장이다. 잘린 응답,
+   * `{}` 를 내주는 미러, 업스트림 스키마 변경이 모두 그 주장으로 둔갑하면 안 된다 —
+   * mapStudy 는 같은 계층에서 정반대로 하고 있었다(객체가 아니면 던지고, nctId 가
+   * 없으면 던진다). 같은 규칙을 여기에도 적용한다.
+   */
+  it('study 페이로드가 아니면 빈 결과가 아니라 크게 던진다', () => {
+    for (const bad of [null, 42, 'a string', {}, { protocolSection: {} }]) {
+      expect(() => extractResults(bad, ID, opts(), AT)).toThrow(CtregError);
+    }
+  });
+
+  /**
+   * I2 회귀 (출력). OutcomeResultSchema/AdverseEventSchema 는 존재만 하고 런타임에
+   * 한 번도 파싱되지 않는 타입이었다 — measure 없는 outcome, term 없는 이상반응이
+   * 그대로 봉투로 나갔다. mapStudy 가 TrialRecordSchema 로 자기 출력을 검증하는 것과
+   * 같은 규율을 건다.
+   */
+  it('계약을 못 지키는 항목은 통과시키지 않고 던진다', () => {
+    const noMeasure = {
+      protocolSection: { identificationModule: { nctId: 'NCT00000000' } },
+      resultsSection: { outcomeMeasuresModule: { outcomeMeasures: [{ type: 'PRIMARY' }] } },
+    };
+    expect(() => extractResults(noMeasure, ID, opts({ full: true }), AT)).toThrow(CtregError);
+
+    const noTerm = {
+      protocolSection: { identificationModule: { nctId: 'NCT00000000' } },
+      resultsSection: {
+        adverseEventsModule: { seriousEvents: [{ organSystem: 'Cardiac', stats: [{ numAtRisk: 120 }] }] },
+      },
+    };
+    expect(() => extractResults(noTerm, ID, opts({ full: true }), AT)).toThrow(CtregError);
+  });
+
+  it('던지는 오류는 어느 필드가 계약을 어겼는지 이름을 부른다', () => {
+    const noMeasure = {
+      protocolSection: { identificationModule: { nctId: 'NCT00000000' } },
+      resultsSection: { outcomeMeasuresModule: { outcomeMeasures: [{ type: 'PRIMARY' }] } },
+    };
+    try {
+      extractResults(noMeasure, ID, opts({ full: true }), AT);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      expect((e as CtregError).exit).toBe(EXIT.UPSTREAM);
+      expect((e as CtregError).message).toContain('measure');
+    }
   });
 
   it('flow 와 baseline 은 정규화하지 않고 원문 구조를 통과시킨다', () => {

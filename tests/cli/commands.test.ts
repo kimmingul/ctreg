@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
 import { parseCliArgs } from '../../src/cli/args.js';
+import { runCount } from '../../src/cli/commands/count.js';
 import { runGet } from '../../src/cli/commands/get.js';
 import { runResults } from '../../src/cli/commands/results.js';
 import { runSearch } from '../../src/cli/commands/search.js';
@@ -10,6 +11,7 @@ import { exitFor } from '../../src/cli/output.js';
 import type { Capability, RegistryAdapter } from '../../src/core/capability.js';
 import type { TrialRecord } from '../../src/core/record.js';
 import type { RegistryKey } from '../../src/core/registry.js';
+import { CtregError } from '../../src/runtime/errors.js';
 
 const record = (n: string): TrialRecord => ({
   id: `CTGOV:${n}`, registry: 'ctgov', registryId: n,
@@ -118,10 +120,76 @@ describe('results 커맨드', () => {
     expect(adapters.ctgov.results).not.toHaveBeenCalled();
     expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'unsupported' });
     expect(env.registries[0]!.error?.code).toBe('unsupported');
-    // 힌트를 담을 자리가 없으므로 핵심 구분("없는 것이 아니라 안 싣는다")은 메시지에 있어야 한다.
+    // 핵심 구분("없는 것이 아니라 안 싣는다")은 hint 가 아니라 메시지에 있어야 한다 —
+    // hint 자리는 생겼지만(I1), 이건 힌트가 아니라 사실 자체다.
     expect(env.registries[0]!.error?.message).toContain('싣지 않습니다');
     expect(env.data).toBeNull();
     expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+});
+
+/**
+ * C3 회귀. capability 의 불리언 두 개 중 results 만 강제되고 count 는 어디서도
+ * 강제되지 않았다 — `count: false` 를 신고한 어댑터가 0 을 돌려주면(카운트
+ * 엔드포인트가 없는 레지스트리를 위한 가장 흔한 순진한 구현) CLI 는 status "ok",
+ * total 0, exit 0 을 냈다. "이 레지스트리는 셀 수 없다" 가 "해당하는 시험이 없다"
+ * 로 배달되는 것으로, 스펙 §3.3 이 설계에서 가장 중요한 규칙이라고 부른 것의 정확한
+ * 반대다. ctgov 는 count: true 라 오늘 도달 불가능하지만, 이 슬라이스의 산출물은
+ * 어댑터가 아니라 계약이고 ISRCTN(어댑터 #2 후보)은 count: false 가 유력하다.
+ */
+describe('count 커맨드 — capability.count', () => {
+  it('count 를 제공하지 않는 레지스트리는 0 이 아니라 exit 3 이다', async () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, count: false };
+    // 카운트 엔드포인트가 없는 레지스트리를 위한 가장 순진한 구현: 0 을 돌려준다.
+    const adapters = stubAdapter({ count: vi.fn(async () => ({ data: 0, warnings: [] })) }, cap);
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X']), adapters);
+
+    expect(adapters.ctgov.count).not.toHaveBeenCalled();
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'unsupported' });
+    expect(env.registries[0]!.error?.code).toBe('unsupported');
+    expect(env.registries[0]!.error?.message).toContain('셀 수 없습니다');
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+
+  it('count: true 인 레지스트리는 그대로 센다', async () => {
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X']), stubAdapter());
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'ok', total: 1 });
+    expect(exitFor(env)).toBe(EXIT.OK);
+  });
+});
+
+/**
+ * I1 회귀. http.ts 는 업스트림 400 본문("Unknown sort field")을 회복 힌트로 만들어
+ * CtregError.hint 에 담는데, RegistryStatus.error 에 hint 자리가 없어 봉투 문턱에서
+ * 사라졌다. 400 이 날 수 있는 유일한 경로가 레지스트리별 catch 이므로, 스펙 §1.1 이
+ * 이 CLI 의 존재 이유 네 가지 중 하나로 든 "400 회복 힌트" 가 실제로는 도달 불가능했다.
+ */
+describe('봉투 — 레지스트리별 오류의 회복 힌트', () => {
+  const failing = (hint?: string) =>
+    stubAdapter({
+      search: vi.fn(async () => { throw new CtregError('ctgov 가 400 를 반환했습니다', 'upstream', EXIT.UPSTREAM, hint); }),
+      count: vi.fn(async () => { throw new CtregError('ctgov 가 400 를 반환했습니다', 'upstream', EXIT.UPSTREAM, hint); }),
+      get: vi.fn(async () => { throw new CtregError('ctgov 가 400 를 반환했습니다', 'upstream', EXIT.UPSTREAM, hint); }),
+      results: vi.fn(async () => { throw new CtregError('ctgov 가 400 를 반환했습니다', 'upstream', EXIT.UPSTREAM, hint); }),
+    });
+
+  it('search / count / get / results 모두 hint 를 봉투까지 옮긴다', async () => {
+    const HINT = 'Unknown sort field: NotAField';
+    const envs = [
+      await runSearch(parseCliArgs(['search', '--condition', 'X', '--sort', 'NotAField']), failing(HINT)),
+      await runCount(parseCliArgs(['count', '--condition', 'X']), failing(HINT)),
+      await runGet(parseCliArgs(['get', 'NCT00000001']), failing(HINT)),
+      await runResults(parseCliArgs(['results', 'NCT00000001']), failing(HINT)),
+    ];
+    for (const env of envs) {
+      expect(env.registries[0]!.error?.hint).toBe(HINT);
+    }
+  });
+
+  it('힌트가 없으면 hint 키 자체를 만들지 않는다', async () => {
+    const env = await runSearch(parseCliArgs(['search', '--condition', 'X']), failing());
+    expect(env.registries[0]!.error).toEqual({ code: 'upstream', message: 'ctgov 가 400 를 반환했습니다' });
+    expect(JSON.stringify(env.registries[0])).not.toContain('hint');
   });
 });
 
