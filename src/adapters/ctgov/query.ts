@@ -45,10 +45,11 @@ const SECTION_FIELDS: Record<Exclude<IncludeSection, 'core' | 'all'>, string[]> 
     'protocolSection.eligibilityModule.maximumAge',
   ],
   outcomes: ['protocolSection.outcomesModule'],
-  contacts: [
-    'protocolSection.contactsLocationsModule.centralContacts',
-    'protocolSection.contactsLocationsModule.overallOfficials',
-  ],
+  // overallOfficials (PI/study director) 는 map.ts 가 읽지 않는다 — centralContacts 와는
+  // 다른 목적(연락 담당자 vs 연구책임자)이라 record 에 넣으려면 role 의미를 새로 정의해야
+  // 하고, 그건 이미 리뷰를 통과한 스펙을 건드리는 일이다. 나중에 필요해지면 그 필드를
+  // 읽는 매퍼와 함께 leaf 를 추가한다.
+  contacts: ['protocolSection.contactsLocationsModule.centralContacts'],
   locations: ['protocolSection.contactsLocationsModule.locations'],
 };
 
