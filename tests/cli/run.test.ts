@@ -156,6 +156,14 @@ describe('run()', () => {
     expect(c.out()).toContain('ctreg search');
   });
 
+  it('도움말이 exit 5 가 언제 나는지 말한다 — 경고가 아니라 레지스트리 실패', async () => {
+    const c = capture();
+    await run(['--help'], c.io, env());
+    const help = c.out();
+    expect(help).toContain('레지스트리');
+    expect(help).toMatch(/5[^\n]*레지스트리/);
+  });
+
   it('로그는 stdout 을 오염시키지 않는다 — stdout 은 항상 파싱 가능해야 한다', async () => {
     const c = capture();
     await run(['registries'], c.io, env());

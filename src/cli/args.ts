@@ -28,7 +28,8 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
           --sort <field> --eligibility-chars <N> --raw
           --format json|ndjson|text --no-cache --refresh
 
-exit: 0 정상 · 2 사용법 · 3 미지원 · 4 업스트림 · 5 부분 실패
+exit: 0 정상(0건 포함) · 2 사용법 · 3 미지원 · 4 업스트림
+      5 부분 실패 — 일부 레지스트리만 성공. 경고는 종료 코드를 바꾸지 않는다.
 `;
 
 const INCLUDE_SECTIONS: IncludeSection[] = ['core', 'eligibility', 'outcomes', 'contacts', 'locations', 'all'];
