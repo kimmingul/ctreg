@@ -15,10 +15,17 @@ describe('폐쇄 어휘', () => {
     expect(TRIAL_STATUS).toContain('other');
   });
 
-  it('phase 에는 결합 값(phase_1_2)을 두지 않는다 — 배열로 무손실 보존하기 때문', () => {
+  it('phase 는 스펙이 고정한 7개 값이며, 결합 값(phase_1_2)을 두지 않는다 — 배열로 무손실 보존하기 때문', () => {
+    expect(TRIAL_PHASE).toEqual([
+      'early_phase_1',
+      'phase_1',
+      'phase_2',
+      'phase_3',
+      'phase_4',
+      'na',
+      'other',
+    ]);
     expect(TRIAL_PHASE).not.toContain('phase_1_2');
-    expect(TRIAL_PHASE).toContain('phase_1');
-    expect(TRIAL_PHASE).toContain('na');
   });
 
   it('studyType 은 4개 값이다', () => {
