@@ -24,7 +24,10 @@ export function render(env: Envelope, format: 'json' | 'ndjson' | 'text'): strin
   if (format === 'json') return `${JSON.stringify(env, null, 2)}\n`;
 
   if (format === 'ndjson') {
-    const rows = Array.isArray(env.data) ? env.data : [env.data];
+    // data 가 없으면 데이터 줄을 아예 내지 않는다. `null` 한 줄은 레코드가 아닌데도
+    // 레코드 자리에 앉아, 스트리밍 소비자가 걸러내야 하는 가짜 행이 된다.
+    // 메타 줄은 그대로 나가므로 "마지막 줄은 언제나 메타" 규칙은 그대로다.
+    const rows = Array.isArray(env.data) ? env.data : env.data === null || env.data === undefined ? [] : [env.data];
     const dataLines = rows.map((r) => JSON.stringify(r));
     // 데이터 줄 뒤에 메타데이터 한 줄을 항상 붙인다 — query/registries/warnings/error 는
     // 개별 레코드에 담을 자리가 없다 (예: throttle_lock_timeout 은 id 가 없다).

@@ -64,7 +64,11 @@ export async function getJson<T>(
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = deps.now ?? Date.now;
   const warnings: Warning[] = [];
-  const key = cacheKey(o.registry, o.path, o.params);
+  // 캐시 키에 base URL 이 들어가야 한다. 없으면 A 서버에서 받은 응답을 B 서버에 대한
+  // 요청에 그대로 내주는 false hit 이 된다 — CTREG_*_BASE_URL 로 다른 서버(스테이징,
+  // 미러, 테스트 스텁)를 가리켜도 이전 서버의 데이터가 이 서버 것인 양 나온다.
+  // cacheKey 의 endpoint 인자에 실어 보낸다 — 요청 URL 의 파라미터 앞부분 그대로다.
+  const key = cacheKey(o.registry, o.baseUrl + o.path, o.params);
 
   if (o.cacheMode === 'use') {
     const hit = await readCache<T>(cfg.cacheDir, key, cfg.cacheTtlSec, now);

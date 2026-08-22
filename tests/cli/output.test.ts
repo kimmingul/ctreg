@@ -64,6 +64,12 @@ describe('출력 봉투', () => {
     expect(meta.error).toEqual({ code: 'upstream', message: 'boom' });
   });
 
+  it('ndjson 은 data 가 null 이면 데이터 줄을 내지 않는다 — null 은 레코드가 아니다', () => {
+    const lines = render({ ...base, data: null }, 'ndjson').trimEnd().split('\n');
+    expect(lines).toHaveLength(1);
+    expect(JSON.parse(lines[0]!)._meta).toBe(true);
+  });
+
   it('ndjson 데이터 줄은 절대 _meta 키를 갖지 않는다', () => {
     const lines = render(base, 'ndjson').trimEnd().split('\n');
     const dataLines = lines.slice(0, -1);

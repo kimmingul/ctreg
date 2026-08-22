@@ -6,7 +6,7 @@ import { CtregError } from '../runtime/errors.js';
 import type { HttpDeps } from '../runtime/http.js';
 import { USAGE, parseCliArgs } from './args.js';
 import { runCount } from './commands/count.js';
-import { runGet } from './commands/get.js';
+import { IdRoutingError, runGet } from './commands/get.js';
 import { runRegistries } from './commands/registries.js';
 import { runResults } from './commands/results.js';
 import { runSearch } from './commands/search.js';
@@ -52,7 +52,15 @@ export async function run(
     const err = CtregError.is(e)
       ? { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) }
       : { code: 'internal', message: (e as Error).message };
-    const envelope: Envelope = { query: {}, registries: [], warnings: [], data: null, error: err };
+    // 던진 오류가 경고를 들고 왔으면 봉투에 옮긴다 — get 의 라우팅 실패처럼 나쁜 ID
+    // 가 여럿일 때, 최상위 error 는 하나만 이름 부를 수 있어서 나머지가 사라진다.
+    const envelope: Envelope = {
+      query: {},
+      registries: [],
+      warnings: IdRoutingError.is(e) ? e.warnings : [],
+      data: null,
+      error: err,
+    };
     io.stdout(render(envelope, format));
     // 사용법은 사람이 읽는 것이므로 stderr 로도 낸다. stdout 은 실패 사유까지 포함해
     // 언제나 파싱 가능한 봉투를 낸다 — 커맨드를 식별하지 못한 경우도 예외가 아니다.

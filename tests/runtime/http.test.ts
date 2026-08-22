@@ -197,4 +197,27 @@ describe('HTTP 클라이언트', () => {
     },
     15_000, // reserveSlot 의 락 재시도 기본 상한(500ms)까지 10 회 재시도하므로 실시간으로 몇 초 걸린다.
   );
+
+  it('base URL 이 다르면 캐시 항목을 공유하지 않는다 — 다른 서버의 응답을 이 서버 것인 양 내면 안 된다', async () => {
+    const f1 = vi.fn(async () => json({ from: 'A' }));
+    const a = await getJson<{ from: string }>(cfg, opts(), deps(f1 as unknown as typeof fetch));
+    expect(a.value).toEqual({ from: 'A' });
+
+    // 같은 registry / path / params, base URL 만 다르다.
+    const f2 = vi.fn(async () => json({ from: 'B' }));
+    const b = await getJson<{ from: string }>(
+      cfg,
+      { ...opts(), baseUrl: 'https://other.test/api/v2' },
+      deps(f2 as unknown as typeof fetch),
+    );
+
+    expect(f2).toHaveBeenCalledTimes(1); // 캐시 히트로 건너뛰면 안 된다
+    expect(b.cached).toBe(false);
+    expect(b.value).toEqual({ from: 'B' });
+
+    // 원래 base URL 은 여전히 자기 항목을 캐시에서 읽는다.
+    const again = await getJson<{ from: string }>(cfg, opts(), deps(vi.fn() as unknown as typeof fetch));
+    expect(again.cached).toBe(true);
+    expect(again.value).toEqual({ from: 'A' });
+  });
 });

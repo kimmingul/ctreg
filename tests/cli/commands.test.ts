@@ -107,10 +107,21 @@ describe('results 커맨드', () => {
       .rejects.toMatchObject({ exit: EXIT.USAGE });
   });
 
-  it('results 를 제공하지 않는 레지스트리면 exit 3 이다', async () => {
+  // 리뷰 I-3 지시로 브리프 테스트를 바꿨다: 던지는 대신 registries[] 에 기록한다.
+  // 규칙은 "registries[] 가 비어 있다 == 어떤 레지스트리도 정해지지 않았다" 이고,
+  // 여기서는 parseTrialId 가 레지스트리를 이미 풀었으므로 비어 있으면 안 된다.
+  it('results 를 제공하지 않는 레지스트리는 registries[] 에 unsupported 로 남고 exit 3 이다', async () => {
     const cap: Capability = { ...CTGOV_CAPABILITY, results: false };
-    await expect(runResults(parseCliArgs(['results', 'NCT00000001']), stubAdapter({}, cap)))
-      .rejects.toMatchObject({ exit: EXIT.UNSUPPORTED });
+    const adapters = stubAdapter({}, cap);
+    const env = await runResults(parseCliArgs(['results', 'NCT00000001']), adapters);
+
+    expect(adapters.ctgov.results).not.toHaveBeenCalled();
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'unsupported' });
+    expect(env.registries[0]!.error?.code).toBe('unsupported');
+    // 힌트를 담을 자리가 없으므로 핵심 구분("없는 것이 아니라 안 싣는다")은 메시지에 있어야 한다.
+    expect(env.registries[0]!.error?.message).toContain('싣지 않습니다');
+    expect(env.data).toBeNull();
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
   });
 });
 
@@ -221,5 +232,77 @@ describe('index 배선', () => {
       expect(parsed.error).toBeUndefined();
       expect(parsed.registries[0].status).toBe('ok');
     }
+  });
+});
+
+// --- 리뷰 1차 수정 ---
+
+describe('get 커맨드 — 파싱 불가 ID 와 미지원 레지스트리를 구분한다', () => {
+  it('파싱 불가 ID 는 정상 ID 와 섞여 있어도 exit 2 다 (§5.3)', async () => {
+    const adapters = stubAdapter();
+    await expect(runGet(parseCliArgs(['get', 'NCT00000001', 'NCT0000010']), adapters))
+      .rejects.toMatchObject({ exit: EXIT.USAGE });
+    // 같은 오타가 단독일 때와 같은 뜻이어야 한다 — 동행에 따라 의미가 달라지면 안 된다.
+    await expect(runGet(parseCliArgs(['get', 'NCT0000010']), adapters))
+      .rejects.toMatchObject({ exit: EXIT.USAGE });
+    // 요청 자체가 성립하지 않았으므로 어떤 레지스트리도 부르지 않는다.
+    expect(adapters.ctgov.get).not.toHaveBeenCalled();
+  });
+
+  it('어댑터가 없는 레지스트리는 여전히 경고로 격하된다 — 두 실패는 다른 사실이다', async () => {
+    const adapters = stubAdapter();
+    const env = await runGet(parseCliArgs(['get', 'NCT00000001', 'EUCTR:2020-000001-11']), adapters);
+    expect(exitFor(env)).toBe(EXIT.OK);
+    expect(env.warnings.map((w) => w.code)).toEqual(['id_unroutable']);
+  });
+
+  it('라우팅에 실패한 ID 는 던질 때도 전부 봉투에 남는다', async () => {
+    await expect(runGet(parseCliArgs(['get', 'EUCTR:2020-000001-11', 'not-an-id']), stubAdapter()))
+      .rejects.toMatchObject({
+        exit: EXIT.USAGE,
+        warnings: [
+          { code: 'id_unroutable', id: 'EUCTR:2020-000001-11' },
+          { code: 'id_unroutable', id: 'not-an-id' },
+        ],
+      });
+  });
+});
+
+describe('results 커맨드 — 없는 시험은 업스트림 장애가 아니다', () => {
+  it('not_found 는 exit 0 · data null · not_found 경고다 (get 과 같은 사실은 같은 모양으로)', async () => {
+    const { CtregError } = await import('../../src/runtime/errors.js');
+    const adapters = stubAdapter({
+      results: vi.fn(async () => {
+        throw new CtregError('ctgov 에서 찾을 수 없습니다', 'not_found', EXIT.UPSTREAM);
+      }),
+    });
+    const env = await runResults(parseCliArgs(['results', 'NCT99999999']), adapters);
+
+    expect(exitFor(env)).toBe(EXIT.OK);
+    expect(env.data).toBeNull();
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'ok', returned: 0 });
+    expect(env.warnings).toEqual([
+      expect.objectContaining({ code: 'not_found', id: 'CTGOV:NCT99999999' }),
+    ]);
+  });
+});
+
+describe('index 배선 — 던진 오류도 경고를 잃지 않는다', () => {
+  it('라우팅 전멸이면 stdout 봉투가 나쁜 ID 를 전부 이름으로 담는다', async () => {
+    const out: string[] = [];
+    const io = { stdout: (s: string) => out.push(s), stderr: () => {} };
+    const code = await run(
+      ['get', 'EUCTR:2020-000001-11', 'not-an-id'],
+      io,
+      {},
+      { adapters: stubAdapter() as Record<RegistryKey, RegistryAdapter> },
+    );
+
+    expect(code).toBe(EXIT.USAGE);
+    const parsed = JSON.parse(out.join(''));
+    expect(parsed.error.code).toBe('usage');
+    expect(parsed.registries).toEqual([]); // 어떤 레지스트리도 정해지지 않았다
+    expect(parsed.warnings.map((w: { id: string }) => w.id))
+      .toEqual(['EUCTR:2020-000001-11', 'not-an-id']);
   });
 });
