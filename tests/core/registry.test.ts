@@ -27,6 +27,10 @@ describe('ID 정규화', () => {
     expect(parseTrialId('ctgov:nct01234567').id).toBe('CTGOV:NCT01234567');
   });
 
+  it('접두사 없는 소문자 ID 도 추론 정규식이 대소문자 구분 없이 잡는다', () => {
+    expect(parseTrialId('nct01234567').id).toBe('CTGOV:NCT01234567');
+  });
+
   it('아직 없는 레지스트리 접두사는 exit 3 이다 — 문법은 맞고 지원이 없는 것', () => {
     try {
       parseTrialId('ISRCTN:12345678');

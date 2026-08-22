@@ -11,10 +11,16 @@ export function formatTrialId(registry: RegistryKey, registryId: string): string
   return `${registry.toUpperCase()}:${registryId}`;
 }
 
-/** 접두사 없는 원문 ID 를 레지스트리로 되돌리는 패턴. 어댑터가 늘면 여기에 줄이 는다. */
-const ID_PATTERNS: { registry: RegistryKey; pattern: RegExp; normalize: (s: string) => string }[] = [
-  { registry: 'ctgov', pattern: /^nct\d{8}$/i, normalize: (s) => s.toUpperCase() },
-];
+type IdSpec = { pattern: RegExp; normalize: (s: string) => string };
+
+/**
+ * 레지스트리별 접두사 없는 원문 ID 패턴. `Record<RegistryKey, ...>` 이므로
+ * `REGISTRY_KEYS` 에 키를 추가하고 여기 항목을 빠뜨리면 컴파일이 깨진다 —
+ * 어댑터를 늘릴 때는 두 곳을 다 채워야 하고, 컴파일러가 그것을 강제한다.
+ */
+const ID_PATTERNS: Record<RegistryKey, IdSpec> = {
+  ctgov: { pattern: /^nct\d{8}$/i, normalize: (s) => s.toUpperCase() },
+};
 
 export function parseTrialId(input: string): {
   registry: RegistryKey;
@@ -33,18 +39,17 @@ export function parseTrialId(input: string): {
         `ctreg registries 로 사용 가능한 레지스트리를 확인하세요. 현재: ${REGISTRY_KEYS.join(', ')}`,
       );
     }
-    const match = ID_PATTERNS.find((p) => p.registry === prefix);
-    const registryId = match?.normalize(rest) ?? rest;
+    const registryId = ID_PATTERNS[prefix].normalize(rest);
     return { registry: prefix, registryId, id: formatTrialId(prefix, registryId) };
   }
 
-  const inferred = ID_PATTERNS.find((p) => p.pattern.test(trimmed));
+  const inferred = REGISTRY_KEYS.find((key) => ID_PATTERNS[key].pattern.test(trimmed));
   if (!inferred) {
     throw usageError(
       `'${input}' 에서 레지스트리를 알아낼 수 없습니다`,
       'CTGOV:NCT01234567 처럼 접두사를 붙이거나, 접두사 없는 NCT 번호를 주세요.',
     );
   }
-  const registryId = inferred.normalize(trimmed);
-  return { registry: inferred.registry, registryId, id: formatTrialId(inferred.registry, registryId) };
+  const registryId = ID_PATTERNS[inferred].normalize(trimmed);
+  return { registry: inferred, registryId, id: formatTrialId(inferred, registryId) };
 }
