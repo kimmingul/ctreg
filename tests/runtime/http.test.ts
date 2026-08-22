@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { EXIT } from '../../src/cli/exit-codes.js';
 import type { Config } from '../../src/runtime/config.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 import { getJson } from '../../src/runtime/http.js';
+import { bucketPath } from '../../src/runtime/throttle.js';
 
 let cfg: Config;
 beforeEach(() => {
@@ -108,5 +109,69 @@ describe('HTTP 클라이언트', () => {
     }, deps(f as unknown as typeof fetch));
     expect(seen[0]).toContain('a=x');
     expect(seen[0]).not.toContain('b=');
+  });
+
+  it('429 의 retry-after 를 그대로 존중해 디스크 버킷에 정확한 절대시각으로 공유한다', async () => {
+    const FIXED_NOW = 2_000_000;
+    const f = vi.fn(async () => json({}, 429, { 'retry-after': '7' }));
+    await expect(
+      getJson(cfg, opts('off'), { ...deps(f as unknown as typeof fetch), now: () => FIXED_NOW }),
+    ).rejects.toMatchObject({ code: 'rate_limited' });
+
+    const state = JSON.parse(readFileSync(bucketPath(cfg.cacheDir, 'ctgov'), 'utf8'));
+    expect(state.blockedUntil).toBe(FIXED_NOW + 7000);
+  });
+
+  it('fetch 자체가 reject 하면(네트워크 단절) code upstream 으로 재시도 예산만큼 재시도한다', async () => {
+    const f = vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    });
+    await expect(getJson(cfg, opts('off'), deps(f as unknown as typeof fetch))).rejects.toMatchObject({
+      code: 'upstream',
+    });
+    expect(f).toHaveBeenCalledTimes(cfg.maxRetries + 1);
+  });
+
+  it('AbortSignal.timeout 이 실제로 발동하면 code upstream 으로 던진다', async () => {
+    cfg.timeoutMs = 20;
+    cfg.maxRetries = 0;
+    const f = vi.fn(
+      (_url: unknown, init: { signal: AbortSignal }) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () =>
+            reject(new DOMException('The operation was aborted.', 'AbortError')),
+          );
+        }),
+    );
+    await expect(getJson(cfg, opts('off'), deps(f as unknown as typeof fetch))).rejects.toMatchObject({
+      code: 'upstream',
+    });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('호출자의 signal 이 타임아웃과 결합되어(AbortSignal.any) 호출자가 취소하면 즉시 중단된다', async () => {
+    cfg.timeoutMs = 5000; // 이 테스트에서는 타임아웃이 아니라 호출자의 abort 로만 끝나야 한다
+    cfg.maxRetries = 0;
+    const controller = new AbortController();
+    const f = vi.fn(
+      (_url: unknown, init: { signal: AbortSignal }) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () =>
+            reject(new DOMException('The operation was aborted.', 'AbortError')),
+          );
+        }),
+    );
+    setTimeout(() => controller.abort(), 5);
+    await expect(
+      getJson(cfg, { ...opts('off'), signal: controller.signal }, deps(f as unknown as typeof fetch)),
+    ).rejects.toMatchObject({ code: 'upstream' });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('cacheMode off 는 응답을 캐시에 쓰지 않는다', async () => {
+    const f = vi.fn(async () => json({ ok: true }));
+    await getJson(cfg, opts('off'), deps(f as unknown as typeof fetch));
+    const cached = readdirSync(cfg.cacheDir).filter((name) => name.startsWith('resp-'));
+    expect(cached).toEqual([]);
   });
 });
