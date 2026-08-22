@@ -38,12 +38,12 @@ describe('CT.gov 쿼리 조립', () => {
     expect(params['filter.overallStatus']).toBe('RECRUITING|COMPLETED');
   });
 
-  it('phase 는 filter.advanced 의 AREA[Phase] 로 간다', () => {
+  it('phase 는 filter.advanced 의 AREA[Phase] 로 간다 — 단일 표현식은 괄호 없이 나간다', () => {
     const { params } = buildSearchParams({ phase: ['phase_2', 'phase_3'] }, opts);
-    expect(params['filter.advanced']).toBe('(AREA[Phase]PHASE2 OR AREA[Phase]PHASE3)');
+    expect(params['filter.advanced']).toBe('AREA[Phase]PHASE2 OR AREA[Phase]PHASE3');
   });
 
-  it('표현식이 둘 이상이면 괄호로 싸 AND 로 잇는다', () => {
+  it('표현식이 둘 이상이면 각각 괄호로 싸 AND 로 잇는다', () => {
     const { params } = buildSearchParams({ phase: ['phase_3'], studyType: 'interventional' }, opts);
     expect(params['filter.advanced']).toBe('(AREA[Phase]PHASE3) AND (AREA[StudyType]INTERVENTIONAL)');
   });
@@ -66,19 +66,42 @@ describe('CT.gov 쿼리 조립', () => {
     }
   });
 
+  it('--near 만 있고 --radius 가 없으면 기본 반경을 적용하고 경고를 남긴다', () => {
+    const { params, warnings } = buildSearchParams({ near: { lat: 37.5665, lon: 126.978 } }, opts);
+    expect(params['filter.geo']).toBe('distance(37.5665,126.978,50km)');
+    expect(warnings.map((w) => w.code)).toContain('geo_radius_defaulted');
+    expect(warnings.find((w) => w.code === 'geo_radius_defaulted')?.message).toContain('50km');
+  });
+
   it('날짜 범위는 AREA[...]RANGE[...] 이고, 누락 시험을 배제한다는 경고를 남긴다', () => {
     const { params, warnings } = buildSearchParams({ updatedSince: '2025-01-01' }, opts);
-    expect(params['filter.advanced']).toBe('(AREA[LastUpdatePostDate]RANGE[2025-01-01, MAX])');
+    expect(params['filter.advanced']).toBe('AREA[LastUpdatePostDate]RANGE[2025-01-01, MAX]');
     expect(warnings.map((w) => w.code)).toContain('date_filter_excludes_missing');
   });
 
-  it('양쪽 경계가 있으면 RANGE 의 두 자리를 모두 채운다', () => {
-    const { params } = buildSearchParams({ startAfter: '2024-01-01', startBefore: '2024-12-31' }, opts);
-    expect(params['filter.advanced']).toBe('(AREA[StartDate]RANGE[2024-01-01, 2024-12-31])');
+  it('양쪽 경계가 있으면 RANGE 의 두 자리를 모두 채우고 경고를 남긴다', () => {
+    const { params, warnings } = buildSearchParams({ startAfter: '2024-01-01', startBefore: '2024-12-31' }, opts);
+    expect(params['filter.advanced']).toBe('AREA[StartDate]RANGE[2024-01-01, 2024-12-31]');
+    expect(warnings.map((w) => w.code)).toContain('date_filter_excludes_missing');
+  });
+
+  it('completion 날짜 범위도 같은 경고를 남긴다', () => {
+    const { params, warnings } = buildSearchParams(
+      { completionAfter: '2024-01-01', completionBefore: '2024-12-31' },
+      opts,
+    );
+    expect(params['filter.advanced']).toBe('AREA[PrimaryCompletionDate]RANGE[2024-01-01, 2024-12-31]');
+    expect(warnings.map((w) => w.code)).toContain('date_filter_excludes_missing');
   });
 
   it('날짜 형식이 YYYY-MM-DD 가 아니면 exit 2 다', () => {
-    expect(() => buildSearchParams({ updatedSince: '2025/01/01' }, opts)).toThrow();
+    try {
+      buildSearchParams({ updatedSince: '2025/01/01' }, opts);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      expect((e as CtregError).exit).toBe(EXIT.USAGE);
+      expect((e as CtregError).hint).toBeDefined();
+    }
   });
 
   it('pageSize 를 캡에 묶고 countTotal 을 켠다', () => {

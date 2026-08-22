@@ -35,13 +35,14 @@ const CORE_FIELDS = [
 const SECTION_FIELDS: Record<Exclude<IncludeSection, 'core' | 'all'>, string[]> = {
   // 모듈 전체가 아니라 leaf 필드로 지정한다 — capability.ts 의 detail.eligibilityText 는
   // eligibilityCriteria 텍스트 하나를 가리키지, eligibilityModule 전체를 가리키지 않는다.
+  // Task 10 의 매퍼가 실제로 읽는 필드만 싣는다 — 매퍼가 안 쓰는 필드를 실어봐야
+  // leaf-path 로 payload 를 줄인 취지가 무색해진다.
   eligibility: [
     'protocolSection.eligibilityModule.eligibilityCriteria',
     'protocolSection.eligibilityModule.healthyVolunteers',
     'protocolSection.eligibilityModule.sex',
     'protocolSection.eligibilityModule.minimumAge',
     'protocolSection.eligibilityModule.maximumAge',
-    'protocolSection.eligibilityModule.stdAges',
   ],
   outcomes: ['protocolSection.outcomesModule'],
   contacts: [
@@ -94,8 +95,18 @@ export function buildSearchParams(
     throw usageError('--radius 는 --near 없이 쓸 수 없습니다', '--near <lat,lon> 으로 중심 좌표를 주세요.');
   }
   if (q.near) {
-    const r = q.radius ?? { value: 50, unit: 'km' as const };
-    params['filter.geo'] = `distance(${q.near.lat},${q.near.lon},${r.value}${r.unit})`;
+    if (q.radius) {
+      params['filter.geo'] = `distance(${q.near.lat},${q.near.lon},${q.radius.value}${q.radius.unit})`;
+    } else {
+      const r = { value: 50, unit: 'km' as const };
+      params['filter.geo'] = `distance(${q.near.lat},${q.near.lon},${r.value}${r.unit})`;
+      // --radius 를 안 주면 CT.gov 로 보낼 반경을 임의로 정한 것 — 다른 암묵적 축소와
+      // 마찬가지로 caller 가 볼 수 없는 필터이니 반드시 경고를 남긴다.
+      warnings.push({
+        code: 'geo_radius_defaulted',
+        message: `--radius 를 지정하지 않아 기본값 ${r.value}${r.unit} 를 적용했습니다. 이 범위 밖의 시험은 결과에서 빠집니다.`,
+      });
+    }
   }
 
   const advanced: string[] = [];
@@ -116,7 +127,11 @@ export function buildSearchParams(
     });
   }
 
-  if (advanced.length > 0) params['filter.advanced'] = advanced.map((p) => `(${p})`).join(' AND ');
+  // 참조 구현과 동일하게: 표현식이 하나뿐이면 괄호 없이, 둘 이상이면 각각 괄호로
+  // 싸 AND 로 잇는다. 표현식이 하나일 때 무조건 괄호를 씌우는 것은 §7.1 및
+  // 참조 buildSearchQuery() 와 다르다.
+  if (advanced.length === 1) params['filter.advanced'] = advanced[0];
+  else if (advanced.length > 1) params['filter.advanced'] = advanced.map((p) => `(${p})`).join(' AND ');
 
   params.fields = buildFields(o.include).join('|');
   params.pageSize = Math.min(q.pageSize ?? CAPS.pageSize.default, CAPS.pageSize.max);
