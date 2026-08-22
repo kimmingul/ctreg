@@ -213,6 +213,7 @@ describe('CT.gov → TrialRecord 매핑', () => {
     expect(record).not.toHaveProperty('outcomes');
     expect(record).not.toHaveProperty('outcomesTotal');
     expect(record).not.toHaveProperty('contacts');
+    expect(record).not.toHaveProperty('crossIds');
     expect(record.sponsor).toEqual({ lead: 'Lead Co' });
     expect(record.sponsor).not.toHaveProperty('collaborators');
     expect(() => TrialRecordSchema.parse(record)).not.toThrow();
@@ -393,5 +394,54 @@ describe('CT.gov → TrialRecord 매핑', () => {
       },
     };
     expect(() => mapStudy(s, opts(), AT)).toThrow();
+  });
+
+  // 리뷰 라운드 3, 항목 1 — 계약 위반 예외의 메시지가 zod 이슈 덤프가 아니라
+  // 실패한 필드 경로를 담은 한 줄 요약이어야 한다. warnings[] 에 그대로 얹히는 문구다.
+  it('계약 위반 예외 메시지는 zod 덤프가 아니라 필드 경로 한 줄 요약이다', () => {
+    const s = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000020' },
+        statusModule: {},
+        conditionsModule: { conditions: ['X'] },
+      },
+    };
+    expect(() => mapStudy(s, opts(), AT)).toThrow(/NCT00000020.*title/);
+    try {
+      mapStudy(s, opts(), AT);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      expect(message).not.toContain('\n');
+      expect(message).toContain('title');
+    }
+  });
+
+  // 리뷰 라운드 3, 항목 3 — geoPoint 가 깨져도 그 사이트 하나만 좌표를 잃고, 스키마 위반으로
+  // 전체 study 가 죽지 않는다. 다른 정상 사이트의 좌표는 그대로 남는다.
+  it('malformed geoPoint 는 그 장소의 좌표만 생략하고 나머지는 살아남는다', () => {
+    const s = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000021', briefTitle: 'Bad Geo' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        contactsLocationsModule: {
+          locations: [
+            { city: 'Good', geoPoint: { lat: 37.5665, lon: 126.978 } },
+            { city: 'MissingLon', geoPoint: { lat: 35.1796 } },
+            { city: 'NonNumeric', geoPoint: { lat: 'x', lon: 'y' } },
+          ],
+        },
+      },
+    };
+    const { record, warnings } = mapStudy(s, opts(), AT);
+    expect(record.locations).toHaveLength(3);
+    expect(record.locations?.[0]).toMatchObject({ city: 'Good', geo: { lat: 37.5665, lon: 126.978 } });
+    expect(record.locations?.[1]?.city).toBe('MissingLon');
+    expect(record.locations?.[1]).not.toHaveProperty('geo');
+    expect(record.locations?.[2]?.city).toBe('NonNumeric');
+    expect(record.locations?.[2]).not.toHaveProperty('geo');
+    expect(() => TrialRecordSchema.parse(record)).not.toThrow();
+    expect(warnings.filter((w) => w.code === 'location_geo_invalid')).toHaveLength(2);
   });
 });

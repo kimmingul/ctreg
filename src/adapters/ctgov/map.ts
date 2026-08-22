@@ -2,6 +2,7 @@
  * 하버사인은 clinicaltrialsgov-mcp-server (Copyright Casey Hand / cyanheads, Apache-2.0)
  * 의 `geo-helpers.ts` 에서 파생했다. 원본은 마일을 반환하며 여기서는 km 로 낸다.
  */
+import { ZodError } from 'zod';
 import type { Warning } from '../../core/capability.js';
 import { CAPS, type FetchOpts } from '../../core/query.js';
 import { TrialRecordSchema, type TrialLocation, type TrialRecord } from '../../core/record.js';
@@ -40,6 +41,20 @@ function toSex(raw?: string): { sex?: 'all' | 'female' | 'male' | 'unknown'; sex
   return { sex: SEX_IN[raw] ?? 'unknown', sexRaw: raw };
 }
 
+/**
+ * `geoPoint` 는 lat/lon 이 둘 다 유한수일 때만 쓸모가 있다. CT.gov 는 이 필드를 늘 온전히
+ * 채우는 것으로 보이지만(실제 픽스처로 반례를 못 찾았다), 좌표 하나가 깨졌다고 사이트 전체를
+ * 잃는 것보다 좌표 없이 나머지 정보를 보존하는 편이 낫다 — 쓸 수 없는 좌표를 생략하는 것도
+ * 다른 모든 없는 필드와 같은 정직한 진술이지, 조작이 아니다.
+ */
+function validGeo(gp: unknown): { lat: number; lon: number } | undefined {
+  if (!gp || typeof gp !== 'object') return undefined;
+  const { lat, lon } = gp as { lat?: unknown; lon?: unknown };
+  return typeof lat === 'number' && Number.isFinite(lat) && typeof lon === 'number' && Number.isFinite(lon)
+    ? { lat, lon }
+    : undefined;
+}
+
 export function mapStudy(
   study: unknown,
   o: FetchOpts,
@@ -70,10 +85,18 @@ export function mapStudy(
     locationsTotal = rawLocations.length;
     let mapped: TrialLocation[] = rawLocations.map((l) => {
       const st = toStatus(l.status);
+      const geo = validGeo(l.geoPoint);
+      if (l.geoPoint && !geo) {
+        warnings.push({
+          code: 'location_geo_invalid',
+          message: `장소(${l.facility ?? l.city ?? '이름 없음'})의 geoPoint 가 유효하지 않아 좌표를 생략했습니다.`,
+          id,
+        });
+      }
       return {
         ...defined({ facility: l.facility, city: l.city, state: l.state, country: l.country }),
         ...(l.status ? { status: st.status, statusRaw: st.statusRaw } : {}),
-        ...(l.geoPoint ? { geo: { lat: l.geoPoint.lat, lon: l.geoPoint.lon } } : {}),
+        ...(geo ? { geo } : {}),
       } as TrialLocation;
     });
     if (o.near) {
@@ -210,6 +233,19 @@ export function mapStudy(
   // 자기 출력을 스스로 검증한다. title 처럼 스키마가 필수로 요구하는 필드가 원문에
   // 없어 undefined 로 새는 등, 여기서 미처 막지 못한 모든 계약 위반을 여기서 잡는다.
   // 계약을 못 지키는 레코드는 조용히 틀리게 돌아가는 대신 여기서 크게 던진다 —
-  // 호출자(어댑터)는 study 단위로 잡아 경고로 격하한다.
-  return { record: TrialRecordSchema.parse(record), warnings };
+  // 호출자(어댑터)는 study 단위로 잡아 경고로 격하한다. ZodError 를 그대로 던지면 그
+  // 경고 메시지가 zod 의 다중 라인 이슈 덤프가 되어 버리므로, 실패한 필드 경로 한 줄
+  // 요약으로 바꿔 upstreamError 로 다시 던진다.
+  try {
+    return { record: TrialRecordSchema.parse(record), warnings };
+  } catch (e) {
+    if (e instanceof ZodError) {
+      const detail = e.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ');
+      throw upstreamError(
+        `${id} 이(가) 레코드 계약을 만족하지 못했습니다 — ${detail}`,
+        'CT.gov 응답에서 해당 필드를 확인하세요.',
+      );
+    }
+    throw e;
+  }
 }
