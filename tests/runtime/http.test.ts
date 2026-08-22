@@ -134,25 +134,40 @@ describe('HTTP 클라이언트', () => {
     expect(f).toHaveBeenCalledTimes(cfg.maxRetries + 1);
   });
 
-  it('AbortSignal.timeout 이 실제로 발동하면 code upstream 으로 던진다', async () => {
-    cfg.timeoutMs = 20;
-    cfg.maxRetries = 0;
-    const f = vi.fn(
-      (_url: unknown, init: { signal: AbortSignal }) =>
-        new Promise<Response>((_resolve, reject) => {
-          init.signal.addEventListener('abort', () =>
-            reject(new DOMException('The operation was aborted.', 'AbortError')),
-          );
-        }),
-    );
-    await expect(getJson(cfg, opts('off'), deps(f as unknown as typeof fetch))).rejects.toMatchObject({
-      code: 'upstream',
-    });
-    expect(f).toHaveBeenCalledTimes(1);
-  });
+  // 이 테스트의 주장 자체가 "AbortSignal.timeout(cfg.timeoutMs) 이 실제로 발동한다"
+  // 이므로 실제 타이머를 없앨 수 없다 — 타이머가 주장의 일부다. 대신 마진을 넉넉히
+  // 준다: 20ms 는 CPU 부하 아래 스케줄링 지연에 잡아먹힐 수 있었으므로 200ms 로
+  // 올리고, vitest 의 기본 테스트 타임아웃(5000ms)보다 넉넉한 여유를 명시적으로 준다.
+  it(
+    'AbortSignal.timeout 이 실제로 발동하면 code upstream 으로 던진다',
+    async () => {
+      cfg.timeoutMs = 200;
+      cfg.maxRetries = 0;
+      const f = vi.fn(
+        (_url: unknown, init: { signal: AbortSignal }) =>
+          new Promise<Response>((_resolve, reject) => {
+            init.signal.addEventListener('abort', () =>
+              reject(new DOMException('The operation was aborted.', 'AbortError')),
+            );
+          }),
+      );
+      await expect(getJson(cfg, opts('off'), deps(f as unknown as typeof fetch))).rejects.toMatchObject({
+        code: 'upstream',
+      });
+      expect(f).toHaveBeenCalledTimes(1);
+    },
+    10_000,
+  );
 
+  // 이 테스트가 실제로 주장하는 것은 "호출자의 signal 이 AbortSignal.any 로 내부
+  // 타임아웃과 결합되고, 호출자가 취소하면 code upstream 으로 던지며 fetch 를 한 번만
+  // 부른다"이다 — 언제 취소되는지는 주장에 안 들어간다. 이전에는 그 "언제"를 실제
+  // setTimeout(5ms) 로 만들어 cfg.timeoutMs(5000ms) 와 경합했다(부하가 크면 마진이
+  // 줄어든다). 여기서는 벽시계를 아예 쓰지 않는다: 주입한 fetch 가 signal 에
+  // 리스너를 붙인 다음 같은 마이크로태스크 큐에서 즉시 취소해, "리스너가 붙은 뒤
+  // 취소된다"는 순서만 보장하고 실제 시간 간격은 아무 역할도 하지 않는다.
   it('호출자의 signal 이 타임아웃과 결합되어(AbortSignal.any) 호출자가 취소하면 즉시 중단된다', async () => {
-    cfg.timeoutMs = 5000; // 이 테스트에서는 타임아웃이 아니라 호출자의 abort 로만 끝나야 한다
+    cfg.timeoutMs = 5000; // 내부 타임아웃은 관여하지 않는다 — 결합된 신호 전파만 검사한다
     cfg.maxRetries = 0;
     const controller = new AbortController();
     const f = vi.fn(
@@ -161,9 +176,9 @@ describe('HTTP 클라이언트', () => {
           init.signal.addEventListener('abort', () =>
             reject(new DOMException('The operation was aborted.', 'AbortError')),
           );
+          queueMicrotask(() => controller.abort());
         }),
     );
-    setTimeout(() => controller.abort(), 5);
     await expect(
       getJson(cfg, { ...opts('off'), signal: controller.signal }, deps(f as unknown as typeof fetch)),
     ).rejects.toMatchObject({ code: 'upstream' });
