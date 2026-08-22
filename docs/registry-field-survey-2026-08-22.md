@@ -197,3 +197,58 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 나오면, 사용자는 "결과 없음"과 "그렇게 검색할 수 없음"을 구분하지 못한다 — 이 CLI 가
 존재하는 이유가 그 구분이다. API 문서(67 Bricks v0.6)의 질의 필드 목록을 확인한 뒤에
 선언을 쓴다.
+
+
+## ISRCTN 질의 필드 — 전수 실측 (2026-08-22, 어댑터 #2 준비)
+
+API 문서(67 Bricks v0.6, `3.2.1.x`)가 정의한 필드를 **하나씩 실제로 쳐서** 확인했다.
+문서만 읽고 capability 를 선언하면 안 되는 이유가 이 표에 있다.
+
+### 작동 확인 — 이 축들은 선언해도 된다
+
+| 질의 | 건수 |
+| :-- | --: |
+| `condition:diabetes` | 1118 |
+| `conditionCategory:"Cancer"` | 3001 |
+| `intervention:aspirin` | 145 |
+| `recruitmentCountry:"United Kingdom"` | 14958 |
+| `recruitmentCountry:"Korea, South"` | 206 |
+| `phase:"Phase III"` | 911 |
+| `phase:"Phase II/III"` | 123 |
+| `ageRange:"Adult"` | 17746 |
+| `gender:"Female"` | 2970 |
+| `sponsorOrganisation:"University of Oxford"` | 659 |
+| `funderName:"Wellcome Trust"` | 498 |
+| `title:covid` | 325 |
+| `outcomeMeasures:mortality` | 1633 |
+| `overallStartDate GE 2020-01-01T00:00:00` | 28592 |
+| `condition:"lung cancer" AND recruitmentCountry:"Korea, South"` | 3 |
+
+### 문서에 있으나 **작동하지 않는** 것
+
+- **`trialStatus`** — 문서 `3.2.1.1` 이 정의하고 값 목록(Ongoing/Completed/Stopped/Suspended/
+  Enrolling by invitation)까지 준다. **다섯 값 전부 0 이다.** 레코드 XML 에는 이 요소가 있다.
+- **`recruitmentStatus`** — 문서에 있고 `"Recruiting"`·`"No longer recruiting"` 둘 다 0.
+
+**즉 ISRCTN 에는 `status` 축이 사실상 없다.** ctgov 의 `--status recruiting` 에 해당하는 것을
+줄 수 없다. capability 에 `status: false` 로 선언해야 한다 — `true` 로 선언하면 사용자는
+"모집 중인 시험이 없다"와 "이 레지스트리는 모집 상태로 검색할 수 없다"를 구분하지 못한다.
+
+### 구문 함정 셋 — 셋 다 조용히 0 을 낸다
+
+1. **따옴표.** `recruitmentCountry:United Kingdom` → 0. `recruitmentCountry:"United Kingdom"` → 14958.
+   공백이 있는 값은 반드시 따옴표. `phase:Phase III` → 0, `phase:"Phase III"` → 911.
+2. **날짜는 콜론이 아니라 공백.** `overallStartDate:GE 2020-01-01T00:00:00` → 0.
+   `overallStartDate GE 2020-01-01T00:00:00` → 28592. 비교 연산자(LT/LE/GT/GE/NE)는 별개 토큰이다.
+3. **값 어휘.** `gender:"Both"` → 0, `gender:"Female"` → 2970. 값이 틀려도 0 이다.
+
+### 어댑터 저자에게 — 이것이 핵심이다
+
+**필드명이 틀려도 0, 값이 틀려도 0, 구문이 틀려도 0, 필드가 죽어 있어도 0 이다.**
+그리고 그 0 은 "그런 시험이 없다"와 **출력상 구별되지 않는다.** ctgov 에는 이 실패 양식이
+없다(CT.gov 는 모르는 파라미터에 400 을 낸다).
+
+따라서 ISRCTN 어댑터는 **자기가 만든 질의가 실제로 무언가를 찾는다는 것을 스스로 증명해야
+한다.** 계약 스위트에 "알려진 질의가 0 이 아니다" 검사를 넣는 것이 최소한이고, 축마다
+위 표의 실측 건수를 회귀 기준으로 삼을 수 있다(건수는 시간이 지나면 늘어나므로 **0 이 아님**을
+기준으로 삼고 정확한 수는 쓰지 않는다).
