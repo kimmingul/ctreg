@@ -104,10 +104,26 @@ export function mapStudy(
       mapped = mapped
         .map((l) => (l.geo ? { ...l, distanceKm: haversineKm(center, l.geo) } : l))
         .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+    } else if (o.locationTerm) {
+      const needle = o.locationTerm.toLowerCase();
+      const hit = (l: TrialLocation) =>
+        [l.facility, l.city, l.state, l.country].some((f) => f?.toLowerCase().includes(needle));
+      // 안정 분할: 일치하는 것을 원래 순서대로 앞에, 나머지를 원래 순서대로 뒤에.
+      mapped = [...mapped.filter(hit), ...mapped.filter((l) => !hit(l))];
     }
     const cap = want('locations') ? CAPS.locations.max : o.caps.locations;
     if (mapped.length > cap) {
-      warnings.push({ code: 'locations_truncated', message: `장소 ${mapped.length}곳 중 ${cap}곳만 담았습니다.`, id, at: cap });
+      const ordered = o.near
+        ? ' 가까운 순으로 정렬했습니다.'
+        : o.locationTerm
+          ? ` '${o.locationTerm}' 에 일치하는 장소를 앞에 두었습니다.`
+          : '';
+      warnings.push({
+        code: 'locations_truncated',
+        message: `이 시험의 장소 ${mapped.length}곳 중 ${cap}곳만 담았습니다.${ordered}`,
+        id,
+        at: cap,
+      });
       mapped = mapped.slice(0, cap);
     }
     locations = mapped;

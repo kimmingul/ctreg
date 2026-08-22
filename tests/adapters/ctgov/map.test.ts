@@ -471,3 +471,39 @@ describe('CT.gov → TrialRecord 매핑', () => {
     expect(warnings.filter((w) => w.code === 'location_geo_invalid')).toHaveLength(2);
   });
 });
+
+describe('장소 절단은 필터에 걸린 근거를 남긴다', () => {
+  const withLocations = (nctId: string, locs: unknown[]) => ({
+    protocolSection: {
+      identificationModule: { nctId, briefTitle: 'Sites' },
+      statusModule: { overallStatus: 'RECRUITING' },
+      conditionsModule: { conditions: ['X'] },
+      contactsLocationsModule: { locations: locs },
+    },
+  });
+
+  it('--location 으로 좁혔으면 매칭된 장소가 잘림에서 살아남는다', () => {
+    const study = withLocations('NCT00000001', [
+      ...Array.from({ length: 15 }, (_, i) => ({ city: `Elsewhere${i}`, country: 'United States' })),
+      { facility: 'Seoul National University Hospital', city: 'Seoul', country: 'South Korea' },
+    ]);
+    const { record, warnings } = mapStudy(study, opts({ locationTerm: 'Seoul' }), AT);
+    expect(record.locations).toHaveLength(CAPS.locations.default);
+    expect(record.locations!.some((l) => l.city === 'Seoul')).toBe(true);
+    expect(warnings.find((w) => w.code === 'locations_truncated')?.message).toContain('일치하는 장소를 앞에');
+  });
+
+  it('locationTerm 이 없으면 원래 순서를 유지한다', () => {
+    const study = withLocations('NCT00000002', Array.from({ length: 12 }, (_, i) => ({ city: `City${i}`, country: 'US' })));
+    const { record } = mapStudy(study, opts(), AT);
+    expect(record.locations!.map((l) => l.city)).toEqual(
+      Array.from({ length: CAPS.locations.default }, (_, i) => `City${i}`),
+    );
+  });
+
+  it('경고가 무엇이 잘렸는지 말한다 — 검색 결과가 아니라 이 시험의 장소', () => {
+    const study = withLocations('NCT00000003', Array.from({ length: 37 }, (_, i) => ({ city: `City${i}`, country: 'US' })));
+    const { warnings } = mapStudy(study, opts(), AT);
+    expect(warnings.find((w) => w.code === 'locations_truncated')?.message).toContain('이 시험의 장소');
+  });
+});

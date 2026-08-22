@@ -225,6 +225,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
       cacheMode,
       raw: v.raw ?? false,
       ...(near ? { near } : {}),
+      ...(v.location ? { locationTerm: v.location } : {}),
     },
     results: {
       sections: sections as ResultsOpts['sections'],

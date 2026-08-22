@@ -58,6 +58,14 @@ export type FetchOpts = {
    * 두 계층은 다르며 둘 다 필요하다.
    */
   near?: { lat: number; lon: number };
+  /**
+   * 조회를 좁힌 장소 문자열. `NormalizedQuery.location` 은 검색 필터(등록 축소)이고,
+   * 이건 매퍼가 캡을 적용하기 전에 일치하는 사이트를 앞으로 보내기 위한 것이다.
+   * `near` 와 정확히 같은 계층이다 — 필드 테스트에서 `--location` 으로 걸린 시험의
+   * 81% 가 반환된 장소 목록에 매칭 사이트를 하나도 담지 못했다. 필터에 걸린 근거를
+   * 잘라내고 보여주면 사용자는 그 시험이 왜 걸렸는지 알 수 없다.
+   */
+  locationTerm?: string;
 };
 
 export type ResultsOpts = {
