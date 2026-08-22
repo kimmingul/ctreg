@@ -440,9 +440,11 @@ capability 선언 덤프. 네트워크를 치지 않는다. `--registry <key>` �
 
 Task 16a 에서 `scripts/field-test.ts` 로 실제 ClinicalTrials.gov API(`https://clinicaltrials.gov/api/v2`) 를 호출해 아래 5개 항목을 모두 확인했다. 원본 기록은 `docs/field-test-2026-08-22.md`.
 
-1. **`query.lead` / `query.id` / `query.patient` 의 실제 동작과 매칭 범위** — 셋 다 200 을 반환하고 매칭한다. `query.lead`(예: `Merck Sharp & Dohme`)와 `query.id`(예: `NCT04280705`)는 기대한 대로 작동한다. `query.patient` 는 자유서술 텍스트를 받아 매칭하는 게 확인됐다(`lung cancer`→20,183건, `woman with breast cancer`→6,746건) — 단, 필드 테스트 스크립트의 예시 문구(`62 year old woman with EGFR positive lung cancer`)는 과도하게 구체적이어서 0건이 나왔다. 이는 파라미터 자체의 결함이 아니라 그 예시 문구가 안 맞은 것이며, 별도로 짧은 문구 두 개로 재확인했다. 세 축 모두 노출을 유지한다.
-2. **`AREA[LastUpdatePostDate]RANGE[2025-01-01, MAX]` 형태의 Essie 문법** — 확인됨. 그대로 200 을 반환하고 totalCount 가 나온다. `dateRange()` 의 현재 구현(`src/adapters/ctgov/query.ts`)을 그대로 유지한다.
-3. **`filter.ids` 의 배치 상한 및 URL 길이 한계** — 50개, 200개 배치 모두 200 을 반환했다(URL 길이 문제 없음). 즉 실측 상한은 잠정값 50 보다 낮지 않다 — 오히려 최소 200 까지는 열려 있다. `CTGOV_CAPABILITY.limits.maxBatchIds: 50` 은 보수적으로 유지한다(변경 불필요 — 실측이 잠정값보다 낮게 나온 경우에만 낮추기로 했었다).
+필드 테스트는 각 검사가 스스로 적어둔 기대를 실제 응답과 대조해 pass/fail/inconclusive 세 상태로 판정한다 — "요청이 던지지 않았다"만으로 통과시키지 않는다(초판 스크립트는 그렇게 판정해 `query.patient` 가 totalCount=0 인데도 통과로 찍히는 결함이 있었고, 재검토에서 고쳤다).
+
+1. **`query.lead` / `query.id` / `query.patient` 의 실제 동작과 매칭 범위** — `query.lead`(`Merck Sharp & Dohme`, totalCount=2172)는 확인. `query.id`(`NCT04280705`)는 반환된 study 의 `nctId` 가 요청한 값과 정확히 일치하는 것까지 확인(단순히 200 이 아니라). `query.patient` 는 파라미터 자체가 작동하는 것은 확인됐다(단순 문구 `lung cancer`→totalCount=20,183) — 다만 필드 테스트의 예시 문구(`62 year old woman with EGFR positive lung cancer`)는 totalCount=0 이 나와 **그 행 자체는 inconclusive 로 남겼다**: 단일 요청으로는 "이 문구가 안 맞은 것"과 "파라미터가 고장난 것"을 구분할 수 없기 때문이다. 단순 문구 재확인이 후자를 배제하는 근거이지, 전자를 확정하는 근거는 아니다. 세 축 모두 노출을 유지한다.
+2. **`AREA[LastUpdatePostDate]RANGE[2025-01-01, MAX]` 형태의 Essie 문법** — 확인됨(totalCount=170,926). `dateRange()` 의 현재 구현(`src/adapters/ctgov/query.ts`)을 그대로 유지한다.
+3. **`filter.ids` 의 배치 상한 및 URL 길이 한계** — 초판은 합성 NCT ID(`NCT0428xxxx`, 대부분 미존재)로 시험해 "긴 URL이 받아들여진다"만 증명하고 배치 자체는 시험하지 못했다. 재검토에서 실제 검색 결과에서 모은 진짜 NCT ID로 50/100/200/300/500개를 늘려가며 `countTotal` 이 요청 개수와 정확히 일치하는지 확인했고, **500개까지 전부 정확히 일치**했다(잘림 없음, 오류 없음). 즉 실측 상한은 최소 500 이상이며 잠정값 50 보다 한참 위다. `CTGOV_CAPABILITY.limits.maxBatchIds: 50` 은 보수적으로 유지한다(변경 불필요 — 낮추는 경우만 조치 대상이었다). 500 을 넘는 지점은 시도하지 않았다 — "상한이 없다"는 뜻이 아니라 "적어도 500까지는 없다"는 뜻이다.
 4. **`--phase` / `--study-type` 을 `filter.advanced` 로 거는 것과 `query.term` 에 섞는 것 중 어느 쪽이 정확한가** — `filter.advanced` 로 거는 현재 구현(`AREA[Phase]PHASE3`, `AREA[StudyType]INTERVENTIONAL`)이 맞다. 둘 다 200 + 정합적인 totalCount 로 확인됨.
 5. **`hasResults` 필터 문법** — `AREA[HasResults]true` 형태가 실제로 200 을 반환하고(totalCount=79,794) 문법 자체는 유효한 것으로 확인됐다. 그럼에도 **슬라이스 1 에서는 필터로 노출하지 않는다** — 새 CLI 표면을 여는 것은 슬라이스 2 범위라는 프로젝트 판단(Task 16 지시)에 따른 것이지, 문법이 불확실해서가 아니다. 레코드 필드(`hasResults: boolean`)로는 계속 낸다.
 

@@ -1,25 +1,40 @@
 # ctreg 필드 테스트 — ClinicalTrials.gov
 
-실행: 2026-08-22T02:09:50.772Z
+실행: 2026-08-22T02:17:11.760Z
 대상: https://clinicaltrials.gov/api/v2
 
 스펙 `docs/superpowers/specs/2026-08-22-ctreg-design.md` §7.4 의 미검증 문법을 실제 API 로 확인한 결과.
+판정은 "요청이 던지지 않았다"가 아니라 각 행의 기대(expect)를 응답과 대조해서 낸다.
+`filter.ids` 배치 검사는 `query.cond=cancer` 검색으로 모은 실제 NCT ID 600개를 사용했다(이전 판은 합성 ID라 상한을 시험하지 못했다).
+
+집계: ✅ 통과 13 · ❌ 실패 0 · ⚠️ 불확정 1
 
 | 검사 | 기대 | 판정 | 실제 |
 | :-- | :-- | :-- | :-- |
-| query.lead | 200 + totalCount > 0 | ✅ 통과 | totalCount=2172, studies=1, nextPageToken=있음 |
-| query.id | 200 + 해당 NCT 매칭 | ✅ 통과 | totalCount=1, studies=1, nextPageToken=있음 |
-| query.patient | 200 + totalCount > 0 | ✅ 통과 | totalCount=0, studies=0, nextPageToken=없음 |
-| AREA[…]RANGE 날짜 | 200 + totalCount > 0 | ✅ 통과 | totalCount=170926, studies=1, nextPageToken=있음 |
-| AREA[Phase] 값 | 200 + totalCount > 0 | ✅ 통과 | totalCount=49704, studies=1, nextPageToken=있음 |
-| AREA[StudyType] 값 | 200 + totalCount > 0 | ✅ 통과 | totalCount=457756, studies=1, nextPageToken=있음 |
-| filter.ids 50개 | 200 (URL 길이 포함) | ✅ 통과 | totalCount=-, studies=4, nextPageToken=없음 |
-| filter.ids 200개 | 상한 확인 — 실패해도 정보 | ✅ 통과 | totalCount=-, studies=16, nextPageToken=없음 |
-| HasResults 필터 후보 A | 문법 확인 — 실패해도 정보 | ✅ 통과 | totalCount=79794, studies=1, nextPageToken=있음 |
-| pageToken 왕복 | nextPageToken 존재 확인 | ✅ 통과 | totalCount=14461, studies=1, nextPageToken=있음 |
+| query.lead | 200 + totalCount > 0 | ✅ 통과 | totalCount=2172 (>0 확인) |
+| query.id | 200 + 해당 NCT 매칭 (nctId === NCT04280705) | ✅ 통과 | nctId 일치 확인, totalCount=1 |
+| AREA[…]RANGE 날짜 | 200 + totalCount > 0 | ✅ 통과 | totalCount=170926 (>0 확인) |
+| AREA[Phase] 값 | 200 + totalCount > 0 | ✅ 통과 | totalCount=49704 (>0 확인) |
+| AREA[StudyType] 값 | 200 + totalCount > 0 | ✅ 통과 | totalCount=457756 (>0 확인) |
+| HasResults 필터 후보 A | 문법 확인 — 통과해도 슬라이스 2 까지는 CLI 에 노출하지 않음(불확실해서가 아니라 결정으로) | ✅ 통과 | totalCount=79794 — AREA[HasResults]true 문법 유효 확인. 노출은 슬라이스 2 로 의도적으로 미룸. |
+| pageToken 왕복 | nextPageToken 존재 확인 | ✅ 통과 | nextPageToken 있음, totalCount=14461 |
+| query.patient (원 문구) | 200 + totalCount > 0 | ⚠️ 불확정 | totalCount=0 — 이 구체적 문구가 안 맞은 것인지 파라미터 자체가 동작하지 않는지 단일 요청으론 판별 불가. 다음 행('query.patient (단순 문구 재확인)') 참고. |
+| query.patient (단순 문구 재확인) | 단순 문구로 재확인 — totalCount > 0 이면 파라미터 자체는 동작 | ✅ 통과 | totalCount=20183 — 단순 문구는 매칭됨. query.patient 파라미터 자체는 동작한다. 위 원문구의 totalCount=0 은 파라미터 고장이 아니라 그 구체적 문장·인구통계 조합이 텍스트로 매칭되는 시험이 없었던 것으로 해석 가능(확정은 아님 — 매칭 알고리즘 자체는 미공개). |
+| filter.ids 50개 (실제 ID) | 50개 전부 매칭 (totalCount=50) | ✅ 통과 | totalCount=50 — 50개 전부 매칭, 상한 아직 안 걸림 |
+| filter.ids 100개 (실제 ID) | 100개 전부 매칭 (totalCount=100) | ✅ 통과 | totalCount=100 — 100개 전부 매칭, 상한 아직 안 걸림 |
+| filter.ids 200개 (실제 ID) | 200개 전부 매칭 (totalCount=200) | ✅ 통과 | totalCount=200 — 200개 전부 매칭, 상한 아직 안 걸림 |
+| filter.ids 300개 (실제 ID) | 300개 전부 매칭 (totalCount=300) | ✅ 통과 | totalCount=300 — 300개 전부 매칭, 상한 아직 안 걸림 |
+| filter.ids 500개 (실제 ID) | 500개 전부 매칭 (totalCount=500) | ✅ 통과 | totalCount=500 — 500개 전부 매칭, 상한 아직 안 걸림 |
+
+## 해석
+
+- **query.patient**: 원 문구(totalCount=0)만으로는 파라미터 고장인지 문구가 안 맞은 것인지 판별할 수 없어 불확정으로 남겼다. 단순 문구("lung cancer") 재확인 결과가 그 판단 근거다 — 위 표에서 확인.
+- **filter.ids**: 합성 ID가 아니라 실제 검색 결과에서 모은 ID로 사이즈를 늘려가며 `countTotal`이 요청한 개수와 정확히 일치하는지 봤다. 실패(❌)가 나온 최소 사이즈가 있다면 그것이 실측 상한 후보다. 전부 통과했다면 최대로 시도한 사이즈까지는 상한에 걸리지 않았다는 뜻이지, "상한이 없다"는 뜻은 아니다.
+- **HasResults**: 통과는 문법이 유효하다는 뜻일 뿐이다. CLI 필터로 노출하지 않는 것은 이 판정과 무관하게 슬라이스 범위 결정이다.
 
 ## 조치
 
 - ❌ 항목은 어댑터에서 해당 플래그를 노출하지 않거나, 확인된 문법으로 고친다.
-- `filter.ids` 상한이 50 미만으로 확인되면 `CTGOV_CAPABILITY.limits.maxBatchIds` 를 실제 값으로 낮춘다.
-- HasResults 문법이 확인되지 않으면 슬라이스 2 로 미룬다. 레코드 필드로만 계속 낸다.
+- ⚠️ 항목은 확정이 아니다 — 추가 검사 없이 플래그를 새로 열지 않는다.
+- `filter.ids` 실측 상한이 잠정값 50 미만으로 확인되면 `CTGOV_CAPABILITY.limits.maxBatchIds` 를 낮춘다.
+- HasResults 문법이 유효해도 슬라이스 2 까지는 필터로 노출하지 않는다. 레코드 필드로만 낸다.
