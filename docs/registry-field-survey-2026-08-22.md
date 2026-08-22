@@ -9,6 +9,7 @@
 - 각 레지스트리의 공식 문서(API 문서, 필드 사전, 규제기관 발간 가이드)와 실제 검색/상세 페이지를 WebFetch/WebSearch 로 열람해 필드 존재 여부를 확인했다.
 - 확인하지 못한 값은 `?` 로 남기고, 왜 확인하지 못했는지와 무엇을 보면 확인되는지를 각주로 적었다. 추정으로 채우지 않았다.
 - CT.gov 열은 이미 스펙 §7(`ctgov` 어댑터, CT.gov API v2 기준)이 확정한 내용이므로 전부 `O` 로 둔다.
+- **`X`와 `~`를 가르는 기준.** 스키마(필수 데이터셋 또는 문서화된 필드 목록) 자체에 해당 개념이 들어갈 자리가 아예 없으면 `X`다. 자리는 있는데(문서에 필드로 명시되어 있는데) 값의 의미·구조가 CT.gov와 다르거나, 필수는 아니고 원 데이터 제공자가 채웠을 때만 조건부로 나타나는 부가 필드면 `~`다 — "필드가 없다"와 "필드는 있지만 항상 채워진다는 보장이 없다"는 서로 다른 판정이라 기호도 다르게 쓴다. 이 기준이 가장 뚜렷하게 걸리는 자리가 아래 phase/ICTRP 행이다: WHO TRDS(필수 최소 데이터셋) 24개 항목에는 phase가 없지만, 그 밖의 검색 포털 고급검색에는 phase 필터가 존재한다 — "TRDS라는 스키마엔 자리가 없다"가 아니라 "조건부 부가 필드로는 있다"는 뜻이므로 `X`가 아니라 `~`로 판정한다.
 
 ---
 
@@ -17,7 +18,7 @@
 | 레지스트리 | 공개 API 유무 | 인증 요구 | 필드 목록 출처 URL |
 | :-- | :-- | :-- | :-- |
 | **WHO ICTRP** | 혼합 — 웹 검색 결과의 **XML 다운로드는 공개**(로그인 불요). 실시간 재사용이 가능한 **"ICTRP Search Portal Web Service"**는 별도 신청 계정이 필요하고, 대량 수집용 "Crawling Service"는 아이디/비밀번호 발급이 전제다. | 검색·XML 내려받기: 불요. Web Service/Crawling: 요구(`ictrpinfo@who.int` 신청) | [WHO Trial Registration Data Set (TRDS) v1.3.1](https://www.who.int/tools/clinical-trials-registry-platform/network/who-data-set) · [검색 팁(고급검색 필드)](https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal/search-tips) · [Web Service 안내](https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal/ictrp-search-portal-web-service) |
-| **ISRCTN** | **REST(XML) API 공개.** 4가지 출력 포맷(default/who/ukctg/internal, internal은 deprecated) | **불요** — API 키 없이 공개 사용, 단 대량 조회 시 스로틀링을 지켜달라는 안내만 있음 | [67 Bricks ISRCTN API 문서 v0.6](https://www.isrctn.com/editorial/retrieveFile/81786542-9920-48a0-8fce-09f8428ab843/37855) |
+| **ISRCTN** | **REST(XML) API 공개.** 4가지 출력 포맷(default/who/ukctg/internal, internal은 deprecated) | **불요** — API 키 없이 공개 사용, 단 대량 조회 시 스로틀링을 지켜달라는 안내만 있음 | [67 Bricks ISRCTN API 문서 v0.6](https://www.isrctn.com/editorial/retrieveFile/81786542-9920-48a0-8fce-09f8428ab843/37855) · 실제 레코드 확인용으로 직접 호출: `https://www.isrctn.com/api/query/format/default?q=96189403&limit=1`(ISRCTN96189403) |
 | **EU CTIS** | **화면(공개 포털)만 확인함.** EMA가 공식 REST API를 문서로 공개한 것을 찾지 못했다 — 서드파티 스크레이퍼(Apify 등)만 존재. | 포털 열람 자체는 불요(회원가입 없이 조회 가능) | [CTIS public portal: Full trial information (EMA/441147/2024, 2025-01-27)](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-full-trial-information_en.pdf) · [CTIS public portal: summary (EMA/441149/2024, 2024-09-20)](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf) · 포털: `https://euclinicaltrials.eu` |
 | **CRIS (한국)** | **공공데이터포털(data.go.kr) 경유 Open API 공개**(REST, XML/JSON 선택). CRIS 자체 소개에 따르면 목록 16항목·상세 70항목·통계 18항목을 제공한다. | **요구** — `serviceKey`(공공데이터포털 발급 인증키) | [공공데이터포털 — 질병관리청 임상연구 DB Open API](https://www.data.go.kr/data/3033869/openapi.do) · 실제 서비스: `https://cris.nih.go.kr` |
 | **jRCT (일본)** | **공개 API를 찾지 못함** — 화면(웹 검색·상세페이지)만 확인. 일본제약공업협회(JPMA) 열람 가이드에도 API 언급이 없다. | 열람 자체는 불요(로그인 없이 조회) | [JPMA "治験の探し方〜jRCTのみかた〜"(2025-04, jRCT 필드 열람 가이드)](https://www.jpma.or.jp/information/evaluation/results/message/CL_202303_jRCT_mikata.pdf) · 사이트: `https://jrct.mhlw.go.jp/`(2025년 3월 `jrct.niph.go.jp`에서 이전) |
@@ -32,8 +33,8 @@
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
 | title | O | O | O | O | O | O | ICTRP·CTIS·CRIS·jRCT 전부 "공식 제목/평이한 제목" 이중 구조를 가진다(스펙의 `title`/`officialTitle`과 그대로 대응) |
 | status | O | O | ~ | ~ | ~ | ~ | 매핑 가능하나 구조가 다르다. ISRCTN은 `trialStatus`(Ongoing/Completed/Stopped/Suspended/Enrolling by invitation)와 `recruitmentStatus`(Not yet recruiting/Recruiting/No longer recruited/…) 두 필드가 따로 있다. **CTIS는 트라이얼 하나에 회원국(EU/EEA)별로 다른 recruitment status가 붙는다** — 출처: [CTIS public portal: summary](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf)(EMA/441149/2024, 2024-09-20) 4/6쪽 "Member State" 섹션의 "Current status" 필드 정의 — "The present stage of the clinical trial **in each member state**. Statuses can be: Authorised, recruitment pending / Authorised, recruiting / Ongoing, recruiting / Ongoing, recruitment ended / Temporarily halted / Suspended / Ended / Revoked / Not authorised / Expired." 10개 상태값이 트라이얼 전체가 아니라 회원국 하나하나에 붙는다 — "레코드당 값 1개"라는 스펙의 전제와 구조적으로 다르다(아래 판정 참고). jRCT는 5단계(募集前/募集中/募集中断/募集終了/研究終了)로 CT.gov보다 세분화되어 있다. CRIS는 `전체연구모집현황`(모집중 등) |
-| phase | O | X | ~ | ~ | ~ | ~ | **ICTRP는 TRDS(24개 필수항목)에 phase가 없다** — WHO의 필수 최소 데이터셋 자체에 자리가 없으므로 "동등한 필드가 있다(O)"도 "있으나 의미가 다르다(~)"도 아니라 X로 판정한다. (참고: 검색 포털의 고급검색에는 phase 필터가 있지만, 이는 TRDS 밖의 부가 기능이고 원 레지스트리가 제출했을 때만 조건부로 채워진다 — TRDS 필수 여부와는 별개다.) ISRCTN·CTIS는 결합값("Phase I/II", "integrated I/II")을 단일 문자열로 준다 — 스펙이 이미 배열로 무손실 보존하도록 설계되어 있어(§2.3) 대응 가능. CRIS는 관찰연구에서 `해당사항없음`(N/A)으로 채워진다 |
-| studyType | O | O | ? | ~ | O | ? | ICTRP TRDS 항목 15(Study Type)로 명시. CRIS는 `중재연구`/`관찰연구`로 CT.gov의 interventional/observational과 직접 대응. ISRCTN은 쿼리 API 문서(§3.2.1, 23개 constraint)에 studyType류 필드가 없다 — RCT 등록기관이라 암묵적으로 전부 interventional일 가능성이 높지만 문서로 확인 못함(**?** — 확인하려면 단일 trial의 `default` XML 전체 스키마를 열어야 한다). CTIS는 "의약품 임상시험만 대상, 관찰연구는 범위 밖"이라고 명시되어 있어 사실상 항상 interventional(값은 있으나 range가 CT.gov와 다르다는 의미로 `~`). jRCT는 가이드에 `治験の区分`(trial category) 필드명은 확인했으나 정확한 값 목록(중재/관찰 구분인지 다른 분류 체계인지)을 확인하지 못했다(**?** — 아래 "확인 못한 항목 요약" 표에도 동일하게 기재) |
+| phase | O | ~ | ~ | ~ | ~ | ~ | **ICTRP는 TRDS(24개 필수항목)에는 phase가 없지만, 검색 포털 고급검색에는 phase 필터가 있다** — 위 "방법과 한계"의 X/~ 기준대로, "스키마에 자리가 아예 없다(X)"가 아니라 "필수는 아니지만 조건부 부가 필드로 존재한다(~)"에 해당한다. 원 레지스트리가 phase를 제출했을 때만 채워지므로 채움 여부가 CT.gov만큼 보장되지는 않는다. ISRCTN·CTIS는 결합값("Phase I/II", "integrated I/II")을 단일 문자열로 준다 — 스펙이 이미 배열로 무손실 보존하도록 설계되어 있어(§2.3) 대응 가능. CRIS는 관찰연구에서 `해당사항없음`(N/A)으로 채워진다 |
+| studyType | O | O | O | ~ | O | ? | ICTRP TRDS 항목 15(Study Type)로 명시. CRIS는 `중재연구`/`관찰연구`로 CT.gov의 interventional/observational과 직접 대응. **ISRCTN은 실제 trial의 `default` XML을 직접 열어 확인했다** — 출처: `https://www.isrctn.com/api/query/format/default?q=96189403&limit=1`(ISRCTN96189403). `<primaryStudyDesign>Interventional</primaryStudyDesign>` 요소가 존재해 CT.gov의 interventional/observational 개념과 직접 대응한다(다만 이번에 연 예시 1건은 값이 "Interventional"이었다 — "Observational"이 실제로 나오는 사례는 확인 못함, ISRCTN이 RCT 중심 등록기관이라는 점과 일치). CTIS는 "의약품 임상시험만 대상, 관찰연구는 범위 밖"이라고 명시되어 있어 사실상 항상 interventional(값은 있으나 range가 CT.gov와 다르다는 의미로 `~`). jRCT는 JPMA 가이드 **15쪽** "治験の内容確認：概要" 화면 캡처에서 `治験の区分`(trial category) 필드명 자체는 확인했으나(각주에 "용어 설명은 33쪽 이후 「기본용어」 참조"라고만 되어 있다), 정확한 값 목록(중재/관찰 구분인지 다른 분류 체계인지)은 확인하지 못했다(**?** — 아래 "확인 못한 항목 요약" 표에도 동일하게 기재) |
 | conditions | O | O | O | O | O | O | 전부 자유 텍스트 원문 그대로 — 스펙 원칙(§2.1, "질환명은 정규화하지 않는다")과 정확히 맞는다 |
 | interventions | O | O | O | O | ~ | O | CRIS 상세 페이지 확인 결과 개입 관련 필드는 존재하나(연구대상 상태/질환 근처) 구조화된 `type` 구분이 있는지는 확인 못함 — 확인하려면 중재연구(관찰연구 아님) 실제 상세 페이지를 열어야 한다(이번에 연 예시는 관찰연구였다) |
 | sponsor.lead | O | O | O | O | O | O | 전부 존재. jRCT는 "依頼者等に関する事項"(의뢰자 등에 관한 사항) 섹션으로 별도 관리 |
@@ -41,8 +42,8 @@
 | dates.start | O | O | O | O | O | O | ICTRP는 TRDS 항목 16 "Date of First Enrollment"로 대응(스펙의 `dates.start`와 개념이 거의 같다). ISRCTN `overallStartDate`, CTIS "Trial start date", CRIS `첫 연구대상자 등록일`, jRCT `実施期間(開始日)` 전부 확인 |
 | dates.lastUpdated | O | ? | O | ? | O | O | ISRCTN `lastEdited`(dateTime, range 쿼리 가능) 확인. CRIS `date_updated` 필드가 공공데이터포털 API 응답에 존재함을 확인. jRCT `最終公表日`(가이드에 "최후에 갱신된 날"로 명시) 확인. ICTRP는 TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 "최종 갱신일"이 없다(**?** — 확인하려면 실제 trial 하나를 XML로 내려받아 레코드 안에 타임스탬프가 있는지, 또는 Web Service 계정을 발급받아 응답 스키마를 봐야 한다). CTIS는 EMA 공식 필드 사전에서 찾지 못했다(**?** — 확인 방법은 enrollment.count 항목과 동일) |
 | locations | O | ~ | ~ | ~ | ~ | ~ | **좌표(`geo`)를 제공하는 곳은 CT.gov뿐이다.** ICTRP·ISRCTN은 TRDS/API 문서 모두 "국가" 단위까지만 필드가 있다(도시·기관명 없음 — ISRCTN `recruitmentCountry`는 국가 리스트 range 필드다). CTIS는 별도 "Locations and contact points" 탭이 있으나(사이트 안내에서 탭 존재만 확인) 좌표 제공 여부는 확인 못함. CRIS는 `참여기관`(기관명, 도시 수준 주소는 있을 수 있으나 좌표는 없음), jRCT는 `実施医療機関`(기관명+주소, 좌표 없음) |
-| hasResults | O | O | ? | O | ? | ? | ICTRP는 TRDS 항목 23 "Summary Results"와 검색 포털의 "Results" 필터로 이중 확인됨. CTIS는 포털 탭 구성 자체에 "Trial Results" 탭이 별도로 있어 결과 유무를 판별할 수 있다. ISRCTN은 쿼리 API의 23개 constraint 목록에 결과 유무 필드가 없다(**?** — `default` XML 전체 스키마 또는 실제 상세 페이지의 "Results" 섹션 존재 여부를 봐야 한다). CRIS는 `연구종료일`류 날짜 필드는 있으나 결과 공개 여부 플래그는 찾지 못했다(**?** — 실제로 결과가 등록된 중재연구의 상세 페이지를 열어 "연구결과" 항목이 있는지 확인해야 한다). jRCT는 "jRCT에서 치험결과 조회" 기능이 있으나 이는 진행상태(研究終了) 필터일 뿐 결과 데이터 유무를 나타내는 별도 필드인지는 확인 못했다(**?** — 실제 종료된 시험의 상세 페이지에 결과 섹션이 있는지 봐야 한다) |
-| crossIds | O | O | ? | O | X | ? | **ICTRP TRDS 항목 3 "Secondary Identifying Numbers"가 사실상 crossIds 그 자체다** — WHO가 이 필드를 필수 24항목에 넣은 이유가 바로 중복 등록 추적이다. CTIS는 EMA 공식 필드 사전에 "ClinicalTrials.gov identifier (NCT number)", "ISRCTN number", "Additional registries"가 명시적으로 나열되어 있어 가장 확실하다. CRIS는 실제 상세 페이지(KCT0002018, **관찰연구 1건**) 확인 결과 WHO ICTRP·NCT 상호등록번호 필드가 **없었다** — 단 **이 X 판정은 근거가 약하다**: 확인한 표본이 1건뿐이고, 그마저 해외 이중등록 유인이 상대적으로 적은 국내 관찰연구다(해외 다기관이 참여하는 국내 중재연구라면 다를 수 있음). CRIS 자체가 한국의 WHO 1차 등록기관이라는 점도 감안해야 한다. ISRCTN·jRCT는 API 문서/가이드에서 확인하지 못했다(**?** — ISRCTN은 `default` XML 스키마, jRCT는 상세 페이지의 "その他の事項" 섹션 또는 JPMA 가이드 33쪽 이후 "기본용어" 부분을 봐야 한다 — 이번 조사에서는 가이드 1~22쪽만 확인했다) |
+| hasResults | O | O | O | O | ? | ? | ICTRP는 TRDS 항목 23 "Summary Results"와 검색 포털의 "Results" 필터로 이중 확인됨. CTIS는 포털 탭 구성 자체에 "Trial Results" 탭이 별도로 있어 결과 유무를 판별할 수 있다. **ISRCTN은 실제 trial의 `default` XML(ISRCTN96189403, 위 studyType 행과 동일 출처)에서 확인했다** — 최상위에 `<results>` 섹션이 통째로 있고 그 안에 `<publicationDetails>`(관련 논문 링크 3건), `<basicReport>`(첨부 PDF), `<ipdSharingStatement>`, `<dataPolicies>`가 들어 있다. 구조화된 결과 섹션의 존재 자체가 결과 유무 판별 기준이 될 수 있다. CRIS는 `연구종료일`류 날짜 필드는 있으나 결과 공개 여부 플래그는 찾지 못했다(**?** — 실제로 결과가 등록된 중재연구의 상세 페이지를 열어 "연구결과" 항목이 있는지 확인해야 한다). jRCT는 "jRCT에서 치험결과 조회" 기능이 있으나 이는 진행상태(研究終了) 필터일 뿐 결과 데이터 유무를 나타내는 별도 필드인지는 확인 못했다(**?** — 실제 종료된 시험의 상세 페이지에 결과 섹션이 있는지 봐야 한다) |
+| crossIds | O | O | O | O | X | ? | **ICTRP TRDS 항목 3 "Secondary Identifying Numbers"가 사실상 crossIds 그 자체다** — WHO가 이 필드를 필수 24항목에 넣은 이유가 바로 중복 등록 추적이다. CTIS는 EMA 공식 필드 사전에 "ClinicalTrials.gov identifier (NCT number)", "ISRCTN number", "Additional registries"가 명시적으로 나열되어 있어 가장 확실하다. **ISRCTN은 실제 trial의 `default` XML(ISRCTN96189403, 위 studyType 행과 동일 출처)에서 확인했다** — `<externalRefs>` 섹션에 `<doi>`, `<protocolSerialNumber>`, `<clinicalTrialsGovNumber/>`, `<eudraCTNumber/>` 요소가 있다. 스키마 자체에 NCT/EudraCT 상호등록 슬롯이 있다는 게 확인됐다는 뜻이다(다만 이번 예시에서는 두 요소 다 비어 있었다 — 슬롯의 존재와 실제 값이 채워지는 빈도는 별개다). CRIS는 실제 상세 페이지(KCT0002018, **관찰연구 1건**) 확인 결과 WHO ICTRP·NCT 상호등록번호 필드가 **없었다** — 단 **이 X 판정은 근거가 약하다**: 확인한 표본이 1건뿐이고, 그마저 해외 이중등록 유인이 상대적으로 적은 국내 관찰연구다(해외 다기관이 참여하는 국내 중재연구라면 다를 수 있음). CRIS 자체가 한국의 WHO 1차 등록기관이라는 점도 감안해야 한다. jRCT는 API 문서/가이드에서 확인하지 못했다(**?** — 상세 페이지의 "その他の事項" 섹션 또는 JPMA 가이드 33쪽 이후 "기본용어" 부분을 봐야 한다 — 이번 조사에서는 가이드 1~22쪽만 확인했다) |
 
 ---
 
@@ -66,8 +67,8 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 | :-- | :-- | :-- |
 | title | 6/6 | **core 유지** |
 | status | 6/6 (구조·어휘는 상이) | **core 유지** — 단, CTIS의 "국가별 status" 구조는 §4 참고 |
-| phase | 5/6 — ICTRP는 `X`(TRDS 필수항목에 없음, 검색 포털에만 조건부로 존재), 나머지 CT.gov·ISRCTN·CTIS·CRIS·jRCT 5곳은 `O`/`~` | **core 유지** — ICTRP 하나가 X여도 나머지 5곳이 이미 규칙(≥2)을 넉넉히 충족한다. 이미 `phase?`로 optional, 결합값은 이미 배열로 처리하도록 설계돼 있음(변경 불필요) |
-| studyType | CT.gov·ICTRP·CRIS 확정 O, CTIS `~`, ISRCTN·jRCT `?` | **core 유지** (확정 3곳만으로도 규칙 충족) |
+| phase | 6/6 — ICTRP는 TRDS 필수항목엔 없지만 검색 포털에 조건부 필터로 존재해 `~`(위 "방법과 한계"의 X/~ 기준 참고), 나머지도 `O`/`~` | **core 유지** — 이미 `phase?`로 optional, 결합값은 이미 배열로 처리하도록 설계돼 있음(변경 불필요) |
+| studyType | CT.gov·ICTRP·ISRCTN·CRIS 확정 O(ISRCTN은 `default` XML로 재확인), CTIS `~`, jRCT `?` | **core 유지** (확정 4곳으로 규칙 충족) |
 | conditions | 6/6 | **core 유지** |
 | interventions | CT.gov·ICTRP·ISRCTN·CTIS·jRCT 확정 O, CRIS `~` | **core 유지** |
 | sponsor.lead | 6/6 | **core 유지** |
@@ -75,8 +76,8 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 | dates.start | 6/6 | **core 유지** |
 | dates.lastUpdated | CT.gov·ISRCTN·CRIS·jRCT 확정 O, ICTRP·CTIS `?` | **core 유지** (확정 4곳으로 규칙 충족) |
 | locations | 6/6 (좌표는 CT.gov만) | **core 유지** — `geo`는 이미 optional, 구조 변경 불필요 |
-| hasResults | CT.gov·ICTRP·CTIS 확정 O, ISRCTN·CRIS·jRCT `?` | **core 유지** (확정 3곳으로 규칙 충족) |
-| crossIds | CT.gov·ICTRP·CTIS 확정 O, CRIS `X`(**근거 약함** — 관찰연구 표본 1건에서만 확인, 매트릭스 각주 참고), ISRCTN·jRCT `?` | **core 유지** (확정 3곳으로 규칙 충족 — CRIS의 X 판정 강도와 무관하게 결론은 바뀌지 않는다) |
+| hasResults | CT.gov·ICTRP·CTIS·ISRCTN 확정 O(ISRCTN은 `default` XML의 `<results>` 섹션으로 재확인), CRIS·jRCT `?` | **core 유지** (확정 4곳으로 규칙 충족) |
+| crossIds | CT.gov·ICTRP·CTIS·ISRCTN 확정 O(ISRCTN은 `default` XML의 `<externalRefs>` 섹션으로 재확인 — 슬롯은 있으나 이번 예시에서는 비어 있었음), CRIS `X`(**근거 약함** — 관찰연구 표본 1건에서만 확인, 매트릭스 각주 참고), jRCT `?` | **core 유지** (확정 4곳으로 규칙 충족 — CRIS의 X 판정 강도와 무관하게 결론은 바뀌지 않는다) |
 
 **13개 core 필드 전부 core 로 유지된다. `core → optional`, `core → detail` 로 이동한 필드는 없다.** 어휘 확장이 반드시 필요하다고 판단한 값도 없다 — 이번 조사에서 발견한 상태값(ISRCTN "No longer recruited", jRCT "募集終了" 등)은 의미가 모호해 특정 폐쇄 어휘 값에 딱 맞아떨어지지 않지만, 스펙이 이미 갖춘 `other` + `statusRaw` 조합으로 무손실 처리가 가능하므로 새 값을 추가할 필요는 없다.
 
@@ -99,19 +100,16 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 
 | 항목 | 레지스트리 | 확인 못한 이유 | 무엇을 보면 확인되는가 |
 | :-- | :-- | :-- | :-- |
-| studyType | ISRCTN | 공개 API 문서(v0.6)의 쿼리 constraint 23개 목록에 study-type류 필드가 없음 | 단일 trial의 `default` XML 전체 스키마(쿼리 constraint에 없는 필드도 레코드 본문엔 있을 수 있음) |
-| studyType | jRCT | 가이드에 `治験の区分`(trial category) 필드명은 나오나 값 목록을 확인 못함 | 실제 jRCT 상세 페이지의 해당 필드 값, 또는 공식 데이터 사전 |
+| studyType | jRCT | JPMA 가이드 15쪽에서 `治験の区分`(trial category) 필드명은 확인했으나(용어 설명은 33쪽 이후로 미루고 있음) 값 목록을 확인 못함 | 실제 jRCT 상세 페이지의 해당 필드 값, 또는 공식 데이터 사전(가이드 33쪽 이후 "기본용어") |
 | enrollment.count(실제치 여부) | ICTRP | WHO TRDS 항목 17의 공식 명칭이 **"Target & final sample size"**라 목표치와 실제치를 함께 가리킬 수 있으나, 개별 trial 레코드에서 "final" 값이 실제로 채워지는지는 확인하지 못함 | 실제 ICTRP trial의 XML export(검색 결과를 XML로 내려받기)를 열어 final sample size 요소가 값을 갖고 있는지 확인. 다음 라운드로 미룬다 — 지금 당장 결론을 낼 필요는 없다 |
 | enrollment.count | CTIS | EMA 공식 필드 사전 두 건(Full trial information 7쪽, summary 6쪽) 어디에도 표본크기 필드가 없음 | 실제 trial 페이지의 Locations/Results 탭(두 공식 PDF에는 없다는 게 이번에 확인된 사실이라, 남은 후보는 화면 자체뿐) |
 | dates.lastUpdated | ICTRP | TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 없음 | 실제 trial의 XML export 원문, 또는 Web Service 계정으로 응답 스키마 확인 |
 | dates.lastUpdated | CTIS | enrollment.count와 동일 사유 | 동일 |
-| hasResults | ISRCTN | 쿼리 constraint 23개 목록에 없음 | `default` XML 전체 스키마, 또는 실제 상세 페이지의 "Results" 섹션 |
 | hasResults | CRIS | 완료일 필드는 있으나 결과공개 플래그를 찾지 못함 | 결과가 등록된 실제 중재연구 상세 페이지 |
 | hasResults | jRCT | "치험결과 조회" 기능은 진행상태 필터일 뿐, 별도 필드인지 미확인 | 종료된 시험의 실제 상세 페이지에 결과 섹션 유무 확인 |
-| crossIds | ISRCTN | 쿼리 constraint 23개 목록에 없음 | `default` XML 스키마(예: nctID류 필드 존재 여부) |
 | crossIds | jRCT | 가이드 1~22쪽에서 확인 못함(33쪽 이후 "기본용어" 및 상세 페이지 "その他の事項" 섹션 미확인) | 가이드 33쪽 이후, 또는 실제 상세 페이지의 "その他の事項" |
 | outcomes(detail) | jRCT | 가이드에서 "研究・治験の目的"(objectives)까지만 확인, outcome measure 구조 필드 미확인 | 실제 상세 페이지의 관리적 사항 세부 항목 |
-| contacts(detail) | ISRCTN | 쿼리 constraint 23개 목록에 없음 | `default` XML 스키마 |
+| contacts(detail) | ISRCTN | `default` XML 응답에서 top-level 요소로 `contact`가 보이긴 했으나(위 hasResults/crossIds 행에서 인용한 XML 요소 목록 참고), 그 안의 세부 필드(이름/역할/이메일 등 CT.gov `contacts`와 대응되는 하위 구조)까지는 이번 조사에서 열어보지 않았다 | 같은 `default` XML 응답에서 `<contact>` 요소 내부를 펼쳐 하위 필드 확인 |
 | contacts(detail) | CRIS | 목록 API(16항목) 문서만 확인, 상세 70항목 문서는 미확인 | 공공데이터포털의 상세조회 API 문서 |
 
 ---
