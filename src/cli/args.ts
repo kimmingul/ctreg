@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { CAPS, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
-import { DEFAULT_REGISTRY, type RegistryKey, isRegistryKey } from '../core/registry.js';
+import { DEFAULT_REGISTRY, REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
   isFilterablePhase, isFilterableStatus, isFilterableStudyType,
   type StudyType, type TrialPhase, type TrialStatus,
@@ -85,7 +85,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 
   if (v.help) {
     return {
-      command: 'registries', positionals: [], registries: [DEFAULT_REGISTRY],
+      command: 'registries', positionals: [], registries: [...REGISTRY_KEYS],
       query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true,
     };
   }
@@ -101,12 +101,22 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   if (v['no-cache'] && v.refresh) throw usageError('--no-cache 와 --refresh 는 함께 쓸 수 없습니다');
   const cacheMode: FetchOpts['cacheMode'] = v['no-cache'] ? 'off' : v.refresh ? 'refresh' : 'use';
 
-  // 기본값은 등록된 키 전체가 아니라 이름 붙은 하나다 — DEFAULT_REGISTRY 의 주석 참고.
-  // 중복은 합친다: 그냥 두면 모든 네트워크 커맨드가 같은 레지스트리를 두 번 돌아
-  // count 가 정확히 진실의 2배인 수를 경고 없이 사실로 내고(리뷰 I4), search 는 같은
-  // 레코드를 두 번 내며, "레지스트리마다 registries[] 항목 하나" 라는 봉투의 형태
-  // 규칙이 깨진다. 순서는 호출자가 준 순서를 그대로 유지한다.
-  const registries = [...new Set((v.registry ?? [DEFAULT_REGISTRY]) as string[])];
+  // 기본값은 커맨드에 따라 다르다. 조회 커맨드(search/get/results/count)는 이름 붙은
+  // 하나로 간다 — 등록된 키 전체로 두면 어댑터를 하나 붙이는 순간 기존 호출자 전원의
+  // 기본 동작이 조용히 팬아웃으로 바뀐다(DEFAULT_REGISTRY 의 주석 참고).
+  //
+  // `registries` 는 정반대다. 이 커맨드의 일 자체가 발견이고, §4.5 는 이것을
+  // "capability 덤프 — `--registry <key>` 로 하나만" 으로 규정한다: 좁히는 것이
+  // 옵션이지 기본이 아니다. 여기까지 DEFAULT_REGISTRY 를 적용하면, 스킬이 요청을
+  // 조립하기 전에 부르라고 안내받은 바로 그 커맨드가 두 번째 레지스트리의 존재를
+  // 영영 알려주지 않는다 — C2 와 똑같이 어댑터가 하나인 동안에는 보이지 않는다.
+  //
+  // 중복은 어느 쪽이든 합친다: 그냥 두면 모든 네트워크 커맨드가 같은 레지스트리를 두
+  // 번 돌아 count 가 정확히 진실의 2배인 수를 경고 없이 사실로 내고(리뷰 I4), search
+  // 는 같은 레코드를 두 번 내며, "레지스트리마다 registries[] 항목 하나" 라는 봉투의
+  // 형태 규칙이 깨진다. 순서는 호출자가 준 순서를 그대로 유지한다.
+  const fallback: readonly string[] = command === 'registries' ? REGISTRY_KEYS : [DEFAULT_REGISTRY];
+  const registries = [...new Set((v.registry ?? fallback) as string[])];
   for (const r of registries) {
     if (!isRegistryKey(r)) {
       throw usageError(`모르는 레지스트리: '${r}'`, 'ctreg registries 로 사용 가능한 키를 확인하세요.');

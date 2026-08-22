@@ -24,12 +24,38 @@ vi.mock('../../src/core/registry.js', async (importOriginal) => {
 });
 
 const { parseCliArgs } = await import('../../src/cli/args.js');
-const { DEFAULT_REGISTRY } = await import('../../src/core/registry.js');
+const { DEFAULT_REGISTRY, REGISTRY_KEYS } = await import('../../src/core/registry.js');
 
 describe('--registry 기본값', () => {
   it('레지스트리가 둘 등록돼도 기본값은 ctgov 하나다', () => {
     expect(parseCliArgs(['search', '--condition', 'x']).registries).toEqual(['ctgov']);
     expect(parseCliArgs(['count']).registries).toEqual([DEFAULT_REGISTRY]);
+  });
+
+  /**
+   * C2 의 거울상. 팬아웃이 틀린 자리에서 기본 팬아웃을 막았더니, 팬아웃이 존재
+   * 이유인 자리에서도 막혔다 — `registries` 는 capability 덤프이고 §4.5 는
+   * `--registry <key>` 를 *좁히는* 옵션으로 규정한다. 스킬은 요청을 조립하기 전에
+   * 이 커맨드를 부르라고 안내받으므로, 여기서 좁히면 스킬이 두 번째 레지스트리의
+   * 존재를 영영 알 수 없다 (README 도 "두 번째 레지스트리가 붙어도 이 커맨드로
+   * 능력 차이를 알 수 있게 설계했다" 고 적고 있다).
+   *
+   * 위 테스트와 같은 이유로 두 키가 등록된 상황에서 검사한다 — 어댑터가 하나인
+   * 동안에는 두 동작이 구별되지 않는다.
+   */
+  it('registries 는 좁히지 않는다 — 등록된 키 전부를 덤프한다', () => {
+    expect(parseCliArgs(['registries']).registries).toEqual([...REGISTRY_KEYS]);
+    expect(parseCliArgs(['registries']).registries).toEqual(['ctgov', 'probe']);
+  });
+
+  it('registries 도 --registry 로는 좁혀진다 — 좁히는 것이 옵션이다', () => {
+    expect(parseCliArgs(['registries', '--registry', 'probe']).registries).toEqual(['probe']);
+  });
+
+  it('조회 커맨드는 registries 의 예외에 휩쓸리지 않는다', () => {
+    for (const cmd of [['search', '--condition', 'x'], ['count'], ['get', 'NCT00000001'], ['results', 'NCT00000001']]) {
+      expect(parseCliArgs(cmd).registries).toEqual([DEFAULT_REGISTRY]);
+    }
   });
 
   it('명시하면 그 키만 쓴다 — 기본값이 끼어들지 않는다', () => {
