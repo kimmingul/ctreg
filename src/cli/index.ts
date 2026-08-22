@@ -43,23 +43,18 @@ export async function run(
     io.stdout(render(envelope, format));
     return exitFor(envelope);
   } catch (e) {
-    // 커맨드 자체를 식별하지 못한 경우(비어 있거나 모르는 커맨드) args.ts 는 힌트로
-    // USAGE 전문을 그대로 준다 — 이때는 구조화할 질의도 커맨드도 없으므로 사람이
-    // 읽는 사용법만 stderr 로 내고 stdout 은 비워 둔다. stdout 이 "항상 파싱 가능"
-    // 해야 한다는 계약은 "항상 무언가를 담아야 한다"는 뜻이 아니다 — 빈 문자열도
-    // 유효하게 파싱 실패하는 게 아니라 애초에 아무 것도 안 쓴 것이다.
-    // 커맨드는 식별됐지만(예: search) 그 안에서 옵션이 잘못된 경우는 다르다 — 스킬이
-    // 이미 어떤 커맨드를 불렀는지 알고 있으므로, 실패 사유를 담은 봉투를 stdout 에
-    // 내어 기계가 파싱해 재시도 방법을 알 수 있게 한다.
-    if (CtregError.is(e) && e.hint === USAGE) {
-      io.stderr(`${e.message}\n\n${USAGE}`);
-      return e.exit;
-    }
     const err = CtregError.is(e)
       ? { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) }
       : { code: 'internal', message: (e as Error).message };
     const envelope: Envelope = { query: {}, registries: [], warnings: [], data: null, error: err };
     io.stdout(render(envelope, format));
+    // 사용법은 사람이 읽는 것이므로 stderr 로도 낸다. stdout 은 실패 사유까지 포함해
+    // 언제나 파싱 가능한 봉투를 낸다 — 커맨드를 식별하지 못한 경우도 예외가 아니다.
+    // 스킬 입장에서 규칙이 하나여야 한다: "stdout 은 항상 파싱되고, 실패하면 error
+    // 를 담는다." 커맨드 인식 실패만 stdout 을 비우는 특례를 두면, 그 특례를 잊었을
+    // 때 빈 문자열에 대한 JSON 파싱 에러가 나는데 그건 무엇이 잘못됐는지 아무 정보도
+    // 안 준다.
+    if (err.code === 'usage') io.stderr(`${err.message}\n\n${USAGE}`);
     return CtregError.is(e) ? e.exit : EXIT.UPSTREAM;
   }
 }

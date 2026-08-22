@@ -2,8 +2,16 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
+import type { ParsedArgs } from '../../src/cli/args.js';
+import { runCount } from '../../src/cli/commands/count.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import { run } from '../../src/cli/index.js';
+import { exitFor } from '../../src/cli/output.js';
+import { CAPS } from '../../src/core/query.js';
+import type { RegistryAdapter } from '../../src/core/capability.js';
+import type { RegistryKey } from '../../src/core/registry.js';
+import { upstreamError } from '../../src/runtime/errors.js';
 
 function capture() {
   const out: string[] = [];
@@ -19,6 +27,27 @@ const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-run-')),
 
 const stubFetch = (body: unknown) =>
   vi.fn(async () => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }));
+
+const baseArgs = (overrides: Partial<ParsedArgs> = {}): ParsedArgs => ({
+  command: 'count',
+  positionals: [],
+  registries: ['ctgov'],
+  query: {},
+  fetch: {
+    include: ['core'],
+    caps: {
+      locations: CAPS.locations.default,
+      eligibilityChars: CAPS.eligibilityChars.default,
+      outcomes: CAPS.outcomes.default,
+    },
+    cacheMode: 'use',
+    raw: false,
+  },
+  results: { sections: ['outcomes', 'adverse', 'flow', 'baseline'], full: false, cacheMode: 'use' },
+  format: 'json',
+  help: false,
+  ...overrides,
+});
 
 describe('run()', () => {
   it('registries 는 네트워크 없이 capability 를 낸다', async () => {
@@ -42,12 +71,74 @@ describe('run()', () => {
     expect(JSON.parse(c.out()).data).toEqual({ total: 412 });
   });
 
-  it('모르는 커맨드는 exit 2 이고 사용법은 stderr 로 간다', async () => {
+  it(
+    'count 는 레지스트리 하나가 실패해도 나머지 결과를 지키고, exitFor 는 5(부분 실패)를 낸다',
+    async () => {
+      // REGISTRY_KEYS 에는 현재 ctgov 하나뿐이라 실제 서로 다른 두 레지스트리 키가 없다.
+      // runCount 는 어댑터 맵의 키가 아니라 args.registries 를 순회하며 어댑터를 찾아
+      // 도는 루프이므로, 두 번째 레지스트리가 실제로 등록될 때와 동일한 코드 경로를
+      // (런타임에서만 유효한 캐스팅으로) runCount 를 직접 불러 확인한다.
+      const ok = {
+        key: 'ctgov',
+        capability: () => CTGOV_CAPABILITY,
+        search: vi.fn(),
+        get: vi.fn(),
+        results: vi.fn(),
+        count: vi.fn(async () => ({ data: 100, warnings: [] })),
+      } as unknown as RegistryAdapter;
+      const bad = {
+        key: 'ctgov',
+        capability: () => CTGOV_CAPABILITY,
+        search: vi.fn(),
+        get: vi.fn(),
+        results: vi.fn(),
+        count: vi.fn(async () => {
+          throw upstreamError('boom');
+        }),
+      } as unknown as RegistryAdapter;
+      const adapters = { good: ok, bad } as unknown as Record<RegistryKey, RegistryAdapter>;
+      const args = baseArgs({ registries: ['good', 'bad'] as unknown as RegistryKey[] });
+
+      const envelope = await runCount(args, adapters);
+
+      expect(envelope.registries).toEqual([
+        { registry: 'good', status: 'ok', total: 100 },
+        { registry: 'bad', status: 'error', error: { code: 'upstream', message: 'boom' } },
+      ]);
+      expect(envelope.data).toEqual({ total: 100 });
+      expect(exitFor(envelope)).toBe(EXIT.PARTIAL);
+    },
+  );
+
+  it('count 는 미지원 축을 만나면 어댑터를 부르기 전에 막는다 — 어댑터의 count() 가 호출되지 않는다', async () => {
+    const c = capture();
+    const countSpy = vi.fn(async () => ({ data: 999, warnings: [] }));
+    const limited = {
+      key: 'ctgov',
+      capability: () => ({ ...CTGOV_CAPABILITY, search: { ...CTGOV_CAPABILITY.search, patient: false } }),
+      search: vi.fn(),
+      get: vi.fn(),
+      results: vi.fn(),
+      count: countSpy,
+    } as unknown as RegistryAdapter;
+
+    const code = await run(['count', '--patient', '62 year old'], c.io, env(), {
+      adapters: { ctgov: limited },
+    });
+
+    expect(code).toBe(EXIT.UNSUPPORTED);
+    expect(countSpy).not.toHaveBeenCalled();
+    const parsed = JSON.parse(c.out());
+    expect(parsed.registries[0].status).toBe('unsupported');
+  });
+
+  it('모르는 커맨드는 exit 2 이고, 사용법은 stderr 로 가지만 stdout 도 파싱 가능한 오류 봉투를 낸다', async () => {
     const c = capture();
     const code = await run(['landscape'], c.io, env());
     expect(code).toBe(EXIT.USAGE);
     expect(c.err()).toContain('search');
-    expect(c.out()).toBe('');
+    const parsed = JSON.parse(c.out());
+    expect(parsed.error.code).toBe('usage');
   });
 
   it('오류도 봉투 모양으로 stdout 에 나가고 힌트를 담는다', async () => {
