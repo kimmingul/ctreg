@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseCliArgs } from '../../src/cli/args.js';
+import { CAPS } from '../../src/core/query.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 
@@ -66,6 +67,24 @@ describe('인자 파싱', () => {
     expectUsage(() => parseCliArgs(['search', '--eligibility-chars', '100']), '--include eligibility');
     expect(parseCliArgs(['search', '--include', 'eligibility', '--eligibility-chars', '100']).fetch.caps.eligibilityChars).toBe(100);
     expectUsage(() => parseCliArgs(['search', '--include', 'eligibility', '--eligibility-chars', '999999']));
+  });
+
+  it('--include locations/outcomes 는 해당 캡을 최대치로 올린다 (§5.2) — 정책은 CLI 가 정한다', () => {
+    const noInclude = parseCliArgs(['search']);
+    expect(noInclude.fetch.caps.locations).toBe(CAPS.locations.default);
+    expect(noInclude.fetch.caps.outcomes).toBe(CAPS.outcomes.default);
+
+    const withLocations = parseCliArgs(['search', '--include', 'locations']);
+    expect(withLocations.fetch.caps.locations).toBe(CAPS.locations.max);
+    expect(withLocations.fetch.caps.outcomes).toBe(CAPS.outcomes.default);
+
+    const withOutcomes = parseCliArgs(['search', '--include', 'outcomes']);
+    expect(withOutcomes.fetch.caps.outcomes).toBe(CAPS.outcomes.max);
+    expect(withOutcomes.fetch.caps.locations).toBe(CAPS.locations.default);
+
+    const withAll = parseCliArgs(['search', '--include', 'all']);
+    expect(withAll.fetch.caps.locations).toBe(CAPS.locations.max);
+    expect(withAll.fetch.caps.outcomes).toBe(CAPS.outcomes.max);
   });
 
   it('--no-cache 와 --refresh 는 캐시 모드를 바꾼다', () => {

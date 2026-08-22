@@ -74,7 +74,7 @@ describe('CT.gov → TrialRecord 매핑', () => {
     expect(warnings.map((w) => w.code)).toContain('locations_truncated');
   });
 
-  it('--include locations 이면 캡이 최대치로 늘어난다', () => {
+  it('--include locations 이면 캡이 최대치로 늘어난다 (args.ts 가 caps.locations 를 올린 것을 매퍼가 그대로 따른다)', () => {
     const many = {
       protocolSection: {
         identificationModule: { nctId: 'NCT00000009', briefTitle: 'Many Sites 2' },
@@ -85,10 +85,34 @@ describe('CT.gov → TrialRecord 매핑', () => {
         },
       },
     };
-    const { record, warnings } = mapStudy(many, opts({ include: ['core', 'locations'] }), AT);
+    const o = opts({
+      include: ['core', 'locations'],
+      caps: { locations: CAPS.locations.max, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.default },
+    });
+    const { record, warnings } = mapStudy(many, o, AT);
     expect(record.locations).toHaveLength(37);
     expect(record.locationsTotal).toBe(37);
     expect(warnings.map((w) => w.code)).not.toContain('locations_truncated');
+  });
+
+  it('caps.locations 를 매퍼에 직접 주면 그 값을 쓴다 — 어댑터가 스스로 덮어쓰지 않는다', () => {
+    const many = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000010', briefTitle: 'Many Sites 3' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        contactsLocationsModule: {
+          locations: Array.from({ length: 37 }, (_, i) => ({ city: `City${i}`, country: 'US' })),
+        },
+      },
+    };
+    // include 에 'locations' 가 없어도(=opt-in 게이트는 core 만 지남) caps.locations 는
+    // 필터를 통과하지 않는다 — locations 는 core 에 늘 포함되는 섹션이라 want('locations') 는
+    // 관계 없이 항상 참이다. 이 테스트가 고정하는 것은 "캡 숫자를 누가 정하는가" 뿐이다.
+    const o = opts({ caps: { locations: 5, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.default } });
+    const { record, warnings } = mapStudy(many, o, AT);
+    expect(record.locations).toHaveLength(5);
+    expect(warnings.map((w) => w.code)).toContain('locations_truncated');
   });
 
   it('--include eligibility 없이는 적격 기준문을 담지 않는다', () => {
@@ -135,10 +159,37 @@ describe('CT.gov → TrialRecord 매핑', () => {
       },
     };
     expect(mapStudy(many, opts(), AT).record.outcomes).toBeUndefined();
-    const { record, warnings } = mapStudy(many, opts({ include: ['core', 'outcomes'] }), AT);
+    const o = opts({
+      include: ['core', 'outcomes'],
+      caps: { locations: CAPS.locations.default, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.max },
+    });
+    const { record, warnings } = mapStudy(many, o, AT);
     expect(record.outcomes).toHaveLength(25);
     expect(record.outcomesTotal).toBe(25);
     expect(warnings.map((w) => w.code)).not.toContain('outcomes_truncated');
+  });
+
+  it('caps.outcomes 를 매퍼에 직접 주면 그 값으로 자르고 outcomes_truncated 경고를 남긴다 — o.caps.outcomes 채널이 실제로 쓰인다', () => {
+    const many = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000011', briefTitle: 'O2' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        outcomesModule: {
+          primaryOutcomes: Array.from({ length: 10 }, (_, i) => ({ measure: `Outcome ${i}` })),
+        },
+      },
+    };
+    const o = opts({
+      include: ['core', 'outcomes'],
+      caps: { locations: CAPS.locations.default, eligibilityChars: CAPS.eligibilityChars.default, outcomes: 3 },
+    });
+    const { record, warnings } = mapStudy(many, o, AT);
+    expect(record.outcomes).toHaveLength(3);
+    expect(record.outcomesTotal).toBe(10);
+    const w = warnings.find((x) => x.code === 'outcomes_truncated');
+    expect(w).toBeDefined();
+    expect(w?.at).toBe(3);
   });
 
   it('--near 가 있으면 각 장소에 거리를 붙이고 가까운 순으로 정렬한다', () => {
@@ -403,7 +454,11 @@ describe('CT.gov → TrialRecord 매핑', () => {
         },
       },
     };
-    const { record, warnings } = mapStudy(many, opts({ include: ['core', 'outcomes'] }), AT);
+    const o = opts({
+      include: ['core', 'outcomes'],
+      caps: { locations: CAPS.locations.default, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.max },
+    });
+    const { record, warnings } = mapStudy(many, o, AT);
     expect(record.outcomes).toHaveLength(CAPS.outcomes.max);
     expect(record.outcomesTotal).toBe(201);
     expect(warnings.map((w) => w.code)).toContain('outcomes_truncated');

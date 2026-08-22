@@ -4,7 +4,7 @@
  */
 import { ZodError } from 'zod';
 import type { Warning } from '../../core/capability.js';
-import { CAPS, type FetchOpts } from '../../core/query.js';
+import type { FetchOpts } from '../../core/query.js';
 import { TrialRecordSchema, type TrialLocation, type TrialRecord } from '../../core/record.js';
 import { formatTrialId } from '../../core/registry.js';
 import { upstreamError } from '../../runtime/errors.js';
@@ -124,7 +124,7 @@ export function mapStudy(
         })
         .map((x) => x.l);
     }
-    const cap = want('locations') ? CAPS.locations.max : o.caps.locations;
+    const cap = o.caps.locations;
     if (mapped.length > cap) {
       const reasons: string[] = [];
       if (needle !== undefined) reasons.push(`'${o.locationTerm}' 에 일치하는 장소를 앞에`);
@@ -162,9 +162,9 @@ export function mapStudy(
     }) as TrialRecord['eligibility'];
   }
 
-  // 결과 지표 (옵트인). `--include outcomes` 없이는 이 블록에 들어오지 않으므로, 들어왔다면
-  // want('outcomes') 는 항상 참이고 캡은 항상 최대치다 — o.caps.outcomes 분기는 도달 불가.
-  // (locations 는 opt-in 게이트가 없어 사정이 다르다 — 위 참고.) Task 14 는 이 필드에 기대지 않는다.
+  // 결과 지표 (옵트인). `--include outcomes` 없이는 이 블록에 들어오지 않는다. 캡은
+  // o.caps.outcomes 가 정한다 — CLI 가 `--include outcomes`/`all` 일 때 최대치로 올린다(§5.2).
+  // Task 14 는 이 필드에 기대지 않는다.
   let outcomes: TrialRecord['outcomes'];
   let outcomesTotal: number | undefined;
   const om = p.outcomesModule;
@@ -176,7 +176,7 @@ export function mapStudy(
     ];
     if (all.length > 0) {
       outcomesTotal = all.length;
-      const cap = CAPS.outcomes.max;
+      const cap = o.caps.outcomes;
       if (all.length > cap) {
         warnings.push({ code: 'outcomes_truncated', message: `결과 지표 ${all.length}개 중 ${cap}개만 담았습니다.`, id, at: cap });
       }

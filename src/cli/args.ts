@@ -217,10 +217,13 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     query,
     fetch: {
       include: include as IncludeSection[],
+      // §5.2: caps 는 CLI 가 정한 정책을 어댑터에 전달하는 채널이다. `--include locations`/`all`
+      // 이면 locations 캡을, `--include outcomes`/`all` 이면 outcomes 캡을 최대치로 올린다 —
+      // 어댑터는 o.caps.X 를 읽기만 한다(eligibilityChars 와 같은 모양).
       caps: {
-        locations: CAPS.locations.default,
+        locations: include.includes('locations') || include.includes('all') ? CAPS.locations.max : CAPS.locations.default,
         eligibilityChars: eligibilityChars ?? CAPS.eligibilityChars.default,
-        outcomes: CAPS.outcomes.default,
+        outcomes: include.includes('outcomes') || include.includes('all') ? CAPS.outcomes.max : CAPS.outcomes.default,
       },
       cacheMode,
       raw: v.raw ?? false,
