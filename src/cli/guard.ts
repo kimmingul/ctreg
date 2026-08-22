@@ -1,6 +1,20 @@
 import type { Capability, Warning } from '../core/capability.js';
 import type { FetchOpts, NormalizedQuery } from '../core/query.js';
+import type { RegistryKey } from '../core/registry.js';
 import { unsupportedError } from '../runtime/errors.js';
+
+/**
+ * 등록된 키(REGISTRY_KEYS)인데 어댑터가 아직 없을 때 쓴다 — 두 번째 어댑터를 붙이는
+ * 작업은 여러 단계로 나뉘고, 그 사이에는 "키는 알려져 있는데 구현이 없는" 상태가
+ * 반드시 생긴다. 크래시나 조용한 빈 결과 대신 이 모양(exit 3)으로 신고한다. 다섯
+ * 커맨드가 모두 이 문구를 쓰므로 메시지가 커맨드마다 갈리지 않는다.
+ */
+export function missingAdapterError(key: RegistryKey) {
+  return unsupportedError(
+    `'${key}' 레지스트리는 아직 이 빌드에 없습니다`,
+    'ctreg registries 로 지금 쓸 수 있는 레지스트리를 확인하세요.',
+  );
+}
 
 /**
  * 미지원 축을 조용히 무시하고 빈 결과를 내면, 에이전트가 "해당 시험 없음"과

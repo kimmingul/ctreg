@@ -3,6 +3,7 @@ import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
 import { parseCliArgs } from '../../src/cli/args.js';
 import { runCount } from '../../src/cli/commands/count.js';
 import { runGet } from '../../src/cli/commands/get.js';
+import { runRegistries } from '../../src/cli/commands/registries.js';
 import { runResults } from '../../src/cli/commands/results.js';
 import { runSearch } from '../../src/cli/commands/search.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
@@ -330,7 +331,7 @@ describe('index 배선', () => {
       ['results', 'NCT00000001'],
     ]) {
       const c = capture();
-      const code = await run(argv, c.io, {}, { adapters: stubAdapter() as Record<RegistryKey, RegistryAdapter> });
+      const code = await run(argv, c.io, {}, { adapters: stubAdapter() });
       expect(code).toBe(EXIT.OK);
       const parsed = JSON.parse(c.out());
       expect(parsed.error).toBeUndefined();
@@ -399,7 +400,7 @@ describe('index 배선 — 던진 오류도 경고를 잃지 않는다', () => {
       ['get', 'EUCTR:2020-000001-11', 'not-an-id'],
       io,
       {},
-      { adapters: stubAdapter() as Record<RegistryKey, RegistryAdapter> },
+      { adapters: stubAdapter() },
     );
 
     expect(code).toBe(EXIT.USAGE);
@@ -408,5 +409,51 @@ describe('index 배선 — 던진 오류도 경고를 잃지 않는다', () => {
     expect(parsed.registries).toEqual([]); // 어떤 레지스트리도 정해지지 않았다
     expect(parsed.warnings.map((w: { id: string }) => w.id))
       .toEqual(['EUCTR:2020-000001-11', 'not-an-id']);
+  });
+});
+
+// --- Task 6: 레지스트리 키가 어댑터보다 먼저 존재할 수 있다 ---
+
+describe('레지스트리 키는 있는데 아직 어댑터가 없을 때', () => {
+  it('등록된 키인데 어댑터가 없으면 크래시도 빈 성공도 아니라 exit 3 이다', async () => {
+    // ctgov 는 REGISTRY_KEYS 에 실려 있는 진짜 키다 — 여기서는 그 어댑터를
+    // 아예 채우지 않은 맵을 준다. Partial<> 이므로 캐스팅 없이 그냥 {} 로 된다.
+    const adapters: Partial<Record<RegistryKey, RegistryAdapter>> = {};
+    const env = await runSearch(parseCliArgs(['search', '--condition', 'X']), adapters);
+
+    expect(env.data).toEqual([]);
+    expect(env.registries).toEqual([
+      expect.objectContaining({ registry: 'ctgov', status: 'unsupported' }),
+    ]);
+    expect(env.registries[0]?.error?.code).toBe('unsupported');
+    expect(env.registries[0]?.error?.message).toContain('ctgov');
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+
+  it('연합에서 하나만 어댑터가 없으면, 있는 쪽은 정상 처리되고 exit 5 (부분 성공) 다', async () => {
+    // REGISTRY_KEYS 에는 아직 ctgov 하나뿐이라, 두 번째 레지스트리는 기존 테스트들과
+    // 같은 방식(런타임 전용 캐스팅)으로 흉내낸다 — 'bad' 키는 아예 adapters 에 없다.
+    const good = stubAdapter().ctgov;
+    const adapters = { good } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = { ...parseCliArgs(['search', '--condition', 'X']), registries: ['good', 'bad'] as unknown as RegistryKey[] };
+
+    const env = await runSearch(args, adapters);
+
+    expect(env.data).toHaveLength(1);
+    expect(env.registries.map((r) => r.status)).toEqual(['ok', 'unsupported']);
+    expect(env.registries[1]?.error?.code).toBe('unsupported');
+    expect(exitFor(env)).toBe(EXIT.PARTIAL);
+  });
+
+  it('registries 커맨드는 어댑터 없는 키에서 죽지 않고 unsupported 로 남긴다', () => {
+    const adapters: Partial<Record<RegistryKey, RegistryAdapter>> = {};
+    const env = runRegistries(parseCliArgs(['registries']), adapters);
+
+    expect(env.registries).toEqual([
+      expect.objectContaining({ registry: 'ctgov', status: 'unsupported' }),
+    ]);
+    expect(env.registries[0]?.error?.code).toBe('unsupported');
+    expect(env.data).toEqual([]); // 어댑터가 없어 capability 를 낼 수 없는 키는 건너뛴다
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
   });
 });

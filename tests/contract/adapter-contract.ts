@@ -251,7 +251,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       const key = parseTrialId(under.sampleId).registry;
       const env = await runResults(
         argsFor(key, { command: 'results', positionals: [under.sampleId] }),
-        { [key]: forged } as Record<RegistryKey, RegistryAdapter>,
+        { [key]: forged },
       );
 
       expect(results).not.toHaveBeenCalled();
@@ -277,7 +277,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       };
       const env = await runCount(
         argsFor(adapter.key, { command: 'count' }),
-        { [adapter.key]: forged } as Record<RegistryKey, RegistryAdapter>,
+        { [adapter.key]: forged },
       );
 
       expect(count).not.toHaveBeenCalled();

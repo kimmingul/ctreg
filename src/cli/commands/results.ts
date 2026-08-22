@@ -2,6 +2,7 @@ import type { RegistryAdapter } from '../../core/capability.js';
 import { parseTrialId, type RegistryKey } from '../../core/registry.js';
 import { CtregError, usageError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
+import { missingAdapterError } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -20,7 +21,7 @@ import type { Envelope, RegistryStatus } from '../output.js';
  */
 export async function runResults(
   args: ParsedArgs,
-  adapters: Record<RegistryKey, RegistryAdapter>,
+  adapters: Partial<Record<RegistryKey, RegistryAdapter>>,
 ): Promise<Envelope> {
   if (args.positionals.length !== 1) {
     throw usageError(
@@ -29,9 +30,23 @@ export async function runResults(
     );
   }
   const { registry, id } = parseTrialId(args.positionals[0]!);
-  const adapter = adapters[registry]!;
-  const cap = adapter.capability();
   const query = { id, sections: args.results.sections };
+  const adapter = adapters[registry];
+  if (!adapter) {
+    // 다른 커맨드들의 루프-catch 와 달리 results 는 레지스트리 하나만 다루므로
+    // 던지지 않는다 — parseTrialId 가 이미 레지스트리를 정했으니 registries[] 를
+    // 비워 두면 "레지스트리가 정해지지 않았다" 는 봉투 규칙과 어긋난다.
+    const err = missingAdapterError(registry);
+    return {
+      query,
+      registries: [
+        { registry, status: 'unsupported', error: { code: err.code, message: err.message, ...(err.hint ? { hint: err.hint } : {}) } },
+      ],
+      warnings: [],
+      data: null,
+    };
+  }
+  const cap = adapter.capability();
 
   if (!cap.results) {
     // 핵심 구분("결과가 없는 게 아니라 안 싣는다")은 메시지 안에 둔다. hint 자리가

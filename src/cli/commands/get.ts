@@ -3,7 +3,7 @@ import type { TrialRecord } from '../../core/record.js';
 import { parseTrialId, type RegistryKey } from '../../core/registry.js';
 import { CtregError, usageError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { assertSupported } from '../guard.js';
+import { assertSupported, missingAdapterError } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -30,7 +30,7 @@ export class IdRoutingError extends CtregError {
  */
 export async function runGet(
   args: ParsedArgs,
-  adapters: Record<RegistryKey, RegistryAdapter>,
+  adapters: Partial<Record<RegistryKey, RegistryAdapter>>,
 ): Promise<Envelope> {
   if (args.positionals.length === 0) {
     throw usageError('get 은 ID 를 하나 이상 요구합니다', 'ctreg get CTGOV:NCT01234567 [ID...]');
@@ -72,8 +72,9 @@ export async function runGet(
   if (byRegistry.size === 0) throw new IdRoutingError(unroutable as CtregError, warnings);
 
   for (const [key, ids] of byRegistry) {
-    const adapter = adapters[key]!;
     try {
+      const adapter = adapters[key];
+      if (!adapter) throw missingAdapterError(key);
       // get 은 검색 축을 쓰지 않으므로 질의는 빈 것으로 검사한다. 그래도 --include 는
       // 봐야 한다: 레지스트리가 담지 않는 섹션을 조용히 빠뜨린 레코드를 주면
       // "이 시험엔 그 정보가 없다" 로 오독된다 (guard.ts 가 막으려는 바로 그 혼동).

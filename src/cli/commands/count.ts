@@ -2,7 +2,7 @@ import type { RegistryAdapter, Warning } from '../../core/capability.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError, unsupportedError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { applyLimits, assertSupported } from '../guard.js';
+import { applyLimits, assertSupported, missingAdapterError } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -13,15 +13,16 @@ import type { Envelope, RegistryStatus } from '../output.js';
  */
 export async function runCount(
   args: ParsedArgs,
-  adapters: Record<RegistryKey, RegistryAdapter>,
+  adapters: Partial<Record<RegistryKey, RegistryAdapter>>,
 ): Promise<Envelope> {
   const registries: RegistryStatus[] = [];
   const warnings: Warning[] = [];
   let total = 0;
 
   for (const key of args.registries) {
-    const adapter = adapters[key]!;
     try {
+      const adapter = adapters[key];
+      if (!adapter) throw missingAdapterError(key);
       const cap = adapter.capability();
       assertSupported(cap, args.query, args.fetch);
       // capability.count 는 여기서 강제한다 — results.ts 가 cap.results 를 강제하는

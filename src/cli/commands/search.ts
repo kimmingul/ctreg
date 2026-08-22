@@ -3,7 +3,7 @@ import type { TrialRecord } from '../../core/record.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { applyLimits, assertSupported } from '../guard.js';
+import { applyLimits, assertSupported, missingAdapterError } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -17,15 +17,16 @@ import type { Envelope, RegistryStatus } from '../output.js';
  */
 export async function runSearch(
   args: ParsedArgs,
-  adapters: Record<RegistryKey, RegistryAdapter>,
+  adapters: Partial<Record<RegistryKey, RegistryAdapter>>,
 ): Promise<Envelope> {
   const registries: RegistryStatus[] = [];
   const warnings: Warning[] = [];
   const data: TrialRecord[] = [];
 
   for (const key of args.registries) {
-    const adapter = adapters[key]!;
     try {
+      const adapter = adapters[key];
+      if (!adapter) throw missingAdapterError(key);
       // 가드가 먼저다. 미지원 축이면 네트워크를 치지 않는다.
       assertSupported(adapter.capability(), args.query, args.fetch);
       // 이 레지스트리의 maxPageSize 로 클램프한다. args.query 자체는 건드리지 않는다 —

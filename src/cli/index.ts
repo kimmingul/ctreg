@@ -14,7 +14,7 @@ import { EXIT, type ExitCode } from './exit-codes.js';
 import { type Envelope, exitFor, render } from './output.js';
 
 export type Io = { stdout(s: string): void; stderr(s: string): void };
-export type RunDeps = { adapters?: Record<RegistryKey, RegistryAdapter>; http?: HttpDeps };
+export type RunDeps = { adapters?: Partial<Record<RegistryKey, RegistryAdapter>>; http?: HttpDeps };
 
 export async function run(
   argv: string[],
