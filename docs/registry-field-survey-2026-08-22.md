@@ -104,6 +104,7 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 | enrollment.count(실제치 여부) | ICTRP | WHO TRDS 항목 17의 공식 명칭이 **"Target & final sample size"**라 목표치와 실제치를 함께 가리킬 수 있으나, 개별 trial 레코드에서 "final" 값이 실제로 채워지는지는 확인하지 못함 | 실제 ICTRP trial의 XML export(검색 결과를 XML로 내려받기)를 열어 final sample size 요소가 값을 갖고 있는지 확인. 다음 라운드로 미룬다 — 지금 당장 결론을 낼 필요는 없다 |
 | enrollment.count | CTIS | EMA 공식 필드 사전 두 건(Full trial information 7쪽, summary 6쪽) 어디에도 표본크기 필드가 없음 | 실제 trial 페이지의 Locations/Results 탭(두 공식 PDF에는 없다는 게 이번에 확인된 사실이라, 남은 후보는 화면 자체뿐) |
 | dates.lastUpdated | ICTRP | TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 없음 | 실제 trial의 XML export 원문, 또는 Web Service 계정으로 응답 스키마 확인 |
+| dates.lastUpdated(회원국별 여부) | CTIS | "Last update" 정의 문장 자체에는 회원국별 문구가 없으나 같은 "Member State" 블록 안에 있고, 블록의 다른 필드는 모두 회원국별임이 명시됨 | 실제 CTIS trial 페이지에서 Last update 가 트라이얼당 1개인지 회원국당 1개인지 확인 |
 | hasResults | CRIS | 완료일 필드는 있으나 결과공개 플래그를 찾지 못함 | 결과가 등록된 실제 중재연구 상세 페이지 |
 | hasResults | jRCT | "치험결과 조회" 기능은 진행상태 필터일 뿐, 별도 필드인지 미확인 | 종료된 시험의 실제 상세 페이지에 결과 섹션 유무 확인 |
 | crossIds | jRCT | 가이드 1~22쪽에서 확인 못함(33쪽 이후 "기본용어" 및 상세 페이지 "その他の事項" 섹션 미확인) | 가이드 33쪽 이후, 또는 실제 상세 페이지의 "その他の事項" |
