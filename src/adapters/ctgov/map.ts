@@ -119,17 +119,21 @@ export function mapStudy(
           const byHit = Number(hit(b.l)) - Number(hit(a.l));
           if (byHit !== 0) return byHit;
           const byDist = dist(a.l) - dist(b.l);
-          if (byDist !== 0) return byDist;
-          return a.i - b.i; // 안정성: 나머지는 원래 순서
+          if (!Number.isNaN(byDist) && byDist !== 0) return byDist;
+          return a.i - b.i; // 둘 다 거리 없음(Infinity - Infinity = NaN) → 원래 순서
         })
         .map((x) => x.l);
     }
     const cap = o.caps.locations;
     if (mapped.length > cap) {
-      const reasons: string[] = [];
-      if (needle !== undefined) reasons.push(`'${o.locationTerm}' 에 일치하는 장소를 앞에`);
-      if (o.near) reasons.push('가까운 순으로');
-      const ordered = reasons.length > 0 ? ` ${reasons.join(', ')} 두었습니다.` : '';
+      const ordered =
+        needle !== undefined && o.near
+          ? ` '${o.locationTerm}' 에 일치하는 장소를 먼저, 그 안에서 가까운 순으로 두었습니다.`
+          : needle !== undefined
+            ? ` '${o.locationTerm}' 에 일치하는 장소를 앞에 두었습니다.`
+            : o.near
+              ? ' 가까운 순으로 두었습니다.'
+              : '';
       warnings.push({
         code: 'locations_truncated',
         message: `이 시험의 장소 ${mapped.length}곳 중 ${cap}곳만 담았습니다.${ordered}`,

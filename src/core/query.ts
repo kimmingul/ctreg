@@ -48,6 +48,11 @@ export type NormalizedQuery = {
 
 export type FetchOpts = {
   include: IncludeSection[];
+  /**
+   * 담을 양의 정책. **CLI 가 정하고 어댑터는 읽기만 한다** — 어댑터가 스스로 캡을 고르면
+   * 채널이 한 방향으로만 작동해 CLI 의 의도가 사라진다(스펙 §5.2). `--include locations`
+   * 같은 플래그의 해석은 `args.ts` 가 끝내고, 여기에는 결과 숫자만 담긴다.
+   */
   caps: { locations: number; eligibilityChars: number; outcomes: number };
   cacheMode: CacheMode;
   raw: boolean;

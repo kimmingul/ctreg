@@ -599,3 +599,41 @@ describe('두 축을 같이 주면 둘 다 근거로 남는다', () => {
     expect(record.locations!.some((l) => l.city === 'Seoul')).toBe(false);
   });
 });
+
+describe('거리 없는 장소끼리의 동순위는 엔진의 NaN 비교 처리에 기대지 않는다', () => {
+  // 이 테스트는 회귀 검출용이 아니다 — 고치기 전 코드도 통과한다(Node/V8, Bun/JSC 모두
+  // NaN 비교자를 우연히 "같음"으로 처리해 원래 순서가 보존되기 때문이다). 목적은 계약
+  // 고정이다: `!Number.isNaN(byDist) && byDist !== 0` 가드가 없으면 이 성질은 ECMA-262가
+  // 보장하는 게 아니라 엔진 구현이 마침 맞아떨어진 우연일 뿐이다.
+  const N = 24;
+  const noGeoLocations = (order: number[]) =>
+    order.map((i) => ({ city: `City${i}`, country: 'US' })); // geoPoint 없음 → distanceKm 없음 → Infinity
+
+  const study = (nctId: string, order: number[]) => ({
+    protocolSection: {
+      identificationModule: { nctId, briefTitle: 'No Geo' },
+      statusModule: { overallStatus: 'RECRUITING' },
+      conditionsModule: { conditions: ['X'] },
+      contactsLocationsModule: { locations: noGeoLocations(order) },
+    },
+  });
+
+  const wideOpts = () =>
+    opts({
+      near: { lat: 37.5665, lon: 126.978 },
+      locationTerm: 'ZZZ_NO_MATCH',
+      caps: { locations: 200, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.default },
+    });
+
+  it('정순 입력 — 아무도 매칭도 좌표도 없으면 입력 순서 그대로 나온다', () => {
+    const order = Array.from({ length: N }, (_, i) => i);
+    const { record } = mapStudy(study('NCT00000008', order), wideOpts(), AT);
+    expect(record.locations!.map((l) => l.city)).toEqual(order.map((i) => `City${i}`));
+  });
+
+  it('역순 입력 — 정렬이 우연히 다시 오름차순으로 되돌리지 않는다', () => {
+    const order = Array.from({ length: N }, (_, i) => N - 1 - i);
+    const { record } = mapStudy(study('NCT00000009', order), wideOpts(), AT);
+    expect(record.locations!.map((l) => l.city)).toEqual(order.map((i) => `City${i}`));
+  });
+});
