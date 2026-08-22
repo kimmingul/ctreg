@@ -66,6 +66,32 @@ function containsDeepEqual(haystack: unknown, needle: unknown): boolean {
   return false;
 }
 
+/**
+ * `Capability['search']` 의 키 대부분은 `NormalizedQuery` 의 필드명과 그대로 겹치지만,
+ * 전부는 아니다 — `guard.ts` 의 `assertSupported` 가 실제로 무엇을 보고 축이 "쓰였다"고
+ * 판단하는지가 기준이다:
+ * - `geo` 는 `q.near` 를 본다(`q.geo` 라는 필드는 없다).
+ * - `dateRange` 는 여섯 날짜 필드 중 하나라도 있는지를 본다(`q.dateRange` 라는 필드는
+ *   없다) — `{ dateRange: 'x' }` 를 넣으면 여섯 필드가 전부 `undefined` 인 채로 남아
+ *   `used` 가 거짓이 되고, `assertSupported` 는 조용히 통과해 버린다. `expectExit3` 는
+ *   그래서 `assertSupported` 가 안 던진 걸 `expect.unreachable` 로 잡는데, 그 에러엔
+ *   `.exit` 이 없어 `expected undefined to be 3` 이라는 무의미한 메시지로 떨어진다 —
+ *   관문이 진짜로 미지원인 축을 놓친 게 아니라, 이 스위트의 프로브가 애초에 그 축을
+ *   건드리지 못한 것이었다.
+ * 나머지 축(`condition`, `status`, `phase` 등)은 이름이 그대로 겹치므로 `{[axis]:'x'}`
+ * 로 충분하다.
+ */
+const probeFor = (axis: keyof Capability['search']): NormalizedQuery => {
+  switch (axis) {
+    case 'geo':
+      return { near: { lat: 0, lon: 0 } };
+    case 'dateRange':
+      return { updatedSince: 'x' };
+    default:
+      return { [axis]: 'x' } as NormalizedQuery;
+  }
+};
+
 const argsFor = (key: RegistryKey, over: Partial<ParsedArgs> = {}): ParsedArgs => ({
   command: 'count',
   positionals: [],
@@ -289,9 +315,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         return;
       }
       for (const axis of unsupported) {
-        const probe: NormalizedQuery =
-          axis === 'geo' ? { near: { lat: 0, lon: 0 } } : ({ [axis]: 'x' } as NormalizedQuery);
-        expectExit3(probe, cap, axis);
+        expectExit3(probeFor(axis), cap, axis);
       }
     });
 
