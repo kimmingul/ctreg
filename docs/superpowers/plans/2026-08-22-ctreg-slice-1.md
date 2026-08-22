@@ -1384,15 +1384,31 @@ export function cacheKey(
   endpoint: string,
   params: Record<string, unknown>,
 ): string {
+  // 구분자를 값 안에 넣어 위조할 수 없도록 JSON 으로 직렬화한 뒤 해시한다.
+  // `k=v` 를 `&` 로 잇는 방식은 실제로 충돌한다: {a:'x&b=y'} 와 {a:'x',b:'y'} 가
+  // 둘 다 "a=x&b=y" 가 된다. false hit 은 false miss 보다 나쁘다 — 호출 지점에서
+  // 정답과 구별할 수 없는 다른 쿼리의 데이터를 낸다.
+  // String(v) 강제 변환은 의도적이다: 이 params 는 HTTP 층에서
+  // searchParams.set(k, String(v)) 가 되므로 1 과 '1' 은 바이트 동일한 요청을 만든다.
   const normalized = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([k, v]) => `${k}=${String(v)}`)
-    .join('&');
-  return createHash('sha256').update(`${registry}|${endpoint}|${normalized}`).digest('hex');
+    .map(([k, v]) => [k, String(v)]);
+  return createHash('sha256')
+    .update(JSON.stringify([registry, endpoint, normalized]))
+    .digest('hex');
 }
 
 const entryPath = (dir: string, key: string) => join(dir, `resp-${key}.json`);
+
+function isStoredEntry<T>(o: unknown): o is StoredEntry<T> {
+  return (
+    typeof o === 'object' && o !== null &&
+    typeof (o as StoredEntry<T>).storedAt === 'number' &&
+    typeof (o as StoredEntry<T>).fetchedAt === 'string' &&
+    'value' in o
+  );
+}
 
 export async function readCache<T>(
   dir: string,
@@ -1402,7 +1418,12 @@ export async function readCache<T>(
 ): Promise<CacheEntry<T> | undefined> {
   try {
     const raw = await readFile(entryPath(dir, key), 'utf8');
-    const entry = JSON.parse(raw) as StoredEntry<T>;
+    const entry: unknown = JSON.parse(raw);
+    // JSON.parse 성공은 "이 파일이 캐시 항목이다" 와 다른 명제다. 형태를 확인하지 않으면
+    // {"foo":"bar"} 가 value:undefined 인 가짜 hit 이 되고, storedAt 누락은 NaN>ttl → false 라
+    // 영원히 만료되지 않는다. 손상된 캐시는 예외도 가짜 답도 아니라 miss 로 퇴화해야 한다.
+    if (!isStoredEntry<T>(entry)) return undefined;
+    // 경계는 inclusive: 정확히 storedAt + ttlSec*1000 은 아직 hit, 1ms 뒤부터 miss.
     if (now() - entry.storedAt > ttlSec * 1000) return undefined;
     return { value: entry.value, fetchedAt: entry.fetchedAt };
   } catch {
