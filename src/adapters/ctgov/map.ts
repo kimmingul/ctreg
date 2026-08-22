@@ -6,6 +6,7 @@ import type { Warning } from '../../core/capability.js';
 import { CAPS, type FetchOpts } from '../../core/query.js';
 import type { TrialLocation, TrialRecord } from '../../core/record.js';
 import { formatTrialId } from '../../core/registry.js';
+import { upstreamError } from '../../runtime/errors.js';
 import { toPhases, toStatus, toStudyType } from './vocab.js';
 
 const EARTH_RADIUS_KM = 6371.0088;
@@ -28,16 +29,33 @@ function defined<T extends object>(o: T): Partial<T> | undefined {
 
 const dateOf = (s: { date?: string } | undefined) => s?.date;
 
+/**
+ * CT.gov `sex` 원문 → 공통 어휘. statusRaw/phaseRaw 와 같은 규칙 — 필드가 있으면 매핑 성공
+ * 여부와 무관하게 원문을 sexRaw 로 남긴다. 처음 보는 값 하나 때문에 레코드 전체 파싱이
+ * 깨지면 안 되므로 매핑 실패는 예외가 아니라 'unknown' 으로 흡수한다.
+ */
+const SEX_IN: Record<string, 'all' | 'female' | 'male'> = { ALL: 'all', FEMALE: 'female', MALE: 'male' };
+function toSex(raw?: string): { sex?: 'all' | 'female' | 'male' | 'unknown'; sexRaw?: string } {
+  if (raw === undefined || raw === '') return {};
+  return { sex: SEX_IN[raw] ?? 'unknown', sexRaw: raw };
+}
+
 export function mapStudy(
   study: unknown,
   o: FetchOpts,
   fetchedAt: string,
 ): { record: TrialRecord; warnings: Warning[] } {
+  if (study === null || typeof study !== 'object') {
+    throw upstreamError('CT.gov 응답이 예상한 형태(객체)가 아닙니다.', 'CT.gov API 상태를 확인하세요.');
+  }
   const warnings: Warning[] = [];
   const s = study as Record<string, any>;
   const p = s.protocolSection ?? {};
   const ident = p.identificationModule ?? {};
-  const registryId: string = ident.nctId;
+  const registryId: string | undefined = ident.nctId;
+  if (!registryId) {
+    throw upstreamError('CT.gov 응답에 nctId 가 없습니다.', '개별 study 응답을 확인하세요.');
+  }
   const id = formatTrialId('ctgov', registryId);
 
   const wantAll = o.include.includes('all');
@@ -81,19 +99,23 @@ export function mapStudy(
     if (truncated) {
       warnings.push({ code: 'eligibility_truncated', message: '적격 기준문을 잘랐습니다.', id, at: o.caps.eligibilityChars });
     }
-    const sexRaw: string | undefined = em.sex;
+    const sexMapped = toSex(em.sex);
     eligibility = defined({
       minAge: em.minimumAge,
       maxAge: em.maximumAge,
-      sex: sexRaw ? (sexRaw.toLowerCase() as 'all' | 'female' | 'male') : undefined,
+      sex: sexMapped.sex,
+      sexRaw: sexMapped.sexRaw,
       healthyVolunteers: em.healthyVolunteers,
       criteriaText: truncated ? raw!.slice(0, o.caps.eligibilityChars) : raw,
       criteriaTruncated: truncated ? true : undefined,
     }) as TrialRecord['eligibility'];
   }
 
-  // 결과 지표 (옵트인). `--include outcomes` 면 캡이 최대치로 늘어난다 (§5.2) — locations 와 동일한 규칙.
+  // 결과 지표 (옵트인). `--include outcomes` 없이는 이 블록에 들어오지 않으므로, 들어왔다면
+  // want('outcomes') 는 항상 참이고 캡은 항상 최대치다 — o.caps.outcomes 분기는 도달 불가.
+  // (locations 는 opt-in 게이트가 없어 사정이 다르다 — 위 참고.) Task 14 는 이 필드에 기대지 않는다.
   let outcomes: TrialRecord['outcomes'];
+  let outcomesTotal: number | undefined;
   const om = p.outcomesModule;
   if (om && want('outcomes')) {
     const all = [
@@ -101,27 +123,46 @@ export function mapStudy(
       ...(om.secondaryOutcomes ?? []).map((x: any) => ({ type: 'secondary' as const, ...x })),
       ...(om.otherOutcomes ?? []).map((x: any) => ({ type: 'other' as const, ...x })),
     ];
-    const effectiveCap = want('outcomes') ? CAPS.outcomes.max : o.caps.outcomes;
-    if (all.length > effectiveCap) {
-      warnings.push({ code: 'outcomes_truncated', message: `결과 지표 ${all.length}개 중 ${effectiveCap}개만 담았습니다.`, id, at: effectiveCap });
+    if (all.length > 0) {
+      outcomesTotal = all.length;
+      const cap = CAPS.outcomes.max;
+      if (all.length > cap) {
+        warnings.push({ code: 'outcomes_truncated', message: `결과 지표 ${all.length}개 중 ${cap}개만 담았습니다.`, id, at: cap });
+      }
+      outcomes = all.slice(0, cap).map((x) => ({
+        type: x.type,
+        measure: x.measure,
+        ...defined({ timeFrame: x.timeFrame, description: x.description }),
+      }));
     }
-    outcomes = all.slice(0, effectiveCap).map((x) => ({
-      type: x.type,
-      measure: x.measure,
-      ...defined({ timeFrame: x.timeFrame, description: x.description }),
-    }));
   }
 
   const status = toStatus(p.statusModule?.overallStatus);
   const phases = toPhases(p.designModule?.phases);
   const studyType = toStudyType(p.designModule?.studyType);
   const enrollmentInfo = p.designModule?.enrollmentInfo;
-  const lead = p.sponsorCollaboratorsModule?.leadSponsor?.name;
-  const collaborators: string[] | undefined = p.sponsorCollaboratorsModule?.collaborators?.map((c: any) => c.name);
+  const enrollment = enrollmentInfo
+    ? (defined({ count: enrollmentInfo.count, basis: enrollmentInfo.type?.toLowerCase() }) as TrialRecord['enrollment'])
+    : undefined;
 
+  const lead = p.sponsorCollaboratorsModule?.leadSponsor?.name;
+  const rawCollaborators: any[] = p.sponsorCollaboratorsModule?.collaborators ?? [];
+  const collaborators: string[] | undefined =
+    rawCollaborators.length > 0 ? rawCollaborators.map((c: any) => c.name) : undefined;
+
+  // 보조 식별자는 type 이 없어도 id 가 있으면 데이터다 — 버리지 않는다. registry 는 우리
+  // RegistryKey 가 아니라 업스트림이 붙인 원문 라벨이고, domain 은 같은 id 를 여러 기관이
+  // 재사용할 때(예: 동일 id·다른 CTEP/기관 domain) 구분하는 근거라 함께 보존한다.
   const crossIds = (ident.secondaryIdInfos ?? [])
-    .filter((x: any) => x.id && x.type)
-    .map((x: any) => ({ registry: String(x.type), id: String(x.id) }));
+    .filter((x: any) => x.id)
+    .map((x: any) => ({
+      id: String(x.id),
+      ...(x.type ? { registry: String(x.type) } : {}),
+      ...(x.domain ? { domain: String(x.domain) } : {}),
+    }));
+
+  const rawInterventions: any[] = p.armsInterventionsModule?.interventions ?? [];
+  const rawCentralContacts: any[] = p.contactsLocationsModule?.centralContacts ?? [];
 
   const record: TrialRecord = {
     id,
@@ -137,13 +178,11 @@ export function mapStudy(
     ...phases,
     ...studyType,
     ...(crossIds.length > 0 ? { crossIds } : {}),
-    ...(p.armsInterventionsModule?.interventions
-      ? { interventions: p.armsInterventionsModule.interventions.map((i: any) => ({ name: i.name, ...defined({ type: i.type }) })) }
+    ...(rawInterventions.length > 0
+      ? { interventions: rawInterventions.map((i: any) => ({ name: i.name, ...defined({ type: i.type }) })) }
       : {}),
-    ...(lead || collaborators?.length ? { sponsor: defined({ lead, collaborators }) as TrialRecord['sponsor'] } : {}),
-    ...(enrollmentInfo
-      ? { enrollment: defined({ count: enrollmentInfo.count, basis: enrollmentInfo.type?.toLowerCase() }) as TrialRecord['enrollment'] }
-      : {}),
+    ...(lead || collaborators ? { sponsor: defined({ lead, collaborators }) as TrialRecord['sponsor'] } : {}),
+    ...(enrollment ? { enrollment } : {}),
     ...(() => {
       const dates = defined({
         start: dateOf(p.statusModule?.startDateStruct),
@@ -157,10 +196,10 @@ export function mapStudy(
     ...(locations ? { locations, locationsTotal } : {}),
     ...(typeof s.hasResults === 'boolean' ? { hasResults: s.hasResults } : {}),
     ...(eligibility ? { eligibility } : {}),
-    ...(outcomes ? { outcomes } : {}),
-    ...(want('contacts') && p.contactsLocationsModule?.centralContacts
+    ...(outcomes ? { outcomes, outcomesTotal } : {}),
+    ...(want('contacts') && rawCentralContacts.length > 0
       ? {
-          contacts: p.contactsLocationsModule.centralContacts.map((c: any) =>
+          contacts: rawCentralContacts.map((c: any) =>
             defined({ name: c.name, role: c.role, email: c.email, phone: c.phone }),
           ) as TrialRecord['contacts'],
         }

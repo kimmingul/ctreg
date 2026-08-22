@@ -52,7 +52,10 @@ type TrialRecord = {
   id: string                     // "CTGOV:NCT01234567"
   registry: RegistryKey          // "ctgov"
   registryId: string             // "NCT01234567"
-  crossIds?: { registry: string; id: string }[]   // 타 레지스트리 중복 등록
+  crossIds?: { registry?: string; id: string; domain?: string }[]
+  // 보조 식별자. 다른 레지스트리 번호일 수도, 그랜트·프로토콜 번호일 수도 있다.
+  // registry 는 우리 RegistryKey 가 아니라 업스트림이 붙인 원문 라벨이다 — type 이 없으면 registry 도 생략한다.
+  // domain 은 업스트림이 같은 id 를 여러 기관에서 재사용할 때 구분하는 근거다(예: CT.gov 의 동일 id·다른 domain).
   url: string
 
   // ---- core: 항상 채움 (없으면 필드를 생략, 추측 금지) ----

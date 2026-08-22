@@ -22,7 +22,9 @@ export const TrialRecordSchema = z.strictObject({
   id: z.string().min(1),
   registry: RegistryKeySchema,
   registryId: z.string().min(1),
-  crossIds: z.array(z.strictObject({ registry: z.string(), id: z.string() })).optional(),
+  crossIds: z
+    .array(z.strictObject({ registry: z.string().optional(), id: z.string(), domain: z.string().optional() }))
+    .optional(),
   url: z.string().min(1),
 
   // core
@@ -64,6 +66,7 @@ export const TrialRecordSchema = z.strictObject({
       minAge: z.string().optional(),
       maxAge: z.string().optional(),
       sex: z.enum(['all', 'female', 'male', 'unknown']).optional(),
+      sexRaw: z.string().optional(),
       healthyVolunteers: z.boolean().optional(),
       criteriaText: z.string().optional(),
       criteriaTruncated: z.boolean().optional(),
@@ -79,6 +82,7 @@ export const TrialRecordSchema = z.strictObject({
       }),
     )
     .optional(),
+  outcomesTotal: z.number().optional(),
   contacts: z
     .array(
       z.strictObject({

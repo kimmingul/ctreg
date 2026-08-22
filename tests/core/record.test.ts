@@ -65,6 +65,39 @@ describe('TrialRecord 계약', () => {
     ).toThrow();
   });
 
+  it('crossIds 는 registry 없이 id 만으로도 유효하다 — type 없는 보조 식별자를 버리지 않는다', () => {
+    const r = TrialRecordSchema.parse({ ...minimal, crossIds: [{ id: 'OSU 19016' }] });
+    expect(r.crossIds).toEqual([{ id: 'OSU 19016' }]);
+  });
+
+  it('crossIds 는 domain 으로 같은 id·다른 기관을 구분한다', () => {
+    const r = TrialRecordSchema.parse({
+      ...minimal,
+      crossIds: [
+        { id: '10216', registry: 'OTHER', domain: 'Ohio State University Comprehensive Cancer Center LAO' },
+        { id: '10216', registry: 'OTHER', domain: 'CTEP' },
+      ],
+    });
+    expect(r.crossIds?.[0]?.domain).toBe('Ohio State University Comprehensive Cancer Center LAO');
+    expect(r.crossIds?.[1]?.domain).toBe('CTEP');
+  });
+
+  it('outcomesTotal 은 캡 적용 이전 총 개수를 담는다', () => {
+    const r = TrialRecordSchema.parse({
+      ...minimal,
+      outcomes: [{ type: 'primary', measure: 'X' }],
+      outcomesTotal: 25,
+    });
+    expect(r.outcomesTotal).toBe(25);
+    expect(r.outcomes).toHaveLength(1);
+  });
+
+  it('eligibility.sexRaw 는 statusRaw 와 같은 규칙으로 원문을 보존한다', () => {
+    const r = TrialRecordSchema.parse({ ...minimal, eligibility: { sex: 'unknown', sexRaw: 'SOMETHING_NEW' } });
+    expect(r.eligibility?.sex).toBe('unknown');
+    expect(r.eligibility?.sexRaw).toBe('SOMETHING_NEW');
+  });
+
   it('중첩 객체(TrialResults.sections.outcomes)도 알 수 없는 필드를 거부한다', () => {
     // 필수 필드(total/expanded/items)는 전부 채우고 오타 필드 하나만 얹는다.
     // strict 가 아니라면 이 요청은 그냥 통과하고 오타 필드는 조용히 사라진다.

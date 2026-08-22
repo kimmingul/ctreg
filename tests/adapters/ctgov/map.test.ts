@@ -4,9 +4,18 @@ import { describe, expect, it } from 'vitest';
 import { mapStudy, haversineKm } from '../../../src/adapters/ctgov/map.js';
 import { TrialRecordSchema } from '../../../src/core/record.js';
 import { CAPS, type FetchOpts } from '../../../src/core/query.js';
+import { CtregError } from '../../../src/runtime/errors.js';
 
 const fixture = (n: string) =>
   JSON.parse(readFileSync(join(__dirname, '../../fixtures/ctgov', `${n}.json`), 'utf8'));
+
+/** search-page.json 에서 nctId 로 원문 study 하나를 뽑는다 — 값 pin 테스트를 실제 응답에 건다. */
+const studyByNctId = (nctId: string) => {
+  const page = fixture('search-page') as { studies: any[] };
+  const s = page.studies.find((x) => x.protocolSection.identificationModule.nctId === nctId);
+  if (!s) throw new Error(`fixture 에 ${nctId} 없음`);
+  return s;
+};
 
 const opts = (over: Partial<FetchOpts> = {}): FetchOpts => ({
   include: ['core'],
@@ -128,6 +137,7 @@ describe('CT.gov → TrialRecord 매핑', () => {
     expect(mapStudy(many, opts(), AT).record.outcomes).toBeUndefined();
     const { record, warnings } = mapStudy(many, opts({ include: ['core', 'outcomes'] }), AT);
     expect(record.outcomes).toHaveLength(25);
+    expect(record.outcomesTotal).toBe(25);
     expect(warnings.map((w) => w.code)).not.toContain('outcomes_truncated');
   });
 
@@ -161,5 +171,175 @@ describe('CT.gov → TrialRecord 매핑', () => {
     const d = haversineKm({ lat: 37.5665, lon: 126.978 }, { lat: 35.1796, lon: 129.0756 });
     expect(d).toBeGreaterThan(310);
     expect(d).toBeLessThan(340);
+  });
+
+  // C1 — type 없는 보조 식별자를 조용히 버리면 안 된다. NCT00334763 은 세 개 다 type 이 없다.
+  it('type 없는 보조 식별자도 crossIds 에서 살아남는다 (NCT00334763)', () => {
+    const { record } = mapStudy(studyByNctId('NCT00334763'), opts(), AT);
+    expect(record.crossIds).toEqual([
+      { id: 'NU-05L1' },
+      { id: 'NU-1362-038' },
+      { id: 'GENENTECH-AVF3646s' },
+    ]);
+  });
+
+  it('crossIds 는 type 있는 항목의 registry 를 채우고, domain 으로 동일 id·다른 기관을 구분한다 (NCT03831932)', () => {
+    const { record } = mapStudy(studyByNctId('NCT03831932'), opts(), AT);
+    expect(record.crossIds).toEqual([
+      { id: 'NCI-2019-00572', registry: 'REGISTRY', domain: 'CTRP (Clinical Trial Reporting Program)' },
+      { id: 'OSU 19016' },
+      { id: '10216', registry: 'OTHER', domain: 'Ohio State University Comprehensive Cancer Center LAO' },
+      { id: '10216', registry: 'OTHER', domain: 'CTEP' },
+      { id: 'UM1CA186712', registry: 'NIH' },
+    ]);
+  });
+
+  // C2 — 모듈은 있지만 배열이 비어 있으면, 그 배열이 있었다는 사실 자체를 기록에 남기지 않는다.
+  it('빈 배열은 present-but-empty 컨테이너를 만들지 않고 키 자체를 생략한다', () => {
+    const empties = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000010', briefTitle: 'Empties' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        armsInterventionsModule: { interventions: [] },
+        outcomesModule: { primaryOutcomes: [], secondaryOutcomes: [], otherOutcomes: [] },
+        contactsLocationsModule: { centralContacts: [] },
+        sponsorCollaboratorsModule: { leadSponsor: { name: 'Lead Co' }, collaborators: [] },
+      },
+    };
+    const o = opts({ include: ['core', 'eligibility', 'outcomes', 'contacts', 'locations'] });
+    const { record } = mapStudy(empties, o, AT);
+    expect(record).not.toHaveProperty('interventions');
+    expect(record).not.toHaveProperty('outcomes');
+    expect(record).not.toHaveProperty('outcomesTotal');
+    expect(record).not.toHaveProperty('contacts');
+    expect(record.sponsor).toEqual({ lead: 'Lead Co' });
+    expect(record.sponsor).not.toHaveProperty('collaborators');
+    expect(() => TrialRecordSchema.parse(record)).not.toThrow();
+  });
+
+  // I1 — enrollmentInfo 모듈은 있지만 안이 비어 있으면 enrollment 키 자체가 없어야 한다.
+  // `{ enrollment: undefined }` 를 스프레드하면 값은 undefined 인데 키는 남는 사고가 났었다.
+  it('enrollmentInfo 가 비어 있으면 enrollment 키를 만들지 않는다', () => {
+    const s = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000011', briefTitle: 'Empty Enrollment' },
+        statusModule: {},
+        conditionsModule: { conditions: ['X'] },
+        designModule: { enrollmentInfo: {} },
+      },
+    };
+    const { record } = mapStudy(s, opts(), AT);
+    expect(Object.hasOwn(record, 'enrollment')).toBe(false);
+    expect(() => TrialRecordSchema.parse(record)).not.toThrow();
+  });
+
+  // I3 — sex 는 명시적으로 매핑하고, 모르는 값은 예외 대신 unknown + sexRaw 로 흡수한다.
+  it('sex 는 알려진 값을 매핑하고 원문을 sexRaw 로 남긴다', () => {
+    for (const [raw, mapped] of [
+      ['ALL', 'all'],
+      ['FEMALE', 'female'],
+      ['MALE', 'male'],
+    ] as const) {
+      const s = {
+        protocolSection: {
+          identificationModule: { nctId: 'NCT00000012', briefTitle: 'Sex' },
+          statusModule: {},
+          conditionsModule: { conditions: ['X'] },
+          eligibilityModule: { sex: raw },
+        },
+      };
+      const { record } = mapStudy(s, opts({ include: ['core', 'eligibility'] }), AT);
+      expect(record.eligibility?.sex).toBe(mapped);
+      expect(record.eligibility?.sexRaw).toBe(raw);
+    }
+  });
+
+  it('처음 보는 sex 값은 예외를 던지지 않고 unknown 으로 흡수하며 원문을 남긴다', () => {
+    const s = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000013', briefTitle: 'Sex Unknown' },
+        statusModule: {},
+        conditionsModule: { conditions: ['X'] },
+        eligibilityModule: { sex: 'SOMETHING_NEW' },
+      },
+    };
+    const { record } = mapStudy(s, opts({ include: ['core', 'eligibility'] }), AT);
+    expect(record.eligibility?.sex).toBe('unknown');
+    expect(record.eligibility?.sexRaw).toBe('SOMETHING_NEW');
+    expect(() => TrialRecordSchema.parse(record)).not.toThrow();
+  });
+
+  // I4 — 신원을 지어내지 않는다. nctId 가 없으면 CTGOV:undefined 같은 가짜 id 대신 예외를 던진다.
+  it('nctId 가 없으면 가짜 id 를 만들지 않고 upstreamError 를 던진다', () => {
+    const s = { protocolSection: { identificationModule: { briefTitle: 'No Id' } } };
+    expect(() => mapStudy(s, opts(), AT)).toThrow(CtregError);
+  });
+
+  it('study 가 객체가 아니면 원시 TypeError 대신 CtregError 를 던진다', () => {
+    expect(() => mapStudy(null, opts(), AT)).toThrow(CtregError);
+    expect(() => mapStudy('nope', opts(), AT)).toThrow(CtregError);
+  });
+
+  // I5 — 값 자체를 실제 응답으로 pin 한다. "parse 가 안 던진다" 는 잘못된 값도 통과시킨다.
+  it('study-full 의 실제 값들이 정확히 매핑된다', () => {
+    const { record } = mapStudy(fixture('study-full'), opts(), AT);
+    expect(record.officialTitle).toBe(
+      'A Multicenter, Adaptive, Randomized Blinded Controlled Trial of the Safety and Efficacy of Investigational Therapeutics for the Treatment of COVID-19 in Hospitalized Adults',
+    );
+    expect(record.conditions).toEqual(['COVID-19']);
+    expect(record.phase).toEqual(['phase_3']);
+    expect(record.studyType).toBe('interventional');
+    expect(record.hasResults).toBe(true);
+    expect(record.enrollment).toEqual({ count: 1062, basis: 'actual' });
+    expect(record.dates?.start).toBe('2020-02-21');
+    expect(record.dates?.primaryCompletion).toBe('2020-05-21');
+    expect(record.sponsor).toEqual({ lead: 'National Institute of Allergy and Infectious Diseases (NIAID)' });
+    expect(record.interventions).toEqual([
+      { type: 'OTHER', name: 'Placebo' },
+      { type: 'DRUG', name: 'Remdesivir' },
+    ]);
+  });
+
+  it('NCT00334763 의 collaborators 가 실제 값으로 매핑된다', () => {
+    const { record } = mapStudy(studyByNctId('NCT00334763'), opts(), AT);
+    expect(record.sponsor).toEqual({ lead: 'Northwestern University', collaborators: ['National Cancer Institute (NCI)'] });
+  });
+
+  it('장소마다 자기 status 를 담는다 — 모든 장소를 recruiting 으로 뭉개지 않는다', () => {
+    const mixed = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000014', briefTitle: 'Mixed Status' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        contactsLocationsModule: {
+          locations: [
+            { city: 'A', country: 'US', status: 'RECRUITING' },
+            { city: 'B', country: 'US', status: 'COMPLETED' },
+            { city: 'C', country: 'US', status: 'NOT_YET_RECRUITING' },
+          ],
+        },
+      },
+    };
+    const { record } = mapStudy(mixed, opts(), AT);
+    expect(record.locations?.map((l) => l.status)).toEqual(['recruiting', 'completed', 'not_yet_recruiting']);
+  });
+
+  // I6 — contacts 는 eligibility/outcomes 와 같은 opt-in 이다. 실제 이메일을 담은 응답으로 양방향을 편다.
+  it('--include contacts 없이는 실제 central contact(이메일 포함)도 새지 않는다 (NCT06999187)', () => {
+    const { record } = mapStudy(studyByNctId('NCT06999187'), opts(), AT);
+    expect(record.contacts).toBeUndefined();
+  });
+
+  it('--include contacts 면 실제 central contact 값이 그대로 담긴다 (NCT06999187)', () => {
+    const { record } = mapStudy(studyByNctId('NCT06999187'), opts({ include: ['core', 'contacts'] }), AT);
+    expect(record.contacts).toEqual([
+      {
+        name: 'Dren Bio Central Contact',
+        role: 'CONTACT',
+        phone: '415-737-5277',
+        email: 'DR-0202-ONC-001_inquiries@drenbio.com',
+      },
+    ]);
   });
 });
