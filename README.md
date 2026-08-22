@@ -77,6 +77,8 @@ ctreg search --condition "non-small cell lung cancer" --status recruiting --page
 
 다음 페이지는 `--page-token`(`nextPageToken` 값)으로 이어 받는다. 검색 축(`--condition`, `--intervention`, `--term`, `--title`, `--location`, `--outcome-query`, `--sponsor`, `--lead`, `--id`, `--patient`)은 하나 이상 조합해서 쓸 수 있고, 필터(`--status`, `--phase`, `--study-type`, 날짜 범위, `--near`/`--radius`)는 그 위에 덧씌운다.
 
+**`--near` 는 시험을 거르지, 사이트를 거르지 않는다.** `--near`(+ 기본/지정 `--radius`)는 "반경 안에 사이트가 하나라도 있는 시험"을 매칭 조건으로 쓴다. 매칭에 성공한 시험이라도 레코드에 실리는 `locations` 배열은 그 시험의 전체 사이트 목록(상한까지 자르고 `locationsTotal` 로 진짜 개수를 남긴다)이지, 반경 안의 사이트만 남긴 목록이 아니다 — 예를 들어 서울 근처로 검색해도 그 시험이 해외에서도 모집 중이면 대만·미국·스페인 사이트가 함께 나온다. 각 사이트는 `distanceKm` 을 갖고 가까운 순으로 정렬되므로, 목록 맨 위가 검색 반경에 실제로 걸린 사이트다 — "이 근처에서 모집하는 시험이 있다"와 "이 시험은 이 근처에서만 모집한다"는 다른 사실이니 혼동하지 마라.
+
 ### `ctreg get` — ID 로 시험 레코드를 바로 가져온다
 
 ```bash
