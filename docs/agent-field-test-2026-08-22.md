@@ -151,7 +151,7 @@ CLI-FIX 다"라고 정해두었고, 그것이 항목을 CLI-FIX 로 미는 힘�
 
 스펙 §7 이 요구하는 시나리오별 커맨드 목록이다. 전사에서 실제 실행된 `ctreg` 호출만 뽑았다
 (환경변수 접두사·파이프·리다이렉션·중복 제거, `--help` 출력의 사용법 줄과 산문 언급은 제외).
-전사 원문은 `.superpowers/fieldtest/` 에 있다.
+전사 원문은 `docs/fieldtest/` 에 있다.
 
 **S1 서울 근처 모집중 NSCLC** — 14개
 
@@ -254,10 +254,12 @@ ctreg get NCT04280705 NCT00000102 NCT99999999 --format json
 
 ## 근거를 다시 확인하려면
 
-전사와 정답표는 `.superpowers/fieldtest/` 에 있다(gitignore — 저장소에 커밋되지 않는다):
-`s1.md`~`s6.md`, 재실행 `s3-haiku.md`·`s4-haiku.md`, 정답표 `ground-truth-s1.md`·
-`ground-truth-s2-s6.md`. 판정 근거와 룰링은
-`.superpowers/sdd/2026-08-22-ctreg-plugin-fieldtest/progress.md`.
+전사와 정답표는 **`docs/fieldtest/` 에 커밋되어 있다**: `s1.md`~`s6.md`,
+재실행 `s3-haiku.md`·`s4-haiku.md`, 정답표 `ground-truth-s1.md`·`ground-truth-s2-s6.md`.
+이 문서의 모든 판정과 숫자는 거기서 확인할 수 있다.
+
+작업 중의 룰링과 판정 과정은 `.superpowers/sdd/2026-08-22-ctreg-plugin-fieldtest/progress.md`
+에 있으나 그것은 gitignore 된 스크래치이므로 남아 있지 않을 수 있다.
 
 대조 시점은 **2026-08-22** 다. ClinicalTrials.gov 는 매일 갱신되므로 이 문서의 모든
 숫자(119·109·2934·110·15·48·15120 등)는 그날의 값이다. 나중에 재측정하면 달라진다 —
