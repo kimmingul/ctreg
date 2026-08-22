@@ -70,12 +70,20 @@ describe('온디스크 토큰버킷', () => {
     const release = await lockfile.lock(path, { realpath: false });
     try {
       const r = await reserveSlot({
-        dir, registry: 'ctgov', ratePerSec: 1, lockTimeoutMs: 50, now: c.now, sleep: c.sleep,
+        dir, registry: 'ctgov', ratePerSec: 1, lockRetryMaxMs: 50, now: c.now, sleep: c.sleep,
       });
       expect(r.lockTimedOut).toBe(true);
       expect(r.waitedMs).toBe(1000);
     } finally {
       await release();
     }
+  });
+
+  it('손상된(파싱 불가) 버킷 파일은 즉시 허용이 아니라 한 간격만큼 대기하게 한다', async () => {
+    const c = fakeClock();
+    const path = bucketPath(dir, 'ctgov');
+    writeFileSync(path, '{이것은 유효한 JSON 이 아니다');
+    const r = await reserveSlot({ dir, registry: 'ctgov', ratePerSec: 1, now: c.now, sleep: c.sleep });
+    expect(r.waitedMs).toBe(1000);
   });
 });
