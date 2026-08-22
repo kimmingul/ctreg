@@ -76,6 +76,6 @@ describe('SKILL.md 는 얇다', () => {
 
   it('절 구성이 고정되어 있다 — 새 절을 만들어 지식을 부어넣을 수 없다', () => {
     const headings = [...BODY.matchAll(/^##\s+(.+?)\s*$/gm)].map((m) => m[1]);
-    expect(headings).toEqual(['시작하기 전에', '출력을 읽는 법', '한계']);
+    expect(headings).toEqual(['시작하기 전에', '출력을 읽는 법', '레지스트리를 읽는 법', '한계']);
   });
 });
