@@ -147,6 +147,105 @@ CLI-FIX 다"라고 정해두었고, 그것이 항목을 CLI-FIX 로 미는 힘�
   요약 모드의 `items: []` 를 직접 마주한다.
 - O2 는 결함으로 확정하지 않았다. 재현하지 못한 것을 확정하면 이 문서의 나머지도 못 믿게 된다.
 
+## 부록 — 에이전트가 실행한 커맨드
+
+스펙 §7 이 요구하는 시나리오별 커맨드 목록이다. 전사에서 실제 실행된 `ctreg` 호출만 뽑았다
+(환경변수 접두사·파이프·중복 제거, `--help` 출력의 사용법 줄은 제외). 전사 원문은
+`.superpowers/fieldtest/` 에 있다.
+
+**S1 서울 근처 모집중 NSCLC** — 14개
+
+```
+ctreg --help
+ctreg registries
+ctreg search --condition "non-small cell lung cancer" --location "Seoul" --status RECRUITING --format text
+ctreg search --condition "non-small cell lung cancer" --location "Seoul" --status recruiting --format text
+ctreg search --condition "non-small cell lung cancer" --location "Seoul" --status recruiting --format json --page-size 3
+ctreg search --condition "non-small cell lung cancer" --near "37.5665,126.9780" --radius 50km --status recruiting --format text
+ctreg count --condition "non-small cell lung cancer" --status recruiting
+ctreg count --condition "non-small cell lung cancer" --location "Seoul" --status recruiting
+ctreg count --condition "non-small cell lung cancer" --near "37.5665,126.9780" --radius 50km --status recruiting
+ctreg count --condition "non-small cell lung cancer" --near "48.8566,2.3522" --radius 50km --status recruiting
+ctreg search --condition "non-small cell lung cancer" --near "37.5665,126.9780" --radius 50km --status recruiting --format text --page-size 150
+ctreg search --condition "non-small cell lung cancer" --near "37.5665,126.9780" --radius 50km --status recruiting --format json --page-size 150
+ctreg get CTGOV:NCT07100080 --format json
+ctreg get CTGOV:NCT07100080 --raw --format json
+```
+
+**S2 펨브롤리주맙 건수와 phase 분포** — 9개
+
+```
+ctreg --help
+ctreg registries
+ctreg count --intervention "pembrolizumab"
+ctreg count --intervention "pembrolizumab" --phase BOGUS
+ctreg count --intervention "pembrolizumab" --phase $p
+ctreg search --intervention "pembrolizumab" --phase phase_1 --phase phase_2 --page-size 5
+ctreg count --intervention "pembrolizumab" --phase early_phase_1 --phase phase_1 --phase phase_2 --phase phase_3 --phase phase_4 --phase na
+ctreg count --term "pembrolizumab"
+ctreg count --intervention "Keytruda"
+```
+
+**S3 NCT04280705 유해사례, 심장 관련** — 1개
+
+```
+ctreg registries
+```
+
+**S4 세 NCT 정리 (하나는 없는 ID)** — 4개
+
+```
+ctreg --help
+ctreg registries
+ctreg get NCT04280705 NCT00000102 NCT99999999
+ctreg get --help
+```
+
+**S5 EudraCT 번호 조회** — 7개
+
+```
+ctreg --help
+ctreg registries
+ctreg search --help
+ctreg get --help
+ctreg search --id "2020-000001-11"
+ctreg get "2020-000001-11"
+ctreg search --term "2020-000001-11"
+```
+
+**S6 결과 게시된 완료 당뇨 시험** — 8개
+
+```
+ctreg registries
+ctreg search --help
+ctreg search --condition diabetes --status COMPLETED --page-size 5
+ctreg search --condition diabetes --status completed --page-size 5
+ctreg search --condition diabetes --status completed --has-results true
+ctreg search --condition diabetes --status completed --page-size 200 --format ndjson
+ctreg count --condition diabetes --status completed
+ctreg results CTGOV:NCT00982644
+```
+
+**S3 재실행 (다른 모델 계열)** — 5개
+
+```
+ctreg --help
+ctreg registries
+ctreg results NCT04280705
+ctreg results NCT04280705 --ae-organ "Cardiac disorders"
+ctreg get NCT04280705
+```
+
+**S4 재실행 (다른 모델 계열)** — 3개
+
+```
+ctreg --help
+ctreg registries
+ctreg get NCT04280705 NCT00000102 NCT99999999 --format json
+```
+
+합계 51개 호출.
+
 ## 근거를 다시 확인하려면
 
 전사와 정답표는 `.superpowers/fieldtest/` 에 있다(gitignore — 저장소에 커밋되지 않는다):
