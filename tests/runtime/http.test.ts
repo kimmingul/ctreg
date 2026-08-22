@@ -1,6 +1,7 @@
-import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import lockfile from 'proper-lockfile';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { Config } from '../../src/runtime/config.js';
@@ -174,4 +175,26 @@ describe('HTTP 클라이언트', () => {
     const cached = readdirSync(cfg.cacheDir).filter((name) => name.startsWith('resp-'));
     expect(cached).toEqual([]);
   });
+
+  it(
+    '스로틀 버킷 락을 잡지 못하면 단독 진행하면서 throttle_lock_timeout 경고를 담아 성공한다',
+    async () => {
+      const path = bucketPath(cfg.cacheDir, 'ctgov');
+      writeFileSync(path, JSON.stringify({ nextAvailableAt: 0 }));
+      // reserveSlot 이 이 락을 끝내 잡지 못하도록, getJson 을 부르기 전에 실제
+      // proper-lockfile 락을 쥔 채로 유지한다 — throttle.test.ts 와 같은 기법.
+      const release = await lockfile.lock(path, { realpath: false });
+      try {
+        const f = vi.fn(async () => json({ ok: true }));
+        const r = await getJson<{ ok: boolean }>(cfg, opts('off'), deps(f as unknown as typeof fetch));
+        expect(r.value).toEqual({ ok: true });
+        expect(r.warnings).toContainEqual(
+          expect.objectContaining({ code: 'throttle_lock_timeout' }),
+        );
+      } finally {
+        await release();
+      }
+    },
+    15_000, // reserveSlot 의 락 재시도 기본 상한(500ms)까지 10 회 재시도하므로 실시간으로 몇 초 걸린다.
+  );
 });
