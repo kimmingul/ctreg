@@ -41,8 +41,8 @@
 
 **교차 검증 결과(`docs/registry-field-survey-2026-08-22.md`).** WHO ICTRP·ISRCTN·EU CTIS·CRIS(한국)·jRCT(일본) 다섯 레지스트리를 CT.gov와 대조한 결과, §2.2 의 core 필드 13개 전부가 CT.gov 외 최소 세 곳 이상에서 채워질 수 있음을 확인했다 — core에서 이동한 필드는 없다. 다만 향후 두 번째 어댑터를 만들 때 반드시 알아야 할 구조적 함정 두 가지가 드러났다:
 
-1. **CTIS는 상태를 레코드당 1개가 아니라 회원국(EU/EEA)별로 따로 매긴다.** `status`가 단일 값이라는 이 스펙의 전제와 구조적으로 다르다 — 대표값을 고르는 기준은 CTIS 어댑터가 정하고, 국가별 전체 값은 `--raw`의 `source`로 보존한다.
-2. **CT.gov를 제외한 조사 대상 레지스트리는 전부 목표(target) 등록 인원만 제공한다.** `enrollment.basis === 'actual'`은 사실상 CT.gov 전용이라고 가정하고 다른 어댑터를 설계해야 한다.
+1. **CTIS는 상태를 레코드당 1개가 아니라 회원국(EU/EEA)별로 따로 매긴다.** 출처: [CTIS public portal: summary](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf)(EMA/441149/2024, 2024-09-20) 4/6쪽 "Member State" 섹션의 "Current status" 필드 — "The present stage of the clinical trial **in each member state**"라고 명시하고 10개 상태값(Authorised, recruitment pending / Authorised, recruiting / Ongoing, recruiting / Ongoing, recruitment ended / Temporarily halted / Suspended / Ended / Revoked / Not authorised / Expired)을 회원국 단위로 매긴다. `status`가 단일 값이라는 이 스펙의 전제와 구조적으로 다르다 — 대표값을 고르는 기준은 CTIS 어댑터가 정하고, 국가별 전체 값은 `--raw`의 `source`로 보존한다.
+2. **ISRCTN·CRIS·jRCT 세 곳은 목표(target) 등록 인원만 제공하고 실제(actual) 인원을 구분하지 않는다는 것이 확인됐다.** 이 세 곳을 위한 어댑터는 `enrollment.basis === 'actual'`을 채울 수 없다고 가정해야 한다. **ICTRP는 다르게 취급한다 — target-only로 단정할 근거가 없다.** WHO TRDS 항목 17의 공식 명칭이 "Sample Size"가 아니라 "Target & final sample size"라, 목표치뿐 아니라 실제(최종)치도 함께 담을 수 있는 필드로 보인다 — 다만 개별 레코드에서 그 값이 실제로 채워지는지는 검증하지 못했다(미확인, `docs/registry-field-survey-2026-08-22.md`의 "확인 못한 항목 요약" 참고). CTIS도 표본크기 필드 자체를 두 공식 문서(Full trial information, summary) 어디서도 찾지 못해 미확정이다.
 
 ### 2.2 레코드
 
