@@ -507,3 +507,40 @@ describe('장소 절단은 필터에 걸린 근거를 남긴다', () => {
     expect(warnings.find((w) => w.code === 'locations_truncated')?.message).toContain('이 시험의 장소');
   });
 });
+
+describe('두 축을 같이 주면 둘 다 근거로 남는다', () => {
+  const study = {
+    protocolSection: {
+      identificationModule: { nctId: 'NCT00000007', briefTitle: 'Both' },
+      statusModule: { overallStatus: 'RECRUITING' },
+      conditionsModule: { conditions: ['X'] },
+      contactsLocationsModule: {
+        locations: [
+          // 중심에 가까운 15곳 (서울과 무관)
+          ...Array.from({ length: 15 }, (_, i) => ({
+            city: `Near${i}`, country: 'United States',
+            geoPoint: { lat: 37.6 + i * 0.001, lon: 127.0 },
+          })),
+          // 매칭되지만 멀리 있는 서울 사이트
+          { facility: 'Seoul National University Hospital', city: 'Seoul', country: 'South Korea',
+            geoPoint: { lat: 10.0, lon: 10.0 } },
+        ],
+      },
+    },
+  };
+  const center = { lat: 37.5665, lon: 126.978 };
+
+  it('near 가 있어도 location 매칭 장소가 잘려나가지 않는다', () => {
+    const { record, warnings } = mapStudy(study, opts({ near: center, locationTerm: 'Seoul' }), AT);
+    expect(record.locations!.some((l) => l.city === 'Seoul')).toBe(true);
+    const msg = warnings.find((w) => w.code === 'locations_truncated')!.message;
+    expect(msg).toContain('Seoul');
+    expect(msg).toContain('가까운 순');
+  });
+
+  it('near 만 주면 예전처럼 거리순이다', () => {
+    const { record } = mapStudy(study, opts({ near: center }), AT);
+    expect(record.locations![0]!.city).toMatch(/^Near/);
+    expect(record.locations!.some((l) => l.city === 'Seoul')).toBe(false);
+  });
+});

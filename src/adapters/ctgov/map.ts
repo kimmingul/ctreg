@@ -99,25 +99,37 @@ export function mapStudy(
         ...(geo ? { geo } : {}),
       } as TrialLocation;
     });
+    // 두 축은 배타적이지 않다. `--near` 와 `--location` 을 같이 주면 둘 다 결과를 좁혔고,
+    // 따라서 둘 다 "이 시험이 왜 걸렸는가"의 근거다. 하나만 살려 자르면 F1 이 고치려던
+    // 실패(필터에 걸린 근거가 잘려나감)가 조합 케이스에서 그대로 재발한다.
+    // 정렬 키: 일치하는 장소 먼저, 그 안에서 가까운 순.
+    const needle = o.locationTerm?.toLowerCase();
+    const hit = (l: TrialLocation) =>
+      needle !== undefined &&
+      [l.facility, l.city, l.state, l.country].some((f) => f?.toLowerCase().includes(needle));
     if (o.near) {
       const center = o.near;
+      mapped = mapped.map((l) => (l.geo ? { ...l, distanceKm: haversineKm(center, l.geo) } : l));
+    }
+    if (o.near || needle !== undefined) {
+      const dist = (l: TrialLocation) => l.distanceKm ?? Number.POSITIVE_INFINITY;
       mapped = mapped
-        .map((l) => (l.geo ? { ...l, distanceKm: haversineKm(center, l.geo) } : l))
-        .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
-    } else if (o.locationTerm) {
-      const needle = o.locationTerm.toLowerCase();
-      const hit = (l: TrialLocation) =>
-        [l.facility, l.city, l.state, l.country].some((f) => f?.toLowerCase().includes(needle));
-      // 안정 분할: 일치하는 것을 원래 순서대로 앞에, 나머지를 원래 순서대로 뒤에.
-      mapped = [...mapped.filter(hit), ...mapped.filter((l) => !hit(l))];
+        .map((l, i) => ({ l, i }))
+        .sort((a, b) => {
+          const byHit = Number(hit(b.l)) - Number(hit(a.l));
+          if (byHit !== 0) return byHit;
+          const byDist = dist(a.l) - dist(b.l);
+          if (byDist !== 0) return byDist;
+          return a.i - b.i; // 안정성: 나머지는 원래 순서
+        })
+        .map((x) => x.l);
     }
     const cap = want('locations') ? CAPS.locations.max : o.caps.locations;
     if (mapped.length > cap) {
-      const ordered = o.near
-        ? ' 가까운 순으로 정렬했습니다.'
-        : o.locationTerm
-          ? ` '${o.locationTerm}' 에 일치하는 장소를 앞에 두었습니다.`
-          : '';
+      const reasons: string[] = [];
+      if (needle !== undefined) reasons.push(`'${o.locationTerm}' 에 일치하는 장소를 앞에`);
+      if (o.near) reasons.push('가까운 순으로');
+      const ordered = reasons.length > 0 ? ` ${reasons.join(', ')} 두었습니다.` : '';
       warnings.push({
         code: 'locations_truncated',
         message: `이 시험의 장소 ${mapped.length}곳 중 ${cap}곳만 담았습니다.${ordered}`,
