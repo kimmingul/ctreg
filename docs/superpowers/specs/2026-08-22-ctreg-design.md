@@ -323,7 +323,7 @@ capability 선언 덤프. 네트워크를 치지 않는다. `--registry <key>` �
 | `data[]` (search/get) | page-size 20 | 최대 200 |
 | `locations[]` | 10 (+ `locationsTotal`) | `--include locations` → 200 |
 | `eligibility.criteriaText` | 8,000자 | `--eligibility-chars N`, 최대 40,000 |
-| `outcomes[]` | 20 | `--include outcomes` → 200 |
+| `outcomes[]` | 옵트인 — `--include outcomes` 없으면 필드 자체가 없음 (+ `outcomesTotal`) | `--include outcomes` 이면 캡은 항상 최대치 200. `locations` 와 달리 core 기본값으로 20 이 나오는 경로가 없다 |
 | `results` 커맨드 응답 | 요약 | `--full` (경고 동반) |
 
 **조용한 절단은 금지한다.** 잘라낸 모든 지점은 `warnings[]` 항목 하나와 레코드 안의 `*Truncated` 플래그를 남긴다. 조용한 절단은 에이전트를 가장 확실하게 속이는 실패 모드다.

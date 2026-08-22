@@ -294,6 +294,11 @@ describe('CT.gov → TrialRecord 매핑', () => {
     expect(record.enrollment).toEqual({ count: 1062, basis: 'actual' });
     expect(record.dates?.start).toBe('2020-02-21');
     expect(record.dates?.primaryCompletion).toBe('2020-05-21');
+    expect(record.dates?.completion).toBe('2020-05-21');
+    expect(record.dates?.firstPosted).toBe('2020-02-21');
+    expect(record.dates?.lastUpdated).toBe('2022-03-14');
+    expect(record.status).toBe('completed');
+    expect(record.statusRaw).toBe('COMPLETED');
     expect(record.sponsor).toEqual({ lead: 'National Institute of Allergy and Infectious Diseases (NIAID)' });
     expect(record.interventions).toEqual([
       { type: 'OTHER', name: 'Placebo' },
@@ -323,6 +328,20 @@ describe('CT.gov → TrialRecord 매핑', () => {
     };
     const { record } = mapStudy(mixed, opts(), AT);
     expect(record.locations?.map((l) => l.status)).toEqual(['recruiting', 'completed', 'not_yet_recruiting']);
+    expect(record.locations?.map((l) => l.statusRaw)).toEqual(['RECRUITING', 'COMPLETED', 'NOT_YET_RECRUITING']);
+  });
+
+  it('healthyVolunteers 는 --include eligibility 일 때 실제 값으로 담긴다', () => {
+    const s = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000017', briefTitle: 'HV' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        eligibilityModule: { eligibilityCriteria: 'x', healthyVolunteers: false },
+      },
+    };
+    const { record } = mapStudy(s, opts({ include: ['core', 'eligibility'] }), AT);
+    expect(record.eligibility?.healthyVolunteers).toBe(false);
   });
 
   // I6 — contacts 는 eligibility/outcomes 와 같은 opt-in 이다. 실제 이메일을 담은 응답으로 양방향을 편다.
@@ -341,5 +360,38 @@ describe('CT.gov → TrialRecord 매핑', () => {
         email: 'DR-0202-ONC-001_inquiries@drenbio.com',
       },
     ]);
+  });
+
+  // 리뷰 라운드 2, 항목 1 — outcomes 절단은 §5.2 의 "조용한 절단 금지" 규칙이
+  // locations 와 대칭이어야 한다: 캡이 적용되고, outcomesTotal 이 절단 전 총 개수를
+  // 담고, 경고가 남아야 한다. 픽스처를 커밋하는 대신 페이로드를 테스트에서 만든다.
+  it('결과 지표가 캡(200)을 넘으면 잘리되 outcomesTotal 과 경고를 남긴다', () => {
+    const many = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000018', briefTitle: 'Many Outcomes' },
+        statusModule: { overallStatus: 'RECRUITING' },
+        conditionsModule: { conditions: ['X'] },
+        outcomesModule: {
+          primaryOutcomes: Array.from({ length: 201 }, (_, i) => ({ measure: `Outcome ${i}` })),
+        },
+      },
+    };
+    const { record, warnings } = mapStudy(many, opts({ include: ['core', 'outcomes'] }), AT);
+    expect(record.outcomes).toHaveLength(CAPS.outcomes.max);
+    expect(record.outcomesTotal).toBe(201);
+    expect(warnings.map((w) => w.code)).toContain('outcomes_truncated');
+  });
+
+  // 리뷰 라운드 2, 항목 2 — mapStudy 는 이제 자기 출력을 TrialRecordSchema 로 검증한다.
+  // briefTitle 이 없으면 title: undefined 인 레코드를 조용히 돌려주는 대신 예외를 던져야 한다.
+  it('briefTitle 이 없으면 title: undefined 인 레코드 대신 예외를 던진다', () => {
+    const s = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000019' },
+        statusModule: {},
+        conditionsModule: { conditions: ['X'] },
+      },
+    };
+    expect(() => mapStudy(s, opts(), AT)).toThrow();
   });
 });

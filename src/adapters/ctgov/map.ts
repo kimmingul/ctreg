@@ -4,7 +4,7 @@
  */
 import type { Warning } from '../../core/capability.js';
 import { CAPS, type FetchOpts } from '../../core/query.js';
-import type { TrialLocation, TrialRecord } from '../../core/record.js';
+import { TrialRecordSchema, type TrialLocation, type TrialRecord } from '../../core/record.js';
 import { formatTrialId } from '../../core/registry.js';
 import { upstreamError } from '../../runtime/errors.js';
 import { toPhases, toStatus, toStudyType } from './vocab.js';
@@ -207,5 +207,9 @@ export function mapStudy(
     ...(o.raw ? { source: study } : {}),
   };
 
-  return { record, warnings };
+  // 자기 출력을 스스로 검증한다. title 처럼 스키마가 필수로 요구하는 필드가 원문에
+  // 없어 undefined 로 새는 등, 여기서 미처 막지 못한 모든 계약 위반을 여기서 잡는다.
+  // 계약을 못 지키는 레코드는 조용히 틀리게 돌아가는 대신 여기서 크게 던진다 —
+  // 호출자(어댑터)는 study 단위로 잡아 경고로 격하한다.
+  return { record: TrialRecordSchema.parse(record), warnings };
 }
