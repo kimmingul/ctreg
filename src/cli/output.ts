@@ -25,7 +25,19 @@ export function render(env: Envelope, format: 'json' | 'ndjson' | 'text'): strin
 
   if (format === 'ndjson') {
     const rows = Array.isArray(env.data) ? env.data : [env.data];
-    return rows.map((r) => JSON.stringify(r)).join('\n') + '\n';
+    const dataLines = rows.map((r) => JSON.stringify(r));
+    // 데이터 줄 뒤에 메타데이터 한 줄을 항상 붙인다 — query/registries/warnings/error 는
+    // 개별 레코드에 담을 자리가 없다 (예: throttle_lock_timeout 은 id 가 없다).
+    // `_meta: true` 로 구분하며, 레코드 스키마가 strict 라 데이터 줄이 이 키를 우연히 갖지 않는다.
+    // 조건 없이 항상 낸다 — 소비자가 "마지막 줄은 언제나 메타"라는 규칙 하나만 알면 되게 하기 위해서다.
+    const meta: { _meta: true; query: unknown; registries: RegistryStatus[]; warnings: Warning[]; error?: Envelope['error'] } = {
+      _meta: true,
+      query: env.query,
+      registries: env.registries,
+      warnings: env.warnings,
+      error: env.error,
+    };
+    return [...dataLines, JSON.stringify(meta)].join('\n') + '\n';
   }
 
   const lines: string[] = [];

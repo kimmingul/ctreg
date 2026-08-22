@@ -314,6 +314,7 @@ capability 선언 덤프. 네트워크를 치지 않는다. `--registry <key>` �
 - `registries[].status` — `ok` | `error` | `unsupported`. 어댑터별로 독립. 하나가 실패해도 나머지 결과는 낸다.
 - `registries[].nextPageToken` — 페이지네이션은 **번호가 아니라 불투명 커서**다. CT.gov 가 `pageToken` 을 쓰고 다른 레지스트리도 커서형이 흔하므로, 페이지 번호를 계약에 넣지 않는다. 다음 페이지가 없으면 필드를 생략한다.
 - **stdout 은 기계용, stderr 는 사람용.** 로그·진행상황·타이밍은 어떤 경우에도 stdout 을 오염시키지 않는다. `--format json`(기본)과 `ndjson` 은 stdout 에 JSON 만 낸다. `--format text` 는 사람이 직접 실행할 때만 쓰는 모드이며, 스킬은 쓰지 않는다.
+- `--format ndjson` 은 데이터 줄 뒤에 **항상** 메타데이터 한 줄을 더 낸다. `query`·`registries`·`warnings`·(있으면) 최상위 `error` 를 담고 `_meta: true` 로 구분하며, 데이터 레코드는 이 키를 갖지 않는다. `id` 없는 경고(`throttle_lock_timeout` 등)처럼 레코드 하나에 걸 자리가 없는 사실을 흘리지 않기 위함이다.
 
 ### 5.2 바운딩
 
