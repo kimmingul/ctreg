@@ -79,6 +79,8 @@ ctreg search --condition "non-small cell lung cancer" --status recruiting --page
 
 **`--near` 는 시험을 거르지, 사이트를 거르지 않는다.** `--near`(+ 기본/지정 `--radius`)는 "반경 안에 사이트가 하나라도 있는 시험"을 매칭 조건으로 쓴다. 매칭에 성공한 시험이라도 레코드에 실리는 `locations` 배열은 그 시험의 전체 사이트 목록(상한까지 자르고 `locationsTotal` 로 진짜 개수를 남긴다)이지, 반경 안의 사이트만 남긴 목록이 아니다 — 예를 들어 서울 근처로 검색해도 그 시험이 해외에서도 모집 중이면 대만·미국·스페인 사이트가 함께 나온다. 각 사이트는 `distanceKm` 을 갖고 가까운 순으로 정렬되므로, 목록 맨 위가 검색 반경에 실제로 걸린 사이트다 — "이 근처에서 모집하는 시험이 있다"와 "이 시험은 이 근처에서만 모집한다"는 다른 사실이니 혼동하지 마라.
 
+**`--location`(장소 이름으로 시험을 거르는 축)도 같은 원리다.** `locations` 배열을 상한까지 자를 때 필터에 걸린 근거(그 장소 이름과 일치하는 사이트)가 먼저 오도록 정렬한 뒤 자른다 — 그래야 목록 맨 위를 보는 것만으로 "이 시험이 왜 걸렸는가"를 알 수 있다. `--near` 와 `--location` 을 같이 주면 둘 다 결과를 좁힌 근거이므로 일치하는 사이트를 앞에, 그 안에서 가까운 순으로 둔다.
+
 ### `ctreg get` — ID 로 시험 레코드를 바로 가져온다
 
 ```bash
@@ -125,7 +127,7 @@ ctreg registries
   "warnings": [],
   "data": [ {
     "key": "ctgov", "name": "ClinicalTrials.gov", "region": "US / global",
-    "search": { "condition": true, "intervention": true, "…": "…", "geo": true, "geoNeedsCoords": true },
+    "search": { "condition": true, "intervention": true, "…": "…", "geo": true },
     "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
     "results": true, "count": true,
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 50 }
@@ -167,7 +169,7 @@ ctreg registries
 | `CTREG_CACHE_TTL_SEC` | `3600` | 캐시 항목의 유효 시간(초). |
 | `CTREG_TIMEOUT_MS` | `30000` | 업스트림 HTTP 요청 타임아웃(밀리초). |
 | `CTREG_MAX_RETRIES` | `3` | 업스트림 요청 실패 시 재시도 횟수. |
-| `CTREG_RATE_PER_SEC` | `1` | 초당 허용 요청 수. ClinicalTrials.gov 는 설계상 1 req/s 로 두는 것을 기본으로 한다 — 올리기 전에 업스트림의 실제 정책을 확인하라. |
+| `CTREG_RATE_PER_SEC` | (미설정) | 전역 오버라이드. **미설정이면 각 레지스트리가 스스로 신고한 요청률**(`ctreg registries` 의 `limits.ratePerSec`, ctgov 는 1 req/s)**을 쓴다** — 레지스트리마다 예산이 다를 수 있어서다. 이 값을 주면 모든 레지스트리에 그 값 하나를 강제한다(공유 네트워크에서 다같이 늦추거나, 특별 허가로 다같이 올리거나). 올리기 전에 업스트림의 실제 정책을 확인하라. |
 | `CTREG_CTGOV_BASE_URL` | `https://clinicaltrials.gov/api/v2` | ctgov 어댑터가 호출할 API 베이스 URL. 테스트나 미러 대상 전환에 쓴다. |
 
 캐시/요청률 제한을 끄거나 우회하고 싶을 때는 환경변수 대신 커맨드 플래그를 쓴다: `--no-cache` (이번 호출은 캐시를 아예 쓰지 않는다), `--refresh` (캐시를 갱신하며 조회한다). 둘은 함께 쓸 수 없다.
