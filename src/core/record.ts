@@ -19,17 +19,17 @@ export type TrialLocation = z.infer<typeof TrialLocationSchema>;
 
 export const TrialRecordSchema = z.strictObject({
   // 신원
-  id: z.string(),
+  id: z.string().min(1),
   registry: RegistryKeySchema,
-  registryId: z.string(),
+  registryId: z.string().min(1),
   crossIds: z.array(z.strictObject({ registry: z.string(), id: z.string() })).optional(),
-  url: z.string(),
+  url: z.string().min(1),
 
   // core
-  title: z.string(),
-  officialTitle: z.string().optional(),
+  title: z.string().min(1),
+  officialTitle: z.string().min(1).optional(),
   status: StatusSchema,
-  statusRaw: z.string().optional(),
+  statusRaw: z.string().min(1).optional(),
   phase: z.array(z.enum(TRIAL_PHASE)).optional(),
   phaseRaw: z.array(z.string()).optional(),
   studyType: z.enum(STUDY_TYPE).optional(),
@@ -37,16 +37,16 @@ export const TrialRecordSchema = z.strictObject({
   conditions: z.array(z.string()),
   interventions: z.array(z.strictObject({ type: z.string().optional(), name: z.string() })).optional(),
   sponsor: z
-    .object({ lead: z.string().optional(), collaborators: z.array(z.string()).optional() })
+    .strictObject({ lead: z.string().optional(), collaborators: z.array(z.string()).optional() })
     .optional(),
   enrollment: z
-    .object({
+    .strictObject({
       count: z.number().optional(),
       basis: z.enum(['actual', 'estimated', 'unknown']).optional(),
     })
     .optional(),
   dates: z
-    .object({
+    .strictObject({
       start: z.string().optional(),
       primaryCompletion: z.string().optional(),
       completion: z.string().optional(),
@@ -60,7 +60,7 @@ export const TrialRecordSchema = z.strictObject({
 
   // detail (--include)
   eligibility: z
-    .object({
+    .strictObject({
       minAge: z.string().optional(),
       maxAge: z.string().optional(),
       sex: z.enum(['all', 'female', 'male', 'unknown']).optional(),
@@ -91,7 +91,7 @@ export const TrialRecordSchema = z.strictObject({
     .optional(),
 
   // 출처
-  fetchedAt: z.string(),
+  fetchedAt: z.string().min(1),
   source: z.unknown().optional(),
 });
 export type TrialRecord = z.infer<typeof TrialRecordSchema>;
@@ -120,10 +120,10 @@ export const TrialResultsSchema = z.strictObject({
   hasResults: z.boolean(),
   sections: z.strictObject({
     outcomes: z
-      .object({ total: z.number(), expanded: z.number(), items: z.array(OutcomeResultSchema) })
+      .strictObject({ total: z.number(), expanded: z.number(), items: z.array(OutcomeResultSchema) })
       .optional(),
     adverse: z
-      .object({
+      .strictObject({
         total: z.number(),
         expanded: z.number(),
         byOrgan: z.array(

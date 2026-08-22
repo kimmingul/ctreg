@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TrialRecordSchema } from '../../src/core/record.js';
+import { TrialRecordSchema, TrialResultsSchema } from '../../src/core/record.js';
 
 const minimal = {
   id: 'CTGOV:NCT01234567',
@@ -52,5 +52,37 @@ describe('TrialRecord 계약', () => {
     // locationsTotal 오타(locationTotal)를 흘려보내면, 필드가 optional 이라
     // 그냥 무시되고 "이 시험은 사이트가 없다"로 오독될 수 있다.
     expect(() => TrialRecordSchema.parse({ ...minimal, locationTotal: 42 })).toThrow();
+  });
+
+  it('중첩 객체(eligibility)도 오타를 거부한다 — criteriaTruncated 오타는 절단을 숨긴다', () => {
+    // criteriaTruncated 를 criteriaTruncatd 로 잘못 쓰면, strict 가 아닌 스키마는
+    // 그 필드를 조용히 버리고 나머지를 통과시킨다 — 잘린 criteriaText 가 완전한 것처럼 보인다.
+    expect(() =>
+      TrialRecordSchema.parse({
+        ...minimal,
+        eligibility: { criteriaText: 'abc', criteriaTruncatd: true },
+      }),
+    ).toThrow();
+  });
+
+  it('중첩 객체(TrialResults.sections.outcomes)도 알 수 없는 필드를 거부한다', () => {
+    // 필수 필드(total/expanded/items)는 전부 채우고 오타 필드 하나만 얹는다.
+    // strict 가 아니라면 이 요청은 그냥 통과하고 오타 필드는 조용히 사라진다.
+    expect(() =>
+      TrialResultsSchema.parse({
+        id: 'CTGOV:NCT01234567',
+        registry: 'ctgov',
+        hasResults: true,
+        fetchedAt: '2026-08-22T00:00:00.000Z',
+        sections: {
+          outcomes: {
+            total: 1,
+            expanded: 1,
+            items: [],
+            itmes: [], // 오타
+          },
+        },
+      }),
+    ).toThrow();
   });
 });
