@@ -1,0 +1,11 @@
+ctreg
+Copyright 2026 ctreg contributors
+
+This product includes software developed as part of
+clinicaltrialsgov-mcp-server (https://github.com/cyanheads/clinicaltrialsgov-mcp-server),
+Copyright Casey Hand (cyanheads), licensed under the Apache License, Version 2.0.
+
+Portions of src/adapters/ctgov/ and src/runtime/http.ts are derived from that work.
+
+ClinicalTrials.gov is a registry operated by the U.S. National Library of Medicine.
+This project is not affiliated with, endorsed by, or sponsored by the NLM or NIH.
