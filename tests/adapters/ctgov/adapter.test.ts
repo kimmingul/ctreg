@@ -1,14 +1,18 @@
-import { readFileSync } from 'node:fs';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import lockfile from 'proper-lockfile';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CTGOV_CAPABILITY, createCtgovAdapter } from '../../../src/adapters/ctgov/adapter.js';
 import { CapabilitySchema } from '../../../src/core/capability.js';
-import { CAPS, type FetchOpts } from '../../../src/core/query.js';
+import { CAPS, type FetchOpts, type ResultsOpts } from '../../../src/core/query.js';
 import type { Config } from '../../../src/runtime/config.js';
+import { bucketPath } from '../../../src/runtime/throttle.js';
 
 const page = JSON.parse(readFileSync(join(__dirname, '../../fixtures/ctgov/search-page.json'), 'utf8'));
+// results.test.ts 와 같은 시험(NCT04280705)을 쓴다 — resultsSection 이 있는 픽스처는
+// 이거 하나뿐이고, 같은 시험을 여러 테스트가 서로 다른 전제로 쓰는 드리프트를 피한다.
+const fullStudy = JSON.parse(readFileSync(join(__dirname, '../../fixtures/ctgov/study-full.json'), 'utf8'));
 
 let cfg: Config;
 beforeEach(() => {
@@ -68,6 +72,10 @@ describe('CT.gov 어댑터', () => {
     expect(r.data).toBe(99);
     expect(seen[0]).toContain('pageSize=0');
     expect(seen[0]).toContain('countTotal=true');
+    // count 의 존재 이유는 "값싼 요청 한 번" 이다 — fields 를 실어 보내면 그 전제가
+    // 깨진다. 오늘은 구현상 당연히 참이지만, 나중에 fields 를 다시 채우는 수정이
+    // 들어와도 다른 어떤 검증도 이를 잡지 못하므로 여기서 직접 막는다.
+    expect(seen[0]).not.toContain('fields=');
   });
 
   it('get 은 배치 상한을 넘으면 여러 호출로 쪼갠다', async () => {
@@ -116,4 +124,47 @@ describe('CT.gov 어댑터', () => {
     expect(r.data).toHaveLength(1);
     expect(r.data[0]!.registryId).toBe('NCT03831932');
   });
+
+  const resultsOpts = (over: Partial<ResultsOpts> = {}): ResultsOpts => ({
+    sections: ['outcomes', 'adverse', 'flow', 'baseline'],
+    full: false,
+    cacheMode: 'off',
+    ...over,
+  });
+
+  // 리뷰에서 지적: adapter.test.ts 에 results() 를 부르는 테스트가 하나도 없었다.
+  // client.study → extractResults 배선이 코드만 읽어서는 "맞는 것 같다" 였을 뿐,
+  // 어느 테스트도 고정하지 않았다. 이 테스트는 두 가지를 동시에 확인한다:
+  //   1) client 가 낸 경고(락 타임아웃)와 extractResults 가 낸 경고(요약)가
+  //      *둘 다* AdapterResult.warnings 에 합쳐져 나온다 — 리뷰가 열어둔 질문이기도
+  //      하다: HTTP 계층의 throttle_lock_timeout 경고가 실제로 어댑터 출력까지
+  //      전달되는지는 search 의 쿼리 조립 경고와 "구조적으로 같다" 는 추론으로만
+  //      뒷받침돼 있었다. 여기서 직접 확인한다.
+  //   2) 추출된 결과 자체가 제대로 온다 (hasResults, id, outcomes.total).
+  it(
+    'results 는 client 경고와 추출 경고를 모두 담아 결과를 낸다',
+    async () => {
+      const path = bucketPath(cfg.cacheDir, 'ctgov');
+      writeFileSync(path, JSON.stringify({ nextAvailableAt: 0 }));
+      // http.test.ts 와 같은 기법: 실제 proper-lockfile 락을 쥔 채로 유지해
+      // reserveSlot 이 끝내 락을 못 잡게 만들고, throttle_lock_timeout 경고를 강제한다.
+      const release = await lockfile.lock(path, { realpath: false });
+      try {
+        const f = respond(fullStudy);
+        const a = createCtgovAdapter(cfg, deps(f));
+        const r = await a.results('NCT04280705', resultsOpts());
+
+        expect(r.data.id).toBe('CTGOV:NCT04280705');
+        expect(r.data.hasResults).toBe(true);
+        expect(r.data.sections.outcomes!.total).toBeGreaterThan(0);
+
+        const codes = r.warnings.map((w) => w.code);
+        expect(codes).toContain('throttle_lock_timeout'); // client (getJson) 발
+        expect(codes).toContain('results_summarized'); // extractResults 발
+      } finally {
+        await release();
+      }
+    },
+    15_000, // reserveSlot 의 락 재시도 상한(500ms) x 10회 재시도라 실시간으로 몇 초 걸린다.
+  );
 });
