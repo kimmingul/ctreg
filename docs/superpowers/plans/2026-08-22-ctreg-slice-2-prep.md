@@ -376,6 +376,46 @@ git -c user.name="min" -c user.email="kimmingul@gmail.com" commit -m "docs(cli):
 
 ---
 
+## Task 8: O3 플레이크 — 벽시계 마진 의존을 없앤다
+
+**Files:**
+- Modify: `tests/runtime/http.test.ts`
+
+**근거:** 전체 스위트가 간헐적으로 1건 실패하는 것을 **세 번** 목격했다. 세 번 다 전체 스위트
+실행 중이었고, 세 번째에 이름을 잡았다 — `tests/runtime/http.test.ts` 의 AbortSignal 타임아웃.
+
+해당 테스트 둘이 실제 타이머에 작은 값을 쓴다: `cfg.timeoutMs = 20`, 그리고
+`setTimeout(() => controller.abort(), 5)`. 부하가 걸리면 스케줄링 지연이 이 마진을 넘길 수 있다.
+
+**재현하지 못했다** — 단독 6회·전체 3회를 CPU 부하 하에 돌렸고 앞선 8회를 더해 17회 연속 통과.
+그러므로 **"플레이크를 고쳤다"고 주장할 수 없다.** 이 태스크의 목표는 그것이 아니다.
+
+**목표: 테스트가 무엇을 검사하는지 벽시계와 무관하게 만든다.** 두 테스트가 실제로 확인하려는
+것은 "abort 가 발동하면 `code: upstream` 으로 던지고 fetch 를 한 번만 부른다"이다. 그것은
+타이머 없이도 검사할 수 있다 — 컨트롤러를 직접 abort 시키거나, 주입된 fetch 가 abort 이벤트에
+반응하도록 두고 테스트가 그 시점을 결정하면 된다.
+
+- [ ] **Step 1** — 두 테스트를 읽고, 각각이 **실제로 주장하는 것**을 한 문장으로 적는다.
+      타이머는 그 주장의 일부인가, 아니면 주장에 도달하는 수단인가?
+- [ ] **Step 2** — 수단일 뿐인 곳에서 벽시계 의존을 제거한다. `cfg.timeoutMs` 가 20 이어야만
+      하는 이유가 없다면 그 결합을 끊는다. **`AbortSignal.timeout` 자체가 발동한다는 사실을
+      검사하는 테스트라면 그것은 남겨야 한다** — 다만 마진을 넉넉히 하고 그 테스트에만
+      명시적 timeout 을 준다.
+- [ ] **Step 3** — 리팩터 후 두 테스트가 **여전히 회귀를 잡는지 확인하라.** `http.ts` 에서
+      abort 처리를 고의로 망가뜨려(예: AbortError 를 upstream 이 아닌 다른 코드로 매핑)
+      테스트가 실패하는지 보고, 반드시 원복하라. **실패하지 않으면 리팩터가 검사를 지운 것이다.**
+- [ ] **Step 4** — 전체 스위트 10회 반복 실행. 전부 통과해야 한다. **이것이 플레이크가
+      사라졌다는 증거는 아니다**(재현한 적이 없으므로) — 리팩터가 새 문제를 만들지 않았다는
+      증거일 뿐이다. 보고에 이 구분을 명시하라.
+- [ ] **Step 5: 커밋**
+
+```bash
+git add tests/runtime/http.test.ts
+git -c user.name="min" -c user.email="kimmingul@gmail.com" commit -m "test(runtime): assert abort behaviour without racing the wall clock" -- tests/runtime/http.test.ts
+```
+
+---
+
 ## 완료 조건
 
 - [ ] F7: `ctreg registries | head -c 10` 이 스택트레이스 없이 끝난다
@@ -383,4 +423,5 @@ git -c user.name="min" -c user.email="kimmingul@gmail.com" commit -m "docs(cli):
 - [ ] F10: `--help` 가 exit 5 의 조건과 "경고는 종료 코드를 바꾸지 않는다"를 말한다
 - [ ] 선결 1~4 각각의 테스트가 통과
 - [ ] 전체 스위트 통과, `bunx tsc -p tsconfig.typecheck.json --noEmit` 클린, `bun run build` 클린
+- [ ] O3: `http.test.ts` 가 벽시계 마진에 의존하지 않고, 사보타주로 회귀 검출력을 확인함
 - [ ] `docs/slice-2-prerequisites.md` 의 해당 항목에 "해소됨 + 커밋" 표시
