@@ -22,7 +22,7 @@
 import { writeFileSync } from 'node:fs';
 import { ISRCTN_CAPABILITY, createIsrctnAdapter } from '../src/adapters/isrctn/adapter.js';
 import { ISRCTN_FILTERABLE } from '../src/adapters/isrctn/query.js';
-import type { Capability } from '../src/core/capability.js';
+import type { Capability, SearchAxis } from '../src/core/capability.js';
 import type { NormalizedQuery } from '../src/core/query.js';
 import { loadConfig } from '../src/runtime/config.js';
 import { CtregError } from '../src/runtime/errors.js';
@@ -111,16 +111,14 @@ async function main() {
   const REGISTRY_TOTAL = await rawCount('lastEdited GE 1900-01-01T00:00:00');
   console.error(`레지스트리 전체: ${REGISTRY_TOTAL}건 (필터 무시 판정의 기준선)\n`);
 
-  console.error('--- 1. true 로 신고한 축이 실제로 좁히는가 ---');
-  const declared = Object.entries(ISRCTN_CAPABILITY.search).filter(([, on]) => on) as [
-    keyof Capability['search'],
-    true,
-  ][];
+  console.error('--- 1. 지원한다고 신고한 축이 실제로 좁히는가 ---');
+  const declared = Object.entries(ISRCTN_CAPABILITY.search)
+    .filter(([, axis]) => axis.supported) as [keyof Capability['search'], SearchAxis][];
   for (const [axis] of declared) {
     const probe = AXIS_PROBE[axis];
     if (!probe) {
       // 신고는 켜 뒀는데 이 스크립트에 프로브가 없다 — 증명되지 않은 신고다.
-      record('fail', [axis, '(프로브 없음)', LABEL.fail, '**축을 true 로 신고했는데 이 표에 증명이 없습니다.** AXIS_PROBE 에 추가하세요.'], rows);
+      record('fail', [axis, '(프로브 없음)', LABEL.fail, '**축을 지원한다고 신고했는데 이 표에 증명이 없습니다.** AXIS_PROBE 에 추가하세요.'], rows);
       console.error(`${LABEL.fail}  ${axis} — 프로브 없음`);
       continue;
     }

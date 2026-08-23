@@ -48,7 +48,7 @@ export async function runResults(
   }
   const cap = adapter.capability();
 
-  if (!cap.results) {
+  if (!cap.results.supported) {
     // 핵심 구분("결과가 없는 게 아니라 안 싣는다")은 메시지 안에 둔다. hint 자리가
     // 생겼지만(리뷰 I1), 이 문장은 힌트가 아니라 사실 자체다 — 힌트를 읽지 않는
     // 호출자에게도 반드시 도달해야 한다. hint 는 다음에 무엇을 하면 되는지를 맡는다.

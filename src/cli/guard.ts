@@ -42,7 +42,7 @@ export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: Fetc
   ];
 
   for (const [axis, used] of axes) {
-    if (used && !cap.search[axis]) {
+    if (used && !cap.search[axis].supported) {
       throw unsupportedError(
         `${cap.name} 은 '${axis}' 검색을 지원하지 않습니다`,
         `ctreg registries 로 이 레지스트리가 지원하는 축을 확인하세요. 결과가 없는 것이 아니라 조회 자체가 불가능합니다.`,
@@ -57,7 +57,7 @@ export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: Fetc
     ['contacts', wantAll || fetch.include.includes('contacts')],
   ];
   for (const [axis, used] of detailAxes) {
-    if (used && !cap.detail[axis]) {
+    if (used && !cap.detail[axis].supported) {
       throw unsupportedError(
         `${cap.name} 은 '${axis}' 를 제공하지 않습니다`,
         'ctreg registries 로 제공 섹션을 확인하세요.',

@@ -3,7 +3,7 @@ import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
 import { applyLimits, assertSupported } from '../../src/cli/guard.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import { CAPS, type FetchOpts, type NormalizedQuery } from '../../src/core/query.js';
-import type { Capability } from '../../src/core/capability.js';
+import type { Capability, SearchAxis } from '../../src/core/capability.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 
 const fetchOpts: FetchOpts = {
@@ -12,10 +12,26 @@ const fetchOpts: FetchOpts = {
   cacheMode: 'use', raw: false,
 };
 
+/**
+ * 실제 선언에서 한 축의 `supported` 만 끈다. `values` 와 `scope` 는 그대로 둬야
+ * 가드가 보는 것이 정말 `supported` 하나인지가 검사된다 — 축 전체를 가짜로 갈아
+ * 끼우면 스키마가 요구하는 다른 필드까지 이 테스트가 손으로 적게 된다.
+ */
+const axisOff = (axis: keyof Capability['search']): SearchAxis =>
+  ({ ...CTGOV_CAPABILITY.search[axis], supported: false });
+
 const limited: Capability = {
   ...CTGOV_CAPABILITY,
-  search: { ...CTGOV_CAPABILITY.search, geo: false, patient: false, updatedRange: false, startRange: false, completionRange: false, outcomeQuery: false },
-  detail: { ...CTGOV_CAPABILITY.detail, eligibilityText: false },
+  search: {
+    ...CTGOV_CAPABILITY.search,
+    geo: axisOff('geo'), patient: axisOff('patient'), updatedRange: axisOff('updatedRange'),
+    startRange: axisOff('startRange'), completionRange: axisOff('completionRange'),
+    outcomeQuery: axisOff('outcomeQuery'),
+  },
+  detail: {
+    ...CTGOV_CAPABILITY.detail,
+    eligibilityText: { ...CTGOV_CAPABILITY.detail.eligibilityText, supported: false },
+  },
 };
 
 /**
@@ -83,7 +99,7 @@ describe('capability 가드', () => {
   it('갱신·시작·종료 날짜 축은 따로 신고된다 — 하나만 죽은 레지스트리를 표현할 수 있어야 한다', () => {
     const updatedOnly: Capability = {
       ...CTGOV_CAPABILITY,
-      search: { ...CTGOV_CAPABILITY.search, startRange: false, completionRange: false },
+      search: { ...CTGOV_CAPABILITY.search, startRange: axisOff('startRange'), completionRange: axisOff('completionRange') },
     };
     expect(() => assertSupported(updatedOnly, { updatedSince: '2025-01-01' }, fetchOpts)).not.toThrow();
     expectUnsupported(() => assertSupported(updatedOnly, { startAfter: '2025-01-01' }, fetchOpts), 'startRange');
@@ -94,7 +110,7 @@ describe('capability 가드', () => {
   it('Capability.search 의 모든 검색 축을 가드가 개별적으로 다룬다', () => {
     const axes = Object.keys(CTGOV_CAPABILITY.search) as (keyof Capability['search'])[];
     for (const axis of axes) {
-      const capOff: Capability = { ...CTGOV_CAPABILITY, search: { ...CTGOV_CAPABILITY.search, [axis]: false } };
+      const capOff: Capability = { ...CTGOV_CAPABILITY, search: { ...CTGOV_CAPABILITY.search, [axis]: axisOff(axis) } };
       expectUnsupported(() => assertSupported(capOff, probeFor(axis), fetchOpts), axis);
     }
   });

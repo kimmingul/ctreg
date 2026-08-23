@@ -55,7 +55,10 @@ describe('search 커맨드', () => {
   });
 
   it('미지원 축은 조회하지 않고 unsupported 로 표시한다', async () => {
-    const cap: Capability = { ...CTGOV_CAPABILITY, search: { ...CTGOV_CAPABILITY.search, patient: false } };
+    const cap: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, patient: { ...CTGOV_CAPABILITY.search.patient, supported: false } },
+    };
     const adapters = stubAdapter({}, cap);
     const env = await runSearch(parseCliArgs(['search', '--patient', '62 year old']), adapters);
     expect(env.registries[0]!.status).toBe('unsupported');
@@ -115,7 +118,7 @@ describe('results 커맨드', () => {
   // 규칙은 "registries[] 가 비어 있다 == 어떤 레지스트리도 정해지지 않았다" 이고,
   // 여기서는 parseTrialId 가 레지스트리를 이미 풀었으므로 비어 있으면 안 된다.
   it('results 를 제공하지 않는 레지스트리는 registries[] 에 unsupported 로 남고 exit 3 이다', async () => {
-    const cap: Capability = { ...CTGOV_CAPABILITY, results: false };
+    const cap: Capability = { ...CTGOV_CAPABILITY, results: { ...CTGOV_CAPABILITY.results, supported: false } };
     const adapters = stubAdapter({}, cap);
     const env = await runResults(parseCliArgs(['results', 'NCT00000001']), adapters);
 
@@ -132,16 +135,16 @@ describe('results 커맨드', () => {
 
 /**
  * C3 회귀. capability 의 불리언 두 개 중 results 만 강제되고 count 는 어디서도
- * 강제되지 않았다 — `count: false` 를 신고한 어댑터가 0 을 돌려주면(카운트
+ * 강제되지 않았다 — count 를 미지원으로 신고한 어댑터가 0 을 돌려주면(카운트
  * 엔드포인트가 없는 레지스트리를 위한 가장 흔한 순진한 구현) CLI 는 status "ok",
  * total 0, exit 0 을 냈다. "이 레지스트리는 셀 수 없다" 가 "해당하는 시험이 없다"
  * 로 배달되는 것으로, 스펙 §3.3 이 설계에서 가장 중요한 규칙이라고 부른 것의 정확한
  * 반대다. ctgov 는 count: true 라 오늘 도달 불가능하지만, 이 슬라이스의 산출물은
- * 어댑터가 아니라 계약이고 ISRCTN(어댑터 #2 후보)은 count: false 가 유력하다.
+ * 어댑터가 아니라 계약이고 ISRCTN(어댑터 #2 후보)은 count 미지원이 유력하다.
  */
 describe('count 커맨드 — capability.count', () => {
   it('count 를 제공하지 않는 레지스트리는 0 이 아니라 exit 3 이다', async () => {
-    const cap: Capability = { ...CTGOV_CAPABILITY, count: false };
+    const cap: Capability = { ...CTGOV_CAPABILITY, count: { ...CTGOV_CAPABILITY.count, supported: false } };
     // 카운트 엔드포인트가 없는 레지스트리를 위한 가장 순진한 구현: 0 을 돌려준다.
     const adapters = stubAdapter({ count: vi.fn(async () => ({ data: 0, warnings: [] })) }, cap);
     const env = await runCount(parseCliArgs(['count', '--condition', 'X']), adapters);
@@ -166,7 +169,7 @@ describe('count 커맨드 — capability.count', () => {
    * 봉투가 커맨드마다 다른 규칙을 쓰면 파서를 쓰는 쪽이 커맨드마다 다른 방어를 해야 한다.
    */
   it('아무도 세지 못하면 0 이 아니라 data: null 이다 — 0 은 "없다" 로 읽힌다', async () => {
-    const cap: Capability = { ...CTGOV_CAPABILITY, count: false };
+    const cap: Capability = { ...CTGOV_CAPABILITY, count: { ...CTGOV_CAPABILITY.count, supported: false } };
     const adapters = stubAdapter({}, cap);
     const env = await runCount(parseCliArgs(['count', '--condition', 'X']), adapters);
 
@@ -181,7 +184,10 @@ describe('count 커맨드 — capability.count', () => {
    */
   it('한쪽만 셌으면 그 부분 합은 남긴다 — exit 5 가 부분임을 말한다', async () => {
     const good = stubAdapter().ctgov;
-    const bad = stubAdapter({}, { ...CTGOV_CAPABILITY, key: 'bad' as RegistryKey, count: false }).ctgov;
+    const bad = stubAdapter({}, {
+      ...CTGOV_CAPABILITY, key: 'bad' as RegistryKey,
+      count: { ...CTGOV_CAPABILITY.count, supported: false },
+    }).ctgov;
     const adapters = { good, bad } as unknown as Record<RegistryKey, RegistryAdapter>;
     const args = { ...parseCliArgs(['count', '--condition', 'X']), registries: ['good', 'bad'] as unknown as RegistryKey[] };
 
@@ -357,7 +363,10 @@ describe('get 커맨드 — 라우팅과 가드', () => {
   });
 
   it('레지스트리가 담지 않는 --include 섹션은 어댑터를 부르기 전에 막는다', async () => {
-    const cap: Capability = { ...CTGOV_CAPABILITY, detail: { ...CTGOV_CAPABILITY.detail, outcomes: false } };
+    const cap: Capability = {
+      ...CTGOV_CAPABILITY,
+      detail: { ...CTGOV_CAPABILITY.detail, outcomes: { ...CTGOV_CAPABILITY.detail.outcomes, supported: false } },
+    };
     const adapters = stubAdapter({}, cap);
     const env = await runGet(parseCliArgs(['get', 'NCT00000001', '--include', 'outcomes']), adapters);
 
