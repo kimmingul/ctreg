@@ -61,7 +61,18 @@ export interface RegistryAdapter {
     q: NormalizedQuery,
     o: FetchOpts,
   ): Promise<AdapterResult<TrialRecord[]> & { total?: number; nextPageToken?: string }>;
+  /**
+   * `ids` 는 **접두사가 붙은 형태**로 온다 — `CTGOV:NCT03831932`, `ISRCTN:ISRCTN12345678`.
+   * 어댑터가 `parseTrialId` 로 스스로 벗겨서 원문 ID 만 업스트림에 보내야 한다.
+   * CLI 는 벗겨 주지 않는다: 연합 조회에서 어느 레지스트리로 라우팅할지를 접두사가
+   * 정하므로, 라우팅이 끝난 뒤에도 접두사가 남아 있는 것이 정상 경로다.
+   *
+   * 이 규약을 안 지켜도 스텁 트랜스포트는 무엇을 물어보든 응답하므로 테스트가 초록일 수
+   * 있다 — 실물 레지스트리에서만 조용히 0건이 된다. 계약 스위트의 "접두사가 업스트림에
+   * 새면 안 된다" 검사가 이 자리를 지킨다.
+   */
   get(ids: string[], o: FetchOpts): Promise<AdapterResult<TrialRecord[]>>;
+  /** `id` 는 `get` 과 같은 접두사 포함 형태다. 위 주석 참고. */
   results(id: string, o: ResultsOpts): Promise<AdapterResult<TrialResults>>;
   count(q: NormalizedQuery, o: FetchOpts): Promise<AdapterResult<number>>;
 }

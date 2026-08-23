@@ -111,11 +111,18 @@ const argsFor = (key: RegistryKey, over: Partial<ParsedArgs> = {}): ParsedArgs =
 export function runAdapterContract(name: string, under: AdapterUnderTest): void {
   const stub = (respond: (url: string) => Response) => {
     const calls: string[] = [];
-    const fetchImpl = vi.fn(async (url: unknown) => {
+    /**
+     * URL 과 본문을 함께 남긴다. 접두사 유출 검사(아래 I5)는 어댑터가 ID 를 질의
+     * 문자열에 싣든 POST 본문에 싣든 똑같이 걸어야 하는데, URL 만 보면 본문으로
+     * 보내는 어댑터에게는 검사가 공허해진다.
+     */
+    const requests: { url: string; body: string }[] = [];
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
       calls.push(String(url));
+      requests.push({ url: String(url), body: typeof init?.body === 'string' ? init.body : '' });
       return respond(String(url));
     }) as unknown as typeof fetch;
-    return { adapter: under.make(fetchImpl), calls };
+    return { adapter: under.make(fetchImpl), calls, requests };
   };
   const ok = () => stub((url) => json(under.respond(url)));
   /** 재시도 대상이 아닌 상태코드를 골랐다 — 백오프 없이 즉시 실패 경로로 간다. */
@@ -227,6 +234,110 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
           r.warnings.some((w) => w.code === 'locations_truncated'),
           `${rec.id} 는 장소가 잘렸는데(locationsTotal=${rec.locationsTotal}, locations=${rec.locations!.length}) locations_truncated 경고가 없습니다.`,
         ).toBe(true);
+      }
+    });
+
+    /**
+     * I4. 위 `locations_truncated` 검사는 캡을 *무시하는* 어댑터도 잡기는 한다 —
+     * 절단이 안 일어나니 `truncated.length` 가 0 이 되어서다. 그런데 그때 뜨는 말은
+     * **"respond() 의 표본을 조정하세요"** 로 하네스를 가리킨다. 표본에는 이미 기본
+     * 캡의 몇 배가 들어 있는데도 그렇다 — 어댑터 저자가 그 말을 따라가면 자기 버그가
+     * 아니라 남의 하네스를 고치려 든다(스텁 어댑터 실험에서 실제로 그 경로를 밟았다).
+     *
+     * 그래서 캡 채널을 **직접** 묻는다: 같은 시험을 넓은 캡과 좁은 캡으로 두 번 받아,
+     * 넓게 받으면 실제로 더 담기는 축에 대해 좁은 요청이 정확히 좁은 만큼만 담는지 본다.
+     * 두 번 받는 것이 핵심이다 — 좁은 요청 하나만 보면 그 축을 아예 안 채우는 어댑터가
+     * 공허하게 통과한다.
+     */
+    it('o.caps 를 좁히면 그만큼만 담는다 — 캡은 CLI 가 정하고 어댑터는 읽기만 한다', async () => {
+      const NARROW = { locations: 1, eligibilityChars: 40, outcomes: 1 };
+      const wide: FetchOpts = {
+        ...fetchOpts,
+        include: ['all'],
+        caps: { locations: CAPS.locations.max, eligibilityChars: CAPS.eligibilityChars.max, outcomes: CAPS.outcomes.max },
+      };
+      const narrow: FetchOpts = { ...fetchOpts, include: ['all'], caps: NARROW };
+
+      const big = (await ok().adapter.get([under.sampleId], wide)).data;
+      const small = (await ok().adapter.get([under.sampleId], narrow)).data;
+      expect(big.length, 'get 이 sampleId 로 아무 레코드도 내지 않아 캡을 검사할 수 없습니다.').toBeGreaterThan(0);
+
+      const violation = (axis: string, got: number, cap: number, id: string) =>
+        `${id} 의 ${axis} 가 ${got} 인데 요청의 o.caps 는 ${cap} 였습니다. ` +
+        `캡은 CLI 가 정하고 어댑터는 o.caps.* 를 읽기만 해야 합니다(스펙 §5.2) — ` +
+        `어댑터가 자체 상수를 쓰거나 캡을 덮어쓰고 있지 않은지 확인하세요.`;
+
+      // 장소는 하드 요구다: 위의 locations_truncated 검사가 이미 표본에 기본 캡(10)을
+      // 넘는 장소가 있음을 못박았으므로, 여기서 안 늘어난다면 어댑터가 원인이다.
+      const widest = Math.max(...big.map((r) => r.locations?.length ?? 0));
+      expect(
+        widest,
+        `캡을 ${CAPS.locations.max} 로 올려도 장소가 ${widest}곳뿐입니다 — ` +
+          '어댑터가 o.caps.locations 를 읽지 않고 자체 상한을 쓰고 있을 수 있습니다.',
+      ).toBeGreaterThan(NARROW.locations);
+      for (const rec of small) {
+        const n = rec.locations?.length ?? 0;
+        expect(n, violation('locations', n, NARROW.locations, rec.id)).toBeLessThanOrEqual(NARROW.locations);
+      }
+
+      // 나머지 두 축은 조건부다 — 표본 시험이 결과 지표나 적격 기준문을 아예 게시하지
+      // 않는 레지스트리가 있을 수 있고, 그건 어댑터의 잘못이 아니다. 넓게 받아서 실제로
+      // 좁은 캡을 넘은 축만 검사한다.
+      if (big.some((r) => (r.outcomes?.length ?? 0) > NARROW.outcomes)) {
+        for (const rec of small) {
+          const n = rec.outcomes?.length ?? 0;
+          expect(n, violation('outcomes', n, NARROW.outcomes, rec.id)).toBeLessThanOrEqual(NARROW.outcomes);
+        }
+      }
+      if (big.some((r) => (r.eligibility?.criteriaText?.length ?? 0) > NARROW.eligibilityChars)) {
+        for (const rec of small) {
+          const n = rec.eligibility?.criteriaText?.length ?? 0;
+          expect(n, violation('eligibility.criteriaText', n, NARROW.eligibilityChars, rec.id)).toBeLessThanOrEqual(
+            NARROW.eligibilityChars,
+          );
+        }
+      }
+    });
+
+    /**
+     * I5. `get()`/`results()` 가 받는 ID 는 **접두사가 붙은 형태**(`CTGOV:NCT03831932`)다
+     * — 어댑터가 스스로 벗겨서 업스트림에 보내야 한다. 이 규약이 인터페이스에도 이
+     * 스위트에도 없어서, 안 벗기는 스텁으로 계약 17개가 전부 초록이었다. 스텁 트랜스포트는
+     * 무엇을 물어보든 표본을 돌려주므로 벗기지 않은 요청도 "성공" 하기 때문이다.
+     *
+     * 그러니 결과가 아니라 **나간 요청** 을 본다: 접두사가 업스트림까지 새어 나가면 안 되고,
+     * 벗긴 원문 ID 는 반드시 실려야 한다(뒤쪽이 없으면 ID 를 통째로 버리는 어댑터가 통과한다).
+     */
+    it('get/results 는 접두사 붙은 ID 를 받아 스스로 벗긴다 — 접두사가 업스트림에 새면 안 된다', async () => {
+      const { registryId } = parseTrialId(under.sampleId);
+      const key = makeAdapter().key;
+      const bare = registryId.toLowerCase();
+      const leaked = [`${key}:`, `${key}%3a`];
+
+      const check = async (label: string, run: (a: RegistryAdapter) => Promise<unknown>) => {
+        const { adapter, requests } = ok();
+        await run(adapter);
+        const seen = requests.map((r) => `${r.url} ${r.body}`.toLowerCase());
+        expect(seen.length, `${label} 이 업스트림 요청을 보내지 않았습니다.`).toBeGreaterThan(0);
+
+        const offender = seen.find((s) => leaked.some((p) => s.includes(p)));
+        expect(
+          offender,
+          `${label} 이 접두사를 벗기지 않고 업스트림에 보냈습니다: ${offender}. ` +
+            `get()/results() 는 '${key.toUpperCase()}:${registryId}' 형태를 받아 ` +
+            `'${registryId}' 만 업스트림에 실어야 합니다 — core/registry.ts 의 parseTrialId 를 쓰세요.`,
+        ).toBeUndefined();
+
+        expect(
+          seen.some((s) => s.includes(bare)),
+          `${label} 이 보낸 요청 어디에도 '${registryId}' 가 없습니다 — ` +
+            '접두사를 벗기면서 ID 자체를 잃어버렸을 수 있습니다.',
+        ).toBe(true);
+      };
+
+      await check('get', (a) => a.get([under.sampleId], fetchOpts));
+      if (makeAdapter().capability().results) {
+        await check('results', (a) => a.results(under.sampleId, resultsOpts));
       }
     });
 
