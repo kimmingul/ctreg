@@ -10,6 +10,10 @@ import { usageError } from '../runtime/errors.js';
 
 export const COMMANDS = ['search', 'get', 'results', 'count', 'registries'] as const;
 
+// FILTERABLE_STATUS 는 8개라 한 줄에 다 넣으면 80컬럼에서 단어 중간이 잘린다.
+// 3/5로 나눠 두 줄에 걸치되, 나누는 지점(3)은 순전히 줄바꿈용 상수이지 값이
+// 아니다 — slice(3)이 나머지 전부를 가져가므로 값이 빠질 수는 없다. 다만 폭은
+// 보장하지 않는다: 어휘가 늘면 두 줄 다 다시 길어질 수 있으니 그때 폭을 다시 확인하라.
 export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키마로 조회한다
 
   ctreg search  [검색 축] [필터] [출력]
@@ -20,7 +24,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
 
 검색 축   --condition --intervention --term --title --location --outcome-query
           --sponsor --lead --id --patient
-필터      --status ${FILTERABLE_STATUS.slice(0, 3).join('|')}
+필터      --status ${FILTERABLE_STATUS.slice(0, 3).join('|')}|
           ${FILTERABLE_STATUS.slice(3).join('|')}
           --phase ${FILTERABLE_PHASE.join('|')}
           --study-type ${FILTERABLE_STUDY_TYPE.join('|')}

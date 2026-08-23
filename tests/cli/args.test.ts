@@ -149,11 +149,19 @@ describe('--help 는 값 어휘를 적는다', () => {
    * F9. 세 시나리오가 `--status` 에 대문자를, `--phase` 에 틀린 값을 넣어 거부당했고
    * **셋 다 같은 힌트**를 받았다. --help 가 값을 적지 않아 틀려 봐야만 알 수 있었다.
    * 목록을 어휘에서 파생해 적으면 어휘가 늘어도 --help 가 저절로 따라간다.
+   *
+   * 문자열 부분일치(`toContain`)로는 안 된다 — 단어 경계가 없어서 `na` 를
+   * 목록에서 통째로 지워도 `terminated` 안의 "na" 에 걸려 통과해 버린다
+   * (`phase_1` 도 `early_phase_1` 안에, `recruiting` 도 `not_yet_recruiting`
+   * 안에 숨는다). `[a-z0-9_]` 가 아닌 문자로 잘라 토큰 배열을 만들고 그
+   * 배열에 값이 원소로 있는지를 본다 — 줄바꿈 위치가 바뀌어도 토큰 경계는
+   * 그대로라 안전하다.
    */
   it('세 닫힌 어휘의 값을 전부 적는다', () => {
-    for (const v of FILTERABLE_STATUS) expect(USAGE, `--status 값 '${v}' 가 --help 에 없습니다`).toContain(v);
-    for (const v of FILTERABLE_PHASE) expect(USAGE, `--phase 값 '${v}' 가 --help 에 없습니다`).toContain(v);
-    for (const v of FILTERABLE_STUDY_TYPE) expect(USAGE, `--study-type 값 '${v}' 가 --help 에 없습니다`).toContain(v);
+    const tokens = USAGE.split(/[^a-z0-9_]+/);
+    for (const v of FILTERABLE_STATUS) expect(tokens, `--status 값 '${v}' 가 --help 에 없습니다`).toContain(v);
+    for (const v of FILTERABLE_PHASE) expect(tokens, `--phase 값 '${v}' 가 --help 에 없습니다`).toContain(v);
+    for (const v of FILTERABLE_STUDY_TYPE) expect(tokens, `--study-type 값 '${v}' 가 --help 에 없습니다`).toContain(v);
   });
 
   /**
