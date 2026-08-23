@@ -28,7 +28,7 @@ export async function runSearch(
       const adapter = adapters[key];
       if (!adapter) throw missingAdapterError(key);
       // 가드가 먼저다. 미지원 축이면 네트워크를 치지 않는다.
-      assertSupported(adapter.capability(), args.query, args.fetch);
+      warnings.push(...assertSupported(adapter.capability(), args.query, args.fetch).warnings);
       // 이 레지스트리의 maxPageSize 로 클램프한다. args.query 자체는 건드리지 않는다 —
       // 여러 레지스트리가 이 루프에서 같은 객체를 공유하므로, 여기서 낮추면 다음
       // 레지스트리가 이미 깎인 값을 물려받는다(guard.ts 의 applyLimits 주석 참고).

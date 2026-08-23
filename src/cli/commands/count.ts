@@ -27,7 +27,7 @@ export async function runCount(
       const adapter = adapters[key];
       if (!adapter) throw missingAdapterError(key);
       const cap = adapter.capability();
-      assertSupported(cap, args.query, args.fetch);
+      warnings.push(...assertSupported(cap, args.query, args.fetch).warnings);
       // capability.count 는 여기서 강제한다 — results.ts 가 cap.results 를 강제하는
       // 것과 같은 자리다. assertSupported 에 넣지 않는 이유: 그쪽은 *요청* 의 속성
       // (어떤 검색 축을 썼나, 어떤 섹션을 달라 했나)을 검사하고 다섯 커맨드가 모두

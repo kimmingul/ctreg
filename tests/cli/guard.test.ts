@@ -126,6 +126,39 @@ describe('capability 가드', () => {
   // 요구하는 것은 이미 args.ts 의 `--near` 파싱이 무조건 막고(tests/cli/args.test.ts),
   // 좌표 없이 지명을 받는 레지스트리가 아직 없어 가드가 따로 소비할 대상이 없었다.
   // 그런 레지스트리가 생기면 여기서도 되살린다 — docs/slice-2-prerequisites.md 참고.
+
+  /**
+   * F8. 값별 건수를 아무리 정확히 세도 합이 총계에 못 미치는데, 모자란 부분에 이름을
+   * 붙일 수단이 없었다. 필터를 거는 시점에 그 사실을 말한다 — 날짜 축이 이미
+   * `date_filter_excludes_missing` 으로 하는 것과 같은 자리·같은 모양이다.
+   */
+  it('exhaustive:false 인 축으로 필터하면 경고를 낸다', () => {
+    const notExhaustive: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, phase: { ...CTGOV_CAPABILITY.search.phase, exhaustive: false } },
+    };
+    const r = assertSupported(notExhaustive, { phase: ['phase_3'] }, fetchOpts);
+    expect(r.warnings).toEqual([
+      expect.objectContaining({ code: 'vocab_excludes_missing', registry: 'ctgov' }),
+    ]);
+    expect(r.warnings[0]!.message).toContain('phase');
+  });
+
+  it('exhaustive:true 인 축은 경고하지 않는다', () => {
+    const exhaustive: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, phase: { ...CTGOV_CAPABILITY.search.phase, exhaustive: true } },
+    };
+    expect(assertSupported(exhaustive, { phase: ['phase_3'] }, fetchOpts).warnings).toEqual([]);
+  });
+
+  it('그 축을 쓰지 않으면 경고하지 않는다 — 선언만으로는 경고가 나오지 않는다', () => {
+    const notExhaustive: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, phase: { ...CTGOV_CAPABILITY.search.phase, exhaustive: false } },
+    };
+    expect(assertSupported(notExhaustive, { condition: 'x' }, fetchOpts).warnings).toEqual([]);
+  });
 });
 
 describe('레지스트리별 페이지 크기 상한', () => {

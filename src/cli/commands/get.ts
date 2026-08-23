@@ -78,7 +78,8 @@ export async function runGet(
       // get 은 검색 축을 쓰지 않으므로 질의는 빈 것으로 검사한다. 그래도 --include 는
       // 봐야 한다: 레지스트리가 담지 않는 섹션을 조용히 빠뜨린 레코드를 주면
       // "이 시험엔 그 정보가 없다" 로 오독된다 (guard.ts 가 막으려는 바로 그 혼동).
-      assertSupported(adapter.capability(), {}, args.fetch);
+      // 빈 질의라 축 경고가 나올 일은 없지만, 세 호출 지점의 모양을 맞춘다.
+      warnings.push(...assertSupported(adapter.capability(), {}, args.fetch).warnings);
       const r = await adapter.get(ids, args.fetch);
       warnings.push(...r.warnings);
       data.push(...r.data);

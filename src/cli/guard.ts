@@ -20,7 +20,11 @@ export function missingAdapterError(key: RegistryKey) {
  * 미지원 축을 조용히 무시하고 빈 결과를 내면, 에이전트가 "해당 시험 없음"과
  * "이 레지스트리는 그렇게 검색할 수 없음"을 구분하지 못한다. 반드시 exit 3 으로 알린다.
  */
-export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: FetchOpts): void {
+export function assertSupported(
+  cap: Capability,
+  q: NormalizedQuery,
+  fetch: FetchOpts,
+): { warnings: Warning[] } {
   const axes: [keyof Capability['search'], boolean][] = [
     ['condition', q.condition !== undefined],
     ['intervention', q.intervention !== undefined],
@@ -64,6 +68,37 @@ export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: Fetc
       );
     }
   }
+
+  /**
+   * 축은 지원되는데 그 축의 어휘가 데이터를 다 덮지 못하는 경우(F8). 값별 건수의
+   * 합이 전체 총계보다 작다는 사실을 필터를 거는 **시점에** 말한다 — 선언만으로는
+   * 미리 읽은 호출자만 알게 되고, 필드 테스트에서 에이전트가 뺄셈으로 발견한 상황이
+   * 그대로 남는다. 날짜 축의 date_filter_excludes_missing 과 같은 모양이고, 어느
+   * 쪽도 종료 코드를 바꾸지 않는다.
+   *
+   * 문구가 원인을 하나로 단정하지 않는다: `exhaustive: false` 의 원인은 둘이다 —
+   * 그 필드를 기재하지 않은 레코드와, 기재했으나 그 값이 공통 어휘에 필터 자리가
+   * 없는 레코드. 우리는 둘을 구분해 세지 않으므로 어느 쪽이라 말하면 거짓이 될 수
+   * 있다. 실측(ctgov status): 미달분 97,667 = UNKNOWN 95,620 + 확대접근 1,066 +
+   * WITHHELD 981 — 산술이 정확히 맞고, **상태가 없는 레코드는 0건이다.** 즉 미달분
+   * 전부가 "값은 있는데 어휘에 자리가 없는" 쪽이었다. 그래서 "기재하지 않았다"
+   * 라고만 말하는 문구는 이 경우 거짓이 된다 — 다음 사람이 "더 구체적으로" 고치려
+   * 하면 이 근거를 먼저 봐야 한다.
+   */
+  const warnings: Warning[] = [];
+  for (const [axis, used] of axes) {
+    if (used && cap.search[axis].supported && cap.search[axis].exhaustive === false) {
+      warnings.push({
+        code: 'vocab_excludes_missing',
+        message:
+          `${cap.name} 의 '${axis}' 는 값별로 나눈 건수의 합이 전체보다 작습니다 — ` +
+          '이 값들 중 어디에도 걸리지 않는 시험이 있습니다(그 필드를 기재하지 않았거나, ' +
+          '기재한 값이 공통 어휘에 없습니다). 이 필터의 결과는 그만큼 좁습니다.',
+        registry: cap.key,
+      });
+    }
+  }
+  return { warnings };
 }
 
 /**

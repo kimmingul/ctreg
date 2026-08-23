@@ -607,3 +607,32 @@ describe('레지스트리 키는 있는데 아직 어댑터가 없을 때', () =
     expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
   });
 });
+
+describe('vocab_excludes_missing 는 봉투까지 간다', () => {
+  /**
+   * 가드가 경고를 만들어도 커맨드가 봉투에 싣지 않으면 사용자에게 도달하지 않는다.
+   * 이 저장소에서 같은 형태의 구멍이 세 번 났다 — 고친 함수가 아니라 **부르는 자리**
+   * 를 검사한다.
+   */
+  it('search 가 exhaustive:false 축 경고를 봉투에 싣는다', async () => {
+    const cap: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, phase: { ...CTGOV_CAPABILITY.search.phase, exhaustive: false } },
+    };
+    const env = await runSearch(parseCliArgs(['search', '--condition', 'X', '--phase', 'phase_3']), stubAdapter({}, cap));
+    expect(env.warnings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'vocab_excludes_missing' })]),
+    );
+  });
+
+  it('count 도 같은 경고를 싣는다', async () => {
+    const cap: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, phase: { ...CTGOV_CAPABILITY.search.phase, exhaustive: false } },
+    };
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X', '--phase', 'phase_3']), stubAdapter({}, cap));
+    expect(env.warnings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'vocab_excludes_missing' })]),
+    );
+  });
+});
