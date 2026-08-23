@@ -46,12 +46,12 @@ export const ISRCTN_CAPABILITY: Capability = {
     condition: free('질환 설명 자유 텍스트(condition 필드)'),
     intervention: free('중재 설명 자유 텍스트(intervention 필드)'),
     term: free('본문 전반의 자유 텍스트'),
-    title: free('시험 제목'),
+    title: free('제목 필드(title) 하나. 레코드에는 공개 제목과 학술 제목이 따로 실려 나오는데 축은 하나뿐이라 둘을 갈라 물을 수 없다'),
     sponsor: free('스폰서 기관명(sponsorOrganisation) — 자금 제공자는 별개다'),
     lead: off('ISRCTN 에는 주 스폰서와 공동 스폰서를 가르는 검색 축이 없다'),
     location: off('자유 문자열 장소 축이 없다. 살아 있는 것은 국가 완전일치뿐이라 "서울" 은 0건이 된다'),
     id: off('식별자 전용 축이 전부 죽어 있다 — isrctn:·secondaryNumber:·clinicalTrialsGovNumber: 모두 0건'),
-    patient: off('환자 친화 검색 축이 없다'),
+    patient: off('환자 친화 문장을 받는 검색 에어리어가 없다 — 나이·성별 같은 조건을 문장으로 넘길 자리가 없다. 가장 가까운 것은 본문 전반을 훑는 term 이지만 그쪽도 글자를 맞출 뿐 적격 기준을 해석하지는 않는다'),
     outcomeQuery: free('평가변수 문구(outcomeMeasures 필드)'),
     geo: off('데이터에 좌표가 없다'),
     status: {
@@ -90,7 +90,7 @@ export const ISRCTN_CAPABILITY: Capability = {
    */
   results: {
     supported: false,
-    scope: 'ISRCTN 의 결과는 논문 링크와 첨부 PDF 이지 구조화된 평가변수·이상반응 데이터가 아니다',
+    scope: 'ISRCTN 의 결과는 논문 링크와 첨부 PDF 다 — TrialResults 가 요구하는 구조화된 평가변수·이상반응·참가자 흐름·기저 특성이 아니다',
   },
   count: { supported: true, scope: 'default 포맷의 limit=0 응답에서 총계만 읽는다' },
   limits: {

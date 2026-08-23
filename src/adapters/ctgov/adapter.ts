@@ -20,14 +20,14 @@ export const CTGOV_CAPABILITY: Capability = {
   region: 'US / global',
   search: {
     condition: free('질환·상태 이름. 동의어 확장이 업스트림에서 일어난다'),
-    intervention: free('약물·처치·기기 이름'),
+    intervention: free('중재 모듈에 등록된 이름과 그 다른 이름(otherNames)까지 본다 — 상표명으로 걸린 시험이 정작 레코드에는 그 이름을 싣지 않고 나올 수 있다. 요약에만 등장하는 약물은 term 이 잡는다'),
     term: free('제목·조건·중재·요약을 아우르는 본문 전반의 자유 텍스트'),
     title: free('공식 제목과 간략 제목에만 걸린다 — 본문은 보지 않는다'),
     sponsor: free('주 스폰서와 공동 스폰서를 모두 본다'),
     lead: free('주 스폰서만 본다 — 공동 스폰서는 제외된다'),
     location: free('시험 사이트의 기관명·도시·주·국가'),
     id: free('NCT 번호와 업스트림이 기재한 보조 식별자'),
-    patient: free('환자 친화 표현으로 쓴 자유 텍스트'),
+    patient: free('term 과는 다른 업스트림 검색 에어리어라 같은 단어를 넣어도 결과가 갈린다. 적격 기준을 해석해 주지는 않아서 "62세 EGFR 양성" 같은 긴 서술은 0건이 되고 단순 문구만 걸린다(실측)'),
     outcomeQuery: free('1차·2차 평가변수 문구'),
     geo: {
       supported: true, values: null, exhaustive: null,
@@ -43,13 +43,16 @@ export const CTGOV_CAPABILITY: Capability = {
     },
     studyType: {
       supported: true, values: CTGOV_FILTERABLE.studyType, exhaustive: false,
-      scope: '중재/관찰/확대접근 구분',
+      scope: '중재/관찰/확대접근 구분. 값별로 세면 981건이 어디에도 안 걸리는데, 이 수는 정보가 보류된(WITHHELD) 시험 수와 정확히 같다',
     },
     updatedRange: {
       supported: true, values: null, exhaustive: null,
       scope: '마지막 갱신 게시일(LastUpdatePostDate)',
     },
-    startRange: { supported: true, values: null, exhaustive: null, scope: '시험 시작일(StartDate)' },
+    startRange: {
+      supported: true, values: null, exhaustive: null,
+      scope: '시험 시작일(StartDate). 시작한 시험은 실제일(ACTUAL), 아직 시작 안 한 시험은 예정일(ESTIMATED)인데 필터가 둘을 구분하지 않아 예정일로 걸린 시험이 섞여 나온다',
+    },
     completionRange: {
       supported: true, values: null, exhaustive: null,
       scope: '1차 완료일(PrimaryCompletionDate) — 최종 완료일이 아니다',
