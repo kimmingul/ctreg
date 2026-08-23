@@ -2,6 +2,7 @@ import { parseArgs } from 'node:util';
 import { CAPS, resolvePageSize, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
 import { DEFAULT_REGISTRY, REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
+  FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE,
   isFilterablePhase, isFilterableStatus, isFilterableStudyType,
   type StudyType, type TrialPhase, type TrialStatus,
 } from '../core/vocab.js';
@@ -19,7 +20,11 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
 
 검색 축   --condition --intervention --term --title --location --outcome-query
           --sponsor --lead --id --patient
-필터      --status --phase --study-type (반복 가능)
+필터      --status ${FILTERABLE_STATUS.slice(0, 3).join('|')}
+          ${FILTERABLE_STATUS.slice(3).join('|')}
+          --phase ${FILTERABLE_PHASE.join('|')}
+          --study-type ${FILTERABLE_STUDY_TYPE.join('|')}
+          (셋 다 반복 가능. 값은 소문자다 — 레지스트리 원문 값이 아니라 공통 어휘다)
           --near <lat,lon> --radius <N>km|mi
           --updated-since --updated-before --start-after --start-before
           --completion-after --completion-before   (YYYY-MM-DD)
@@ -27,6 +32,8 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
           --page-size <N> --page-token <t>
           --sort <field> --eligibility-chars <N> --raw
           --format json|ndjson|text --no-cache --refresh
+
+레지스트리마다 받는 값이 다르다. 어느 축을 어떤 값으로 쓸 수 있는지는 \`ctreg registries\` 가 말한다.
 
 exit: 0 정상(0건 포함) · 2 사용법 · 3 미지원 · 4 업스트림
       5 부분 실패 — 일부 레지스트리만 성공. 경고는 종료 코드를 바꾸지 않는다.
