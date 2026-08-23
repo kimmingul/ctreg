@@ -54,7 +54,17 @@ const PHASE_OUT: Partial<Record<TrialPhase, string>> = {
   na: 'Not Applicable',
 };
 
-const STUDY_TYPE_OUT: Record<string, string> = {
+/**
+ * `Record<string, string>` 이었다 — 아무 문자열이나 키가 될 수 있었다는 뜻이고, 그
+ * 키들이 `ISRCTN_FILTERABLE` 을 거쳐 capability 의 `values` 로, 즉 **받아들여지는 값의
+ * 공개 신고** 로 나간다. 공통 어휘에 없는 키 하나면 CLI 가 exit 2 로 거절하는 값을
+ * 신고하게 되고, 그것이 이 브랜치가 고치려는 실패 그 자체다.
+ *
+ * `StudyType` 으로 좁혀도 `other`(매핑 결과일 뿐 필터 입력이 아니다)는 여전히 타입이
+ * 허용한다 — 위 `PHASE_OUT` 도 같은 자리에 `other` 를 허용한다. 그 마지막 칸은 계약
+ * 스위트의 '신고한 values 는 전부 CLI 가 받는 값이다' 가 막는다.
+ */
+const STUDY_TYPE_OUT: Partial<Record<StudyType, string>> = {
   interventional: 'Interventional',
   observational: 'Observational',
 };

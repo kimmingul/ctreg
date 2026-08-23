@@ -4,6 +4,7 @@ import { CapabilitySchema, type Capability, type RegistryAdapter, type SearchAxi
 import { CAPS, type FetchOpts, type NormalizedQuery, type ResultsOpts } from '../../src/core/query.js';
 import { TrialRecordSchema, TrialResultsSchema } from '../../src/core/record.js';
 import { parseTrialId, type RegistryKey } from '../../src/core/registry.js';
+import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../../src/core/vocab.js';
 import { assertSupported } from '../../src/cli/guard.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { ParsedArgs } from '../../src/cli/args.js';
@@ -17,6 +18,13 @@ const fetchOpts: FetchOpts = {
   caps: { locations: CAPS.locations.default, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.default },
   cacheMode: 'off', raw: false,
 };
+
+/**
+ * 닫힌 어휘를 가진 세 축. 나머지 열네 축은 자유 텍스트이거나 날짜라 `values` 가
+ * `null` 이다. 이 목록을 이름으로 적는 이유는 두 모양(`[]` 과 `null`)이 **다른 것을
+ * 뜻하는데** 타입은 둘을 구분하지 못하기 때문이다 — 구분은 여기서만 선다.
+ */
+const CLOSED_VOCAB_AXES = ['status', 'phase', 'studyType'] as const;
 
 const resultsOpts: ResultsOpts = {
   sections: ['outcomes', 'adverse', 'flow', 'baseline'],
@@ -281,13 +289,70 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     /**
      * `supported: false` 인데 `values` 에 뭔가 들어 있으면 두 선언이 서로를 부정한다.
      * 읽는 쪽은 어느 쪽을 믿어야 할지 알 수 없다.
+     *
+     * 기대하는 빈 값이 축 종류마다 다르다 — 닫힌 어휘 축은 `[]`, 자유 텍스트 축은
+     * `null` 이다. 이전 판은 `values ?? []` 로 둘을 하나로 뭉갰고, 그래서 닫힌 어휘
+     * 축에 `null` 을 적어도 통과했다. `off()` 헬퍼가 바로 그 `null` 을 만든다.
      */
     it('지원하지 않는 축은 values 가 비어 있다', () => {
       const cap = makeAdapter().capability();
       for (const [name, axis] of Object.entries(cap.search) as [string, SearchAxis][]) {
         if (axis.supported) continue;
-        expect(axis.values ?? [], `'${name}' 은 supported:false 인데 values 가 비어 있지 않습니다`).toEqual([]);
+        const empty = (CLOSED_VOCAB_AXES as readonly string[]).includes(name) ? [] : null;
+        expect(
+          axis.values,
+          `'${name}' 은 supported:false 인데 values 가 ${JSON.stringify(empty)} 가 아닙니다`,
+        ).toEqual(empty);
         expect(axis.exhaustive, `'${name}' 은 supported:false 인데 exhaustive 가 null 이 아닙니다`).toBeNull();
+      }
+    });
+
+    /**
+     * `null` 은 **자유 텍스트 축의 모양** 이다 — "닫힌 어휘가 없다, 아무 문자열이나
+     * 받는다". 닫힌 어휘 축에 그것을 적으면 "그 축으로 무엇을 물어볼 수 있는지" 가
+     * 신고에서 통째로 사라지고, 읽는 쪽은 정반대의 결론을 낸다.
+     *
+     * 위 검사만으로는 못 잡는다: 그쪽은 `supported: false` 인 축만 본다. 여기서는
+     * `supported` 와 무관하게 본다 — 함정이 한 줄 옆에 있기 때문이다. ISRCTN 어댑터의
+     * `off()` 헬퍼가 `values: null` 을 만들고, `status` 가 그 헬퍼를 안 쓴 것은
+     * 손으로 적었기 때문일 뿐 구조가 막아 준 것이 아니다.
+     */
+    it('닫힌 어휘 축은 supported 와 무관하게 values 가 배열이다', () => {
+      const cap = makeAdapter().capability();
+      for (const name of CLOSED_VOCAB_AXES) {
+        expect(
+          Array.isArray(cap.search[name].values),
+          `'${name}' 은 닫힌 어휘 축인데 values 가 ${JSON.stringify(cap.search[name].values)} 입니다 — ` +
+            'null 은 "닫힌 어휘가 없다" 는 자유 텍스트 축의 뜻이라, 읽는 쪽이 정반대로 해석합니다.',
+        ).toBe(true);
+      }
+    });
+
+    /**
+     * 신고한 값을 **CLI 가 받는가.** 위의 '신고한 values 는 전부 실제로 질의로
+     * 조립된다' 는 `adapter.search()` 를 직접 부르므로 `parseCliArgs` 를 건너뛴다 —
+     * 어댑터가 기꺼이 조립하는 값이라도 CLI 가 exit 2 로 거절하면 사용자에게는
+     * 여전히 "신고해 놓고 거부한다" 이고, 그것이 이 브랜치가 고치려는 실패 그 자체다.
+     *
+     * ctgov 는 `*_OUT` 이 `isFilterable*` 로 걸러 파생되므로 구조적으로 면역이지만
+     * ISRCTN 의 `*_OUT` 은 손으로 적은 테이블이라 면역이 아니다. 두 어댑터가 같은
+     * 일에 서로 다른 규율을 쓰는 한, 그 차이를 메우는 것은 이 검사다.
+     */
+    it('신고한 values 는 전부 CLI 가 받는 값이다', () => {
+      const cap = makeAdapter().capability();
+      const accepted: Record<(typeof CLOSED_VOCAB_AXES)[number], readonly string[]> = {
+        status: FILTERABLE_STATUS,
+        phase: FILTERABLE_PHASE,
+        studyType: FILTERABLE_STUDY_TYPE,
+      };
+      for (const name of CLOSED_VOCAB_AXES) {
+        const strays = (cap.search[name].values ?? []).filter((v) => !accepted[name].includes(v));
+        expect(
+          strays,
+          `'${name}' 이 신고한 값 ${strays.join(', ')} 를 CLI 가 받지 않습니다 — ` +
+            `--${name === 'studyType' ? 'study-type' : name} 에 넣으면 exit 2 입니다. ` +
+            '신고는 받아들여지는 값의 목록이지 어댑터가 아는 값의 목록이 아닙니다.',
+        ).toEqual([]);
       }
     });
 
