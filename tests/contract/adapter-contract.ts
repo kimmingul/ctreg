@@ -246,16 +246,28 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * 신고해 놓고 거부하는 어댑터를 잡는다. **이 검사를 쓰기 직전까지 ISRCTN 이
      * 정확히 그랬다** — phase 어휘에 early_phase_1 자리가 없어 exit 2 로 거부하는데
      * 선언에는 그 사실이 없었다. 신고와 구현이 어긋나면 사용자는 부딪혀야만 안다.
+     *
+     * `supported: false` 인 축은 건너뛴다 — 그 축은 애초에 `buildQuery` 가 읽지
+     * 않으므로 값 하나만 실어 보내면 "검색 조건이 적어도 하나 필요합니다" 같은,
+     * 진짜 문제(죽은 축에 값이 남아 있다)와 무관한 메시지로 실패한다. 그 문제는
+     * 아래 '지원하지 않는 축은 values 가 비어 있다' 가 정확히 짚는다 — 한 실수에
+     * 신호 하나씩만 나가야 한다.
+     *
+     * 한계: `ok()` 의 스텁은 질의 내용과 무관하게 같은 픽스처로 응답하므로, 이
+     * 검사는 신고한 값이 `buildQuery`/매핑에서 **던지지 않는다** 는 것만 증명한다.
+     * `phase_2` 를 `phase_3` 업스트림 토큰에 매핑하는 것처럼 문법적으로는 멀쩡한
+     * 오매핑은 잡지 못한다 — 값별 요청 내용까지 단언하는 것은 이 검사의 범위 밖이다.
      */
     it('신고한 values 는 전부 실제로 질의로 조립된다', async () => {
       const cap = makeAdapter().capability();
-      const probes: [string, string[], (v: string) => NormalizedQuery][] = [
-        ['status', cap.search.status.values ?? [], (v) => ({ status: [v as never] })],
-        ['phase', cap.search.phase.values ?? [], (v) => ({ phase: [v as never] })],
-        ['studyType', cap.search.studyType.values ?? [], (v) => ({ studyType: v as never })],
+      const axes: [string, SearchAxis, (v: string) => NormalizedQuery][] = [
+        ['status', cap.search.status, (v) => ({ status: [v as never] })],
+        ['phase', cap.search.phase, (v) => ({ phase: [v as never] })],
+        ['studyType', cap.search.studyType, (v) => ({ studyType: v as never })],
       ];
-      for (const [axis, values, probe] of probes) {
-        for (const v of values) {
+      for (const [axis, decl, probe] of axes) {
+        if (!decl.supported) continue; // 죽은 축의 값은 아래 검사의 몫이다
+        for (const v of decl.values ?? []) {
           const { adapter } = ok();
           await expect(
             adapter.search(probe(v), fetchOpts),
