@@ -7,6 +7,7 @@ import { runRegistries } from '../../src/cli/commands/registries.js';
 import { runResults } from '../../src/cli/commands/results.js';
 import { runSearch } from '../../src/cli/commands/search.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
+import { REGISTRY_KEYS } from '../../src/core/registry.js';
 import { run } from '../../src/cli/index.js';
 import { exitFor } from '../../src/cli/output.js';
 import type { Capability, RegistryAdapter } from '../../src/core/capability.js';
@@ -466,8 +467,9 @@ describe('레지스트리 키는 있는데 아직 어댑터가 없을 때', () =
   });
 
   it('연합에서 하나만 어댑터가 없으면, 있는 쪽은 정상 처리되고 exit 5 (부분 성공) 다', async () => {
-    // REGISTRY_KEYS 에는 아직 ctgov 하나뿐이라, 두 번째 레지스트리는 기존 테스트들과
-    // 같은 방식(런타임 전용 캐스팅)으로 흉내낸다 — 'bad' 키는 아예 adapters 에 없다.
+    // 등록되지 않은 키('bad')를 런타임 전용 캐스팅으로 흉내낸다 — REGISTRY_KEYS 에
+    // 실린 진짜 키를 쓰면 "그 키의 어댑터가 없는 상태" 를 만들기 위해 adapters 를
+    // 비워야 하고, 그러면 이 테스트가 검사하려는 '한쪽만 없음' 이 아니게 된다.
     const good = stubAdapter().ctgov;
     const adapters = { good } as unknown as Record<RegistryKey, RegistryAdapter>;
     const args = { ...parseCliArgs(['search', '--condition', 'X']), registries: ['good', 'bad'] as unknown as RegistryKey[] };
@@ -484,10 +486,13 @@ describe('레지스트리 키는 있는데 아직 어댑터가 없을 때', () =
     const adapters: Partial<Record<RegistryKey, RegistryAdapter>> = {};
     const env = runRegistries(parseCliArgs(['registries']), adapters);
 
-    expect(env.registries).toEqual([
-      expect.objectContaining({ registry: 'ctgov', status: 'unsupported' }),
-    ]);
-    expect(env.registries[0]?.error?.code).toBe('unsupported');
+    // 등록된 키 전부가 나온다 — 어댑터가 없다고 목록에서 사라지면 "그런 레지스트리는
+    // 없다" 와 "이 빌드에 아직 없다" 가 구별되지 않는다.
+    expect(env.registries.map((r) => r.registry)).toEqual([...REGISTRY_KEYS]);
+    for (const r of env.registries) {
+      expect(r.status).toBe('unsupported');
+      expect(r.error?.code).toBe('unsupported');
+    }
     expect(env.data).toEqual([]); // 어댑터가 없어 capability 를 낼 수 없는 키는 건너뛴다
     expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
   });

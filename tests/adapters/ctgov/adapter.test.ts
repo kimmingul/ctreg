@@ -23,6 +23,7 @@ beforeEach(() => {
     maxRetries: 3,
     ratePerSec: 1000,
     ctgovBaseUrl: 'https://example.test/api/v2',
+        isrctnBaseUrl: 'https://isrctn.example.test',
   };
 });
 

@@ -1,0 +1,630 @@
+<trials><trial>
+  <main>
+    <trial_id>ISRCTN13555554</trial_id>
+    <utrn/>
+    <reg_name>ISRCTN</reg_name>
+    <date_registration>10/08/2026</date_registration>
+    <primary_sponsor>Jazz Pharmaceuticals Ltd</primary_sponsor>
+    <public_title>Real-world outcomes of patients with HER2-positive biliary tract cancer treated with zanidatamab through an Early Access Programme</public_title>
+    <acronym>RealiZe</acronym>
+    <scientific_title>Multinational real-world study of patients with HER2-positive biliary tract cancer treated with zanidatamab in an Early Access Program (RealiZe)</scientific_title>
+    <date_enrolment>03/08/2026</date_enrolment>
+    <type_enrolment>Actual</type_enrolment>
+    <target_size>42</target_size>
+    <recruitment_status>Recruiting</recruitment_status>
+    <url>https://www.isrctn.com/ISRCTN13555554</url>
+    <study_type>Observational</study_type>
+    <study_design>Cohort study</study_design>
+    <phase>Not Applicable</phase>
+    <hc_freetext>HER2-positive biliary tract cancer (BTC), including unresectable locally advanced or metastatic disease</hc_freetext>
+    <i_freetext>This is a multinational, retrospective, longitudinal, observational cohort study conducted in the United Kingdom, Spain and Italy. Patients with previously treated unresectable locally advanced or metastatic HER2-positive biliary tract cancer who received at least one dose of zanidatamab through an Early Access Programme will be included.
+
+No treatments, interventions, study visits, tests, questionnaires or biological samples will be required as part of the study. Pseudonymised data will be collected retrospectively from existing medical records at participating cancer centres and entered into a standardised electronic case report form. Medical records covering medical history, zanidatamab treatment and subsequent follow-up will be reviewed.
+
+Data collected will include demographic and clinical characteristics, biliary tract cancer subtype, HER2 test results, ECOG performance status, relevant comorbidities, previous anticancer therapies, zanidatamab treatment details (including treatment dates, dose modifications, interruptions and reasons for discontinuation), concomitant medications, tumour response, disease progression, subsequent anticancer treatments and survival status.
+
+Real-world effectiveness outcomes assessed from medical records will include real-world time on treatment (rwToT), real-world progression-free survival (rwPFS), real-world subsequent-line progression-free survival (rwPFS2), real-world overall survival (rwOS), real-world duration of response (rwDOR), and real-world objective response rate (rwORR). Patients will be followed from initiation of zanidatamab treatment until treatment discontinuation, death, or the end of available follow-up.</i_freetext>
+    <results_actual_enrolment>0</results_actual_enrolment>
+    <results_date_completed>31/10/2026</results_date_completed>
+    <results_url_link/>
+    <results_summary/>
+    <results_date_posted/>
+    <results_date_first_publication/>
+    <results_baseline_char/>
+    <results_participant_flow/>
+    <results_adverse_events/>
+    <results_outcome_measures/>
+    <results_url_protocol/>
+    <results_IPD_plan>No</results_IPD_plan>
+    <results_IPD_description>Not expected to be made available. </results_IPD_description>
+  </main>
+  <contacts>
+    <contact>
+      <type>Public</type>
+      <firstname>Sophie</firstname>
+      <middlename/>
+      <lastname>Thornton</lastname>
+      <address>Jazz Pharmaceuticals Ltd
+ 80 Charlotte Street</address>
+      <city>London</city>
+      <country1>United Kingdom</country1>
+      <zip>W1T 4DF</zip>
+      <telephone>+44 (0)20 3307 4847</telephone>
+      <email>Sophie.Thornton@jazzpharma.com</email>
+      <affiliation/>
+    </contact>
+    <contact>
+      <type>Scientific</type>
+      <firstname>Sophie</firstname>
+      <middlename/>
+      <lastname>Thornton</lastname>
+      <address>Jazz Pharmaceuticals Ltd
+ 80 Charlotte Street</address>
+      <city>London</city>
+      <country1>United Kingdom</country1>
+      <zip>W1T 4DF</zip>
+      <telephone>+44 (0)20 3307 4847</telephone>
+      <email>Sophie.Thornton@jazzpharma.com</email>
+      <affiliation/>
+    </contact>
+  </contacts>
+  <countries>
+    <country2>United Kingdom</country2>
+    <country2>England</country2>
+    <country2>Italy</country2>
+    <country2>Spain</country2>
+  </countries>
+  <criteria>
+    <inclusion_criteria>Patients with previously treated unresectable locally advanced or metastatic HER2-positive biliary tract cancer who received at least one dose of zanidatamab through the Early Access Programme (no upper age limit).
+
+In Spain and Italy, living patients must provide informed consent where required by local regulations. In the United Kingdom, eligible patients may be included using the approved opt-out process.</inclusion_criteria>
+    <agemin>18 Years</agemin>
+    <agemax>99 Years</agemax>
+    <gender>All</gender>
+    <exclusion_criteria>United Kingdom only: Patients with an NHS National Data Opt-Out and patients who choose to opt out of participation.
+
+Spain and Italy: Patients who do not provide informed consent where consent is required by local regulations.</exclusion_criteria>
+  </criteria>
+  <health_condition_code>
+    <hc_code/>
+  </health_condition_code>
+  <health_condition_keyword>
+    <hc_keyword>Cancer</hc_keyword>
+    <hc_keyword/>
+  </health_condition_keyword>
+  <intervention_code>
+    <i_code/>
+  </intervention_code>
+  <intervention_keyword>
+    <i_keyword>Drug</i_keyword>
+  </intervention_keyword>
+  <primary_outcome>
+    <prim_outcome>Real-world time on treatment (rwToT) measured using the time from zanidatamab treatment initiation to treatment discontinuation for any reason, including physician-assessed disease progression, treatment-related toxicity, clinical decision, or death, derived from patient medical records and recorded in the electronic case report form (eCRF) at the end of the available follow-up</prim_outcome>
+    <prim_outcome>Real-world progression-free survival (rwPFS) measured using the time from zanidatamab treatment initiation to physician-assessed disease progression or death from any cause, whichever occurs first, derived from patient medical records and recorded in the eCRF at the end of the available follow-up</prim_outcome>
+    <prim_outcome>Real-world subsequent-line progression-free survival (rwPFS2) measured using the time from zanidatamab treatment initiation to physician-assessed disease progression following subsequent-line treatment or death from any cause, whichever occurs first, derived from patient medical records and recorded in the eCRF at the end of the available follow-up</prim_outcome>
+    <prim_outcome>Real-world overall survival (rwOS) measured using the time from zanidatamab treatment initiation to death from any cause, derived from patient medical records and recorded in the eCRF at the end of the available follow-up</prim_outcome>
+    <prim_outcome>Real-world duration of response (rwDOR) measured using the time from first documented physician-assessed partial response or complete response to disease progression or death, derived from patient medical records and recorded in the eCRF at the end of the available follow-up</prim_outcome>
+    <prim_outcome>Real-world objective response rate (rwORR) measured using the proportion of patients achieving a physician-assessed complete response or partial response to zanidatamab treatment, based on medical record review and recorded in the eCRF at the end of the available follow-up</prim_outcome>
+  </primary_outcome>
+  <secondary_outcome>
+    <sec_outcome>Patient demographics and relevant medical history measured using demographic and clinical characteristics abstracted from medical records, including country of treatment, age at zanidatamab initiation, sex at birth, relevant comorbidities, date of biliary tract cancer diagnosis, HER2 test results, previous surgery, biliary tract cancer subtype, previous lines of treatment, ECOG performance status and participation in other interventional clinical trials at baseline (zanidatamab treatment initiation)</sec_outcome>
+    <sec_outcome>Dates of zanidatamab treatment initiation and discontinuation measured using patient medical records and recorded in the eCRF at the end of the available follow-up</sec_outcome>
+    <sec_outcome>Zanidatamab dose, dose modifications and treatment interruptions measured using patient medical records and recorded in the eCRF at the end of the available follow-up</sec_outcome>
+  </secondary_outcome>
+  <secondary_sponsor>
+    <sponsor_name/>
+  </secondary_sponsor>
+  <secondary_ids>
+    <secondary_id>
+      <sec_id>364497</sec_id>
+      <issuing_authority>Integrated Research Application System (IRAS)</issuing_authority>
+    </secondary_id>
+    <secondary_id>
+      <sec_id>70928</sec_id>
+      <issuing_authority>Central Portfolio Management System (CPMS)</issuing_authority>
+    </secondary_id>
+    <secondary_id>
+      <sec_id>JZP598-527</sec_id>
+      <issuing_authority>Sponsor Protocol ID</issuing_authority>
+    </secondary_id>
+  </secondary_ids>
+  <source_support>
+    <source_name>Jazz Pharmaceuticals</source_name>
+  </source_support>
+  <ethics_reviews>
+    <ethics_review>
+      <status>Approved</status>
+      <approval_date>23/03/2026</approval_date>
+      <contact_name>Health and Social Care Research Ethics Committee B (HSC REC B); ref: 26/NI/0041</contact_name>
+      <contact_address>Office for Research Ethics Committees Northern Ireland (ORECNI)
+2nd Floor James House, 2-4 Cromac Avenue, BELFAST, BT7 2JA, United Kingdom</contact_address>
+      <contact_phone>+44 (0)28 95 361400</contact_phone>
+      <contact_email>PRS@hscni.net</contact_email>
+    </ethics_review>
+    <ethics_review>
+      <status>Approved</status>
+      <approval_date>26/04/2026</approval_date>
+      <contact_name>Comité de Ética de la Investigación de la Fundación Jiménez Díaz (CEIm); ref: EO093-26_FJD</contact_name>
+      <contact_address>C/ del Maestro Ángel Llorca, 6
+Bajo B, Edificio Alto, Madrid, 28003, Spain</contact_address>
+      <contact_phone>+34 (0)91 544 37 20</contact_phone>
+      <contact_email>ceic@fjd.es</contact_email>
+    </ethics_review>
+    <ethics_review>
+      <status>Submitted</status>
+      <approval_date/>
+      <contact_name>Comitato Etico Territoriale Lombardia 5; 14/07/2026; ref: 436/26</contact_name>
+      <contact_address>Via Alessandro Manzoni 56, Rozzano (MI), 20089, Italy</contact_address>
+      <contact_phone>+39 (0)2 8224 7216</contact_phone>
+      <contact_email>cetlombardia5@humanitas.it</contact_email>
+    </ethics_review>
+  </ethics_reviews>
+</trial><trial>
+  <main>
+    <trial_id>ISRCTN16053507</trial_id>
+    <utrn/>
+    <reg_name>ISRCTN</reg_name>
+    <date_registration>04/08/2026</date_registration>
+    <primary_sponsor>University of Liverpool</primary_sponsor>
+    <public_title>Feasibility of home urine collection for lung health check</public_title>
+    <acronym>P4-LHC</acronym>
+    <scientific_title>Feasibility of home urine collection for lung health check (P4-LHC)</scientific_title>
+    <date_enrolment>15/08/2025</date_enrolment>
+    <type_enrolment>Actual</type_enrolment>
+    <target_size>1000</target_size>
+    <recruitment_status>No longer recruiting</recruitment_status>
+    <url>https://www.isrctn.com/ISRCTN16053507</url>
+    <study_type>Observational</study_type>
+    <study_design>Cohort study</study_design>
+    <phase>Not Applicable</phase>
+    <hc_freetext>Lung cancer</hc_freetext>
+    <i_freetext>NHS staff in the TLHC at Liverpool Heart and Chest Hospital will identify 1000 subjects for the University of Liverpool to approach for the study. The chosen subjects represent three major groups for which important questions remain:
+1. TLHC non-responders: 500 randomly selected from those who have not yet responded to the TLHC invite (two letters
+and a phone call); with unknown risk (unless they subsequently engage with TLHC, as is hoped).
+2. TLHC low-risk responders: 250 randomly selected from those who are low risk for lung cancer according to TLHC risk scores (and therefore not currently invited for an LDCT scan).
+3. TLHC high-risk responders: 250 randomly selected from those who are high risk for lung cancer and are offered a TLHC low-dose CT scan.
+
+Liverpool University Biobank will securely receive the personal details (name, address and Liverpool Heart and Chest Hospital [LHCH] subject ID); store them in a secure database; create their own Liverpool University Biobank (LUB) Subject ID; and produce a personalised package for each subject approached consisting of:
+1. An introductory leaflet (one page) with invite letter on the back (specific to the subject group)
+2. A participant information sheet (two pages)
+3. A Colli-Pee urine home collection kit (CE-marked kit including how-to-use instructions, a funnel device and a storage tube with lid)
+4. A pre-addressed, pre-paid postage kit (to return the urine sample and the consent form)
+
+Access to information and further help will be available online (via QR codes providing access to Immersive Reader-enabled webpages or translation for those with English as a second language) or provided by telephone.
+Having read the provided information, P4-LHC participants will complete the consent form, provide a urine sample with the easy-to-use kit, and return both in the envelope provided. 
+On receipt of the urine samples, the Liverpool University Biobank (LUB) will update its database to record consent and sample receipt and produce sample ID numbers for each subject.
+Two tubes will be stored in the LUB freezers (at -80°C) prior to shipment to Elypta AB labs.
+The three remaining tubes will be stored in LUB freezers (at -80°C).
+
+Additional data will be supplied by NHS TLHC staff to LUB (and shared anonymously with study researchers), for the 1000 subjects approached and for the population from which those 1000 subjects have been selected (representing those eligible for TLHC in a specific geographical catchment).
+
+The data would include age, sex, IMD decile, whether they responded to the TLHC, whether they were high or low risk for lung cancer (with % risk score from LLPv2 and PLCOm2012), whether they received a TLHC low-dose CT scan, and whether they were diagnosed with lung cancer by the TLHC. 
+
+The urine samples received by Elypta AB (the Swedish company that developed the GAGome test) will be analysed for the glycosaminoglycans that make up the GAGome score. The anonymous data will be jointly analysed by the University and Elypta researchers. In this feasibility study the GAGome scores are not shared with the participants.</i_freetext>
+    <results_actual_enrolment>231</results_actual_enrolment>
+    <results_date_completed>01/10/2026</results_date_completed>
+    <results_url_link/>
+    <results_summary/>
+    <results_date_posted/>
+    <results_date_first_publication/>
+    <results_baseline_char/>
+    <results_participant_flow/>
+    <results_adverse_events/>
+    <results_outcome_measures/>
+    <results_url_protocol/>
+    <results_IPD_plan>No</results_IPD_plan>
+    <results_IPD_description>Not expected to be made available. </results_IPD_description>
+  </main>
+  <contacts>
+    <contact>
+      <type>Public</type>
+      <firstname>Michael</firstname>
+      <middlename/>
+      <lastname>Davies</lastname>
+      <address>The University of Liverpool Department of Molecular and Clinical Cancer Medicine, Institute of Systems, Molecular &amp; Integrative Biology, The William Duncan Building, 6 West Derby Street</address>
+      <city>Liverpool</city>
+      <country1>United Kingdom</country1>
+      <zip>L7 8TX</zip>
+      <telephone>+44 (0)151 794 9105</telephone>
+      <email>michael.davies@liverpool.ac.uk</email>
+      <affiliation/>
+    </contact>
+    <contact>
+      <type>Scientific</type>
+      <firstname>John</firstname>
+      <middlename/>
+      <lastname>Field</lastname>
+      <address>The University of Liverpool Department of Molecular and Clinical Cancer Medicine, Institute of Systems, Molecular &amp; Integrative Biology, The William Duncan Building, 6 West Derby Street</address>
+      <city>Liverpool</city>
+      <country1>United Kingdom</country1>
+      <zip>L7 8TX</zip>
+      <telephone>+44 (0)151 794 9001</telephone>
+      <email>j.k.field@liverpool.ac.uk</email>
+      <affiliation/>
+    </contact>
+  </contacts>
+  <countries>
+    <country2>United Kingdom</country2>
+    <country2>England</country2>
+  </countries>
+  <criteria>
+    <inclusion_criteria>Prior invitation to the Cheshire and Merseyside NHS  Lung Cancer Screening Programme (at the time called Targeted Lung Health Check [TLHC]) as identified by Liverpool Heart and Chest Hospital</inclusion_criteria>
+    <agemin>55 Years</agemin>
+    <agemax>75 Years</agemax>
+    <gender>All</gender>
+    <exclusion_criteria>1. Not included in the NHS Targeted Lung Health Check recruitment or opted out of NHS data sharing
+2. Unable to provide consent</exclusion_criteria>
+  </criteria>
+  <health_condition_code>
+    <hc_code/>
+  </health_condition_code>
+  <health_condition_keyword>
+    <hc_keyword>Cancer</hc_keyword>
+    <hc_keyword/>
+  </health_condition_keyword>
+  <intervention_code>
+    <i_code/>
+  </intervention_code>
+  <intervention_keyword>
+    <i_keyword>Other</i_keyword>
+  </intervention_keyword>
+  <primary_outcome>
+    <prim_outcome>Re-engagement in the NHS Lung Cancer Screening Programme measured using updated recruitment data to Lung Cancer Screening (LCS) at 6 months from initial recruitment invite</prim_outcome>
+  </primary_outcome>
+  <secondary_outcome>
+    <sec_outcome>GAGome biomarker measured using quantitative high-performance liquid chromatography (HPLC) at following end of recruitment</sec_outcome>
+  </secondary_outcome>
+  <secondary_sponsor>
+    <sponsor_name/>
+  </secondary_sponsor>
+  <secondary_ids>
+    <secondary_id>
+      <sec_id>344969</sec_id>
+      <issuing_authority>Integrated Research Application System (IRAS)</issuing_authority>
+    </secondary_id>
+  </secondary_ids>
+  <source_support>
+    <source_name>Elypta AB Sweden</source_name>
+  </source_support>
+  <ethics_reviews>
+    <ethics_review>
+      <status>Approved</status>
+      <approval_date>06/11/2024</approval_date>
+      <contact_name>North West - Greater Manchester East Research Ethics Committee; ref: 24/NW/0283</contact_name>
+      <contact_address>3rd Floor, Barlow House
+4 Minshull Street, Manchester, M1 3DZ, United Kingdom</contact_address>
+      <contact_phone>+44 (0)207 104 8000</contact_phone>
+      <contact_email>gmeast.rec@hra.nhs.uk</contact_email>
+    </ethics_review>
+  </ethics_reviews>
+</trial><trial>
+  <main>
+    <trial_id>ISRCTN30583116</trial_id>
+    <utrn/>
+    <reg_name>ISRCTN</reg_name>
+    <date_registration>27/07/2026</date_registration>
+    <primary_sponsor>University of Birmingham</primary_sponsor>
+    <public_title>How can we improve care for patients recovering from acute pancreatitis following discharge from hospital?</public_title>
+    <acronym>PANORAMA</acronym>
+    <scientific_title>oPtimising post-dischArge care pathways after acute paNcreatitis: evaluatiOn of health seRvice utilisAtion, outcoMes</scientific_title>
+    <date_enrolment>17/06/2026</date_enrolment>
+    <type_enrolment>Actual</type_enrolment>
+    <target_size>1017</target_size>
+    <recruitment_status>Recruiting</recruitment_status>
+    <url>https://www.isrctn.com/ISRCTN30583116</url>
+    <study_type>Observational</study_type>
+    <study_design>Cohort study</study_design>
+    <phase>Not Applicable</phase>
+    <hc_freetext>Acute pancreatitis</hc_freetext>
+    <i_freetext>There are 5 Work Packages (WP). These are complementary and intended to inform aspects of the final WP5 (see study summary graphic).
+
+WP1: Survey
+In order to ensure that themes addressed in the interviews cover all relevant aspects of post discharge care, we will undertake a short initial survey. This will recruit 20-40 from each group of patients/carers, secondary care clinicians (surgeons/gastroenterologists), nursing and allied health professionals, and general practitioners. The survey captures key demographic data, and asks participants to consider what opportunities exist to improve care after discharge, up to 6 months after acute pancreatitis.
+
+WP2: Patient interviews
+A topic guide has been prepared and will be refined with information from WP1. We will invite people with lived experience of acute pancreatitis to take part in a virtual interview of up to an hour.
+
+People can register an interest in participation following links from posts on social media and through interest groups, charities, and the NIHR Be Part of Research registry. They will be asked to complete a short expression of interest form. The research team will review expressions of interest and aim to recruit people with a range of experiences by looking at age, gender, ethnicity, geographical region, and whether pancreatitis was related to gallstones.
+
+When an appropriate participant is found, they will be contacted and the study further discussed with them. Should they wish to proceed, a digital consent form will be completed and a meeting arranged. The meeting will be conducted by a non clinical, experience qualitative researcher, and will be conducted by virtual meeting.
+
+The interview will explore experience of post-discharge care after pancreatitis, and what the participant feels might improve this. Should the participant become distressed, the interview will be paused, and terminated if necessary. Signposting to resources such as charities will be undertaken.
+
+Participation is complete at the end of the interview. The recording will be transcribed, and then dual coded by two researchers. A theoretical framework of post discharge needs will be developed using a thematic analysis approach. This will provide the patient perspective on post-discharge care.
+
+WP3: Clinician interviews
+A topic guide has been prepared and will be refined with information from WP1. We will invite clinicians who care for people with acute pancreatitis to take part.
+
+People can register an interest in participation following links from posts on social media and emails through specialist clinical associations. They will be asked to complete a short expression of interest form. The research team will review expressions of interest and aim to recruit people with a range of experiences by looking at clinical role, and geographical region.
+
+When an appropriate participant is found, they will be contacted and the study further discussed with them. Should they wish to proceed, a digital consent form will be completed and a meeting arranged. The meeting will be conducted by a non clinical, experience qualitative researcher, and will be conducted by virtual meeting.
+
+The interview will explore experience of post-discharge care after pancreatitis, and what opportunities there are to improve this. This will explore ideas around clinical reasoning and assessment of disease and patient recovery.
+
+Participation is complete at the end of the interview. The recording will be transcribed, and then dual coded by two researchers. A theoretical framework of post pancreatitis health risks and pathway opportunities will be developed. This will provide insight into clinical reasoning and priorities.
+
+WP4: Cohort study
+This will recruit people who are due to be discharged from hospital following an episode of acute pancreatitis drawing from several hospitals around the UK. Participants can be approached during their recovery and recruited up to the day of hospital discharge. This is supported by posters in the clinical area, a participant information sheet, and a short video.
+
+If a participant consents, they will complete a set of questionnaires on the day of discharge. These relate to quality of life, mental health, and impact of disease on digestion. These are repeated at day 7, 28, 3 months, and 6 months. There is an additional questionnaire about alcohol use at baseline. We will ask about health service use at 28 days, 3 months, and 6 months post discharge.
+
+Participants will receive reminders to complete by email, sms, or post. All post discharge contact is with the central research team. The questionnaires may take up to 30 minutes to complete.
+
+If a participant reponds to mental health questionnaires indicating high risk of self harm, they will be contacted and advised to seek help via 111 or their GP.
+
+This WP will provide data on health utilisation in the 6 months following discharge. It will provide novel data on the development of anxiety or depression, general quality of life, and patient reported symptoms of pancreatic exocrine insufficiency. We will use these data to construct models to allow us to stratify people who are most likely to use health care services following acute pancreatitis.
+
+WP5: Implementation workshop
+People who have shown interest in participation in previous WP will be invited to express interest in participating in a workshop to discuss the findings of the study. We will use purposive sampling to identify those to invite to the workshop. A PIS will be provided to those selected to participate, and consent secured.
+
+This will continue until we have a minimum of 20 participants, 10 of whom are patients or carers, and the remainder a mix of health care professionals with roles in care of acute pancreatitis.
+
+We will present the findings of the study to the whole group. We will then break off into smaller groups to discuss key themes. It is not yet clear what these are, but they may include dietary intervention, mental health support, stratified follow-up, pain management.
+
+Smaller groups of 4-5 participants includind patients and clinicians will discuss a single theme. A facilitator will lead this, using a 'so what, now what' framework. This will encourage reflection, contextualising findings, and encouraging participants to share ideas on how to address these challenges.
+
+We will take fields notes on the discussions and compile a list of 'recommendations to change practice' and 'recommendations for further research'. These ideas and reflections will be presented back to the wider group for comment.
+
+We will share this list with policymakers, clinicians, patients, and researchers to influence future care.
+
+Data will be held on secure servers. Expression of interest and cohort data including PROMS will be captured on REDCap hosted at the University of Birmingham. This is encrypted and password protected, using two factor authentication.</i_freetext>
+    <results_actual_enrolment>0</results_actual_enrolment>
+    <results_date_completed>30/09/2027</results_date_completed>
+    <results_url_link/>
+    <results_summary/>
+    <results_date_posted/>
+    <results_date_first_publication/>
+    <results_baseline_char/>
+    <results_participant_flow/>
+    <results_adverse_events/>
+    <results_outcome_measures/>
+    <results_url_protocol/>
+    <results_IPD_plan>No</results_IPD_plan>
+    <results_IPD_description>Data sharing statement to be made available at a later date. </results_IPD_description>
+  </main>
+  <contacts>
+    <contact>
+      <type>Public</type>
+      <firstname>Michala</firstname>
+      <middlename/>
+      <lastname>Pettitt</lastname>
+      <address>Public Health Building
+University of Birmingham</address>
+      <city>Birmingham</city>
+      <country1>United Kingdom</country1>
+      <zip>B15 2TT</zip>
+      <telephone>+44 121 415 9106</telephone>
+      <email>panorama-study@contacts.bham.ac.uk</email>
+      <affiliation/>
+    </contact>
+    <contact>
+      <type>Scientific</type>
+      <firstname>Michala</firstname>
+      <middlename/>
+      <lastname>Pettitt</lastname>
+      <address>Public Health Building
+University of Birmingham</address>
+      <city>Birmingham</city>
+      <country1>United Kingdom</country1>
+      <zip>B15 2TT</zip>
+      <telephone>+44 121 415 9106</telephone>
+      <email>panorama-study@contacts.bham.ac.uk</email>
+      <affiliation/>
+    </contact>
+  </contacts>
+  <countries>
+    <country2>United Kingdom</country2>
+    <country2>England</country2>
+    <country2>Scotland</country2>
+  </countries>
+  <criteria>
+    <inclusion_criteria>WP1: Any lived experience of adult acute pancreatitis care in NHS as patient or carer, clinician providing NHS care to patients with acute pancreatitis in secondary or primary care.
+WP2: Adults (or their carers) with experience of acute pancreatitis care in the NHS within the preceeding six months. Ideally have a conversational standard of English, but translation can be arranged.
+WP3: Clinicians (surgeons, gastroenterologists, specialist nurses, allied health professionals, GPs) providing NHS care to patients with acute pancreatitis.
+WP4: People currently admitted to hospital for acute pancreatitis who are due to be discharged. Must be able to consent to participate. 
+WP5: Any lived experience of adult acute pancreatitis care in NHS as patient or carer, clinician providing NHS care to patients with acute pancreatitis in secondary or primary care.
+
+Minimum age of participants in any work stream is 16 years old, and participants may be up to 100 years old.</inclusion_criteria>
+    <agemin>16 Years</agemin>
+    <agemax>100 Years</agemax>
+    <gender>All</gender>
+    <exclusion_criteria>WP1: Must be able to complete survey in English
+WP2: Must have experienced care as an adult
+WP3: Non UK clinical practice
+WP4: Unwilling to consent; no capacity to consent</exclusion_criteria>
+  </criteria>
+  <health_condition_code>
+    <hc_code/>
+  </health_condition_code>
+  <health_condition_keyword>
+    <hc_keyword>Digestive System</hc_keyword>
+    <hc_keyword/>
+  </health_condition_keyword>
+  <intervention_code>
+    <i_code/>
+  </intervention_code>
+  <intervention_keyword>
+    <i_keyword>Other</i_keyword>
+  </intervention_keyword>
+  <primary_outcome>
+    <prim_outcome>WP1: Identification of the opportunities that exist to improve care after discharge from hospital following acute pancreatitis measured using survey of stakeholders to identify the key features and characteristics that define a ‘good’ follow-up pathway for patients with AP.  Qualitative content analysis using a thematic approach at until saturation is reached (40 patients/ carers, 40 clinicians)</prim_outcome>
+    <prim_outcome>WP2: Commentary describing the experiences of participants (patients and their carers) following discharge from hospital with acute pancreatitis measured using purposive selection of candidates completing an EoI to maximise sampling across collected descriptors (sex, ethnicity, aetiology, region), followed by semi-structure interviews (informed by analysis of WP1) and qualitative thematic analysis at Following analysis of WP1 to run concurrently with WP3 and WP4</prim_outcome>
+    <prim_outcome>WP3: Commentary describing the experiences of NHS clinicians with responsibilities for the care of patients with AP measured using purposive selection of candidates completing an EoI to maximise sampling across collected descriptors (sex, ethnicity, aetiology, region), followed by semi-structure interviews (informed by analysis of WP1) and qualitative thematic analysis at following analysis of WP1 to run concurrently with WP2 and WP4</prim_outcome>
+    <prim_outcome>WP4: Patient demographics, Patient co-morbidities, Prior diagnosis of mental health issues, Disease aetiology and inpatient treatment, Clinician planned follow-up on discharge measured using patient records at baseline</prim_outcome>
+    <prim_outcome>WP4: Alcohol usage measured using AUDIT-C PROM at baseline</prim_outcome>
+    <prim_outcome>WP4: Patient quality of life measured using EQ-5D-5L PROM at discharge, 7 days, 30 days, 3 months, 6 months</prim_outcome>
+    <prim_outcome>WP4: Patient anxiety measured using GAD-7 PROM at discharge, 7 days, 30 days, 3 months, 6 months</prim_outcome>
+    <prim_outcome>WP4: Patient depression measured using PHQ-9 PROM at discharge, 7 days, 30 days, 3 months, 6 months</prim_outcome>
+    <prim_outcome>WP4: Patient endocrine insufficiency score measured using PEI-Q PROM at discharge, 7 days, 30 days, 3 months, 6 months</prim_outcome>
+    <prim_outcome>WP4: Healthcare utilisation following discharge measured using Healthcare Utilisation PROM at 30 days, 3 months, 6 months</prim_outcome>
+    <prim_outcome>WP5: Identification of opportunities to implement the findings from WP1-4 measured using data from WP1-4 will be triangulated to identify commonalities and differences.  These analyses will form the basis of discussions in a one-day stakeholder workshop. Rolfe’s Co-reflective model ‘What?, So What?, Now What?’ will be used as a framework to identify opportunities to amend post-discharge pathways for patients following hospitalisation with acute pancreatitis at the end of analysis of preceding WP1-4</prim_outcome>
+  </primary_outcome>
+  <secondary_outcome/>
+  <secondary_sponsor>
+    <sponsor_name/>
+  </secondary_sponsor>
+  <secondary_ids>
+    <secondary_id>
+      <sec_id>349680</sec_id>
+      <issuing_authority>Integrated Research Application System (IRAS)</issuing_authority>
+    </secondary_id>
+    <secondary_id>
+      <sec_id>64883</sec_id>
+      <issuing_authority>Central Portfolio Management System (CPMS)</issuing_authority>
+    </secondary_id>
+    <secondary_id>
+      <sec_id>165210</sec_id>
+      <issuing_authority>National Institute for Health and Care Research (NIHR)</issuing_authority>
+    </secondary_id>
+  </secondary_ids>
+  <source_support>
+    <source_name>National Institute for Health and Care Research</source_name>
+  </source_support>
+  <ethics_reviews>
+    <ethics_review>
+      <status>Approved</status>
+      <approval_date>13/05/2026</approval_date>
+      <contact_name>South Central - Oxford B Research Ethics Committee; ref: 26/SC/0148</contact_name>
+      <contact_address>2 Redman Place, Stratford, London, E20 1JQ, United Kingdom</contact_address>
+      <contact_phone>no telephone number provided</contact_phone>
+      <contact_email>oxfordb.rec@hra.nhs.uk</contact_email>
+    </ethics_review>
+  </ethics_reviews>
+</trial><trial>
+  <main>
+    <trial_id>ISRCTN64724266</trial_id>
+    <utrn/>
+    <reg_name>ISRCTN</reg_name>
+    <date_registration>16/10/2018</date_registration>
+    <primary_sponsor>University College London</primary_sponsor>
+    <public_title>Comparing two optical technologies when screening for bowel cancer: a trial from several UK hospitals</public_title>
+    <acronym/>
+    <scientific_title>A randomised controlled trial to compare two optical technologies in colorectal cancer screening: a multi-site evaluation</scientific_title>
+    <date_enrolment>01/05/2012</date_enrolment>
+    <type_enrolment>Actual</type_enrolment>
+    <target_size>340</target_size>
+    <recruitment_status>No longer recruiting</recruitment_status>
+    <url>https://www.isrctn.com/ISRCTN64724266</url>
+    <study_type>Interventional</study_type>
+    <study_design>Interventional prospective multi-centre randomised controlled trial (Diagnostic)</study_design>
+    <phase>Not Applicable</phase>
+    <hc_freetext>Colorectal cancer and polyps</hc_freetext>
+    <i_freetext>For randomisation, every potential participant was consecutively allocated to the next available slot during the BCS pre-assessment pathway. Each study site had both Olympus Lucera and Pentax HiLine colonoscopes available. The available slots were in either an Olympus Lucera (arm 1) or Pentax HiLine system (arm 2) list. The person performing allocation was not aware of the system in place for that specific list in order to minimise selection bias. For operational reasons, the entire endoscopy list was run with a single type of endoscope. Therefore, randomisation was on an endoscopy list basis rather than an individual patient basis and was stratified by the endoscopist (list/block randomisation). This passive randomisation ensured balance to operators and approximately equal numbers in each arm.
+Arm 1 received a colonoscopy with the Standard Resolution Olympus Lucera System (SD-OL). This is a white balance colonoscope using enhancement level 2. Narrow band imaging was used at the discretion of the endoscopist, but this was recorded. Use of scope guide was allowed and recorded at the endoscopist’s discretion.
+Arm 2 received a colonoscopy with the High Resolution Pentax HiLine System (HD-PHL). This is a white balance colonoscope. I-scan 1 was used during withdrawal from the caecum and I-scan 2 &amp; 3 were used at the discretion of the endoscopist but this was recorded.  
+The duration of treatment was the length of the colonoscopy and all participants received standard follow-up care for colonoscopies.</i_freetext>
+    <results_actual_enrolment>262</results_actual_enrolment>
+    <results_date_completed>31/05/2014</results_date_completed>
+    <results_url_link>https://www.ncbi.nlm.nih.gov/pubmed/31281625</results_url_link>
+    <results_summary>https://www.cancerresearchuk.org/about-cancer/find-a-clinical-trial/a-trial-looking-two-different-types-endoscope</results_summary>
+    <results_date_posted/>
+    <results_date_first_publication>18/07/2019</results_date_first_publication>
+    <results_baseline_char/>
+    <results_participant_flow/>
+    <results_adverse_events/>
+    <results_outcome_measures/>
+    <results_url_protocol/>
+    <results_IPD_plan>Yes</results_IPD_plan>
+    <results_IPD_description>Available on request. The datasets generated during and/or analysed during the current study are/will be available upon request.</results_IPD_description>
+  </main>
+  <contacts>
+    <contact>
+      <type>Public</type>
+      <firstname/>
+      <middlename/>
+      <lastname/>
+      <address/>
+      <city/>
+      <country1/>
+      <zip/>
+      <telephone/>
+      <email/>
+      <affiliation/>
+    </contact>
+    <contact>
+      <type>Scientific</type>
+      <firstname>Matthew </firstname>
+      <middlename/>
+      <lastname>Banks</lastname>
+      <address>University College Hospital, Department of Gastroenterology
+250 Euston Road</address>
+      <city>London</city>
+      <country1>United Kingdom</country1>
+      <zip>NW1 2PG</zip>
+      <telephone>+44 (0)20 34479311</telephone>
+      <email>matthew.banks2@nhs.net</email>
+      <affiliation/>
+    </contact>
+  </contacts>
+  <countries>
+    <country2>United Kingdom</country2>
+    <country2>England</country2>
+    <country2>Wales</country2>
+  </countries>
+  <criteria>
+    <inclusion_criteria>1. Positive faecal occult blood test
+2. Scheduled to undergo first (index) colonoscopy as part of the National BCS program
+3. Undergoing colonoscopy at any one of:
+3.1. University College Hospital (London)
+3.2. University Hospital Llandough (Cardiff)
+3.3. Bradford Hospital (Bradford)
+4. Aged 18 years or older</inclusion_criteria>
+    <agemin>18 Years</agemin>
+    <agemax/>
+    <gender>All</gender>
+    <exclusion_criteria>1. Contraindications to colonoscopy
+2. Follow-up (surveillance) patients</exclusion_criteria>
+  </criteria>
+  <health_condition_code>
+    <hc_code/>
+  </health_condition_code>
+  <health_condition_keyword>
+    <hc_keyword>Cancer</hc_keyword>
+    <hc_keyword>Colorectal cancer and polyps</hc_keyword>
+  </health_condition_keyword>
+  <intervention_code>
+    <i_code/>
+  </intervention_code>
+  <intervention_keyword>
+    <i_keyword>Procedure/Surgery</i_keyword>
+  </intervention_keyword>
+  <primary_outcome>
+    <prim_outcome>The following were measured as categorical variables with two outcomes (yes/no) and reported as a percentage. These were assessed using a review of histopathology reports, endoscopy images and endoscopy reports at the baseline (after the colonoscopy):
+1. Total polyp detection rate (PDR)
+2. Adenoma detection rate (ADR)</prim_outcome>
+  </primary_outcome>
+  <secondary_outcome>
+    <sec_outcome>The following were assessed through a review of endoscopy images, endoscopy reports and patient notes (unless otherwise stated) at the baseline (after the colonoscopy):
+1. Caecal intubation time, measured in minutes
+2. Caecal intubation rate, measured as a categorical variable with two outcomes (yes/no) and reported as a percentage
+3. Total procedure time, measured in minutes
+4. Withdrawal time, measured in minutes
+5. Patient comfort scores, measured with a Global Rating Scale with a score of 1 indicating "no discomfort" and a score of 5 indicating "severe discomfort" 
+6. Sedation used, measured through recording medication used and the dose given (percentages of each medication and mean dose with standard deviation were calculated)
+7. Polyp retrieval rate, measured as a categorical variable with two outcomes (yes/no) and reported as a percentage
+8. Immediate/late complications, measured as a percentage for each complication
+9. Endoscopists’ comments on procedural difficulty, recorded with free text by the endoscopist</sec_outcome>
+  </secondary_outcome>
+  <secondary_sponsor>
+    <sponsor_name/>
+  </secondary_sponsor>
+  <secondary_ids>
+    <secondary_id>
+      <sec_id>11/LO/1712</sec_id>
+      <issuing_authority>Protocol serial number</issuing_authority>
+    </secondary_id>
+  </secondary_ids>
+  <source_support>
+    <source_name>Investigator Initiated and funded</source_name>
+  </source_support>
+  <ethics_reviews>
+    <ethics_review>
+      <status/>
+      <approval_date/>
+      <contact_name>National Research Ethics Service Committee London Central, 07/11/2011, REC ref: 11/LO/1712</contact_name>
+      <contact_address/>
+      <contact_phone/>
+      <contact_email/>
+    </ethics_review>
+  </ethics_reviews>
+</trial></trials>

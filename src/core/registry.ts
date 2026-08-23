@@ -1,6 +1,6 @@
 import { unsupportedError, usageError } from '../runtime/errors.js';
 
-export const REGISTRY_KEYS = ['ctgov'] as const;
+export const REGISTRY_KEYS = ['ctgov', 'isrctn'] as const;
 export type RegistryKey = (typeof REGISTRY_KEYS)[number];
 
 /**
@@ -31,6 +31,14 @@ type IdSpec = { pattern: RegExp; normalize: (s: string) => string };
  */
 const ID_PATTERNS: Record<RegistryKey, IdSpec> = {
   ctgov: { pattern: /^nct\d{8}$/i, normalize: (s) => s.toUpperCase() },
+  /**
+   * ISRCTN 은 자기 식별자를 두 가지로 쓴다 — `<isrctn>` 요소는 숫자만(`30583116`),
+   * `publicIdentifierCanonical` 과 WHO 포맷의 `trial_id` 는 접두사까지(`ISRCTN30583116`).
+   * 둘 다 받아 접두사 붙은 쪽으로 접는다: 정규 형태가 둘이면 같은 시험이 두 개의 ctreg
+   * id 를 갖고, not_found 대조와 캐시 키가 사용자가 어떻게 쳤는지에 따라 갈린다.
+   * 숫자만 있는 형태가 ctgov 패턴과 겹치지 않으므로(NCT 접두사 필수) 추론도 안전하다.
+   */
+  isrctn: { pattern: /^(isrctn)?\d{8}$/i, normalize: (s) => `ISRCTN${s.replace(/^isrctn/i, '')}` },
 };
 
 export function parseTrialId(input: string): {

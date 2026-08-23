@@ -44,6 +44,17 @@ export type AdapterUnderTest = {
   respond(url: string): unknown;
   /** 이 어댑터가 이해하는 접두사 포함 ID 하나 (`CTGOV:NCT03831932` 형태). */
   sampleId: string;
+  /**
+   * 전송 형식. 주지 않으면 `respond(url)` 을 JSON 으로 직렬화해 보낸다.
+   *
+   * 모든 레지스트리가 JSON 을 내지는 않는다 — ISRCTN 은 XML 만 낸다. 그런 어댑터에게
+   * `respond` 하나만 주면 두 역할이 충돌한다: 이 스위트는 `respond(url)` 을 **자료
+   * 구조로** 써서 `--raw` 의 source 가 원문 어딘가와 깊이 같은지 보는데, 전송에는
+   * **원문 텍스트** 가 필요하다. 그래서 둘을 나눈다 — `respond` 는 원문을 자료로
+   * 본 모습, `wire` 는 선으로 나가는 바이트다. 같은 픽스처에서 파생시키면 둘이
+   * 어긋날 일이 없다.
+   */
+  wire?(url: string): { text: string; contentType: string };
 };
 
 const json = (body: unknown, status = 200) =>
@@ -110,7 +121,7 @@ const argsFor = (key: RegistryKey, over: Partial<ParsedArgs> = {}): ParsedArgs =
 
 /**
  * 새 어댑터를 만들 때 이 스위트를 통과시키는 것이 계약 준수의 정의다.
- * 두 번째 레지스트리는 여기에 한 줄(`runAdapterContract('ictrp', …)`)을 더하면 된다.
+ * 두 번째 레지스트리는 여기에 한 줄(`runAdapterContract('isrctn', …)`)을 더하면 된다.
  */
 export function runAdapterContract(name: string, under: AdapterUnderTest): void {
   const stub = (respond: (url: string) => Response) => {
@@ -128,7 +139,13 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     }) as unknown as typeof fetch;
     return { adapter: under.make(fetchImpl), calls, requests };
   };
-  const ok = () => stub((url) => json(under.respond(url)));
+  const ok = () =>
+    stub((url) => {
+      const w = under.wire?.(url);
+      return w
+        ? new Response(w.text, { status: 200, headers: { 'content-type': w.contentType } })
+        : json(under.respond(url));
+    });
   /** 재시도 대상이 아닌 상태코드를 골랐다 — 백오프 없이 즉시 실패 경로로 간다. */
   const broken = () => stub(() => json({ message: 'Unknown sort field' }, 400));
 
@@ -223,15 +240,21 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * 확인하지 못하고 공허하게 통과하므로, 먼저 절단이 실제로 일어났는지부터 못박는다.
      */
     it('장소가 잘리면 locations_truncated 경고가 반드시 딸려온다 — 경고 배열이 있다는 것만으론 부족하다', async () => {
+      // 캡을 1 로 낮춰서 묻는다. 예전에는 기본 캡(10)으로 물었는데, 그러면 표본이 장소를
+      // 11곳 이상 담은 레지스트리에서만 이 검사가 작동한다 — 장소를 국가 단위로만 주는
+      // 레지스트리(ISRCTN 은 WHO 포맷에서 모집 국가 서너 곳이 전부다)에서는 절단이 일어날
+      // 수 없어 검사가 통째로 헛돌거나, 하네스를 고치라는 엉뚱한 실패가 난다. 장소가 둘만
+      // 있어도 캡 1 이면 반드시 잘리므로, 이 검사는 이제 어떤 레지스트리에서도 성립한다.
+      const narrow: FetchOpts = { ...fetchOpts, caps: { ...fetchOpts.caps, locations: 1 } };
       const { adapter } = ok();
-      const r = await adapter.get([under.sampleId], fetchOpts);
+      const r = await adapter.get([under.sampleId], narrow);
       const truncated = r.data.filter(
         (rec) => rec.locationsTotal !== undefined && rec.locations !== undefined && rec.locationsTotal > rec.locations.length,
       );
       expect(
         truncated.length,
-        `respond() 의 표본이 장소 절단을 유발하지 않습니다 — CAPS.locations.default(${CAPS.locations.default})를 ` +
-          '넘는 장소를 담은 레코드를 포함하도록 respond() 를 조정하세요.',
+        'respond() 의 표본이 장소 절단을 유발하지 않습니다 — 장소를 두 곳 이상 담은 레코드를 ' +
+          '포함하도록 respond() 를 조정하세요(캡을 1 로 낮춰 물었습니다).',
       ).toBeGreaterThan(0);
       for (const rec of truncated) {
         expect(

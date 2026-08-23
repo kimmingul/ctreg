@@ -18,6 +18,7 @@ export type Config = {
    */
   ratePerSec?: number;
   ctgovBaseUrl: string;
+  isrctnBaseUrl: string;
 };
 
 function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -47,5 +48,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     maxRetries: num(env, 'CTREG_MAX_RETRIES', 3),
     ratePerSec: optNum(env, 'CTREG_RATE_PER_SEC'),
     ctgovBaseUrl: env.CTREG_CTGOV_BASE_URL ?? 'https://clinicaltrials.gov/api/v2',
+    // ctgov 와 달리 경로에 버전이 없다 — ISRCTN 의 엔드포인트는 `/api/query/...` 로
+    // 사이트 루트에 바로 붙는다(API 문서 3: "base URL for all API calls is the URL of
+    // the site"). 그래서 여기 담기는 것은 호스트까지다.
+    isrctnBaseUrl: env.CTREG_ISRCTN_BASE_URL ?? 'https://www.isrctn.com',
   };
 }

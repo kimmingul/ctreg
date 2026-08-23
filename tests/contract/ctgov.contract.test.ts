@@ -18,6 +18,7 @@ runAdapterContract('ctgov', {
         cacheDir: mkdtempSync(join(tmpdir(), 'ctreg-contract-')),
         cacheTtlSec: 3600, timeoutMs: 5000, maxRetries: 0, ratePerSec: 1000,
         ctgovBaseUrl: 'https://example.test/api/v2',
+        isrctnBaseUrl: 'https://isrctn.example.test',
       },
       { fetchImpl, sleep: async () => {} },
     ),
