@@ -36,9 +36,9 @@ export function assertSupported(cap: Capability, q: NormalizedQuery, fetch: Fetc
     ['phase', (q.phase?.length ?? 0) > 0],
     ['studyType', q.studyType !== undefined],
     ['geo', q.near !== undefined],
-    ['dateRange',
-      [q.updatedSince, q.updatedBefore, q.startAfter, q.startBefore, q.completionAfter, q.completionBefore]
-        .some((d) => d !== undefined)],
+    ['updatedRange', [q.updatedSince, q.updatedBefore].some((d) => d !== undefined)],
+    ['startRange', [q.startAfter, q.startBefore].some((d) => d !== undefined)],
+    ['completionRange', [q.completionAfter, q.completionBefore].some((d) => d !== undefined)],
   ];
 
   for (const [axis, used] of axes) {

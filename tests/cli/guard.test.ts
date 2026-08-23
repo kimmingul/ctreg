@@ -14,7 +14,7 @@ const fetchOpts: FetchOpts = {
 
 const limited: Capability = {
   ...CTGOV_CAPABILITY,
-  search: { ...CTGOV_CAPABILITY.search, geo: false, patient: false, dateRange: false, outcomeQuery: false },
+  search: { ...CTGOV_CAPABILITY.search, geo: false, patient: false, updatedRange: false, startRange: false, completionRange: false, outcomeQuery: false },
   detail: { ...CTGOV_CAPABILITY.detail, eligibilityText: false },
 };
 
@@ -39,7 +39,9 @@ function probeFor(axis: keyof Capability['search']): NormalizedQuery {
     case 'phase': return { phase: ['phase_1'] };
     case 'studyType': return { studyType: 'interventional' };
     case 'geo': return { near: { lat: 0, lon: 0 } };
-    case 'dateRange': return { updatedSince: '2025-01-01' };
+    case 'updatedRange': return { updatedSince: '2025-01-01' };
+    case 'startRange': return { startAfter: '2025-01-01' };
+    case 'completionRange': return { completionAfter: '2025-01-01' };
     default: {
       const exhaustive: never = axis;
       throw new Error(`'${exhaustive}' 축의 프로브가 guard.test.ts 에 없다 — probeFor 에 추가하라`);
@@ -65,8 +67,28 @@ describe('capability 가드', () => {
   it('미지원 검색 축은 빈 결과가 아니라 exit 3 이다', () => {
     expectUnsupported(() => assertSupported(limited, { patient: '62 year old' }, fetchOpts), 'patient');
     expectUnsupported(() => assertSupported(limited, { near: { lat: 37, lon: 127 } }, fetchOpts), 'geo');
-    expectUnsupported(() => assertSupported(limited, { updatedSince: '2025-01-01' }, fetchOpts), 'dateRange');
+    expectUnsupported(() => assertSupported(limited, { updatedSince: '2025-01-01' }, fetchOpts), 'updatedRange');
     expectUnsupported(() => assertSupported(limited, { outcomeQuery: 'PFS' }, fetchOpts), 'outcomeQuery');
+  });
+
+  /**
+   * 날짜 축이 하나였을 때는 "이 레지스트리는 날짜로 검색할 수 있다/없다" 만 말할 수
+   * 있었다. ISRCTN 은 그 사이에 있다 — `lastEdited`(갱신)와 `overallEndDate`(종료)로는
+   * 걸러지는데 `overallStartDate`(시작)는 **조용히 무시되어 전체를 돌려준다**(실측:
+   * `condition:diabetes AND overallStartDate GE 2020` 이 `condition:diabetes` 와 같은 수).
+   * 축이 하나면 셋 중 하나를 골라야 한다 — true 로 두면 시작일 필터가 사라진 결과를
+   * 필터된 것처럼 내보내고, false 로 두면 실제로 되는 두 축까지 버린다. 둘 다 이 CLI 가
+   * 없애려는 실패다. 그래서 세 축으로 쪼갠다.
+   */
+  it('갱신·시작·종료 날짜 축은 따로 신고된다 — 하나만 죽은 레지스트리를 표현할 수 있어야 한다', () => {
+    const updatedOnly: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: { ...CTGOV_CAPABILITY.search, startRange: false, completionRange: false },
+    };
+    expect(() => assertSupported(updatedOnly, { updatedSince: '2025-01-01' }, fetchOpts)).not.toThrow();
+    expectUnsupported(() => assertSupported(updatedOnly, { startAfter: '2025-01-01' }, fetchOpts), 'startRange');
+    expectUnsupported(() => assertSupported(updatedOnly, { startBefore: '2025-01-01' }, fetchOpts), 'startRange');
+    expectUnsupported(() => assertSupported(updatedOnly, { completionAfter: '2025-01-01' }, fetchOpts), 'completionRange');
   });
 
   it('Capability.search 의 모든 검색 축을 가드가 개별적으로 다룬다', () => {

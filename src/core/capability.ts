@@ -28,7 +28,17 @@ export const CapabilitySchema = z.strictObject({
     status: z.boolean(),
     phase: z.boolean(),
     studyType: z.boolean(),
-    dateRange: z.boolean(),
+    /**
+     * 날짜 축은 셋으로 나뉜다. 하나로 묶으면 "일부 날짜만 되는" 레지스트리를 표현할 수
+     * 없고, 그런 레지스트리가 실재한다 — ISRCTN 은 `lastEdited`(갱신)와
+     * `overallEndDate`(종료)로는 걸러지지만 `overallStartDate`(시작)는 문서에 있는데도
+     * 조용히 무시되어 필터가 없던 것처럼 전체를 돌려준다. 축이 하나라면 그 어댑터는
+     * 시작일 필터가 증발한 결과를 필터된 것처럼 내보내거나, 실제로 되는 두 축까지
+     * 포기해야 한다. 둘 다 이 CLI 가 없애려는 실패다.
+     */
+    updatedRange: z.boolean(),
+    startRange: z.boolean(),
+    completionRange: z.boolean(),
   }),
   detail: z.strictObject({
     eligibilityText: z.boolean(),

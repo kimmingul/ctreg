@@ -71,8 +71,8 @@ function containsDeepEqual(haystack: unknown, needle: unknown): boolean {
  * 전부는 아니다 — `guard.ts` 의 `assertSupported` 가 실제로 무엇을 보고 축이 "쓰였다"고
  * 판단하는지가 기준이다:
  * - `geo` 는 `q.near` 를 본다(`q.geo` 라는 필드는 없다).
- * - `dateRange` 는 여섯 날짜 필드 중 하나라도 있는지를 본다(`q.dateRange` 라는 필드는
- *   없다) — `{ dateRange: 'x' }` 를 넣으면 여섯 필드가 전부 `undefined` 인 채로 남아
+ * - 세 날짜 축(`updatedRange`/`startRange`/`completionRange`)은 각자 두 개씩의 날짜 필드를
+ *   본다(`q.updatedRange` 같은 필드는 없다) — `{ updatedRange: 'x' }` 를 넣으면 그 필드들이 전부 `undefined` 인 채로 남아
  *   `used` 가 거짓이 되고, `assertSupported` 는 조용히 통과해 버린다. `expectExit3` 는
  *   그래서 `assertSupported` 가 안 던진 걸 `expect.unreachable` 로 잡는데, 그 에러엔
  *   `.exit` 이 없어 `expected undefined to be 3` 이라는 무의미한 메시지로 떨어진다 —
@@ -85,8 +85,12 @@ const probeFor = (axis: keyof Capability['search']): NormalizedQuery => {
   switch (axis) {
     case 'geo':
       return { near: { lat: 0, lon: 0 } };
-    case 'dateRange':
+    case 'updatedRange':
       return { updatedSince: 'x' };
+    case 'startRange':
+      return { startAfter: 'x' };
+    case 'completionRange':
+      return { completionAfter: 'x' };
     default:
       return { [axis]: 'x' } as NormalizedQuery;
   }
