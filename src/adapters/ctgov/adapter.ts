@@ -27,7 +27,7 @@ export const CTGOV_CAPABILITY: Capability = {
     lead: free('주 스폰서만 본다 — 공동 스폰서는 제외된다'),
     location: free('시험 사이트의 기관명·도시·주·국가'),
     id: free('NCT 번호와 업스트림이 기재한 보조 식별자'),
-    patient: free('term 과는 다른 업스트림 검색 에어리어라 같은 단어를 넣어도 결과가 갈린다. 적격 기준을 해석해 주지는 않아서 "62세 EGFR 양성" 같은 긴 서술은 0건이 되고 단순 문구만 걸린다(실측)'),
+    patient: free('term 과는 다른 업스트림 검색 에어리어라 같은 단어를 넣어도 결과가 갈린다. "62세 EGFR 양성" 같은 긴 서술은 0건이고 단순 문구는 걸린다(실측) — 긴 서술이 0건인 것이 이 에어리어가 적격 기준을 해석하지 않아서인지 그 문구가 안 맞아서인지는 재지 못했다'),
     outcomeQuery: free('1차·2차 평가변수 문구'),
     geo: {
       supported: true, values: null, exhaustive: null,
