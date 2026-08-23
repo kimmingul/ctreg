@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { EXIT } from '../../../src/cli/exit-codes.js';
 import type { CtregError } from '../../../src/runtime/errors.js';
-import { fromPhase, fromStatus, fromStudyType, toPhases, toStatus, toStudyType } from '../../../src/adapters/ctgov/vocab.js';
+import {
+  CTGOV_FILTERABLE,
+  fromPhase,
+  fromStatus,
+  fromStudyType,
+  toPhases,
+  toStatus,
+  toStudyType,
+} from '../../../src/adapters/ctgov/vocab.js';
+import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../../../src/core/vocab.js';
 
 describe('CT.gov 어휘 매핑', () => {
   it('알려진 상태를 공통 어휘로 옮기고 원문을 보존한다', () => {
@@ -111,5 +120,24 @@ describe('CT.gov 어휘 매핑', () => {
     for (const t of ['interventional', 'observational', 'expanded_access'] as const) {
       expect(toStudyType(fromStudyType(t)).studyType).toBe(t);
     }
+  });
+});
+
+describe('ctgov 가 필터로 받는 값', () => {
+  /**
+   * ctgov 는 공통 어휘 전부를 받는다. 이 사실 자체보다 중요한 것은 **목록이 매핑
+   * 테이블에서 파생된다**는 것이다 — 어휘에 값을 하나 더하고 매핑을 빠뜨리면 이
+   * 테스트가 그 자리에서 깨진다.
+   */
+  it('공통 어휘의 필터 가능한 값 전부를 받는다', () => {
+    expect([...CTGOV_FILTERABLE.status].sort()).toEqual([...FILTERABLE_STATUS].sort());
+    expect([...CTGOV_FILTERABLE.phase].sort()).toEqual([...FILTERABLE_PHASE].sort());
+    expect([...CTGOV_FILTERABLE.studyType].sort()).toEqual([...FILTERABLE_STUDY_TYPE].sort());
+  });
+
+  it('신고한 값은 전부 실제로 필터 문자열로 변환된다', () => {
+    for (const v of CTGOV_FILTERABLE.status) expect(() => fromStatus(v)).not.toThrow();
+    for (const v of CTGOV_FILTERABLE.phase) expect(() => fromPhase(v)).not.toThrow();
+    for (const v of CTGOV_FILTERABLE.studyType) expect(() => fromStudyType(v)).not.toThrow();
   });
 });

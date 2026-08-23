@@ -123,3 +123,15 @@ export function fromStudyType(t: StudyType): string {
   }
   return out;
 }
+
+/**
+ * capability 의 `values` 는 이 목록에서 파생한다 — **손으로 두 번 적지 않는다.**
+ * `*_OUT` 은 이미 "필터 문자열로 변환할 수 있는 값"의 정본이고 `*_IN` 에서
+ * `isFilterable*` 로 걸러 만들어진다. 선언이 이 목록을 읽으면 선언과 매핑이
+ * 어긋날 수 없다.
+ */
+export const CTGOV_FILTERABLE = {
+  status: Object.keys(STATUS_OUT) as TrialStatus[],
+  phase: Object.keys(PHASE_OUT) as TrialPhase[],
+  studyType: Object.keys(STUDY_TYPE_OUT) as StudyType[],
+};

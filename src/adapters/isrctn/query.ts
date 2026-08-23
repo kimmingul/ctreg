@@ -15,7 +15,7 @@
 
 import type { Warning } from '../../core/capability.js';
 import { CAPS, resolvePageSize, type NormalizedQuery } from '../../core/query.js';
-import type { TrialPhase } from '../../core/vocab.js';
+import type { StudyType, TrialPhase, TrialStatus } from '../../core/vocab.js';
 import { usageError } from '../../runtime/errors.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,9 +54,33 @@ const PHASE_OUT: Partial<Record<TrialPhase, string>> = {
   na: 'Not Applicable',
 };
 
-const STUDY_TYPE_OUT: Record<string, string> = {
+/**
+ * `Record<string, string>` 이었다 — 아무 문자열이나 키가 될 수 있었다는 뜻이고, 그
+ * 키들이 `ISRCTN_FILTERABLE` 을 거쳐 capability 의 `values` 로, 즉 **받아들여지는 값의
+ * 공개 신고** 로 나간다. 공통 어휘에 없는 키 하나면 CLI 가 exit 2 로 거절하는 값을
+ * 신고하게 되고, 그것이 이 브랜치가 고치려는 실패 그 자체다.
+ *
+ * `StudyType` 으로 좁혀도 `other`(매핑 결과일 뿐 필터 입력이 아니다)는 여전히 타입이
+ * 허용한다 — 위 `PHASE_OUT` 도 같은 자리에 `other` 를 허용한다. 그 마지막 칸은 계약
+ * 스위트의 '신고한 values 는 전부 CLI 가 받는 값이다' 가 막는다.
+ */
+const STUDY_TYPE_OUT: Partial<Record<StudyType, string>> = {
   interventional: 'Interventional',
   observational: 'Observational',
+};
+
+/**
+ * capability 의 `values` 가 읽는 목록. **나가는 쪽** 테이블에서 파생한다 —
+ * `vocab.ts` 의 매핑은 응답으로 **들어오는** 값이고, 지금 문자열이 같은 것은 우연이다.
+ *
+ * `status` 가 빈 목록인 것이 이 파일에서 가장 중요한 선언이다: ISRCTN 은
+ * `trialStatus`·`recruitmentStatus` 가 문서에 값 목록까지 있는데도 실측에서 전부
+ * 0건이라 축 자체가 없다. `[]` 는 "그런 시험이 없다"가 아니라 "그렇게 물어볼 수 없다"다.
+ */
+export const ISRCTN_FILTERABLE = {
+  status: [] as TrialStatus[],
+  phase: Object.keys(PHASE_OUT) as TrialPhase[],
+  studyType: Object.keys(STUDY_TYPE_OUT) as StudyType[],
 };
 
 /** 날짜는 콜론이 아니라 공백 + 비교 연산자이고, 시각까지 있어야 한다(문서 3.2 예시). */
@@ -115,7 +139,7 @@ export function buildQuery(q: NormalizedQuery): { q: string; warnings: Warning[]
   }
 
   // 시작일(`overallStartDate`)은 여기 없다 — 문서에는 있지만 실측에서 필터가 통째로
-  // 무시되어 전체를 돌려준다. capability 의 `startRange: false` 가 그 사실을 신고하고,
+  // 무시되어 전체를 돌려준다. capability 의 `startRange.supported: false` 가 그 사실을 신고하고,
   // 가드가 exit 3 으로 막으므로 이 함수는 그 필드를 볼 일이 없다.
   const dates: (string | undefined)[] = [
     q.updatedSince !== undefined ? dateClause('lastEdited', 'GE', q.updatedSince) : undefined,

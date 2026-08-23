@@ -27,7 +27,7 @@ export async function runCount(
       const adapter = adapters[key];
       if (!adapter) throw missingAdapterError(key);
       const cap = adapter.capability();
-      assertSupported(cap, args.query, args.fetch);
+      warnings.push(...assertSupported(cap, args.query, args.fetch).warnings);
       // capability.count 는 여기서 강제한다 — results.ts 가 cap.results 를 강제하는
       // 것과 같은 자리다. assertSupported 에 넣지 않는 이유: 그쪽은 *요청* 의 속성
       // (어떤 검색 축을 썼나, 어떤 섹션을 달라 했나)을 검사하고 다섯 커맨드가 모두
@@ -38,7 +38,7 @@ export async function runCount(
       // 던지는 쪽을 택한 것은 아래 catch 가 이미 unsupported 를 그 레지스트리의
       // RegistryStatus 로 옮겨 주기 때문이다 — registries[] 가 비어 있다는 것은
       // "어떤 레지스트리도 정해지지 않았다" 는 뜻이라는 봉투 규칙이 그대로 지켜진다.
-      if (!cap.count) {
+      if (!cap.count.supported) {
         throw unsupportedError(
           `${cap.name} 은 결과 건수를 셀 수 없습니다 (해당하는 시험이 없는 것이 아니라 레지스트리가 개수를 제공하지 않습니다)`,
           'ctreg search 로 결과를 직접 받아 보세요. ctreg registries 로 지원 여부를 확인할 수 있습니다.',

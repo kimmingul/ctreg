@@ -2,6 +2,7 @@ import { parseArgs } from 'node:util';
 import { CAPS, resolvePageSize, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
 import { DEFAULT_REGISTRY, REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
+  FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE,
   isFilterablePhase, isFilterableStatus, isFilterableStudyType,
   type StudyType, type TrialPhase, type TrialStatus,
 } from '../core/vocab.js';
@@ -9,6 +10,10 @@ import { usageError } from '../runtime/errors.js';
 
 export const COMMANDS = ['search', 'get', 'results', 'count', 'registries'] as const;
 
+// FILTERABLE_STATUS 는 8개라 한 줄에 다 넣으면 80컬럼에서 단어 중간이 잘린다.
+// 3/5로 나눠 두 줄에 걸치되, 나누는 지점(3)은 순전히 줄바꿈용 상수이지 값이
+// 아니다 — slice(3)이 나머지 전부를 가져가므로 값이 빠질 수는 없다. 다만 폭은
+// 보장하지 않는다: 어휘가 늘면 두 줄 다 다시 길어질 수 있으니 그때 폭을 다시 확인하라.
 export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키마로 조회한다
 
   ctreg search  [검색 축] [필터] [출력]
@@ -19,7 +24,11 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
 
 검색 축   --condition --intervention --term --title --location --outcome-query
           --sponsor --lead --id --patient
-필터      --status --phase --study-type (반복 가능)
+필터      --status ${FILTERABLE_STATUS.slice(0, 3).join('|')}|
+          ${FILTERABLE_STATUS.slice(3).join('|')}
+          --phase ${FILTERABLE_PHASE.join('|')}
+          --study-type ${FILTERABLE_STUDY_TYPE.join('|')}
+          (셋 다 반복 가능. 값은 소문자다 — 레지스트리 원문 값이 아니라 공통 어휘다)
           --near <lat,lon> --radius <N>km|mi
           --updated-since --updated-before --start-after --start-before
           --completion-after --completion-before   (YYYY-MM-DD)
@@ -27,6 +36,8 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
           --page-size <N> --page-token <t>
           --sort <field> --eligibility-chars <N> --raw
           --format json|ndjson|text --no-cache --refresh
+
+레지스트리마다 받는 값이 다르다. 어느 축을 어떤 값으로 쓸 수 있는지는 \`ctreg registries\` 가 말한다.
 
 exit: 0 정상(0건 포함) · 2 사용법 · 3 미지원 · 4 업스트림
       5 부분 실패 — 일부 레지스트리만 성공. 경고는 종료 코드를 바꾸지 않는다.

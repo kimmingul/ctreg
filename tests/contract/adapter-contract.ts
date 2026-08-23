@@ -1,9 +1,10 @@
 import { isDeepStrictEqual } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
-import { CapabilitySchema, type Capability, type RegistryAdapter } from '../../src/core/capability.js';
+import { CapabilitySchema, type Capability, type RegistryAdapter, type SearchAxis } from '../../src/core/capability.js';
 import { CAPS, type FetchOpts, type NormalizedQuery, type ResultsOpts } from '../../src/core/query.js';
 import { TrialRecordSchema, TrialResultsSchema } from '../../src/core/record.js';
 import { parseTrialId, type RegistryKey } from '../../src/core/registry.js';
+import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../../src/core/vocab.js';
 import { assertSupported } from '../../src/cli/guard.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { ParsedArgs } from '../../src/cli/args.js';
@@ -17,6 +18,13 @@ const fetchOpts: FetchOpts = {
   caps: { locations: CAPS.locations.default, eligibilityChars: CAPS.eligibilityChars.default, outcomes: CAPS.outcomes.default },
   cacheMode: 'off', raw: false,
 };
+
+/**
+ * 닫힌 어휘를 가진 세 축. 나머지 열네 축은 자유 텍스트이거나 날짜라 `values` 가
+ * `null` 이다. 이 목록을 이름으로 적는 이유는 두 모양(`[]` 과 `null`)이 **다른 것을
+ * 뜻하는데** 타입은 둘을 구분하지 못하기 때문이다 — 구분은 여기서만 선다.
+ */
+const CLOSED_VOCAB_AXES = ['status', 'phase', 'studyType'] as const;
 
 const resultsOpts: ResultsOpts = {
   sections: ['outcomes', 'adverse', 'flow', 'baseline'],
@@ -242,6 +250,112 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       ).toEqual([]);
     });
 
+    /**
+     * 신고해 놓고 거부하는 어댑터를 잡는다. **이 검사를 쓰기 직전까지 ISRCTN 이
+     * 정확히 그랬다** — phase 어휘에 early_phase_1 자리가 없어 exit 2 로 거부하는데
+     * 선언에는 그 사실이 없었다. 신고와 구현이 어긋나면 사용자는 부딪혀야만 안다.
+     *
+     * `supported: false` 인 축은 건너뛴다 — 그 축은 애초에 `buildQuery` 가 읽지
+     * 않으므로 값 하나만 실어 보내면 "검색 조건이 적어도 하나 필요합니다" 같은,
+     * 진짜 문제(죽은 축에 값이 남아 있다)와 무관한 메시지로 실패한다. 그 문제는
+     * 아래 '지원하지 않는 축은 values 가 비어 있다' 가 정확히 짚는다 — 한 실수에
+     * 신호 하나씩만 나가야 한다.
+     *
+     * 한계: `ok()` 의 스텁은 질의 내용과 무관하게 같은 픽스처로 응답하므로, 이
+     * 검사는 신고한 값이 `buildQuery`/매핑에서 **던지지 않는다** 는 것만 증명한다.
+     * `phase_2` 를 `phase_3` 업스트림 토큰에 매핑하는 것처럼 문법적으로는 멀쩡한
+     * 오매핑은 잡지 못한다 — 값별 요청 내용까지 단언하는 것은 이 검사의 범위 밖이다.
+     */
+    it('신고한 values 는 전부 실제로 질의로 조립된다', async () => {
+      const cap = makeAdapter().capability();
+      const axes: [string, SearchAxis, (v: string) => NormalizedQuery][] = [
+        ['status', cap.search.status, (v) => ({ status: [v as never] })],
+        ['phase', cap.search.phase, (v) => ({ phase: [v as never] })],
+        ['studyType', cap.search.studyType, (v) => ({ studyType: v as never })],
+      ];
+      for (const [axis, decl, probe] of axes) {
+        if (!decl.supported) continue; // 죽은 축의 값은 아래 검사의 몫이다
+        for (const v of decl.values ?? []) {
+          const { adapter } = ok();
+          await expect(
+            adapter.search(probe(v), fetchOpts),
+            `'${axis}' 에 '${v}' 를 신고해 놓고 그 값으로 검색하면 실패합니다 — ` +
+              '선언과 구현이 어긋나면 사용자는 부딪혀야만 알게 됩니다.',
+          ).resolves.toBeDefined();
+        }
+      }
+    });
+
+    /**
+     * `supported: false` 인데 `values` 에 뭔가 들어 있으면 두 선언이 서로를 부정한다.
+     * 읽는 쪽은 어느 쪽을 믿어야 할지 알 수 없다.
+     *
+     * 기대하는 빈 값이 축 종류마다 다르다 — 닫힌 어휘 축은 `[]`, 자유 텍스트 축은
+     * `null` 이다. 이전 판은 `values ?? []` 로 둘을 하나로 뭉갰고, 그래서 닫힌 어휘
+     * 축에 `null` 을 적어도 통과했다. `off()` 헬퍼가 바로 그 `null` 을 만든다.
+     */
+    it('지원하지 않는 축은 values 가 비어 있다', () => {
+      const cap = makeAdapter().capability();
+      for (const [name, axis] of Object.entries(cap.search) as [string, SearchAxis][]) {
+        if (axis.supported) continue;
+        const empty = (CLOSED_VOCAB_AXES as readonly string[]).includes(name) ? [] : null;
+        expect(
+          axis.values,
+          `'${name}' 은 supported:false 인데 values 가 ${JSON.stringify(empty)} 가 아닙니다`,
+        ).toEqual(empty);
+        expect(axis.exhaustive, `'${name}' 은 supported:false 인데 exhaustive 가 null 이 아닙니다`).toBeNull();
+      }
+    });
+
+    /**
+     * `null` 은 **자유 텍스트 축의 모양** 이다 — "닫힌 어휘가 없다, 아무 문자열이나
+     * 받는다". 닫힌 어휘 축에 그것을 적으면 "그 축으로 무엇을 물어볼 수 있는지" 가
+     * 신고에서 통째로 사라지고, 읽는 쪽은 정반대의 결론을 낸다.
+     *
+     * 위 검사만으로는 못 잡는다: 그쪽은 `supported: false` 인 축만 본다. 여기서는
+     * `supported` 와 무관하게 본다 — 함정이 한 줄 옆에 있기 때문이다. ISRCTN 어댑터의
+     * `off()` 헬퍼가 `values: null` 을 만들고, `status` 가 그 헬퍼를 안 쓴 것은
+     * 손으로 적었기 때문일 뿐 구조가 막아 준 것이 아니다.
+     */
+    it('닫힌 어휘 축은 supported 와 무관하게 values 가 배열이다', () => {
+      const cap = makeAdapter().capability();
+      for (const name of CLOSED_VOCAB_AXES) {
+        expect(
+          Array.isArray(cap.search[name].values),
+          `'${name}' 은 닫힌 어휘 축인데 values 가 ${JSON.stringify(cap.search[name].values)} 입니다 — ` +
+            'null 은 "닫힌 어휘가 없다" 는 자유 텍스트 축의 뜻이라, 읽는 쪽이 정반대로 해석합니다.',
+        ).toBe(true);
+      }
+    });
+
+    /**
+     * 신고한 값을 **CLI 가 받는가.** 위의 '신고한 values 는 전부 실제로 질의로
+     * 조립된다' 는 `adapter.search()` 를 직접 부르므로 `parseCliArgs` 를 건너뛴다 —
+     * 어댑터가 기꺼이 조립하는 값이라도 CLI 가 exit 2 로 거절하면 사용자에게는
+     * 여전히 "신고해 놓고 거부한다" 이고, 그것이 이 브랜치가 고치려는 실패 그 자체다.
+     *
+     * ctgov 는 `*_OUT` 이 `isFilterable*` 로 걸러 파생되므로 구조적으로 면역이지만
+     * ISRCTN 의 `*_OUT` 은 손으로 적은 테이블이라 면역이 아니다. 두 어댑터가 같은
+     * 일에 서로 다른 규율을 쓰는 한, 그 차이를 메우는 것은 이 검사다.
+     */
+    it('신고한 values 는 전부 CLI 가 받는 값이다', () => {
+      const cap = makeAdapter().capability();
+      const accepted: Record<(typeof CLOSED_VOCAB_AXES)[number], readonly string[]> = {
+        status: FILTERABLE_STATUS,
+        phase: FILTERABLE_PHASE,
+        studyType: FILTERABLE_STUDY_TYPE,
+      };
+      for (const name of CLOSED_VOCAB_AXES) {
+        const strays = (cap.search[name].values ?? []).filter((v) => !accepted[name].includes(v));
+        expect(
+          strays,
+          `'${name}' 이 신고한 값 ${strays.join(', ')} 를 CLI 가 받지 않습니다 — ` +
+            `--${name === 'studyType' ? 'study-type' : name} 에 넣으면 exit 2 입니다. ` +
+            '신고는 받아들여지는 값의 목록이지 어댑터가 아는 값의 목록이 아닙니다.',
+        ).toEqual([]);
+      }
+    });
+
     // --- 네 메서드의 동작 ---
     //
     // 여기부터가 이 스위트의 본체다. 선언만 검사하면 search() 가 매번 던지는
@@ -446,7 +560,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       };
 
       await check('get', (a) => a.get([under.sampleId], fetchOpts));
-      if (makeAdapter().capability().results) {
+      if (makeAdapter().capability().results.supported) {
         await check('results', (a) => a.results(under.sampleId, resultsOpts));
       }
     });
@@ -463,7 +577,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
 
     it('results 는 TrialResults 계약을 지키는 값을 낸다', async () => {
       const cap = makeAdapter().capability();
-      if (!cap.results) return; // results:false 는 아래 exit 3 테스트가 덮는다
+      if (!cap.results.supported) return; // results 미지원은 아래 exit 3 테스트가 덮는다
       const { adapter, calls } = ok();
       const r = await adapter.results(under.sampleId, resultsOpts);
 
@@ -506,7 +620,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         ['get', () => broken().adapter.get([under.sampleId], fetchOpts)],
         ['count', () => broken().adapter.count({ condition: 'x' } as NormalizedQuery, fetchOpts)],
       ];
-      if (cap.results) probes.push(['results', () => broken().adapter.results(under.sampleId, resultsOpts)]);
+      if (cap.results.supported) probes.push(['results', () => broken().adapter.results(under.sampleId, resultsOpts)]);
 
       for (const [label, call] of probes) {
         await expect(call(), `${label} 은 업스트림 실패를 던져야 한다`).rejects.toBeInstanceOf(CtregError);
@@ -528,11 +642,15 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       };
 
       const unsupported = (Object.keys(cap.search) as (keyof Capability['search'])[])
-        .filter((k) => cap.search[k] === false);
+        .filter((k) => cap.search[k].supported === false);
 
       if (unsupported.length === 0) {
         // 전부 지원하는 어댑터라면 반대 방향으로 검증한다: 가짜로 하나를 끄면 반드시 걸려야 한다.
-        expectExit3({ condition: 'x' }, { ...cap, search: { ...cap.search, condition: false } }, 'condition');
+        expectExit3(
+          { condition: 'x' },
+          { ...cap, search: { ...cap.search, condition: { ...cap.search.condition, supported: false } } },
+          'condition',
+        );
         return;
       }
       for (const axis of unsupported) {
@@ -541,17 +659,17 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     });
 
     /**
-     * 스펙 §9 가 이 스위트의 핵심으로 지목한 항목: `results: false` 인 어댑터에
+     * 스펙 §9 가 이 스위트의 핵심으로 지목한 항목: `results.supported: false` 인 어댑터에
      * results 를 부르면 빈 값이 아니라 exit 3 이 나야 한다. capability 를 조작해
      * 이 어댑터가 그렇게 신고했을 때 CLI 가 어떻게 굴러가는지를 본다 — 신고를
      * 배신하는 순간을 잡는 것이 목적이므로, 조작이 곧 이 테스트의 방법이다.
      */
-    it('results:false 를 신고하면 빈 결과가 아니라 exit 3 이다', async () => {
+    it('results 를 미지원으로 신고하면 빈 결과가 아니라 exit 3 이다', async () => {
       const { adapter } = ok();
       const results = vi.fn(adapter.results.bind(adapter));
       const forged: RegistryAdapter = {
         ...adapter,
-        capability: () => ({ ...adapter.capability(), results: false }),
+        capability: () => ({ ...adapter.capability(), results: { ...adapter.capability().results, supported: false } }),
         results,
       };
       const key = parseTrialId(under.sampleId).registry;
@@ -567,18 +685,18 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     });
 
     /**
-     * 같은 규칙의 나머지 절반. `count: false` 를 신고한 어댑터가 0 을 돌려주는 것은
+     * 같은 규칙의 나머지 절반. `count.supported: false` 를 신고한 어댑터가 0 을 돌려주는 것은
      * 카운트 엔드포인트가 없는 레지스트리에서 가장 흔한 순진한 구현이고, 그 0 이
      * status "ok" 로 나가면 "이 레지스트리는 셀 수 없다" 가 "해당 시험이 없다" 로
      * 배달된다. results 와 달리 이쪽은 아무 데서도 강제되지 않아 실제로 그렇게
      * 동작했다(리뷰 C3).
      */
-    it('count:false 를 신고하면 0 이 아니라 exit 3 이다', async () => {
+    it('count 를 미지원으로 신고하면 0 이 아니라 exit 3 이다', async () => {
       const { adapter } = ok();
       const count = vi.fn(async () => ({ data: 0, warnings: [] }));
       const forged: RegistryAdapter = {
         ...adapter,
-        capability: () => ({ ...adapter.capability(), count: false }),
+        capability: () => ({ ...adapter.capability(), count: { ...adapter.capability().count, supported: false } }),
         count,
       };
       const env = await runCount(
@@ -594,8 +712,8 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     it('신고한 detail 섹션은 가드를 통과한다', () => {
       const cap = makeAdapter().capability();
       const include: FetchOpts['include'] = ['core'];
-      if (cap.detail.eligibilityText) include.push('eligibility');
-      if (cap.detail.outcomes) include.push('outcomes');
+      if (cap.detail.eligibilityText.supported) include.push('eligibility');
+      if (cap.detail.outcomes.supported) include.push('outcomes');
       expect(() => assertSupported(cap, {}, { ...fetchOpts, include })).not.toThrow();
     });
 

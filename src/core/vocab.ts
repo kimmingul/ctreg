@@ -43,3 +43,12 @@ export function isFilterablePhase(v: string): v is TrialPhase {
 export function isFilterableStudyType(v: string): v is StudyType {
   return !NOT_FILTERABLE.has(v) && (STUDY_TYPE as readonly string[]).includes(v);
 }
+
+/**
+ * 필터로 쓸 수 있는 값의 목록. 술어(`isFilterable*`)만 있고 목록이 없으면, 값을
+ * 열거하려는 쪽(`--help`, capability 선언)이 각자 배열을 만들게 되고 그 배열들이
+ * 어휘와 따로 논다. 목록을 술어에서 파생시켜 그 갈래를 없앤다.
+ */
+export const FILTERABLE_STATUS: TrialStatus[] = TRIAL_STATUS.filter(isFilterableStatus);
+export const FILTERABLE_PHASE: TrialPhase[] = TRIAL_PHASE.filter(isFilterablePhase);
+export const FILTERABLE_STUDY_TYPE: StudyType[] = STUDY_TYPE.filter(isFilterableStudyType);

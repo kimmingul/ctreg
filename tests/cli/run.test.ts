@@ -58,7 +58,10 @@ describe('run()', () => {
     expect(f).not.toHaveBeenCalled();
     const parsed = JSON.parse(c.out());
     expect(parsed.data[0].key).toBe('ctgov');
-    expect(parsed.data[0].search.geo).toBe(true);
+    // 축이 객체가 됐으므로 JSON 을 건너온 뒤에도 내용이 남아 있는지까지 본다 —
+    // 직렬화가 축을 다시 불리언으로 납작하게 만들면 `registries` 를 읽는 에이전트는
+    // 예전과 똑같이 "무엇을 받는지" 를 알 수 없다.
+    expect(parsed.data[0].search.geo).toEqual(CTGOV_CAPABILITY.search.geo);
   });
 
   it('count 는 개수만 낸다', async () => {
@@ -115,7 +118,10 @@ describe('run()', () => {
     const countSpy = vi.fn(async () => ({ data: 999, warnings: [] }));
     const limited = {
       key: 'ctgov',
-      capability: () => ({ ...CTGOV_CAPABILITY, search: { ...CTGOV_CAPABILITY.search, patient: false } }),
+      capability: () => ({
+        ...CTGOV_CAPABILITY,
+        search: { ...CTGOV_CAPABILITY.search, patient: { ...CTGOV_CAPABILITY.search.patient, supported: false } },
+      }),
       search: vi.fn(),
       get: vi.fn(),
       results: vi.fn(),

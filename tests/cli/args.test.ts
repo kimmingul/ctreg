@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseCliArgs } from '../../src/cli/args.js';
+import { parseCliArgs, USAGE } from '../../src/cli/args.js';
 import { CAPS } from '../../src/core/query.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
+import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../../src/core/vocab.js';
 
 const expectUsage = (fn: () => unknown, hintFragment?: string) => {
   try {
@@ -140,5 +141,35 @@ describe('인자 파싱', () => {
   it('커맨드가 없거나 모르는 커맨드면 exit 2 다', () => {
     expectUsage(() => parseCliArgs([]));
     expectUsage(() => parseCliArgs(['landscape']), 'search');
+  });
+});
+
+describe('--help 는 값 어휘를 적는다', () => {
+  /**
+   * F9. 세 시나리오가 `--status` 에 대문자를, `--phase` 에 틀린 값을 넣어 거부당했고
+   * **셋 다 같은 힌트**를 받았다. --help 가 값을 적지 않아 틀려 봐야만 알 수 있었다.
+   * 목록을 어휘에서 파생해 적으면 어휘가 늘어도 --help 가 저절로 따라간다.
+   *
+   * 문자열 부분일치(`toContain`)로는 안 된다 — 단어 경계가 없어서 `na` 를
+   * 목록에서 통째로 지워도 `terminated` 안의 "na" 에 걸려 통과해 버린다
+   * (`phase_1` 도 `early_phase_1` 안에, `recruiting` 도 `not_yet_recruiting`
+   * 안에 숨는다). `[a-z0-9_]` 가 아닌 문자로 잘라 토큰 배열을 만들고 그
+   * 배열에 값이 원소로 있는지를 본다 — 줄바꿈 위치가 바뀌어도 토큰 경계는
+   * 그대로라 안전하다.
+   */
+  it('세 닫힌 어휘의 값을 전부 적는다', () => {
+    const tokens = USAGE.split(/[^a-z0-9_]+/);
+    for (const v of FILTERABLE_STATUS) expect(tokens, `--status 값 '${v}' 가 --help 에 없습니다`).toContain(v);
+    for (const v of FILTERABLE_PHASE) expect(tokens, `--phase 값 '${v}' 가 --help 에 없습니다`).toContain(v);
+    for (const v of FILTERABLE_STUDY_TYPE) expect(tokens, `--study-type 값 '${v}' 가 --help 에 없습니다`).toContain(v);
+  });
+
+  /**
+   * --help 는 **이 CLI 가 받는 값**을, registries 는 **각 레지스트리가 그 값으로
+   * 무엇을 하는가**를 말한다. 여기서 레지스트리별 차이까지 적으면 같은 사실이 두
+   * 곳에 살게 되고, 이 저장소에서 그렇게 했다가 한쪽만 갱신된 사고가 이미 두 번 있었다.
+   */
+  it('레지스트리별 차이는 적지 않고 registries 로 보낸다', () => {
+    expect(USAGE).toContain('ctreg registries');
   });
 });
