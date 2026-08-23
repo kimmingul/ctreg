@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
-import { CapabilitySchema, type Capability, type RegistryAdapter } from '../../src/core/capability.js';
+import { CapabilitySchema, type Capability, type RegistryAdapter, type SearchAxis } from '../../src/core/capability.js';
 import { CAPS, type FetchOpts, type NormalizedQuery, type ResultsOpts } from '../../src/core/query.js';
 import { TrialRecordSchema, TrialResultsSchema } from '../../src/core/record.js';
 import { parseTrialId, type RegistryKey } from '../../src/core/registry.js';
@@ -240,6 +240,43 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         `요청한 ID ${dropped.length}개가 어떤 요청에도 실리지 않았습니다: ${dropped.slice(0, 3).join(', ')}…. ` +
           '상한을 넘는 ID 를 나누지 않고 버리면 조회 자체가 조용히 부분 조회가 됩니다.',
       ).toEqual([]);
+    });
+
+    /**
+     * 신고해 놓고 거부하는 어댑터를 잡는다. **이 검사를 쓰기 직전까지 ISRCTN 이
+     * 정확히 그랬다** — phase 어휘에 early_phase_1 자리가 없어 exit 2 로 거부하는데
+     * 선언에는 그 사실이 없었다. 신고와 구현이 어긋나면 사용자는 부딪혀야만 안다.
+     */
+    it('신고한 values 는 전부 실제로 질의로 조립된다', async () => {
+      const cap = makeAdapter().capability();
+      const probes: [string, string[], (v: string) => NormalizedQuery][] = [
+        ['status', cap.search.status.values ?? [], (v) => ({ status: [v as never] })],
+        ['phase', cap.search.phase.values ?? [], (v) => ({ phase: [v as never] })],
+        ['studyType', cap.search.studyType.values ?? [], (v) => ({ studyType: v as never })],
+      ];
+      for (const [axis, values, probe] of probes) {
+        for (const v of values) {
+          const { adapter } = ok();
+          await expect(
+            adapter.search(probe(v), fetchOpts),
+            `'${axis}' 에 '${v}' 를 신고해 놓고 그 값으로 검색하면 실패합니다 — ` +
+              '선언과 구현이 어긋나면 사용자는 부딪혀야만 알게 됩니다.',
+          ).resolves.toBeDefined();
+        }
+      }
+    });
+
+    /**
+     * `supported: false` 인데 `values` 에 뭔가 들어 있으면 두 선언이 서로를 부정한다.
+     * 읽는 쪽은 어느 쪽을 믿어야 할지 알 수 없다.
+     */
+    it('지원하지 않는 축은 values 가 비어 있다', () => {
+      const cap = makeAdapter().capability();
+      for (const [name, axis] of Object.entries(cap.search) as [string, SearchAxis][]) {
+        if (axis.supported) continue;
+        expect(axis.values ?? [], `'${name}' 은 supported:false 인데 values 가 비어 있지 않습니다`).toEqual([]);
+        expect(axis.exhaustive, `'${name}' 은 supported:false 인데 exhaustive 가 null 이 아닙니다`).toBeNull();
+      }
     });
 
     // --- 네 메서드의 동작 ---
