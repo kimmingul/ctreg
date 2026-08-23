@@ -23,7 +23,7 @@ export type HttpDeps = {
   now?: () => number;
 };
 
-type GetJsonOpts = {
+type GetJsonOpts<T> = {
   registry: string;
   baseUrl: string;
   path: string;
@@ -32,9 +32,21 @@ type GetJsonOpts = {
   signal?: AbortSignal;
   /** 이 레지스트리가 capability 에 선언한 예산. cfg.ratePerSec 가 없을 때 쓰인다. */
   ratePerSec: number;
+  /**
+   * 업스트림 본문의 해석. 주지 않으면 `res.json()` — 지금까지의 동작 그대로다.
+   * 주면 본문을 텍스트로 읽어 이 함수에 넘긴다. ISRCTN 처럼 JSON 포맷이 아예 없는
+   * 레지스트리를 위한 자리다. 이 자리가 없으면 그런 어댑터는 캐시·스로틀·재시도·
+   * 타임아웃을 통째로 다시 구현해야 하고, 그러면 레지스트리마다 신뢰성이 갈린다.
+   *
+   * 해석된 값이 캐시에 들어간다(원문이 아니다) — 원문을 넣으면 캐시 히트 경로만
+   * decode 를 건너뛰어, 같은 요청이 캐시 여부에 따라 다른 타입을 내놓는다.
+   */
+  decode?: (text: string) => T;
+  /** `decode` 와 짝이다. 기본값은 `application/json`. */
+  accept?: string;
 };
 
-function buildUrl(baseUrl: string, path: string, params: GetJsonOpts['params']): string {
+function buildUrl(baseUrl: string, path: string, params: GetJsonOpts<unknown>['params']): string {
   const url = new URL(baseUrl + path);
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === '') continue;
@@ -60,7 +72,7 @@ async function bodyMessage(res: Response): Promise<string | undefined> {
 
 export async function getJson<T>(
   cfg: Config,
-  o: GetJsonOpts,
+  o: GetJsonOpts<T>,
   deps: HttpDeps = {},
 ): Promise<{ value: T; fetchedAt: string; cached: boolean; warnings: Warning[] }> {
   const doFetch = deps.fetchImpl ?? fetch;
@@ -105,7 +117,7 @@ export async function getJson<T>(
 
     let res: Response;
     try {
-      res = await doFetch(url, { signal, headers: { accept: 'application/json' } });
+      res = await doFetch(url, { signal, headers: { accept: o.accept ?? 'application/json' } });
     } catch (cause) {
       if (attempt === cfg.maxRetries) {
         throw upstreamError(`${o.registry} 요청 실패: ${url}`, '네트워크 또는 타임아웃.', cause);
@@ -117,7 +129,7 @@ export async function getJson<T>(
     lastStatus = res.status;
 
     if (res.ok) {
-      const value = (await res.json()) as T;
+      const value = o.decode ? o.decode(await res.text()) : ((await res.json()) as T);
       const fetchedAt = new Date(now()).toISOString();
       if (o.cacheMode !== 'off') await writeCache(cfg.cacheDir, key, value, fetchedAt, now);
       return { value, fetchedAt, cached: false, warnings };

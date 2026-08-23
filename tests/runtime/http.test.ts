@@ -288,3 +288,48 @@ describe('HTTP 클라이언트', () => {
     });
   });
 });
+
+/**
+ * ISRCTN 은 XML 만 낸다 — JSON 포맷이 없다. `res.json()` 을 고정으로 부르는 한 이
+ * 런타임(캐시·스로틀·재시도·타임아웃)을 두 번째 어댑터가 쓸 수 없고, 그러면 그 어댑터가
+ * 자기 HTTP 스택을 따로 갖게 된다. 본문 해석만 호출자에게 넘긴다.
+ */
+describe('JSON 이 아닌 업스트림', () => {
+  const xmlOpts = (over: Record<string, unknown> = {}) => ({
+    ...opts('off'),
+    registry: 'isrctn',
+    path: '/api/query/format/default',
+    ...over,
+  });
+
+  it('decode 를 주면 본문을 텍스트로 읽어 해석하고, accept 헤더도 그 타입으로 나간다', async () => {
+    const f = vi.fn(async () => new Response('<a><b>7</b></a>', { status: 200, headers: { 'content-type': 'application/xml' } }));
+    const r = await getJson<{ b: string }>(
+      cfg,
+      xmlOpts({ accept: 'application/xml', decode: (text: string) => ({ b: /<b>(.*)<\/b>/.exec(text)![1]! }) }),
+      deps(f as unknown as typeof fetch),
+    );
+    expect(r.value).toEqual({ b: '7' });
+    expect((f.mock.calls[0] as unknown as [string, RequestInit])[1].headers).toMatchObject({ accept: 'application/xml' });
+  });
+
+  /**
+   * 캐시에는 **해석된 값** 이 들어가야 한다. 원문 텍스트를 넣으면 캐시 히트 경로만
+   * decode 를 건너뛰어 같은 요청이 캐시 여부에 따라 다른 타입을 내놓는다.
+   */
+  it('캐시에 저장되는 것은 원문이 아니라 해석된 값이다', async () => {
+    const f = vi.fn(async () => new Response('<a><b>7</b></a>', { status: 200 }));
+    const o = xmlOpts({ cacheMode: 'use', decode: (text: string) => ({ b: /<b>(.*)<\/b>/.exec(text)![1]! }) });
+    const first = await getJson<{ b: string }>(cfg, o, deps(f as unknown as typeof fetch));
+    const second = await getJson<{ b: string }>(cfg, o, deps(f as unknown as typeof fetch));
+    expect(second.cached).toBe(true);
+    expect(second.value).toEqual(first.value);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('decode 를 안 주면 예전대로 JSON 으로 읽는다', async () => {
+    const f = vi.fn(async () => json({ ok: true }));
+    const r = await getJson<{ ok: boolean }>(cfg, xmlOpts(), deps(f as unknown as typeof fetch));
+    expect(r.value).toEqual({ ok: true });
+  });
+});
