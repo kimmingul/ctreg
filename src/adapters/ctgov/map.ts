@@ -206,9 +206,15 @@ export function mapStudy(
   // 함께 잃었고, 협력사가 있으면 `lead: ""` 라는 있지도 않은 이름을 주장했다.
   const leadName: string | undefined = p.sponsorCollaboratorsModule?.leadSponsor?.name;
   const lead = leadName ? leadName : undefined;
+  // 같은 규칙을 협력사에도 적용한다. 이름이 비어 있는 협력사를 그대로 실으면 `string[]`
+  // 안에 undefined 가 섞여 레코드가 계약을 어기고, adapter.ts 의 mapStudySafely 가 그것을
+  // `study_unmapped` 로 격하시킨다 — **협력사 이름 하나가 비었다는 이유로 그 시험이
+  // 결과에서 통째로 사라진다.** 빈 이름은 이름이 아니므로 그 항목만 버린다.
   const rawCollaborators: any[] = p.sponsorCollaboratorsModule?.collaborators ?? [];
-  const collaborators: string[] | undefined =
-    rawCollaborators.length > 0 ? rawCollaborators.map((c: any) => c.name) : undefined;
+  const named = rawCollaborators
+    .map((c: any) => c?.name)
+    .filter((n: unknown): n is string => typeof n === 'string' && n !== '');
+  const collaborators: string[] | undefined = named.length > 0 ? named : undefined;
   const sponsor = defined({ lead, collaborators }) as TrialRecord['sponsor'];
 
   // 보조 식별자는 type 이 없어도 id 가 있으면 데이터다 — 버리지 않는다. registry 는 우리

@@ -73,6 +73,17 @@ describe('ISRCTN 매퍼 — core', () => {
     expect(record.sponsor?.lead).toBe('University of Birmingham');
   });
 
+  /**
+   * ctgov 쪽에서 실제로 물었던 버그와 같은 자리다 — 이름 없는 협력사를 그대로 실으면
+   * `string[]` 에 undefined 가 섞여 레코드가 계약을 어기고, 그 시험이 결과에서 통째로
+   * 사라진다. WHO 포맷은 `<sponsor_name/>` 을 값 없이 남기므로 여기가 늘 밟히는 경로다.
+   */
+  it('이름 없는 공동 스폰서를 실어 레코드를 죽이지 않는다', () => {
+    const { record } = map('ISRCTN64724266'); // 픽스처의 secondary_sponsor 가 비어 있다
+    expect(record.sponsor).not.toHaveProperty('collaborators');
+    expect(() => TrialRecordSchema.parse(record)).not.toThrow();
+  });
+
   it('crossIds 를 secondary_ids 에서 가져온다', () => {
     const { record } = map('ISRCTN64724266');
     expect(record.crossIds).toEqual([

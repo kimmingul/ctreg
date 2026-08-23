@@ -637,3 +637,38 @@ describe('거리 없는 장소끼리의 동순위는 엔진의 NaN 비교 처리
     expect(record.locations!.map((l) => l.city)).toEqual(order.map((i) => `City${i}`));
   });
 });
+
+describe('sponsor — 이름 없는 협력사', () => {
+  /**
+   * `collaborators[].name` 이 비어 있을 수 있다. 그대로 실으면 `string[]` 안에
+   * `undefined` 가 섞여 TrialRecordSchema 가 레코드를 거부하고, adapter.ts 의
+   * mapStudySafely 가 그것을 `study_unmapped` 로 격하시킨다 — **협력사 이름 하나가
+   * 비었다는 이유로 그 시험이 결과에서 통째로 사라진다.** 빈 이름은 이름이 아니므로
+   * 그 항목만 버리고 나머지는 남긴다(바로 위 lead 와 같은 규칙).
+   */
+  it('이름 없는 협력사 때문에 시험 전체가 사라지지 않는다', () => {
+    const study = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000001', briefTitle: 'T' },
+        sponsorCollaboratorsModule: {
+          leadSponsor: { name: 'Lead Org' },
+          collaborators: [{ name: 'Real Collaborator' }, { name: '' }, {}],
+        },
+      },
+    };
+    const { record } = mapStudy(study, opts(), '2026-08-23T00:00:00.000Z');
+    expect(() => TrialRecordSchema.parse(record)).not.toThrow();
+    expect(record.sponsor).toEqual({ lead: 'Lead Org', collaborators: ['Real Collaborator'] });
+  });
+
+  it('협력사가 전부 이름이 없으면 collaborators 자체를 만들지 않는다', () => {
+    const study = {
+      protocolSection: {
+        identificationModule: { nctId: 'NCT00000002', briefTitle: 'T' },
+        sponsorCollaboratorsModule: { leadSponsor: { name: 'Lead Org' }, collaborators: [{ name: '' }] },
+      },
+    };
+    const { record } = mapStudy(study, opts(), '2026-08-23T00:00:00.000Z');
+    expect(record.sponsor).toEqual({ lead: 'Lead Org' });
+  });
+});
