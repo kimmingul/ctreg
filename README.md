@@ -8,8 +8,24 @@
 
 ## 이 슬라이스의 범위
 
-- **지원 레지스트리는 ClinicalTrials.gov(`ctgov`) 하나뿐이다.** `ctreg registries` 를 실행하면 각 어댑터(지금은 ctgov 하나)가 스스로 신고하는 capability — 어떤 검색 축·상세 섹션·결과 데이터를 지원하는지, 페이지 크기/요청률/배치 상한이 얼마인지 — 를 그대로 볼 수 있다. 두 번째 레지스트리가 붙어도 이 커맨드로 능력 차이를 알 수 있게 설계했다.
-- **`--near` 는 좌표(`위도,경도`)만 받는다. 지명은 받지 않는다.** 이 슬라이스에는 지오코더가 없다. "서울 근처"를 찾고 싶으면 위도/경도를 직접 구해서 넣어야 한다(예: `--near 37.5665,126.978`).
+- **지원 레지스트리는 둘이다 — ClinicalTrials.gov(`ctgov`)와 ISRCTN(`isrctn`).** `ctreg registries` 를 실행하면 각 어댑터가 스스로 신고하는 capability — 어떤 검색 축·상세 섹션·결과 데이터를 지원하는지, 페이지 크기/요청률/배치 상한이 얼마인지 — 를 그대로 볼 수 있다. **둘의 능력은 같지 않다**(바로 아래 참고). `--registry` 를 주지 않으면 `ctgov` 하나만 조회한다 — 어댑터가 늘어도 기존 호출의 동작이 조용히 바뀌지 않도록 기본값은 이름 붙인 하나로 고정돼 있다.
+- **`--near` 는 좌표(`위도,경도`)만 받는다. 지명은 받지 않는다.** 이 슬라이스에는 지오코더가 없다. "서울 근처"를 찾고 싶으면 위도/경도를 직접 구해서 넣어야 한다(예: `--near 37.5665,126.978`). 좌표를 제공하는 레지스트리는 ctgov 뿐이라 `--near` 는 ctgov 전용이다.
+
+### ISRCTN 으로는 할 수 없는 것
+
+ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 물으면 빈 결과가 아니라 exit 3 이 나온다** — "그런 시험이 없다" 와 "그렇게 검색할 수 없다" 는 다른 말이기 때문이다.
+
+| 못 하는 것 | 왜 |
+| :-- | :-- |
+| `--status` | ISRCTN API 의 `trialStatus`·`recruitmentStatus` 는 문서에 값 목록까지 있지만 **모든 값이 0건** 이다. 레코드에는 상태가 실려 나오므로, 받아 보고 거르는 것은 된다. |
+| `--start-after` / `--start-before` | `overallStartDate` 필터가 **조용히 무시된다** — `GE 2050` 도 레지스트리 전체를 낸다. 갱신일(`--updated-since`)과 종료일(`--completion-after`)은 정상 동작한다. |
+| `--location` / `--near` | 자유 문자열 장소로 검색할 축이 없고 좌표도 없다. 레코드의 장소는 **모집 국가** 단위로 실려 나온다. |
+| `--id` / `--patient` / `--lead` | 해당하는 검색 축이 없다. 시험 하나를 ID 로 가져오는 것은 `ctreg get ISRCTN:ISRCTN12345678` 로 된다. |
+| `ctreg results` | ISRCTN 의 결과는 논문 링크와 첨부 PDF 이지 구조화된 평가변수·이상반응 데이터가 아니다. `ctreg get --raw` 로 원문을 볼 수 있다. |
+
+또 하나, **ISRCTN API 에는 페이지 넘김이 없다.** 매칭이 받은 것보다 많으면 `no_pagination` 경고가 붙는다 — `--page-size` 를 올리거나(최대 200) 기간을 쪼개 여러 번 조회하는 것 말고 이어받을 방법이 없다.
+
+이 표는 추측이 아니라 실측이다. `bun run isrctn-field-test` 를 돌리면 신고한 축 전부를 실물 레지스트리에 대조해 `docs/isrctn-field-test-<날짜>.md` 로 남긴다.
 
 ## 설치
 
@@ -40,6 +56,9 @@ ctreg registries
 
 # 모집 중인 비소세포폐암 3상 시험을 3건 찾는다
 ctreg search --condition "non-small cell lung cancer" --status recruiting --phase phase_3 --page-size 3
+
+# 두 레지스트리를 함께 조회한다 (한쪽이 못 하는 축이면 그쪽만 exit 3 으로 신고되고 exit 5 가 된다)
+ctreg search --registry ctgov --registry isrctn --condition melanoma --page-size 2
 
 # 특정 시험을 ID 로 바로 가져온다
 ctreg get CTGOV:NCT04280705
@@ -124,18 +143,28 @@ ctreg registries
 ```
 
 ```json
-{ "query": { "registries": ["ctgov"] },
-  "registries": [ { "registry": "ctgov", "status": "ok" } ],
+{ "query": { "registries": ["ctgov", "isrctn"] },
+  "registries": [ { "registry": "ctgov", "status": "ok" }, { "registry": "isrctn", "status": "ok" } ],
   "warnings": [],
   "data": [ {
     "key": "ctgov", "name": "ClinicalTrials.gov", "region": "US / global",
-    "search": { "condition": true, "intervention": true, "…": "…", "geo": true },
+    "search": { "condition": true, "intervention": true, "…": "…", "geo": true,
+                "status": true, "updatedRange": true, "startRange": true, "completionRange": true },
     "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
     "results": true, "count": true,
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 50 }
+  }, {
+    "key": "isrctn", "name": "ISRCTN", "region": "UK / global",
+    "search": { "condition": true, "intervention": true, "…": "…", "geo": false,
+                "status": false, "updatedRange": true, "startRange": false, "completionRange": true },
+    "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
+    "results": false, "count": true,
+    "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 10 }
   } ]
 }
 ```
+
+`false` 를 읽는 것이 이 커맨드의 요점이다. 날짜 축이 셋으로 나뉘어 있는 것도 같은 이유다 — ISRCTN 처럼 **갱신일·종료일로는 걸러지는데 시작일로는 안 걸러지는** 레지스트리가 있어서, 하나의 `dateRange` 로는 그 사실을 말할 수 없다.
 
 **네트워크를 전혀 타지 않는다.** 어댑터가 스스로 신고하는 정적 capability 를 그대로 반환하므로, 검색을 조립하기 전에 먼저 호출해 어떤 축을 쓸 수 있는지 확인하는 용도로 안전하게 쓸 수 있다.
 
@@ -173,6 +202,7 @@ ctreg registries
 | `CTREG_MAX_RETRIES` | `3` | 업스트림 요청 실패 시 재시도 횟수. |
 | `CTREG_RATE_PER_SEC` | (미설정) | 전역 오버라이드. **미설정이면 각 레지스트리가 스스로 신고한 요청률**(`ctreg registries` 의 `limits.ratePerSec`, ctgov 는 1 req/s)**을 쓴다** — 레지스트리마다 예산이 다를 수 있어서다. 이 값을 주면 모든 레지스트리에 그 값 하나를 강제한다(공유 네트워크에서 다같이 늦추거나, 특별 허가로 다같이 올리거나). 올리기 전에 업스트림의 실제 정책을 확인하라. |
 | `CTREG_CTGOV_BASE_URL` | `https://clinicaltrials.gov/api/v2` | ctgov 어댑터가 호출할 API 베이스 URL. 테스트나 미러 대상 전환에 쓴다. |
+| `CTREG_ISRCTN_BASE_URL` | `https://www.isrctn.com` | isrctn 어댑터가 호출할 베이스 URL. ctgov 와 달리 경로에 버전이 없어 호스트까지만 담는다. |
 
 캐시/요청률 제한을 끄거나 우회하고 싶을 때는 환경변수 대신 커맨드 플래그를 쓴다: `--no-cache` (이번 호출은 캐시를 아예 쓰지 않는다), `--refresh` (캐시를 갱신하며 조회한다). 둘은 함께 쓸 수 없다.
 
