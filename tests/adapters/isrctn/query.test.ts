@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildIdsQuery, buildQuery } from '../../../src/adapters/isrctn/query.js';
+import { buildIdsQuery, buildQuery, ISRCTN_FILTERABLE } from '../../../src/adapters/isrctn/query.js';
 import { EXIT } from '../../../src/cli/exit-codes.js';
 import type { CtregError } from '../../../src/runtime/errors.js';
 import type { NormalizedQuery } from '../../../src/core/query.js';
@@ -118,5 +118,37 @@ describe('ISRCTN ID 배치 질의', () => {
 
   it('하나면 OR 없이 그것만', () => {
     expect(buildIdsQuery(['ISRCTN96189403'])).toBe('ISRCTN96189403');
+  });
+});
+
+describe('ISRCTN 이 필터로 받는 값', () => {
+  /**
+   * ISRCTN 은 공통 어휘의 **부분집합**만 받는다. 지금 이 사실은 부딪혀야만 드러난다 —
+   * `--phase early_phase_1 --registry isrctn` 은 exit 2 다. 목록으로 내보내면 그
+   * 사실이 선언 가능해지고, F5·F9 가 지적한 "틀린 뒤에만 알려준다"가 사라진다.
+   */
+  it('early_phase_1 을 받지 않는다 — ISRCTN phase 어휘에 자리가 없다', () => {
+    expect(ISRCTN_FILTERABLE.phase).not.toContain('early_phase_1');
+    expect(ISRCTN_FILTERABLE.phase).toEqual(
+      expect.arrayContaining(['phase_1', 'phase_2', 'phase_3', 'phase_4', 'na']),
+    );
+  });
+
+  it('expanded_access 를 받지 않는다 — primaryStudyDesign 은 두 값뿐이다', () => {
+    expect(ISRCTN_FILTERABLE.studyType).toEqual(['interventional', 'observational']);
+  });
+
+  /** 실측에서 trialStatus·recruitmentStatus 가 전부 0건이라 축 자체가 없다. */
+  it('status 는 빈 목록이다 — 축이 죽어 있다', () => {
+    expect(ISRCTN_FILTERABLE.status).toEqual([]);
+  });
+
+  it('신고한 값은 전부 실제로 질의로 조립된다 — 신고와 거부가 어긋나면 안 된다', () => {
+    for (const v of ISRCTN_FILTERABLE.phase) {
+      expect(() => buildQuery({ phase: [v] }), `phase '${v}' 를 신고해 놓고 거부합니다`).not.toThrow();
+    }
+    for (const v of ISRCTN_FILTERABLE.studyType) {
+      expect(() => buildQuery({ studyType: v }), `studyType '${v}' 를 신고해 놓고 거부합니다`).not.toThrow();
+    }
   });
 });

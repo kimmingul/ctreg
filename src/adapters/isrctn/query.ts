@@ -15,7 +15,7 @@
 
 import type { Warning } from '../../core/capability.js';
 import { CAPS, resolvePageSize, type NormalizedQuery } from '../../core/query.js';
-import type { TrialPhase } from '../../core/vocab.js';
+import type { StudyType, TrialPhase, TrialStatus } from '../../core/vocab.js';
 import { usageError } from '../../runtime/errors.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -57,6 +57,20 @@ const PHASE_OUT: Partial<Record<TrialPhase, string>> = {
 const STUDY_TYPE_OUT: Record<string, string> = {
   interventional: 'Interventional',
   observational: 'Observational',
+};
+
+/**
+ * capability 의 `values` 가 읽는 목록. **나가는 쪽** 테이블에서 파생한다 —
+ * `vocab.ts` 의 매핑은 응답으로 **들어오는** 값이고, 지금 문자열이 같은 것은 우연이다.
+ *
+ * `status` 가 빈 목록인 것이 이 파일에서 가장 중요한 선언이다: ISRCTN 은
+ * `trialStatus`·`recruitmentStatus` 가 문서에 값 목록까지 있는데도 실측에서 전부
+ * 0건이라 축 자체가 없다. `[]` 는 "그런 시험이 없다"가 아니라 "그렇게 물어볼 수 없다"다.
+ */
+export const ISRCTN_FILTERABLE = {
+  status: [] as TrialStatus[],
+  phase: Object.keys(PHASE_OUT) as TrialPhase[],
+  studyType: Object.keys(STUDY_TYPE_OUT) as StudyType[],
 };
 
 /** 날짜는 콜론이 아니라 공백 + 비교 연산자이고, 시각까지 있어야 한다(문서 3.2 예시). */
