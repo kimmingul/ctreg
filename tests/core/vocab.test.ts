@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FILTERABLE_PHASE,
+  FILTERABLE_STATUS,
+  FILTERABLE_STUDY_TYPE,
   STUDY_TYPE,
   TRIAL_PHASE,
   TRIAL_STATUS,
@@ -42,5 +45,26 @@ describe('폐쇄 어휘', () => {
   it('phase 도 other 를 필터 입력으로 받지 않는다', () => {
     expect(isFilterablePhase('phase_3')).toBe(true);
     expect(isFilterablePhase('other')).toBe(false);
+  });
+});
+
+describe('필터로 쓸 수 있는 값 목록', () => {
+  /**
+   * `unknown` 과 `other` 는 **매핑 결과**이지 검색 조건이 아니다 — 어휘에 자리가
+   * 없는 값을 받았을 때 붙이는 이름이라, 그것으로 필터를 걸어 달라고 할 수 없다.
+   * 목록을 손으로 적으면 이 규칙이 목록마다 다시 지켜져야 하므로 술어로 거른다.
+   */
+  it('unknown 과 other 를 뺀 나머지 전부다', () => {
+    // `v: string` — TRIAL_PHASE/STUDY_TYPE 어휘엔 'unknown' 이 없어, 리터럴 타입 그대로 비교하면
+    // strict 모드가 "겹칠 수 없는 비교"로 막는다. 값 비교의 의도는 그대로이므로 타입만 넓힌다.
+    expect(FILTERABLE_STATUS).toEqual(TRIAL_STATUS.filter((v: string) => v !== 'unknown' && v !== 'other'));
+    expect(FILTERABLE_PHASE).toEqual(TRIAL_PHASE.filter((v: string) => v !== 'unknown' && v !== 'other'));
+    expect(FILTERABLE_STUDY_TYPE).toEqual(STUDY_TYPE.filter((v: string) => v !== 'unknown' && v !== 'other'));
+  });
+
+  it('비어 있지 않다 — 빈 목록은 "필터를 걸 수 없다" 로 읽힌다', () => {
+    expect(FILTERABLE_STATUS.length).toBeGreaterThan(0);
+    expect(FILTERABLE_PHASE.length).toBeGreaterThan(0);
+    expect(FILTERABLE_STUDY_TYPE.length).toBeGreaterThan(0);
   });
 });
