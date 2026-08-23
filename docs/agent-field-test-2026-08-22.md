@@ -106,8 +106,9 @@ S4 는 경고를 읽어 사용자에게 전달했고(`not_found`, "60개 장소 
 4. **F4** — F1 과 같은 뿌리. 경고가 오독을 막는 대신 새 오독을 만든다.
 5. **F2·F5·F8·F9·F14** — 같은 뿌리. 선언이 존재만 말하고 내용을 말하지 않는다.
 
-   > **해소됨 (2026-08-23).** 다섯을 하나의 설계로 함께 고쳤다 —
-   > `docs/superpowers/specs/2026-08-23-capability-says-content-design.md`.
+   > **해소됨 (2026-08-23) — 커밋 `0bf9075`, `a057a65`, `fffb44c`, `ac1da10`,
+   > `5f067bb`, `e134e29`, `ae90a3e`.** 다섯을 하나의 설계로 함께 고쳤다
+   > (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`).
    > 축이 `values`·`exhaustive`·`scope` 를 신고하고, `--help` 가 값 어휘를 적으며,
    > `exhaustive: false` 축으로 필터하면 `vocab_excludes_missing` 이 붙는다.
 6. **F6·F11·F13** — 경고와 플래그의 의미가 불명확하다.

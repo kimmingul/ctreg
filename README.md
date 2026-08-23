@@ -165,10 +165,17 @@ ctreg registries
         "exhaustive": false,
         "scope": "시험이 신고한 단계. 여러 단계를 신고한 시험은 그 전부에 걸린다" },
       "…": "…" },
-    "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
+    "detail": {
+      "eligibilityText": { "supported": true,
+        "scope": "적격 기준 원문. --include eligibility 로 켠다" },
+      "outcomes": { "supported": true,
+        "scope": "평가변수 목록(측정 항목·시점). 결과 수치가 아니다" },
+      "contacts": { "supported": true,
+        "scope": "중앙 연락처. 사이트별 연락처는 locations 에 있다" } },
     "results": { "supported": true,
       "scope": "results 서브커맨드를 지원한다 — 결과 유무로 검색하는 것이 아니다" },
-    "count": true,
+    "count": { "supported": true,
+      "scope": "같은 필터로 건수만 받는다. 페이로드를 받지 않는다" },
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 50 }
   }, {
     "key": "isrctn", "name": "ISRCTN", "region": "UK / global",
@@ -182,10 +189,17 @@ ctreg registries
         "exhaustive": false,
         "scope": "ISRCTN 이 신고한 단계. early_phase_1 에 해당하는 값이 어휘에 없다" },
       "…": "…" },
-    "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
+    "detail": {
+      "eligibilityText": { "supported": true,
+        "scope": "포함·제외 기준을 하나의 본문으로 합쳐 낸다" },
+      "outcomes": { "supported": true,
+        "scope": "1차·2차 평가변수 문구. 결과 수치가 아니다" },
+      "contacts": { "supported": true,
+        "scope": "공개·과학 연락처" } },
     "results": { "supported": false,
       "scope": "ISRCTN 의 결과는 논문 링크와 첨부 PDF 다 — TrialResults 가 요구하는 구조화된 평가변수·이상반응·참가자 흐름·기저 특성이 아니다" },
-    "count": true,
+    "count": { "supported": true,
+      "scope": "default 포맷의 limit=0 응답에서 총계만 읽는다" },
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 10 }
   } ]
 }

@@ -127,14 +127,14 @@ S4(세 NCT 정리, 하나는 없는 ID)에서 드러남. "잘렸다"만 말하�
 
 ### F2 — 능력 선언이 적용 범위를 말하지 않는다
 
-> **해소됨 — `docs/superpowers/specs/2026-08-23-capability-says-content-design.md`.** 각 축이 `scope` 로 적용 범위를 신고한다.
+> **해소됨 — 커밋 `0bf9075`, `a057a65`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** 각 축이 `scope` 로 적용 범위를 신고한다.
 
 S5(EudraCT 번호로 조회)에서 드러남. `term: true` 는 축의 존재만 선언한다. 0건이 "없음"인지
 "안 봄"(그 축을 지원하지 않아 아예 보지 않음)인지 판별할 근거가 도구 안에 없다.
 
 ### F5 — 값 어휘를 열거할 방법이 없다
 
-> **해소됨 — `docs/superpowers/specs/2026-08-23-capability-says-content-design.md`.** 각 축이 `values` 로 어휘를 신고하고 `--help` 가 이를 적는다.
+> **해소됨 — 커밋 `fffb44c`, `0bf9075`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** 각 축이 `values` 로 어휘를 신고하고 `--help` 가 이를 적는다.
 
 S2(펨브롤리주맙 건수와 phase 분포)에서 드러남. 에이전트가 틀린 값을 일부러 넣어 힌트를
 캐냈고, 나머지는 추측했다. F2 와 같은 뿌리 — 선언이 내용을 말하지 않는다.
@@ -146,7 +146,7 @@ S2 가 `--phase` 에 틀린 값을 넣어 거부당했다. **세 경우 모두 �
 
 ### F8 — 어휘가 데이터를 덮지 못한다 (F5 의 심화, 필드 테스트 후 추가 발견)
 
-> **해소됨 — `docs/superpowers/specs/2026-08-23-capability-says-content-design.md`.** 각 축이 `exhaustive` 로 어휘가 데이터를 다 덮는지 신고하고, 필터가 `exhaustive: false` 축을 걸면 `vocab_excludes_missing` 경고가 붙는다.
+> **해소됨 — 커밋 `ac1da10`, `5f067bb`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** 각 축이 `exhaustive` 로 어휘가 데이터를 다 덮는지 신고하고, 필터가 `exhaustive: false` 축을 걸면 `vocab_excludes_missing` 경고가 붙는다.
 
 S2 에이전트가 "169건이 어느 phase 에도 안 걸린다"를 뺄셈으로 발견하고 원인을 추정으로 남겼다.
 컨트롤러가 업스트림으로 추적한 결과: 표본 1000건 중 **phase 필드 자체가 없는 것이 52건**이고,
@@ -195,7 +195,7 @@ S3 이 `--full` 로 arm 별 분리를 찾다가, organ 필터가 무시되고 �
 
 ### F14 — `registries` 의 `results: true` 가 오독을 부른다
 
-> **해소됨 — `docs/superpowers/specs/2026-08-23-capability-says-content-design.md`.** `results` 도 `scope` 를 신고하며, 오독을 막기 위해 "결과 유무로 검색하는 것이 아니다"라고 스스로 적는다.
+> **해소됨 — 커밋 `0bf9075`, `a057a65`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** `results` 도 `scope` 를 신고하며, 오독을 막기 위해 "결과 유무로 검색하는 것이 아니다"라고 스스로 적는다.
 
 S6 이 이 필드를 "결과 게시 여부로 검색할 수 있다"로 읽었다. 실제 의미는 `results`
 서브커맨드를 지원한다는 것이다. **F2 와 같은 뿌리** — 불리언이 무엇에 대한 참인지 말하지 않는다.
