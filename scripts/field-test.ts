@@ -10,6 +10,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { CTGOV_CAPABILITY } from '../src/adapters/ctgov/adapter.js';
+import { CTGOV_FILTERABLE, fromPhase, fromStatus, fromStudyType } from '../src/adapters/ctgov/vocab.js';
 import { loadConfig } from '../src/runtime/config.js';
 import { getJson } from '../src/runtime/http.js';
 import { CtregError } from '../src/runtime/errors.js';
@@ -243,6 +244,30 @@ async function main() {
     if (verdict === 'fail' && check.params['filter.ids']) broke = true;
   }
 
+  console.error('\n--- 닫힌 어휘가 데이터를 덮는가 (exhaustive) ---');
+  const exhaustiveRows: string[] = [];
+  const countFor = async (params: Record<string, string | number | undefined>) => {
+    const r = await getJson<StudiesResponse>(cfg, {
+      registry: 'ctgov', baseUrl: cfg.ctgovBaseUrl, path: '/studies',
+      params: { ...params, pageSize: 0, countTotal: 'true' },
+      cacheMode: 'off', ratePerSec: CTGOV_CAPABILITY.limits.ratePerSec,
+    });
+    return r.value.totalCount ?? 0;
+  };
+  const ALL = await countFor({});
+  const CTGOV_AXES = [
+    { axis: 'status', values: CTGOV_FILTERABLE.status, params: (v: string) => ({ 'filter.overallStatus': fromStatus(v as never) }) },
+    { axis: 'phase', values: CTGOV_FILTERABLE.phase, params: (v: string) => ({ 'filter.advanced': `AREA[Phase]${fromPhase(v as never)}` }) },
+    { axis: 'studyType', values: CTGOV_FILTERABLE.studyType, params: (v: string) => ({ 'filter.advanced': `AREA[StudyType]${fromStudyType(v as never)}` }) },
+  ];
+  for (const a of CTGOV_AXES) {
+    let sum = 0;
+    for (const v of a.values) sum += await countFor(a.params(v));
+    const exhaustive = sum >= ALL;
+    exhaustiveRows.push(`| ${a.axis} | ${a.values.length} | ${sum} | ${ALL} | ${exhaustive ? '\`true\`' : '\`false\`'} | ${ALL - sum} |`);
+    console.error(`  ${a.axis}: 값별 합 ${sum} vs 전체 ${ALL} → exhaustive=${exhaustive}`);
+  }
+
   const doc = `# ctreg 필드 테스트 — ClinicalTrials.gov
 
 실행: ${new Date().toISOString()}
@@ -257,6 +282,15 @@ async function main() {
 | 검사 | 기대 | 판정 | 실제 |
 | :-- | :-- | :-- | :-- |
 ${rows.join('\n')}
+
+## 닫힌 어휘가 데이터를 덮는가
+
+값별 건수의 합이 전체 총계에 못 미치면 그 축의 어휘로는 데이터를 다 덮지 못한다는 뜻이다.
+모자란 부분이 F8 이 이름 붙이지 못했던 그것이고, capability 의 \`exhaustive: false\` 가 그 이름이다.
+
+| 축 | 값 개수 | 값별 합 | 전체 총계 | exhaustive | 어느 값에도 안 걸리는 수 |
+| :-- | --: | --: | --: | :-- | --: |
+${exhaustiveRows.join('\n')}
 
 ## 해석
 

@@ -21,6 +21,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { ISRCTN_CAPABILITY, createIsrctnAdapter } from '../src/adapters/isrctn/adapter.js';
+import { ISRCTN_FILTERABLE } from '../src/adapters/isrctn/query.js';
 import type { Capability } from '../src/core/capability.js';
 import type { NormalizedQuery } from '../src/core/query.js';
 import { loadConfig } from '../src/runtime/config.js';
@@ -166,6 +167,24 @@ async function main() {
     }
   }
 
+  console.error('\n--- 3. 닫힌 어휘가 데이터를 덮는가 (exhaustive) ---');
+  const exhaustiveRows: string[] = [];
+  const AXES: { axis: 'phase' | 'studyType'; values: string[]; probe: (v: string) => NormalizedQuery }[] = [
+    { axis: 'phase', values: ISRCTN_FILTERABLE.phase, probe: (v) => ({ phase: [v as never] }) },
+    { axis: 'studyType', values: ISRCTN_FILTERABLE.studyType, probe: (v) => ({ studyType: v as never }) },
+  ];
+  for (const a of AXES) {
+    if (a.values.length === 0) continue; // 축이 없으면 물음이 성립하지 않는다
+    let sum = 0;
+    for (const v of a.values) sum += (await adapter.count(a.probe(v), fetchOpts)).data;
+    // 총계는 레지스트리 전체다 — 값별 합과 같은 모집단을 봐야 뺄셈이 의미를 갖는다.
+    const exhaustive = sum >= REGISTRY_TOTAL;
+    exhaustiveRows.push(
+      `| ${a.axis} | ${a.values.length} | ${sum} | ${REGISTRY_TOTAL} | ${exhaustive ? '`true`' : '`false`'} | ${REGISTRY_TOTAL - sum} |`,
+    );
+    console.error(`  ${a.axis}: 값별 합 ${sum} vs 전체 ${REGISTRY_TOTAL} → exhaustive=${exhaustive}`);
+  }
+
   const stamp = new Date().toISOString().slice(0, 10);
   const md = [
     `# ISRCTN capability 실물 대조 — ${stamp}`,
@@ -194,6 +213,15 @@ async function main() {
     '| 축 | 원문 질의 | 결과 | 판정 | 비고 |',
     '| :-- | :-- | :-- | :-- | :-- |',
     ...deadRows,
+    '',
+    '## 3. 닫힌 어휘가 데이터를 덮는가',
+    '',
+    '값별 건수의 합이 전체 총계에 못 미치면 그 축의 어휘로는 데이터를 다 덮지 못한다는 뜻이다.',
+    '모자란 부분이 F8 이 이름 붙이지 못했던 그것이고, capability 의 `exhaustive: false` 가 그 이름이다.',
+    '',
+    '| 축 | 값 개수 | 값별 합 | 전체 총계 | exhaustive | 어느 값에도 안 걸리는 수 |',
+    '| :-- | --: | --: | --: | :-- | --: |',
+    ...exhaustiveRows,
     '',
   ].join('\n');
 
