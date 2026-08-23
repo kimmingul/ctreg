@@ -11,6 +11,7 @@
 import { writeFileSync } from 'node:fs';
 import { CTGOV_CAPABILITY } from '../src/adapters/ctgov/adapter.js';
 import { CTGOV_FILTERABLE, fromPhase, fromStatus, fromStudyType } from '../src/adapters/ctgov/vocab.js';
+import { compareDeclared, describeMeasured, judgeExhaustive } from './exhaustive.js';
 import { loadConfig } from '../src/runtime/config.js';
 import { getJson } from '../src/runtime/http.js';
 import { CtregError } from '../src/runtime/errors.js';
@@ -254,18 +255,43 @@ async function main() {
     });
     return r.value.totalCount ?? 0;
   };
+  // 필터 없는 countTotal 이라 이 수는 하한이 아니라 정확한 총계다.
   const ALL = await countFor({});
-  const CTGOV_AXES = [
-    { axis: 'status', values: CTGOV_FILTERABLE.status, params: (v: string) => ({ 'filter.overallStatus': fromStatus(v as never) }) },
-    { axis: 'phase', values: CTGOV_FILTERABLE.phase, params: (v: string) => ({ 'filter.advanced': `AREA[Phase]${fromPhase(v as never)}` }) },
-    { axis: 'studyType', values: CTGOV_FILTERABLE.studyType, params: (v: string) => ({ 'filter.advanced': `AREA[StudyType]${fromStudyType(v as never)}` }) },
+  /**
+   * `overlapping` 은 **한 시험이 이 축의 여러 값에 걸릴 수 있는가** 다. 걸릴 수 있으면
+   * 값별 합은 분할이 아니라 중복 계수이고, 합이 총계 이상이라는 사실은 덮개를 증명하지
+   * 못한다. phase 가 그렇다 — 어댑터의 scope 가 이미 "여러 단계를 신고한 시험은 그
+   * 전부에 걸린다" 고 적어 두었다.
+   */
+  const CTGOV_AXES: {
+    axis: 'status' | 'phase' | 'studyType';
+    values: string[];
+    overlapping: boolean;
+    params: (v: string) => Record<string, string>;
+  }[] = [
+    // 시험 하나가 신고하는 대표 상태는 하나다.
+    { axis: 'status', overlapping: false, values: CTGOV_FILTERABLE.status, params: (v: string) => ({ 'filter.overallStatus': fromStatus(v as never) }) },
+    // 여러 단계를 신고한 시험은 그 전부에 걸린다 — 합에 중복이 있다.
+    { axis: 'phase', overlapping: true, values: CTGOV_FILTERABLE.phase, params: (v: string) => ({ 'filter.advanced': `AREA[Phase]${fromPhase(v as never)}` }) },
+    // 중재/관찰/확대접근은 배타적이다.
+    { axis: 'studyType', overlapping: false, values: CTGOV_FILTERABLE.studyType, params: (v: string) => ({ 'filter.advanced': `AREA[StudyType]${fromStudyType(v as never)}` }) },
   ];
   for (const a of CTGOV_AXES) {
     let sum = 0;
     for (const v of a.values) sum += await countFor(a.params(v));
-    const exhaustive = sum >= ALL;
-    exhaustiveRows.push(`| ${a.axis} | ${a.values.length} | ${sum} | ${ALL} | ${exhaustive ? '\`true\`' : '\`false\`'} | ${ALL - sum} |`);
-    console.error(`  ${a.axis}: 값별 합 ${sum} vs 전체 ${ALL} → exhaustive=${exhaustive}`);
+    const shape = { totalIsFloor: false, overlapping: a.overlapping };
+    const measured = judgeExhaustive({ sum, total: ALL, ...shape });
+    // 실측을 표에 찍고 마는 것이 아니라 **선언과 대조해 집계에 넣는다.** 설계 §5 가
+    // 약속한 "낙관적인 true 는 CI 가 잡는다" 가 성립하는 자리가 여기다.
+    const declared = CTGOV_CAPABILITY.search[a.axis].exhaustive;
+    const j = compareDeclared(declared, measured);
+    tally[j.verdict]++;
+    const shownDeclared = declared === null ? '`null`' : `\`${declared}\``;
+    exhaustiveRows.push(
+      `| ${a.axis} | ${a.values.length} | ${sum} | ${ALL} | ${describeMeasured(measured, shape)} | ${shownDeclared} | ` +
+        `${VERDICT_LABEL[j.verdict]} | ${ALL - sum} | ${j.note.replace(/\|/g, '\\|')} |`,
+    );
+    console.error(`${VERDICT_LABEL[j.verdict]}  ${a.axis}: 값별 합 ${sum} vs 전체 ${ALL} → 실측 ${measured} / 신고 ${declared}`);
   }
 
   const doc = `# ctreg 필드 테스트 — ClinicalTrials.gov
@@ -288,8 +314,16 @@ ${rows.join('\n')}
 값별 건수의 합이 전체 총계에 못 미치면 그 축의 어휘로는 데이터를 다 덮지 못한다는 뜻이다.
 모자란 부분이 F8 이 이름 붙이지 못했던 그것이고, capability 의 \`exhaustive: false\` 가 그 이름이다.
 
-| 축 | 값 개수 | 값별 합 | 전체 총계 | exhaustive | 어느 값에도 안 걸리는 수 |
-| :-- | --: | --: | --: | :-- | --: |
+**이 표는 실측을 찍기만 하는 것이 아니라 어댑터의 선언과 대조한다** — 어긋나면 위 집계의
+❌ 로 들어가고 스크립트가 0 이 아닌 코드로 나간다.
+
+**\`전체 − 값별 합\` 은 "어느 값에도 안 걸리는 수" 가 아니다.** 한 시험이 여러 값에 걸리는
+축(phase — 여러 단계를 신고한 시험은 그 전부에 걸린다)에서는 합에 중복이 들어 있으므로,
+어디에도 안 걸리는 진짜 수는 이 뺄셈보다 **크다.** 겹치지 않는 축(status·studyType)에서만
+두 수가 같다. 같은 이유로 겹치는 축은 합이 총계 이상이어도 \`true\` 로 판정하지 않는다.
+
+| 축 | 값 개수 | 값별 합 | 전체 총계 | 실측 | 신고 | 판정 | 전체 − 값별 합 | 근거 |
+| :-- | --: | --: | --: | :-- | :-- | :-- | --: | :-- |
 ${exhaustiveRows.join('\n')}
 
 ## 해석
@@ -308,7 +342,10 @@ ${exhaustiveRows.join('\n')}
 `;
 
   writeFileSync(`docs/field-test-${new Date().toISOString().slice(0, 10)}.md`, doc);
-  console.error('\ndocs/field-test-*.md 에 기록했습니다.');
+  console.error(`\ndocs/field-test-*.md 에 기록했습니다. 통과 ${tally.pass} / 실패 ${tally.fail} / 불확정 ${tally.inconclusive}`);
+  // 실패가 하나라도 있으면 0 이 아닌 코드로 나간다 — CI 에 걸 수 있게. ISRCTN 스크립트와
+  // 같은 규율이다. 초록 표를 눈으로 확인해야만 알 수 있으면 아무도 확인하지 않는다.
+  process.exit(tally.fail > 0 ? 1 : 0);
 }
 
 await main();
