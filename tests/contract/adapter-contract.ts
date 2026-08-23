@@ -192,6 +192,56 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       }
     });
 
+    /**
+     * M2. 위 검사는 `maxBatchIds` 라는 **숫자** 가 말이 되는지만 본다 — 어댑터가 그 수를
+     * 실제로 지키는지는 안 본다. 선언만 검사하면 50 을 신고하고 500개를 한 요청에 밀어
+     * 넣는 어댑터가 통과하고, 그 초과분은 업스트림에서 조용히 잘린다(경고도, 실패도 없다).
+     *
+     * 그래서 상한보다 하나 많은 ID 를 주고 **나간 요청들** 을 센다. 두 가지를 묻는다:
+     * 어떤 요청도 상한보다 많은 ID 를 싣지 않았는가, 그리고 요청한 ID 가 하나도 빠지지
+     * 않고 어딘가에는 실렸는가. 뒤쪽이 없으면 초과분을 그냥 버리는 어댑터가 통과한다.
+     *
+     * 표본 ID 의 끝자리를 바꿔 합성한다 — 존재하지 않는 시험이어도 상관없다. 여기서
+     * 보는 것은 응답이 아니라 **요청이 어떻게 나뉘었는가** 이기 때문이다.
+     */
+    it('maxBatchIds 를 넘는 ID 는 실제로 나눠 보낸다 — 숫자를 신고하는 것과 지키는 것은 다르다', async () => {
+      const cap = makeAdapter().capability();
+      const limit = cap.limits.maxBatchIds;
+      const { registry, registryId } = parseTrialId(under.sampleId);
+      const width = String(limit + 1).length;
+      // 끝자리만 바꾼다 — 접두사와 자릿수가 유지돼야 parseTrialId 가 같은 레지스트리로 라우팅한다.
+      const ids = Array.from({ length: limit + 1 }, (_, i) =>
+        `${registry.toUpperCase()}:${registryId.slice(0, -width)}${String(i).padStart(width, '0')}`,
+      );
+      const bare = ids.map((id) => parseTrialId(id).registryId.toLowerCase());
+      // 합성이 제대로 됐는지 먼저 못박는다 — 중복이 섞이면 아래 계수가 전부 무의미해진다.
+      expect(new Set(bare).size, `합성한 ID 가 서로 다르지 않습니다: ${bare.slice(0, 3).join(', ')}…`).toBe(ids.length);
+
+      const { adapter, requests } = ok();
+      await adapter.get(ids, fetchOpts);
+      expect(requests.length, 'get 이 업스트림 요청을 보내지 않았습니다.').toBeGreaterThan(0);
+
+      const seen = new Set<string>();
+      for (const r of requests) {
+        const hay = `${r.url} ${r.body}`.toLowerCase();
+        const carried = bare.filter((b) => hay.includes(b));
+        carried.forEach((b) => seen.add(b));
+        expect(
+          carried.length,
+          `요청 하나가 ID 를 ${carried.length}개 실었는데 capability 의 maxBatchIds 는 ${limit} 입니다. ` +
+            '업스트림은 상한을 넘은 ID 를 실패가 아니라 침묵으로 처리하므로, 호출자는 부분 결과를 ' +
+            '전체로 오인합니다 — get() 에서 ID 를 maxBatchIds 크기로 나누세요.',
+        ).toBeLessThanOrEqual(limit);
+      }
+
+      const dropped = bare.filter((b) => !seen.has(b));
+      expect(
+        dropped,
+        `요청한 ID ${dropped.length}개가 어떤 요청에도 실리지 않았습니다: ${dropped.slice(0, 3).join(', ')}…. ` +
+          '상한을 넘는 ID 를 나누지 않고 버리면 조회 자체가 조용히 부분 조회가 됩니다.',
+      ).toEqual([]);
+    });
+
     // --- 네 메서드의 동작 ---
     //
     // 여기부터가 이 스위트의 본체다. 선언만 검사하면 search() 가 매번 던지는

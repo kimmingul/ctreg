@@ -158,6 +158,39 @@ describe('count 커맨드 — capability.count', () => {
     expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'ok', total: 1 });
     expect(exitFor(env)).toBe(EXIT.OK);
   });
+
+  /**
+   * 아무 레지스트리도 세지 못했는데 `data: { total: 0 }` 을 남기면, `registries[]` 를
+   * 보지 않는 호출자에게 그 0 이 **"해당하는 시험이 없다"** 로 배달된다. 이 CLI 가
+   * 없애려는 실패 유형 그대로다. `results.ts` 는 같은 상황에서 이미 `data: null` 을 낸다 —
+   * 봉투가 커맨드마다 다른 규칙을 쓰면 파서를 쓰는 쪽이 커맨드마다 다른 방어를 해야 한다.
+   */
+  it('아무도 세지 못하면 0 이 아니라 data: null 이다 — 0 은 "없다" 로 읽힌다', async () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, count: false };
+    const adapters = stubAdapter({}, cap);
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X']), adapters);
+
+    expect(env.data).toBeNull();
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+
+  /**
+   * 반대 방향. 하나라도 셌으면 그 합은 진짜 부분 합이므로 남긴다 — 여기서 null 로
+   * 지워 버리면 성공한 레지스트리의 답까지 사라진다. 부분이라는 사실은 `registries[]`
+   * 와 exit 5 가 말한다.
+   */
+  it('한쪽만 셌으면 그 부분 합은 남긴다 — exit 5 가 부분임을 말한다', async () => {
+    const good = stubAdapter().ctgov;
+    const bad = stubAdapter({}, { ...CTGOV_CAPABILITY, key: 'bad' as RegistryKey, count: false }).ctgov;
+    const adapters = { good, bad } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = { ...parseCliArgs(['count', '--condition', 'X']), registries: ['good', 'bad'] as unknown as RegistryKey[] };
+
+    const env = await runCount(args, adapters);
+
+    expect(env.data).toEqual({ total: 1 });
+    expect(env.registries.map((r) => r.status)).toEqual(['ok', 'unsupported']);
+    expect(exitFor(env)).toBe(EXIT.PARTIAL);
+  });
 });
 
 /**

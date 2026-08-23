@@ -18,6 +18,9 @@ export async function runCount(
   const registries: RegistryStatus[] = [];
   const warnings: Warning[] = [];
   let total = 0;
+  // 하나라도 실제로 셌는지. `total === 0` 으로는 대신할 수 없다 — 진짜로 0건인 것과
+  // 아무도 세지 못한 것이 같은 값이 되기 때문이고, 그 둘을 가르는 것이 이 CLI 의 일이다.
+  let counted = false;
 
   for (const key of args.registries) {
     try {
@@ -49,6 +52,7 @@ export async function runCount(
       const r = await adapter.count(limited.query, args.fetch);
       warnings.push(...r.warnings);
       total += r.data;
+      counted = true;
       registries.push({ registry: key, status: 'ok', total: r.data });
     } catch (e) {
       if (!CtregError.is(e)) throw e;
@@ -59,5 +63,11 @@ export async function runCount(
       });
     }
   }
-  return { query: args.query, registries, warnings, data: { total } };
+  // 아무도 세지 못했으면 0 이 아니라 null 이다. `registries[]` 를 보지 않는 호출자에게
+  // `{ total: 0 }` 은 "해당하는 시험이 없다" 로 읽힌다 — 미지원과 실패가 성공한 0 으로
+  // 위장되는 자리다. `results.ts` 도 같은 상황에서 `data: null` 을 낸다.
+  //
+  // 반대로 **하나라도** 셌으면 부분 합을 남긴다. 여기서 지우면 성공한 레지스트리의 답까지
+  // 사라진다 — 부분이라는 사실은 registries[] 와 exitFor 의 exit 5 가 이미 말한다.
+  return { query: args.query, registries, warnings, data: counted ? { total } : null };
 }
