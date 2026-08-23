@@ -14,7 +14,7 @@
  */
 
 import type { Warning } from '../../core/capability.js';
-import { CAPS, type NormalizedQuery } from '../../core/query.js';
+import { CAPS, resolvePageSize, type NormalizedQuery } from '../../core/query.js';
 import type { TrialPhase } from '../../core/vocab.js';
 import { usageError } from '../../runtime/errors.js';
 
@@ -156,7 +156,10 @@ export function buildIdsQuery(registryIds: string[]): string {
   return registryIds.join(' OR ');
 }
 
-/** 이 레지스트리에는 페이지네이션이 없다 — `limit` 하나가 전부다(문서 3.2). */
+/**
+ * 이 레지스트리에는 페이지네이션이 없다 — `limit` 하나가 전부다(문서 3.2). 그 하나에
+ * 무엇을 넣을지는 공유 정책이 정한다(core/query.ts 의 resolvePageSize).
+ */
 export function pageLimit(q: NormalizedQuery): number {
-  return Math.min(q.pageSize ?? CAPS.pageSize.default, CAPS.pageSize.max);
+  return resolvePageSize(q);
 }

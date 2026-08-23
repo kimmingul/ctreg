@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import { CAPS, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
+import { CAPS, resolvePageSize, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
 import { DEFAULT_REGISTRY, REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
   isFilterablePhase, isFilterableStatus, isFilterableStudyType,
@@ -198,7 +198,9 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     updatedSince: v['updated-since'], updatedBefore: v['updated-before'],
     startAfter: v['start-after'], startBefore: v['start-before'],
     completionAfter: v['completion-after'], completionBefore: v['completion-before'],
-    pageSize: intOpt(v['page-size'], '--page-size', CAPS.pageSize.max),
+    // 기본값을 여기서 못박는다 — 어댑터가 각자 채우면 정책이 어댑터 수만큼 생긴다
+    // (caps 채널과 같은 규칙, core/query.ts 의 resolvePageSize 주석 참고).
+    pageSize: resolvePageSize({ pageSize: intOpt(v['page-size'], '--page-size', CAPS.pageSize.max) }),
     pageToken: v['page-token'],
     sort: v.sort,
   };

@@ -4,7 +4,7 @@
  * `buildSearchQuery()` 에서 확인한 실제 동작을 따른다.
  */
 import type { Warning } from '../../core/capability.js';
-import { CAPS, type FetchOpts, type IncludeSection, type NormalizedQuery } from '../../core/query.js';
+import { CAPS, resolvePageSize, type FetchOpts, type IncludeSection, type NormalizedQuery } from '../../core/query.js';
 import { usageError } from '../../runtime/errors.js';
 import { fromPhase, fromStatus, fromStudyType } from './vocab.js';
 
@@ -140,7 +140,7 @@ export function buildSearchParams(
   // 담을 수 없으니, "레지스트리가 실제로 뭐라고 했나" 라는 질문에 영영 답하지 못한다.
   // 캐시 키는 파라미터에서 파생하므로 raw 응답과 투영 응답은 저절로 다른 키에 앉는다.
   if (!o.raw) params.fields = buildFields(o.include).join('|');
-  params.pageSize = Math.min(q.pageSize ?? CAPS.pageSize.default, CAPS.pageSize.max);
+  params.pageSize = resolvePageSize(q);
   params.countTotal = 'true';
   params.pageToken = q.pageToken;
   params.sort = q.sort;

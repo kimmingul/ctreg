@@ -89,3 +89,18 @@ export const CAPS = {
   eligibilityChars: { default: 8000, max: 40000 },
   outcomes: { default: 20, max: 200 },
 } as const;
+
+/**
+ * 페이지 크기 정책. **한 군데에만 산다.**
+ *
+ * 캡(`FetchOpts.caps`)과 같은 규칙이다 — CLI 가 정하고 어댑터는 읽는다. 예전에는 두
+ * 어댑터가 각자 `q.pageSize ?? CAPS.pageSize.default` 를 되풀이했고, 세 번째 어댑터가
+ * 붙으면 셋이 됐을 것이다. 복제된 정책은 어긋나도 오류가 아니라 **레지스트리마다 다른
+ * 기본 페이지 크기** 로 나타나서, 연합 조회에서만 그것도 눈으로만 보인다.
+ *
+ * CLI 경로에서는 `args.ts` 가 이미 값을 채워 넣으므로 여기서 `??` 가 쓰이는 것은
+ * 어댑터를 라이브러리로 직접 부르는 경우뿐이다. 그때도 정책은 같아야 하므로 기본값을
+ * 지우지 않고 이 함수 안에 남긴다.
+ */
+export const resolvePageSize = (q: { pageSize?: number }): number =>
+  Math.min(q.pageSize ?? CAPS.pageSize.default, CAPS.pageSize.max);

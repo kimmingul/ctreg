@@ -267,6 +267,39 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       }
     });
 
+    /**
+     * M3. 캡(`o.caps.*`)과 마찬가지로 페이지 크기도 **CLI 가 정하고 어댑터는 읽는다.**
+     * 어댑터가 `q.pageSize` 를 무시하고 자기 기본값을 쓰면 `--page-size` 가 조용히
+     * 사라지고, 사용자는 자기가 요청한 것보다 적은(또는 많은) 결과를 받는다 — 적게 받는
+     * 쪽이 위험하다. 페이지가 잘렸다는 신호가 어디에도 없기 때문이다.
+     *
+     * 파라미터 **이름** 은 레지스트리마다 다르므로(ctgov 는 `pageSize`, ISRCTN 은 `limit`)
+     * 이름을 하드코딩하지 않는다. 서로 다른 두 값으로 두 번 부르고, 각 요청이 자기 값을
+     * 싣고 상대의 값은 싣지 않는지만 본다 — 값 하나만 보면 우연히 다른 파라미터와 같은
+     * 수여서 통과할 수 있다.
+     */
+    it('q.pageSize 가 업스트림 요청까지 간다 — 어댑터가 자기 기본값으로 덮으면 안 된다', async () => {
+      const carries = (reqs: { url: string; body: string }[], n: number) =>
+        reqs.some((r) => [...new URL(r.url).searchParams.values()].includes(String(n)) || r.body.includes(String(n)));
+
+      const run = async (pageSize: number) => {
+        const { adapter, requests } = ok();
+        await adapter.search({ condition: 'x', pageSize } as NormalizedQuery, fetchOpts);
+        return requests;
+      };
+      // 흔한 파라미터 값(0, 1, 10, 20, 200)과 겹치지 않는 두 수를 고른다.
+      const [a, b] = [13, 17];
+      const ra = await run(a);
+      const rb = await run(b);
+
+      expect(carries(ra, a), `pageSize=${a} 로 불렀는데 어떤 요청도 ${a} 를 싣지 않았습니다.`).toBe(true);
+      expect(carries(rb, b), `pageSize=${b} 로 불렀는데 어떤 요청도 ${b} 를 싣지 않았습니다.`).toBe(true);
+      expect(
+        carries(ra, b) || carries(rb, a),
+        '두 요청이 서로의 페이지 크기를 싣고 있습니다 — 어댑터가 q.pageSize 를 읽지 않고 고정값을 쓰는 것으로 보입니다.',
+      ).toBe(false);
+    });
+
     it('get 은 ID 배치를 계약을 지키는 레코드로 낸다', async () => {
       const { adapter, calls } = ok();
       const r = await adapter.get([under.sampleId], fetchOpts);
