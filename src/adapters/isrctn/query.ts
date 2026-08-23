@@ -139,7 +139,7 @@ export function buildQuery(q: NormalizedQuery): { q: string; warnings: Warning[]
   }
 
   // 시작일(`overallStartDate`)은 여기 없다 — 문서에는 있지만 실측에서 필터가 통째로
-  // 무시되어 전체를 돌려준다. capability 의 `startRange: false` 가 그 사실을 신고하고,
+  // 무시되어 전체를 돌려준다. capability 의 `startRange.supported: false` 가 그 사실을 신고하고,
   // 가드가 exit 3 으로 막으므로 이 함수는 그 필드를 볼 일이 없다.
   const dates: (string | undefined)[] = [
     q.updatedSince !== undefined ? dateClause('lastEdited', 'GE', q.updatedSince) : undefined,

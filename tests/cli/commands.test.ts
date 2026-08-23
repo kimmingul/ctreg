@@ -134,13 +134,14 @@ describe('results 커맨드', () => {
 });
 
 /**
- * C3 회귀. capability 의 불리언 두 개 중 results 만 강제되고 count 는 어디서도
- * 강제되지 않았다 — count 를 미지원으로 신고한 어댑터가 0 을 돌려주면(카운트
+ * C3 회귀. 발견 당시 capability 는 불리언이었고, 그 둘 중 results 만 강제되고 count 는
+ * 어디서도 강제되지 않았다 — count 를 미지원으로 신고한 어댑터가 0 을 돌려주면(카운트
  * 엔드포인트가 없는 레지스트리를 위한 가장 흔한 순진한 구현) CLI 는 status "ok",
  * total 0, exit 0 을 냈다. "이 레지스트리는 셀 수 없다" 가 "해당하는 시험이 없다"
  * 로 배달되는 것으로, 스펙 §3.3 이 설계에서 가장 중요한 규칙이라고 부른 것의 정확한
- * 반대다. ctgov 는 count: true 라 오늘 도달 불가능하지만, 이 슬라이스의 산출물은
- * 어댑터가 아니라 계약이고 ISRCTN(어댑터 #2 후보)은 count 미지원이 유력하다.
+ * 반대다. 지금 붙어 있는 두 어댑터는 둘 다 `count.supported: true` 라 이 경로는 실물로는
+ * 도달 불가능하지만, 이 슬라이스의 산출물은 어댑터가 아니라 계약이다 — 세 번째
+ * 레지스트리가 셀 수 없을 때 이 검사가 이미 서 있어야 한다. 그래서 스텁으로 세운다.
  */
 describe('count 커맨드 — capability.count', () => {
   it('count 를 제공하지 않는 레지스트리는 0 이 아니라 exit 3 이다', async () => {
@@ -156,7 +157,7 @@ describe('count 커맨드 — capability.count', () => {
     expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
   });
 
-  it('count: true 인 레지스트리는 그대로 센다', async () => {
+  it('count.supported: true 인 레지스트리는 그대로 센다', async () => {
     const env = await runCount(parseCliArgs(['count', '--condition', 'X']), stubAdapter());
     expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'ok', total: 1 });
     expect(exitFor(env)).toBe(EXIT.OK);

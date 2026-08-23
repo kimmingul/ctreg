@@ -127,14 +127,23 @@ S4(세 NCT 정리, 하나는 없는 ID)에서 드러남. "잘렸다"만 말하�
 
 ### F2 — 능력 선언이 적용 범위를 말하지 않는다
 
-> **해소됨 — 커밋 `0bf9075`, `a057a65`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** 각 축이 `scope` 로 적용 범위를 신고한다.
+> **절반 해소 — 커밋 `0bf9075`, `a057a65`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.**
+> 각 축이 `scope` 로 적용 범위를 신고하므로, 에이전트는 **요청을 보내기 전에** 어느 축이
+> EudraCT 번호를 볼 만한지 고를 수 있고 **0건을 받은 뒤에** 그것을 해석할 근거를 갖는다.
+>
+> **응답 자체는 아직 아무 말도 하지 않는다.** 빌드한 CLI 로 재확인:
+> `search --registry ctgov --term "2015-000397-19"` 는 오늘도 결과 0건 · 경고 없음 · exit 0 이다 —
+> 브랜치 이전과 같다. 즉 미리 `registries` 를 읽지 않은 호출자에게는 그 0 이 여전히
+> "없음"과 구별되지 않는다. `exhaustive: false` 축은 사용 시점 경고(`vocab_excludes_missing`)를
+> 받았는데(F8) 자유 텍스트 축은 받지 못했다. 가드가 그 경고를 만든 논거 —— 선언만으로는
+> 부딪히기 전에 알 수 없다 —— 가 여기에도 그대로 적용된다. 0건 응답에 붙는 경고는 별도 변경이다.
 
 S5(EudraCT 번호로 조회)에서 드러남. `term: true` 는 축의 존재만 선언한다. 0건이 "없음"인지
 "안 봄"(그 축을 지원하지 않아 아예 보지 않음)인지 판별할 근거가 도구 안에 없다.
 
 ### F5 — 값 어휘를 열거할 방법이 없다
 
-> **해소됨 — 커밋 `fffb44c`, `0bf9075`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** 각 축이 `values` 로 어휘를 신고하고 `--help` 가 이를 적는다.
+> **해소됨 — 커밋 `fffb44c`, `0bf9075`, `e134e29`, `ae90a3e`** (`docs/superpowers/specs/2026-08-23-capability-says-content-design.md`)**.** 각 축이 `values` 로 어휘를 신고하고(`fffb44c`, `0bf9075`) `--help` 가 이를 적는다(`e134e29`, `ae90a3e`).
 
 S2(펨브롤리주맙 건수와 phase 분포)에서 드러남. 에이전트가 틀린 값을 일부러 넣어 힌트를
 캐냈고, 나머지는 추측했다. F2 와 같은 뿌리 — 선언이 내용을 말하지 않는다.
