@@ -23,6 +23,10 @@ ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 
 | `--id` / `--patient` / `--lead` | 해당하는 검색 축이 없다. 시험 하나를 ID 로 가져오는 것은 `ctreg get ISRCTN:ISRCTN12345678` 로 된다. |
 | `ctreg results` | ISRCTN 의 결과는 논문 링크와 첨부 PDF 이지 구조화된 평가변수·이상반응 데이터가 아니다. `ctreg get --raw` 로 원문을 볼 수 있다. |
 
+같은 축이라도 **받는 값이 다르다.** ISRCTN 의 phase 어휘에는 `early_phase_1` 자리가
+없고 studyType 에는 `expanded_access` 가 없다. `ctreg registries` 의 `search.<축>.values`
+가 레지스트리별 목록을 그대로 낸다 — 부딪혀서 알 필요가 없다.
+
 또 하나, **ISRCTN API 에는 페이지 넘김이 없다.** 매칭이 받은 것보다 많으면 `no_pagination` 경고가 붙는다 — `--page-size` 를 올리거나(최대 200) 기간을 쪼개 여러 번 조회하는 것 말고 이어받을 방법이 없다.
 
 이 표는 추측이 아니라 실측이다. `bun run isrctn-field-test` 를 돌리면 신고한 축 전부를 실물 레지스트리에 대조해 `docs/isrctn-field-test-<날짜>.md` 로 남긴다.
@@ -148,23 +152,49 @@ ctreg registries
   "warnings": [],
   "data": [ {
     "key": "ctgov", "name": "ClinicalTrials.gov", "region": "US / global",
-    "search": { "condition": true, "intervention": true, "…": "…", "geo": true,
-                "status": true, "updatedRange": true, "startRange": true, "completionRange": true },
+    "search": { "…": "…",
+      "term": { "supported": true, "values": null, "exhaustive": null,
+        "scope": "제목·조건·중재·요약을 아우르는 본문 전반의 자유 텍스트" },
+      "status": { "supported": true,
+        "values": ["recruiting", "not_yet_recruiting", "enrolling_by_invitation",
+          "active_not_recruiting", "suspended", "terminated", "completed", "withdrawn"],
+        "exhaustive": false,
+        "scope": "시험 전체의 대표 상태 하나 — 사이트별 모집 상태가 아니다" },
+      "phase": { "supported": true,
+        "values": ["early_phase_1", "phase_1", "phase_2", "phase_3", "phase_4", "na"],
+        "exhaustive": false,
+        "scope": "시험이 신고한 단계. 여러 단계를 신고한 시험은 그 전부에 걸린다" },
+      "…": "…" },
     "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
-    "results": true, "count": true,
+    "results": { "supported": true,
+      "scope": "results 서브커맨드를 지원한다 — 결과 유무로 검색하는 것이 아니다" },
+    "count": true,
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 50 }
   }, {
     "key": "isrctn", "name": "ISRCTN", "region": "UK / global",
-    "search": { "condition": true, "intervention": true, "…": "…", "geo": false,
-                "status": false, "updatedRange": true, "startRange": false, "completionRange": true },
+    "search": { "…": "…",
+      "term": { "supported": true, "values": null, "exhaustive": null,
+        "scope": "본문 전반의 자유 텍스트" },
+      "status": { "supported": false, "values": [], "exhaustive": null,
+        "scope": "trialStatus·recruitmentStatus 가 문서에 값 목록까지 있으나 실측에서 전부 0건이다. 상태는 레코드에는 실려 나온다 — 받아 보고 거르는 것은 된다" },
+      "phase": { "supported": true,
+        "values": ["phase_1", "phase_2", "phase_3", "phase_4", "na"],
+        "exhaustive": false,
+        "scope": "ISRCTN 이 신고한 단계. early_phase_1 에 해당하는 값이 어휘에 없다" },
+      "…": "…" },
     "detail": { "eligibilityText": true, "outcomes": true, "contacts": true },
-    "results": false, "count": true,
+    "results": { "supported": false,
+      "scope": "ISRCTN 의 결과는 논문 링크와 첨부 PDF 다 — TrialResults 가 요구하는 구조화된 평가변수·이상반응·참가자 흐름·기저 특성이 아니다" },
+    "count": true,
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 10 }
   } ]
 }
 ```
 
-`false` 를 읽는 것이 이 커맨드의 요점이다. 날짜 축이 셋으로 나뉘어 있는 것도 같은 이유다 — ISRCTN 처럼 **갱신일·종료일로는 걸러지는데 시작일로는 안 걸러지는** 레지스트리가 있어서, 하나의 `dateRange` 로는 그 사실을 말할 수 없다.
+`false` 를 읽는 것이 이 커맨드의 요점이지만, 이제 `true` 도 내용을 말한다 —
+`values` 는 그 축이 받는 값 목록(자유 텍스트 축은 `null`), `exhaustive` 는 그 값들이
+데이터를 다 덮는지, `scope` 는 그 축이 실제로 무엇을 보는지다. `results` 의 `scope` 가
+"결과 유무로 검색하는 것이 아니다" 라고 적는 이유는 실제로 그렇게 오독됐기 때문이다.
 
 **네트워크를 전혀 타지 않는다.** 어댑터가 스스로 신고하는 정적 capability 를 그대로 반환하므로, 검색을 조립하기 전에 먼저 호출해 어떤 축을 쓸 수 있는지 확인하는 용도로 안전하게 쓸 수 있다.
 
