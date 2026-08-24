@@ -7,3 +7,6 @@ dist/
 
 # 참조 구현 클론 — 읽기 전용 참고. 이 저장소의 일부가 아니다.
 clinicaltrialsgov-mcp-server/
+
+# 개인 세션 설정과 자동 생성 핸드오프 — 이 저장소의 일부가 아니다.
+.claude/
