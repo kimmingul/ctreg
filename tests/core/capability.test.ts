@@ -48,6 +48,15 @@ describe('축 선언은 내용을 말한다', () => {
     }
   });
 
+  /**
+   * F12. `--radius` 를 생략하면 50km 가 적용되는데, 그 값이 **답의 경계를 정한다.**
+   * 예전에는 적용된 뒤에 `geo_radius_defaulted` 경고로만 알려줬다 — F9 가 지적한
+   * "틀린 뒤에만 말한다" 와 같은 모양이다. 선언이 미리 말해야 한다.
+   */
+  it('geo.scope 가 기본 반경을 미리 말한다', () => {
+    expect(CTGOV_CAPABILITY.search.geo.scope).toContain('50km');
+  });
+
   /** F14: 불리언이 무엇에 대한 참인지 말하지 않아 "결과 유무로 검색 가능" 으로 읽혔다. */
   it('results 는 그것이 서브커맨드 지원이라는 것을 말한다', () => {
     expect(cap.results.supported).toBe(true);

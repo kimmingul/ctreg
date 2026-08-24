@@ -106,7 +106,10 @@ export function mapTrial(
     if (mapped.length > cap) {
       warnings.push({
         code: 'locations_truncated',
-        message: `이 시험의 모집 국가 ${mapped.length}곳 중 ${cap}곳만 담았습니다.`,
+        // ctgov 와 같은 규칙 — 잘렸다는 사실과 되찾는 법을 함께 말한다(F11).
+        message:
+          `이 시험의 모집 국가 ${mapped.length}곳 중 ${cap}곳만 담았습니다.` +
+          ' 전부 받으려면 --include locations 로 캡을 올리세요.',
         id,
         at: cap,
       });

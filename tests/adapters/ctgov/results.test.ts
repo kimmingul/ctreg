@@ -206,3 +206,61 @@ describe('CT.gov 결과 추출', () => {
     expect(results.sections.baseline!.items).toEqual(rs.baselineCharacteristicsModule.measures);
   });
 });
+
+/**
+ * F13. `--full` 은 **요약할 것인가** 를 정하고, 필터는 **무엇을 고를 것인가** 를 정한다.
+ * 예전에는 `keep = full || (필터 ? 매칭 : false)` 라서 `--full` 이 필터를 삼켰다 —
+ * 심장 관련만 달라고 하면서 전부 펼쳐 달라고 하면 **전부** 를 받았고, 경고는
+ * "페이로드가 클 수 있다" 뿐이라 요청이 무시됐다는 사실은 어디에도 없었다.
+ * "조용히 좁히지 않는다" 의 반대 방향(조용히 넓힌다)이지만 같은 계열의 결함이다.
+ *
+ * 네 조합을 전부 고정한다. 바뀌는 것은 하나뿐이고, 나머지 셋이 그대로라는 것도
+ * 검사해야 이 변경이 다른 경로를 건드리지 않았음을 알 수 있다.
+ */
+describe('F13 — --full 과 필터의 관계', () => {
+  const adverse = (over: Partial<ResultsOpts>) =>
+    extractResults(study, ID, opts({ sections: ['adverse'], ...over }), AT).results.sections.adverse!;
+
+  it('둘 다 주면 필터가 이긴다 — 심장 관련만, 전부 전개', () => {
+    const s = adverse({ full: true, aeOrganFilter: 'Cardiac' });
+    expect(s.total).toBe(110);
+    expect(s.expanded).toBe(15);
+    expect(s.items.every((i) => (i.organ ?? '').toLowerCase().includes('cardiac'))).toBe(true);
+  });
+
+  it('--full 단독은 그대로 전부 전개한다', () => {
+    const s = adverse({ full: true });
+    expect(s.expanded).toBe(110);
+  });
+
+  it('필터 단독은 그대로 매칭만 전개한다', () => {
+    const s = adverse({ aeOrganFilter: 'Cardiac' });
+    expect(s.expanded).toBe(15);
+  });
+
+  it('둘 다 없으면 그대로 요약이다', () => {
+    const s = adverse({});
+    expect(s.expanded).toBe(0);
+  });
+
+  /** 결과지표 축도 같은 규칙이다 — 한쪽만 고치면 두 축이 서로 다르게 동작한다. */
+  it('결과지표에서도 --full 보다 outcome 필터가 이긴다', () => {
+    const all = extractResults(study, ID, opts({ sections: ['outcomes'], full: true }), AT)
+      .results.sections.outcomes!;
+    const word = all.items[0]!.measure.split(/\s+/)[0]!;
+    const filtered = extractResults(
+      study, ID, opts({ sections: ['outcomes'], full: true, outcomeFilter: [word] }), AT,
+    ).results.sections.outcomes!;
+    expect(filtered.expanded).toBeLessThan(all.expanded);
+    expect(filtered.items.every((i) => i.measure.toLowerCase().includes(word.toLowerCase()))).toBe(true);
+  });
+
+  /**
+   * `results_full` 은 유지된다. `flow`/`baseline` 은 필터가 아예 없어서 `--full` 이면
+   * 여전히 통째로 전개되므로 "페이로드가 클 수 있다" 는 주장이 계속 참이다.
+   */
+  it('필터와 함께 써도 results_full 경고는 그대로 난다', () => {
+    const { warnings } = extractResults(study, ID, opts({ full: true, aeOrganFilter: 'Cardiac' }), AT);
+    expect(warnings.map((w) => w.code)).toContain('results_full');
+  });
+});

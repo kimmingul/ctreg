@@ -69,7 +69,11 @@ export function extractResults(
 
   if (o.sections.includes('outcomes')) {
     const raw: any[] = rs.outcomeMeasuresModule?.outcomeMeasures ?? [];
-    const keep = (m: any) => o.full || (o.outcomeFilter?.length ? has(m.title, o.outcomeFilter) : false);
+    // `--full` 은 **요약할 것인가**, 필터는 **무엇을 고를 것인가** 를 정한다. 두 질문이
+    // 다르므로 플래그도 직교한다 — 필터가 있으면 그것이 선택을 정하고, 없을 때만
+    // `--full` 이 "전부" 를 뜻한다. 예전에는 `o.full ||` 가 앞에 있어 `--full` 이 필터를
+    // 삼켰고, 좁혀 달라는 요청에 넓은 답이 경고 없이 돌아갔다(F13).
+    const keep = (m: any) => (o.outcomeFilter?.length ? has(m.title, o.outcomeFilter) : o.full);
     const items: OutcomeResult[] = raw.filter(keep).map((m) => ({
       type: OUTCOME_TYPE[m.type] ?? 'other',
       measure: m.title,
@@ -85,10 +89,14 @@ export function extractResults(
       ...(rs.adverseEventsModule?.seriousEvents ?? []).map((e: any) => ({ ...e, serious: true })),
       ...(rs.adverseEventsModule?.otherEvents ?? []).map((e: any) => ({ ...e, serious: false })),
     ];
+    // 결과지표와 같은 규칙(위 주석 참고). 두 필터 중 하나라도 주어졌으면 그 둘의 OR 이
+    // 선택을 정하고, 둘 다 없을 때만 `--full` 이 전부를 뜻한다.
+    const filtered = o.aeOrganFilter !== undefined || o.aeTermFilter !== undefined;
     const keep = (e: any) =>
-      o.full ||
-      (o.aeOrganFilter ? has(e.organSystem, [o.aeOrganFilter]) : false) ||
-      (o.aeTermFilter ? has(e.term, [o.aeTermFilter]) : false);
+      filtered
+        ? (o.aeOrganFilter ? has(e.organSystem, [o.aeOrganFilter]) : false) ||
+          (o.aeTermFilter ? has(e.term, [o.aeTermFilter]) : false)
+        : o.full;
 
     const kept = raw.filter(keep);
     const items: AdverseEvent[] = kept.map((e) => ({

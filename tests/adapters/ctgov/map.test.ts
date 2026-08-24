@@ -556,6 +556,21 @@ describe('장소 절단은 필터에 걸린 근거를 남긴다', () => {
     );
   });
 
+  /**
+   * F11. 경고가 **무엇이 잘렸는지** 는 말하게 됐지만(F1 수정 때 "이 시험의" 가 붙었다)
+   * **되찾는 법** 은 여전히 말하지 않는다. 복구 경로가 실재하는데도 말하지 않으면,
+   * 읽는 쪽은 잘린 것을 받아들이거나 스스로 알아내야 한다.
+   *
+   * 실측으로 확인한 경로: `--include locations` 를 주면 캡이 최대치로 올라가고 이
+   * 경고 자체가 사라진다. **없는 해결책을 권하지 않는 것이 F4 의 교훈이었으므로,
+   * 여기 적는 경로는 실제로 통하는 것이어야 한다.**
+   */
+  it('되찾는 법을 말한다 — --include locations 로 캡이 올라간다', () => {
+    const study = withLocations('NCT00000009', [{ city: 'A', country: 'US' }, { city: 'B', country: 'US' }]);
+    const { warnings } = mapStudy(study, opts({ caps: { ...opts().caps, locations: 1 } }), AT);
+    expect(warnings.find((w) => w.code === 'locations_truncated')!.message).toContain('--include locations');
+  });
+
   it('경고가 무엇이 잘렸는지 말한다 — 검색 결과가 아니라 이 시험의 장소', () => {
     const study = withLocations('NCT00000003', Array.from({ length: 37 }, (_, i) => ({ city: `City${i}`, country: 'US' })));
     const { warnings } = mapStudy(study, opts(), AT);

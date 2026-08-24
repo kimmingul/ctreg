@@ -31,7 +31,7 @@ export const CTGOV_CAPABILITY: Capability = {
     outcomeQuery: free('1차·2차 평가변수 문구'),
     geo: {
       supported: true, values: null, exhaustive: null,
-      scope: '좌표와 반경. 좌표를 가진 사이트만 매칭한다 — 지명은 받지 않는다(--near 는 lat,lon)',
+      scope: '좌표와 반경. 좌표를 가진 사이트만 매칭한다 — 지명은 받지 않는다(--near 는 lat,lon). --radius 를 생략하면 50km 를 쓴다 — 답의 경계를 정하는 값이므로 여기서 미리 말한다',
     },
     status: {
       supported: true, values: CTGOV_FILTERABLE.status, exhaustive: false,

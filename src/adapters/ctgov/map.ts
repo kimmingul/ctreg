@@ -136,7 +136,14 @@ export function mapStudy(
               : '';
       warnings.push({
         code: 'locations_truncated',
-        message: `이 시험의 장소 ${mapped.length}곳 중 ${cap}곳만 담았습니다.${ordered}`,
+        // 무엇이 잘렸는지에 더해 **되찾는 법** 까지 말한다. 복구 경로가 실재하는데도
+        // 침묵하면 읽는 쪽은 잘린 것을 받아들이거나 스스로 알아내야 한다(F11).
+        // 여기 적는 경로는 실제로 통하는 것이어야 한다 — 없는 해결책을 권한 것이
+        // F4 의 결함이었다. `--include locations` 는 캡을 CAPS.locations.max 로 올린다
+        // (args.ts). 최대치를 넘는 시험이면 그래도 잘리지만, 그때는 다시 이 경고가 난다.
+        message:
+          `이 시험의 장소 ${mapped.length}곳 중 ${cap}곳만 담았습니다.${ordered}` +
+          ' 전부 받으려면 --include locations 로 캡을 올리세요.',
         id,
         at: cap,
       });

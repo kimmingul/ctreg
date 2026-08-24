@@ -142,6 +142,12 @@ describe('ISRCTN 매퍼 — 장소', () => {
     expect(record.locationsTotal).toBe(3);
     expect(warnings).toEqual([expect.objectContaining({ code: 'locations_truncated', at: 1 })]);
   });
+
+  /** ctgov 와 같은 규칙(F11) — 두 어댑터가 서로 다르게 말하면 그 차이를 레지스트리 차이로 오독한다. */
+  it('되찾는 법을 말한다 — ctgov 와 같은 경로를 안내한다', () => {
+    const { warnings } = map('ISRCTN64724266', opts({ caps: { ...opts().caps, locations: 1 } }));
+    expect(warnings[0]!.message).toContain('--include locations');
+  });
 });
 
 describe('ISRCTN 매퍼 — detail 섹션은 옵트인이다', () => {
