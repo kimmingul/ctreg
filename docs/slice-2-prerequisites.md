@@ -421,6 +421,15 @@ WHO 포맷에서 모집 국가 서너 곳이 전부라 절단이 일어날 수 �
 
 ### P1 — 지원되는 닫힌 어휘 축의 `exhaustive: null` 을 아무도 막지 않는다 **[어댑터 #3 선결]**
 
+> **해소됨 — 커밋 `f61a318`.** 계약 스위트가 「지원되는 닫힌 어휘 축은 exhaustive 를
+> 신고한다」로 선언 쪽을 막고, `compareDeclared` 가 `declared === null` 을 실측과
+> 무관하게 실패로 돌려 필드테스트 쪽을 막는다. **아래 진단이 예고한 대로 스위트만으로는
+> 절반이었다** — 실측이 늘 판정 불가인 축에서는 `compareDeclared(null, null)` 의 ⚠️ 가
+> 유일하게 남는 구멍이었다. 사보타주 셋(ctgov `phase`→null, isrctn `studyType`→null,
+> 필드테스트의 선언 배선→리터럴)으로 확인했고, **셋째는 막지 못했다**: 스크립트가
+> 네트워크를 치므로 스위트가 부를 수 없다. 두 스크립트의 그 자리에 주석으로 적었다.
+> 아래는 당시의 진단으로 남긴다.
+
 계약 스위트는 `supported: false` 인 축의 `exhaustive` 가 `null` 인지만 검사한다
 (`tests/contract/adapter-contract.ts:306`). **지원되는** 축이 `null` 을 신고하는 것은
 막는 것이 없다.
