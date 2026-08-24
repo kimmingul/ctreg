@@ -57,8 +57,22 @@ describe('compareDeclared — 선언과 실측의 대조', () => {
     expect(compareDeclared(null, false).verdict).toBe('fail');
   });
 
-  it('판정 불가이고 null 로 신고했으면 불확정 — 실측이 아무것도 부정하지 못한다', () => {
-    expect(compareDeclared(null, null).verdict).toBe('inconclusive');
+  /**
+   * 여기가 P1 의 나머지 절반이다. 계약 스위트가 등록된 어댑터의 `exhaustive: null` 을
+   * 막아도, 필드테스트는 어댑터 저자가 **업스트림을 실제로 치면서** 돌리는 것이라
+   * 같은 결함을 따로 만난다. 그리고 실측이 판정 불가인 축(ctgov `phase` 는 overlapping
+   * 이라 항상 그렇다)에서는 이 한 줄이 유일한 방어선이었다.
+   *
+   * 옛 판정은 "실측이 신고를 부정하지 못했으니 불확정" 이었다. 그 논증이 성립하려면
+   * 부정할 **신고가 있어야** 한다 — `null` 은 신고가 아니라 신고의 부재다. 부재를
+   * "부정되지 않았다" 로 세면 신고 누락이 측정의 한계 뒤에 숨는다.
+   *
+   * 두 호출 지점(`field-test.ts`, `isrctn-field-test.ts`)이 먹이는 것은 닫힌 어휘
+   * 세 축의 선언뿐이므로, 여기서 보는 `null` 은 언제나 그 누락이다. `(null, false)`
+   * 와 `(null, true)` 는 이미 실패였고, 이 칸만 측정이 흐릴 때 빠져나가고 있었다.
+   */
+  it('판정 불가이고 null 로 신고하면 실패 — 신고 누락은 실측이 흐려도 누락이다', () => {
+    expect(compareDeclared(null, null).verdict).toBe('fail');
   });
 
   it('모든 판정에 사람이 읽을 근거가 붙는다', () => {

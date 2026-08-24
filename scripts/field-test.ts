@@ -283,6 +283,10 @@ async function main() {
     const measured = judgeExhaustive({ sum, total: ALL, ...shape });
     // 실측을 표에 찍고 마는 것이 아니라 **선언과 대조해 집계에 넣는다.** 설계 §5 가
     // 약속한 "낙관적인 true 는 CI 가 잡는다" 가 성립하는 자리가 여기다.
+    // 선언은 **capability 에서 읽는다.** 여기에 리터럴을 적으면 이 대조는 자기 자신을
+    // 검사하게 된다 — 그리고 이 이음매를 붙드는 테스트는 없다(스크립트가 네트워크를
+    // 치므로 스위트가 부를 수 없다). 사보타주로 확인했다: 이 줄을 `false` 로 바꿔도
+    // 448개가 전부 통과한다. 고칠 때 눈으로 지켜야 하는 줄이다.
     const declared = CTGOV_CAPABILITY.search[a.axis].exhaustive;
     const j = compareDeclared(declared, measured);
     tally[j.verdict]++;

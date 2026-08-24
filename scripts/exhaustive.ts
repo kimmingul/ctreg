@@ -61,9 +61,22 @@ export function describeMeasured(measured: Measured, m: { totalIsFloor: boolean;
  * 실측이 `null`(판정 불가)일 때만 방향에 따라 갈린다: 좁게 신고한 `false` 는 실측이
  * 부정하지 못하므로 불확정이고, `true` 는 증명되지 않았으므로 실패다. 이 비대칭이
  * "증명할 수 없으면 덜 신고한다" 는 규칙을 코드로 만든 것이다.
+ *
+ * `null` 신고는 실측이 무엇이든 **실패** 다. 두 호출 지점이 먹이는 것은 닫힌 어휘 축의
+ * 선언뿐이고, 거기서 `null` 은 "덜 신고했다" 가 아니라 **신고하지 않았다** 이다. 위의
+ * 비대칭은 부정할 신고가 있을 때의 이야기라 부재에는 적용되지 않는다 — 적용하면 실측이
+ * 흐린 축(overlapping 이라 늘 판정 불가인 ctgov `phase` 같은)에서 신고 누락이 영영
+ * ⚠️ 로 통과한다. 계약 스위트가 같은 것을 선언 쪽에서 막는다('지원되는 닫힌 어휘 축은
+ * exhaustive 를 신고한다'); 여기는 업스트림을 실제로 치는 쪽의 같은 방어선이다.
  */
 export function compareDeclared(declared: boolean | null, measured: Measured): Judgement {
   const shown = declared === null ? '`null`' : `\`${declared}\``;
+  if (declared === null) {
+    return {
+      verdict: 'fail',
+      note: '**닫힌 어휘 축인데 `exhaustive` 를 신고하지 않았습니다(`null`).** `null` 은 자유 텍스트 축의 모양이라, 가드도 이 대조도 침묵합니다 — 증명하지 못했으면 `false` 로 신고하세요.',
+    };
+  }
   if (measured === null) {
     if (declared === true) {
       return {

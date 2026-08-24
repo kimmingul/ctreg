@@ -329,6 +329,40 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     });
 
     /**
+     * **지원되는** 닫힌 어휘 축은 덮개를 신고해야 한다.
+     *
+     * 위 두 검사는 `values` 의 모양만 본다. `exhaustive` 쪽은 `supported: false` 인 축이
+     * `null` 인지만 검사받고 있었고(바로 위 '지원하지 않는 축은 values 가 비어 있다'),
+     * **지원되는** 축이 `null` 을 신고하는 것은 아무도 막지 않았다.
+     *
+     * 왜 무는가 — `null` 은 세 소비자에게서 전부 조용히 통과한다:
+     * 가드는 `exhaustive === false` 만 보므로 `vocab_excludes_missing` 이 침묵하고,
+     * 필드테스트는 실측이 판정 불가일 때 `compareDeclared(null, null)` 로 ⚠️ 불확정
+     * 통과이며, 남는 것은 **exit 0 의 조용한 축소** 다 — 이 CLI 가 없애려는 실패 그 자체.
+     * 실측이 항상 `null` 인 축(ctgov `phase` 는 overlapping 이라 판정 불가다)에서는
+     * 어느 소비자도 이것을 되잡아 주지 못한다.
+     *
+     * 자유 텍스트 축은 대상이 아니다 — 거기서 `null` 은 "닫힌 어휘가 없다" 는 옳은 신고다.
+     *
+     * 못 잡는 것: 이 검사는 `false`/`true` 중 **어느 쪽이 맞는지** 는 모른다. 그것은
+     * 실측의 몫이고 필드테스트가 `compareDeclared` 로 대조한다. 여기서 세우는 것은
+     * "판단을 내렸는가" 뿐이다.
+     */
+    it('지원되는 닫힌 어휘 축은 exhaustive 를 신고한다', () => {
+      const cap = makeAdapter().capability();
+      for (const name of CLOSED_VOCAB_AXES) {
+        const axis = cap.search[name];
+        if (!axis.supported) continue; // 미지원 축의 null 은 위 검사가 요구하는 값이다
+        expect(
+          axis.exhaustive,
+          `'${name}' 은 지원되는 닫힌 어휘 축인데 exhaustive 가 null 입니다 — ` +
+            'null 이면 가드도(exhaustive === false 만 본다) 필드테스트도(실측이 판정 불가면 ⚠️ 로 넘어간다) ' +
+            '침묵해서, 신고한 값 밖의 시험이 조용히 사라집니다. 증명하지 못했으면 false 로 신고하세요.',
+        ).not.toBeNull();
+      }
+    });
+
+    /**
      * 신고한 값을 **CLI 가 받는가.** 위의 '신고한 values 는 전부 실제로 질의로
      * 조립된다' 는 `adapter.search()` 를 직접 부르므로 `parseCliArgs` 를 건너뛴다 —
      * 어댑터가 기꺼이 조립하는 값이라도 CLI 가 exit 2 로 거절하면 사용자에게는

@@ -212,6 +212,8 @@ async function main() {
     const measured = judgeExhaustive({ sum, total: REGISTRY_TOTAL_FLOOR, ...shape });
     // 실측을 표에 찍고 마는 것이 아니라 **선언과 대조해 집계에 넣는다.** 설계 §5 가
     // 약속한 "낙관적인 true 는 CI 가 잡는다" 가 성립하는 자리가 여기다.
+    // 선언은 capability 에서 읽는다 — 리터럴로 바꿔도 스위트는 침묵한다.
+    // `field-test.ts` 의 같은 자리 주석 참조.
     const declaredExhaustive = ISRCTN_CAPABILITY.search[a.axis].exhaustive;
     const j = compareDeclared(declaredExhaustive, measured);
     const shownDeclared = declaredExhaustive === null ? '`null`' : `\`${declaredExhaustive}\``;
