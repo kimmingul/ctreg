@@ -145,6 +145,17 @@ ctreg count --condition melanoma --status recruiting
 
 `search` 와 같은 검색 축·필터를 받지만 레코드를 내려받지 않아 빠르다.
 
+**레지스트리를 둘 이상 세면 합계를 내지 않는다.** 한 시험이 여러 레지스트리에 등록될 수 있어(`crossIds` 가 존재하는 이유) 레지스트리별 총계를 더한 값은 시험 수가 아니기 때문이다. 그 자리는 `null` 이 되고 `totals_not_summable` 경고가 이유와 상한을 말한다 — 레지스트리별 수는 `registries[]` 에 그대로 있으므로, 합이 필요하면 무엇을 더하는지 알고 더하면 된다.
+
+```json
+{ "registries": [ { "registry": "ctgov", "status": "ok", "total": 24273 },
+                  { "registry": "isrctn", "status": "ok", "total": 1118 } ],
+  "warnings": [ { "code": "totals_not_summable", "message": "… 그 합 25391 은 합집합의 상한입니다 …" } ],
+  "data": { "total": null } }
+```
+
+`data: { "total": null }`(더할 수 없다)과 `data: null`(아무 레지스트리도 세지 못했다)은 다른 사실이다.
+
 ### `ctreg registries` — 이 CLI 가 다룰 수 있는 레지스트리와 능력
 
 ```bash
