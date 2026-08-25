@@ -148,6 +148,28 @@ describe('CT.gov 결과 추출', () => {
     expect(codes).not.toContain('results_partially_expanded');
   });
 
+  /**
+   * flow/baseline 은 필터가 없는 섹션이라 `--full` 없이는 개수만 나간다. 그 사실도
+   * 경고가 말해야 한다 — 이 두 섹션만 요청했을 때 침묵하면, 감춘 항목이 있는데
+   * 아무도 그것을 말하지 않는 상태가 된다.
+   *
+   * 사보타주로 이 자리가 무방비였음을 확인하고 넣었다: 두 섹션의 계수를 빼도
+   * 465개가 전부 통과했다. outcomes/adverse 가 늘 함께 있는 픽스처로만 검사하면
+   * 이 이음매는 원리상 드러나지 않는다.
+   */
+  it('flow 만 요청해도 전개되지 않은 항목을 경고한다', () => {
+    const { results, warnings } = extractResults(study, ID, opts({ sections: ['flow'] }), AT);
+    expect(results.sections.flow!.total).toBeGreaterThan(0);
+    expect(results.sections.flow!.items).toHaveLength(0);
+    expect(warnings.map((w) => w.code)).toContain('results_summarized');
+  });
+
+  it('baseline 만 요청해도 마찬가지다', () => {
+    const { results, warnings } = extractResults(study, ID, opts({ sections: ['baseline'] }), AT);
+    expect(results.sections.baseline!.total).toBeGreaterThan(0);
+    expect(warnings.map((w) => w.code)).toContain('results_summarized');
+  });
+
   it('--full 은 전부 전개하고 경고를 남긴다', () => {
     const { results, warnings } = extractResults(study, ID, opts({ full: true }), AT);
     expect(results.sections.outcomes!.expanded).toBe(results.sections.outcomes!.total);
