@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCliArgs, USAGE } from '../../src/cli/args.js';
+import { COMMAND_OPTIONS, OPTION_NAMES, parseCliArgs, USAGE } from '../../src/cli/args.js';
 import { CAPS } from '../../src/core/query.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
@@ -14,6 +14,63 @@ const expectUsage = (fn: () => unknown, hintFragment?: string) => {
     if (hintFragment) expect(`${(e as CtregError).hint} ${(e as CtregError).message}`).toContain(hintFragment);
   }
 };
+
+/**
+ * F4. 실측(2026-08-25): `get CTGOV:NCT04280705 --page-size 5 --sort x` 가 **exit 0** 으로
+ * 끝났고 그 플래그들에 대한 말이 아무 데도 없었다. `get` 은 배치 조회라 페이지도 정렬도
+ * 없는데, 사용자가 그것을 준 것은 **먹힌다고 믿는다** 는 뜻이다. 필드 테스트에서
+ * 에이전트가 해보지도 않은 페이지네이션을 사용자에게 권한 유인이 여기다(F4·A2).
+ *
+ * 경고가 아니라 exit 2 인 이유: 조용히 무시하지 않는 것이 이 도구의 축이고, `ParsedArgs`
+ * 에는 경고를 실어 보낼 자리가 아직 없다(정본의 이연 항목이 같은 이유로 열려 있다).
+ *
+ * 보수적으로 잡는다 — 커맨드가 **원리상 못 쓰는** 것만 거절한다. `count --page-size` 는
+ * `applyLimits` 가 일부러 적용하고 있어(레지스트리 순서에 따라 갈리지 않게) 건드리지 않는다.
+ */
+describe('커맨드가 못 쓰는 플래그', () => {
+  it('get 은 페이지·정렬을 받지 않는다 — 배치 조회에는 그런 것이 없다', () => {
+    expectUsage(() => parseCliArgs(['get', 'CTGOV:NCT00000001', '--page-size', '5']), '--page-size');
+    expectUsage(() => parseCliArgs(['get', 'CTGOV:NCT00000001', '--page-token', 't']), '--page-token');
+    expectUsage(() => parseCliArgs(['get', 'CTGOV:NCT00000001', '--sort', 'x']), '--sort');
+  });
+
+  it('거절할 때 그 커맨드가 무엇을 받는지 말한다 — 막기만 하면 F4 를 반복한다', () => {
+    try {
+      parseCliArgs(['get', 'CTGOV:NCT00000001', '--sort', 'x']);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const text = `${(e as CtregError).message} ${(e as CtregError).hint}`;
+      expect(text).toContain('get');
+      expect(text).toContain('--include'); // get 이 실제로 받는 것
+    }
+  });
+
+  it('registries 는 조회 축을 받지 않는다', () => {
+    expectUsage(() => parseCliArgs(['registries', '--condition', 'X']), '--condition');
+  });
+
+  it('results 는 검색 축을 받지 않는다 — ID 하나로 부르는 커맨드다', () => {
+    expectUsage(() => parseCliArgs(['results', 'CTGOV:NCT00000001', '--condition', 'X']), '--condition');
+  });
+
+  it('각 커맨드가 자기 것은 그대로 받는다 — 거절이 넘치면 도구가 못 쓰게 된다', () => {
+    expect(() => parseCliArgs(['search', '--condition', 'X', '--page-size', '5', '--sort', 'x'])).not.toThrow();
+    expect(() => parseCliArgs(['count', '--condition', 'X', '--page-size', '5'])).not.toThrow();
+    expect(() => parseCliArgs(['get', 'CTGOV:NCT00000001', '--include', 'all', '--raw'])).not.toThrow();
+    expect(() => parseCliArgs(['results', 'CTGOV:NCT00000001', '--section', 'flow', '--full'])).not.toThrow();
+    expect(() => parseCliArgs(['registries', '--registry', 'ctgov', '--format', 'text'])).not.toThrow();
+  });
+
+  /**
+   * 표가 옵션을 하나라도 빠뜨리면 그 옵션은 **모든 커맨드에서** 거절된다 — 조용한
+   * 무시를 고치려다 멀쩡한 플래그를 죽이는 정반대 결함이 된다. 이름을 손으로 두 번
+   * 적는 표라 타입이 이것을 강제하지 못한다.
+   */
+  it('모든 옵션이 적어도 한 커맨드에는 속한다', () => {
+    const covered = new Set(Object.values(COMMAND_OPTIONS).flat());
+    expect(OPTION_NAMES.filter((o) => !covered.has(o))).toEqual([]);
+  });
+});
 
 describe('인자 파싱', () => {
   it('커맨드와 검색 축을 읽는다', () => {

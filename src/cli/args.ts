@@ -77,6 +77,69 @@ const OPTIONS = {
   help: flag,
 } as const;
 
+export const OPTION_NAMES = Object.keys(OPTIONS) as (keyof typeof OPTIONS)[];
+
+/** 어느 커맨드에서나 뜻이 같은 것들. 표를 다섯 번 반복하지 않으려고 따로 뺀다. */
+const COMMON_OPTIONS = ['registry', 'format', 'help'] as const;
+/** 네트워크를 치는 커맨드만 캐시를 말할 수 있다. `registries` 는 정적 선언 덤프다. */
+const NETWORK_OPTIONS = ['no-cache', 'refresh', 'raw'] as const;
+/** search 와 count 가 공유하는 질의 표면. 둘의 차이는 레코드를 받느냐뿐이다. */
+const QUERY_OPTIONS = [
+  'condition', 'intervention', 'term', 'title', 'location', 'outcome-query',
+  'sponsor', 'lead', 'id', 'patient', 'status', 'phase', 'study-type',
+  'near', 'radius',
+  'updated-since', 'updated-before', 'start-after', 'start-before',
+  'completion-after', 'completion-before',
+] as const;
+
+/**
+ * 커맨드가 **실제로 소비하는** 옵션. 여기 없는 것을 주면 exit 2 다.
+ *
+ * 왜 필요한가(F4) — 실측: `get <ID> --page-size 5 --sort x` 가 exit 0 으로 끝났고 그
+ * 플래그들에 대한 말이 아무 데도 없었다. `get` 은 배치 조회라 페이지도 정렬도 없는데,
+ * 사용자가 그것을 준 것은 **먹힌다고 믿는다** 는 뜻이다. 조용히 무시하면 그 믿음이
+ * 그대로 답까지 간다 — 필드 테스트에서 에이전트가 해보지도 않은 페이지네이션을
+ * 사용자에게 권한 유인이 이것이다(F4·A2).
+ *
+ * 거절이지 경고가 아닌 이유: 조용히 무시하지 않는 것이 이 도구의 축이고, `ParsedArgs`
+ * 에는 경고를 실어 보낼 자리가 아직 없다(같은 이유로 `--raw` 페이로드 경고가 이연됐다).
+ *
+ * **이 표를 `--help` 도 읽는다**(F3). 커맨드가 무엇을 받는지 두 곳에 적으면 옵션이 하나
+ * 늘 때 한쪽만 갱신되고, 그 어긋남은 이 저장소에서 이미 세 번 일어났다. 거절 메시지가
+ * 대안을 말할 수 있는 것도 같은 표를 읽기 때문이다.
+ *
+ * 보수적으로 잡는다 — 원리상 못 쓰는 것만 뺀다. `count` 의 `page-size` 가 남아 있는 것은
+ * 실수가 아니다: `applyLimits` 가 레지스트리 순서에 따라 클램프가 갈리지 않도록 일부러
+ * 적용한다(commands/count.ts 주석).
+ */
+export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof typeof OPTIONS)[]> = {
+  search: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, ...QUERY_OPTIONS,
+    'include', 'eligibility-chars', 'page-size', 'page-token', 'sort'],
+  // count 는 개수만 받으므로 레코드 표면(include/eligibility-chars/page-token/sort)이 없다.
+  count: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, ...QUERY_OPTIONS, 'page-size'],
+  // get 은 ID 목록으로 부른다 — 질의 축도, 페이지도, 정렬도 성립하지 않는다.
+  get: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, 'include', 'eligibility-chars'],
+  // results 는 ID 하나. 섹션과 전개 필터가 이 커맨드만의 표면이다.
+  results: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, 'section', 'outcome', 'ae-organ', 'ae-term', 'full'],
+  // registries 는 정적 capability 덤프다. 네트워크도, 질의도 없다.
+  registries: [...COMMON_OPTIONS],
+};
+
+/** 표에 없는 플래그를 실제로 준 경우에만 거절한다. 주지 않은 것은 `undefined`/`false` 다. */
+function assertCommandAccepts(command: (typeof COMMANDS)[number], v: Record<string, unknown>): void {
+  const allowed = new Set<string>(COMMAND_OPTIONS[command]);
+  for (const name of OPTION_NAMES) {
+    const given = v[name];
+    if (given === undefined || given === false) continue;
+    if (allowed.has(name)) continue;
+    throw usageError(
+      `'${command}' 는 --${name} 을 쓰지 않습니다`,
+      `--${name} 을 줘도 무시되는 대신 여기서 멈춥니다. '${command}' 가 받는 것: ` +
+        `${COMMAND_OPTIONS[command].map((o) => `--${o}`).join(' ')}`,
+    );
+  }
+}
+
 function intOpt(raw: string | undefined, name: string, max: number): number | undefined {
   if (raw === undefined) return undefined;
   const n = Number(raw);
@@ -104,6 +167,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   if (!command || !(COMMANDS as readonly string[]).includes(command)) {
     throw usageError(command ? `모르는 커맨드: '${command}'` : '커맨드가 없습니다', USAGE);
   }
+  assertCommandAccepts(command as (typeof COMMANDS)[number], v as Record<string, unknown>);
 
   // --- 출력 ---
   const format = (v.format ?? 'json') as ParsedArgs['format'];
