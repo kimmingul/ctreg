@@ -65,7 +65,14 @@ export function extractResults(
     };
   }
 
-  let summarized = false;
+  /**
+   * 전개 여부를 불리언 하나로 세면 **두 상황이 한 코드로 뭉개진다**(F6) — 아무것도
+   * 펼치지 않은 것과 일부만 펼친 것. 후자에서 "요약만 냈습니다. 필터로 전개하세요" 는
+   * 거짓이다: 호출자는 이미 필터를 썼고 펼쳐진 항목도 받았다. 그래서 불리언 대신
+   * **센다** — 펼친 수와 펼칠 수 있었던 수를 섹션을 가로질러 합친다.
+   */
+  let expandedCount = 0;
+  let availableCount = 0;
 
   if (o.sections.includes('outcomes')) {
     const raw: any[] = rs.outcomeMeasuresModule?.outcomeMeasures ?? [];
@@ -81,7 +88,8 @@ export function extractResults(
       ...(m.description ? { description: m.description } : {}),
     }));
     sections.outcomes = { total: raw.length, expanded: items.length, items };
-    if (items.length < raw.length) summarized = true;
+    expandedCount += items.length;
+    availableCount += raw.length;
   }
 
   if (o.sections.includes('adverse')) {
@@ -131,7 +139,8 @@ export function extractResults(
     const byOrgan = [...byOrganMap.entries()].map(([organ, v]) => ({ organ, ...v }));
 
     sections.adverse = { total: raw.length, expanded: items.length, byOrgan, items };
-    if (items.length < raw.length) summarized = true;
+    expandedCount += items.length;
+    availableCount += raw.length;
   }
 
   // flow / baseline 은 레지스트리마다 구조가 달라 정규화하지 않는다.
@@ -140,12 +149,14 @@ export function extractResults(
   if (o.sections.includes('flow') && rs.participantFlowModule) {
     const items: unknown[] = rs.participantFlowModule.periods ?? [];
     sections.flow = { total: items.length, items: o.full ? items : [] };
-    if (!o.full && items.length > 0) summarized = true;
+    expandedCount += o.full ? items.length : 0;
+    availableCount += items.length;
   }
   if (o.sections.includes('baseline') && rs.baselineCharacteristicsModule) {
     const items: unknown[] = rs.baselineCharacteristicsModule.measures ?? [];
     sections.baseline = { total: items.length, items: o.full ? items : [] };
-    if (!o.full && items.length > 0) summarized = true;
+    expandedCount += o.full ? items.length : 0;
+    availableCount += items.length;
   }
 
   if (o.full) {
@@ -154,10 +165,26 @@ export function extractResults(
       message: '결과 전체를 전개했습니다. 페이로드가 매우 클 수 있습니다.',
       id,
     });
-  } else if (summarized) {
+  } else if (expandedCount === 0 && availableCount > 0) {
     warnings.push({
       code: 'results_summarized',
       message: '요약만 냈습니다. --outcome / --ae-organ / --ae-term 으로 필요한 항목만 전개하세요.',
+      id,
+    });
+  } else if (expandedCount < availableCount) {
+    /**
+     * 일부만 펼쳤다. 위 문구를 그대로 쓰면 이미 한 일을 하라고 시키는 것이 되고,
+     * "요약만 냈습니다" 는 사실과 다르다. 무엇이 남았는지를 수로 말한다 — `--full`
+     * 은 남은 것까지 전부라는 뜻이지 이 필터를 되돌린다는 뜻이 아니므로 그렇게 적는다.
+     *
+     * 필터가 아무것도 못 고른 경우(`expandedCount === 0`)는 여기로 오지 않는다 —
+     * 위 가지가 먼저 잡는다. 그쪽에서는 "펼쳐진 것이 없다" 가 참이라 문구가 맞다.
+     */
+    warnings.push({
+      code: 'results_partially_expanded',
+      message:
+        `필터에 걸린 ${expandedCount}개만 펼쳤습니다 — 이 시험의 결과 항목 ${availableCount}개 중 ` +
+        `${availableCount - expandedCount}개는 개수만 냈습니다. 필터를 넓히거나 --full 로 전부 펼치세요.`,
       id,
     });
   }

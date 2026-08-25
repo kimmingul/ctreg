@@ -122,6 +122,32 @@ describe('CT.gov 결과 추출', () => {
     expect(warnings.map((w) => w.code)).toContain('results_summarized');
   });
 
+  /**
+   * F6. 한 코드가 두 상황을 덮고 있었다 — **아무것도 안 펼친 것** 과 **일부만 펼친 것**.
+   * 후자에서 `results_summarized` 의 문구("요약만 냈습니다. --outcome / --ae-organ /
+   * --ae-term 으로 필요한 항목만 전개하세요")는 **거짓** 이다: 호출자는 이미 필터를 썼고
+   * 펼쳐진 항목도 받았다. 이미 한 일을 하라고 시키는 경고는 오독을 막는 대신 새 오독을
+   * 만든다(F4 와 같은 뿌리).
+   */
+  it('일부만 펼쳤으면 전개 전과 다른 코드를 낸다', () => {
+    const { results, warnings } = extractResults(study, ID, opts({ outcomeFilter: ['Time to Recovery'] }), AT);
+    const o = results.sections.outcomes!;
+    // 이 픽스처에서 필터가 실제로 일부만 고르는지 먼저 고정한다 — 0 이나 전부면
+    // 이 검사는 다른 상황을 보고 있는 것이고, 제목이 거짓말하게 된다.
+    expect(o.expanded).toBeGreaterThan(0);
+    expect(o.expanded).toBeLessThan(o.total);
+
+    const codes = warnings.map((w) => w.code);
+    expect(codes).toContain('results_partially_expanded');
+    expect(codes).not.toContain('results_summarized');
+  });
+
+  it('아무것도 안 펼쳤으면 results_summarized 그대로다 — 두 상황이 갈렸을 뿐이다', () => {
+    const codes = extractResults(study, ID, opts(), AT).warnings.map((w) => w.code);
+    expect(codes).toContain('results_summarized');
+    expect(codes).not.toContain('results_partially_expanded');
+  });
+
   it('--full 은 전부 전개하고 경고를 남긴다', () => {
     const { results, warnings } = extractResults(study, ID, opts({ full: true }), AT);
     expect(results.sections.outcomes!.expanded).toBe(results.sections.outcomes!.total);
