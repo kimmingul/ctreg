@@ -288,8 +288,13 @@ describe('--help 는 값 어휘를 적는다', () => {
   });
 
   it('그 축을 안 받는 커맨드에는 값도 적지 않는다 — 받지 않는 것을 적으면 F3 이 도로 열린다', () => {
+    // 세 축을 전부 본다. 한 축만 보면 나머지 두 축이 새어도 통과한다 — 사보타주로
+    // 확인했다(`status` 만 항상 적게 만들어도 phase 만 보는 검사는 침묵했다).
     for (const c of ['get', 'results', 'registries'] as const) {
-      expect(helpFor(c), `'${c}' 사용법에 쓰지도 않는 어휘가 있습니다`).not.toContain(FILTERABLE_PHASE[0]!);
+      const text = helpFor(c);
+      for (const v of [...FILTERABLE_STATUS, ...FILTERABLE_PHASE, ...FILTERABLE_STUDY_TYPE]) {
+        expect(text, `'${c}' 사용법에 쓰지도 않는 값 '${v}' 가 있습니다`).not.toContain(v);
+      }
     }
   });
 });
