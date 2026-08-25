@@ -269,4 +269,27 @@ describe('--help 는 값 어휘를 적는다', () => {
   it('레지스트리별 차이는 적지 않고 registries 로 보낸다', () => {
     expect(USAGE).toContain('ctreg registries');
   });
+
+  /**
+   * **커맨드별 사용법에도 값이 있어야 한다.** F5·F9 를 닫은 것이 "`--help` 가 값 어휘를
+   * 적는다" 인데, 위 검사는 `USAGE` 상수만 본다 — 서브커맨드별 `--help`(F3)가 생기면서
+   * 사용자가 가장 자주 밟는 경로(`ctreg search --help`)에서 값이 사라져도 스위트는
+   * 침묵했다. 실제로 그렇게 회귀했고 실물을 돌려 보고서야 드러났다.
+   *
+   * 위와 같은 이유로 토큰 경계를 쓴다(`na` 가 `terminated` 안에 숨는다).
+   */
+  it('그 커맨드가 어휘 축을 받으면 커맨드별 --help 에도 값이 있다', () => {
+    const tokens = helpFor('search').split(/[^a-z0-9_]+/);
+    for (const v of FILTERABLE_STATUS) expect(tokens, `--status 값 '${v}' 가 search --help 에 없습니다`).toContain(v);
+    for (const v of FILTERABLE_PHASE) expect(tokens, `--phase 값 '${v}' 가 search --help 에 없습니다`).toContain(v);
+    for (const v of FILTERABLE_STUDY_TYPE) expect(tokens, `--study-type 값 '${v}' 가 search --help 에 없습니다`).toContain(v);
+    // count 도 같은 축을 받는다.
+    expect(helpFor('count')).toContain(FILTERABLE_PHASE[0]!);
+  });
+
+  it('그 축을 안 받는 커맨드에는 값도 적지 않는다 — 받지 않는 것을 적으면 F3 이 도로 열린다', () => {
+    for (const c of ['get', 'results', 'registries'] as const) {
+      expect(helpFor(c), `'${c}' 사용법에 쓰지도 않는 어휘가 있습니다`).not.toContain(FILTERABLE_PHASE[0]!);
+    }
+  });
 });

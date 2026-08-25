@@ -146,16 +146,33 @@ const COMMAND_SUMMARY: Record<(typeof COMMANDS)[number], string> = {
  * 쪽이 어긋나고, 사용자는 "받는다고 적혀 있는데 exit 2" 를 만난다.
  */
 export function helpFor(command: (typeof COMMANDS)[number]): string {
+  const accepts = new Set<string>(COMMAND_OPTIONS[command]);
   const opts = COMMAND_OPTIONS[command].map((o) => `--${o}`).join(' ');
   const positional =
     command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : '';
+  /**
+   * 닫힌 어휘 축을 받는 커맨드면 **값도 적는다.** F5·F9 를 닫은 것이 "`--help` 가 값
+   * 어휘를 적는다" 였는데, 서브커맨드별 사용법이 값을 빼면 사용자가 가장 자주 밟는
+   * 경로(`ctreg search --help`)에서 그것이 되살아난다 — 실제로 그렇게 회귀했고, 스위트가
+   * `USAGE` 상수만 보고 있어서 실물을 돌려 보고서야 드러났다.
+   *
+   * 목록은 어휘에서 파생한다(`USAGE` 와 같은 규칙). 어휘가 늘면 두 곳이 함께 따라간다.
+   */
+  const vocab = [
+    accepts.has('status') ? `  --status      ${FILTERABLE_STATUS.join('|')}` : undefined,
+    accepts.has('phase') ? `  --phase       ${FILTERABLE_PHASE.join('|')}` : undefined,
+    accepts.has('study-type') ? `  --study-type  ${FILTERABLE_STUDY_TYPE.join('|')}` : undefined,
+  ].filter((l): l is string => l !== undefined);
+  const vocabBlock = vocab.length
+    ? `\n값 (소문자다 — 레지스트리 원문 값이 아니라 공통 어휘다)\n${vocab.join('\n')}\n`
+    : '';
   return `ctreg ${command}${positional}
 
 ${COMMAND_SUMMARY[command]}
 
 받는 옵션
   ${opts}
-
+${vocabBlock}
 값이 레지스트리마다 다른 축은 \`ctreg registries\` 가 말한다.
 전체 사용법은 \`ctreg --help\` 다.
 `;
