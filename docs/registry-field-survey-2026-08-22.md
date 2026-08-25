@@ -17,7 +17,7 @@
 
 | 레지스트리 | 공개 API 유무 | 인증 요구 | 필드 목록 출처 URL |
 | :-- | :-- | :-- | :-- |
-| **WHO ICTRP** | 혼합 — 웹 검색 결과의 **XML 다운로드는 공개**(로그인 불요). 실시간 재사용이 가능한 **"ICTRP Search Portal Web Service"**는 별도 신청 계정이 필요하고, 대량 수집용 "Crawling Service"는 아이디/비밀번호 발급이 전제다. | 검색·XML 내려받기: 불요. Web Service/Crawling: 요구(`ictrpinfo@who.int` 신청) | [WHO Trial Registration Data Set (TRDS) v1.3.1](https://www.who.int/tools/clinical-trials-registry-platform/network/who-data-set) · [검색 팁(고급검색 필드)](https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal/search-tips) · [Web Service 안내](https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal/ictrp-search-portal-web-service) |
+| **WHO ICTRP** | 혼합 — 아래 **「ICTRP 접근 경로 실측 (2026-08-26)」 절이 이 칸을 정정한다.** 원래 판단: 웹 검색 결과의 **XML 다운로드는 공개**(로그인 불요), 실시간 재사용이 가능한 **"ICTRP Search Portal Web Service"**는 별도 신청 계정이 필요하고, 대량 수집용 "Crawling Service"는 아이디/비밀번호 발급이 전제다. | 검색·XML 내려받기: 불요. Web Service/Crawling: 요구(`ictrpinfo@who.int` 신청) — **Web Service 는 유료다(아래 절)** | [WHO Trial Registration Data Set (TRDS) v1.3.1](https://www.who.int/tools/clinical-trials-registry-platform/network/who-data-set) · [검색 팁(고급검색 필드)](https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal/search-tips) · [Web Service 안내](https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal/ictrp-search-portal-web-service) |
 | **ISRCTN** | **REST(XML) API 공개.** 4가지 출력 포맷(default/who/ukctg/internal, internal은 deprecated) | **불요** — API 키 없이 공개 사용, 단 대량 조회 시 스로틀링을 지켜달라는 안내만 있음 | [67 Bricks ISRCTN API 문서 v0.6](https://www.isrctn.com/editorial/retrieveFile/81786542-9920-48a0-8fce-09f8428ab843/37855) · 실제 레코드 확인용으로 직접 호출: `https://www.isrctn.com/api/query/format/default?q=96189403&limit=1`(ISRCTN96189403) |
 | **EU CTIS** | **화면(공개 포털)만 확인함.** EMA가 공식 REST API를 문서로 공개한 것을 찾지 못했다 — 서드파티 스크레이퍼(Apify 등)만 존재. | 포털 열람 자체는 불요(회원가입 없이 조회 가능) | [CTIS public portal: Full trial information (EMA/441147/2024, 2025-01-27)](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-full-trial-information_en.pdf) · [CTIS public portal: summary (EMA/441149/2024, 2024-09-20)](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf) · 포털: `https://euclinicaltrials.eu` |
 | **CRIS (한국)** | **공공데이터포털(data.go.kr) 경유 Open API 공개**(REST, XML/JSON 선택). CRIS 자체 소개에 따르면 목록 16항목·상세 70항목·통계 18항목을 제공한다. | **요구** — `serviceKey`(공공데이터포털 발급 인증키) | [공공데이터포털 — 질병관리청 임상연구 DB Open API](https://www.data.go.kr/data/3033869/openapi.do) · 실제 서비스: `https://cris.nih.go.kr` |
@@ -38,9 +38,9 @@
 | conditions | O | O | O | O | O | O | 전부 자유 텍스트 원문 그대로 — 스펙 원칙(§2.1, "질환명은 정규화하지 않는다")과 정확히 맞는다 |
 | interventions | O | O | O | O | ~ | O | CRIS 상세 페이지 확인 결과 개입 관련 필드는 존재하나(연구대상 상태/질환 근처) 구조화된 `type` 구분이 있는지는 확인 못함 — 확인하려면 중재연구(관찰연구 아님) 실제 상세 페이지를 열어야 한다(이번에 연 예시는 관찰연구였다) |
 | sponsor.lead | O | O | O | O | O | O | 전부 존재. jRCT는 "依頼者等に関する事項"(의뢰자 등에 관한 사항) 섹션으로 별도 관리 |
-| enrollment.count | O | O | ~ | ? | ~ | ~ | **ISRCTN·CRIS·jRCT 세 곳은 확인 결과 목표(target) 등록 인원만 노출하고, 실제(actual) 등록 인원을 별도 필드로 구분하지 않는다** — ISRCTN "Target number of participants"(실제 trial 페이지에서 확인), CRIS `목표대상자 수`(상세 페이지에서 확인, 실제값 필드는 못 찾음), jRCT `実施予定被験者数/Sample Size`(가이드에서 확인, "予定"=예정치). **ICTRP는 다르게 취급해야 한다 — target-only라고 단정할 근거가 없다.** WHO TRDS 항목 17의 공식 명칭은 "Sample Size"가 아니라 **"Target & final sample size"**다(목표치와 최종치를 항목명 자체에 함께 명시) — 개별 trial 레코드에서 "final"(실제) 값이 실제로 채워지는지는 이번 조사에서 확인하지 못했다(**?**, "확인 못한 항목 요약" 표에 추가). CTIS는 EMA 공식 필드 사전 두 건(Full trial information 7쪽, summary 6쪽) 어디에도 표본크기 필드가 없었다(**?** — 실제 trial 페이지의 Locations/Results 탭을 봐야 한다) |
+| enrollment.count | O | ~ | ~ | ? | ~ | ~ | **ICTRP 는 `O` 였다가 `~` 로 내렸다 — 실측(2026-08-26): 레코드에 노출되는 라벨은 `Target sample size` 하나뿐이다**(NCT04280705 → `1062`, `Trial2.aspx?TrialID=<id>`). TRDS 항목명이 "Target & final" 이라 실제치 가능성을 열어 뒀던 것이 아래 「확인 못한 항목」의 그 줄인데, 레코드에는 target 만 있다 — ISRCTN·CRIS·jRCT 와 같은 자리이므로 기호도 같게 맞춘다. 아래는 당시의 진단으로 남긴다. **ISRCTN·CRIS·jRCT 세 곳은 확인 결과 목표(target) 등록 인원만 노출하고, 실제(actual) 등록 인원을 별도 필드로 구분하지 않는다** — ISRCTN "Target number of participants"(실제 trial 페이지에서 확인), CRIS `목표대상자 수`(상세 페이지에서 확인, 실제값 필드는 못 찾음), jRCT `実施予定被験者数/Sample Size`(가이드에서 확인, "予定"=예정치). **ICTRP는 다르게 취급해야 한다 — target-only라고 단정할 근거가 없다.** WHO TRDS 항목 17의 공식 명칭은 "Sample Size"가 아니라 **"Target & final sample size"**다(목표치와 최종치를 항목명 자체에 함께 명시) — 개별 trial 레코드에서 "final"(실제) 값이 실제로 채워지는지는 이번 조사에서 확인하지 못했다(**?**, "확인 못한 항목 요약" 표에 추가). CTIS는 EMA 공식 필드 사전 두 건(Full trial information 7쪽, summary 6쪽) 어디에도 표본크기 필드가 없었다(**?** — 실제 trial 페이지의 Locations/Results 탭을 봐야 한다) |
 | dates.start | O | O | O | O | O | O | ICTRP는 TRDS 항목 16 "Date of First Enrollment"로 대응(스펙의 `dates.start`와 개념이 거의 같다). ISRCTN `overallStartDate`, CTIS "Trial start date", CRIS `첫 연구대상자 등록일`, jRCT `実施期間(開始日)` 전부 확인 |
-| dates.lastUpdated | O | ? | O | ~ | O | O | ISRCTN `lastEdited`(dateTime, range 쿼리 가능) 확인. CRIS `date_updated` 필드가 공공데이터포털 API 응답에 존재함을 확인. jRCT `最終公表日`(가이드에 "최후에 갱신된 날"로 명시) 확인. ICTRP는 TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 "최종 갱신일"이 없다(**?** — 확인하려면 실제 trial 하나를 XML로 내려받아 레코드 안에 타임스탬프가 있는지, 또는 Web Service 계정을 발급받아 응답 스키마를 봐야 한다). **CTIS는 필드 자체는 있다** — 출처: [CTIS public portal: summary](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf)(EMA/441149/2024) 4/6쪽, "Last update: The most recent date when information about the clinical trial was updated." 다만 이 정의가 놓인 위치가 "Current status"·"Start date"("in a Member State")·"End (or early termination)"("in the relevant Member State")처럼 명시적으로 회원국별이라고 적힌 항목들과 같은 "Member State" 표 블록 안이고 그 사이에 새 섹션 헤더가 없다 — **"Last update"도 회원국별일 가능성이 높지만, 그 정의 문장 자체에는 "in each member state" 같은 명시적 문구가 없어서(Current status·Start date와 달리) 단정하지 못한다.** 그래서 O가 아니라 `~`로 둔다(status와 같은 구조적 문제를 가질 가능성 — §4 참고) |
+| dates.lastUpdated | O | ~ | O | ~ | O | O | **ICTRP 는 `?` 에서 `~` 가 됐다 — 실측(2026-08-26): 레코드에 `Last refreshed on` 필드가 실제로 있다**(NCT04280705 → `21 March 2022`). 다만 **뜻이 다르다**: 그 시험이 마지막으로 갱신된 날이 아니라 **ICTRP 가 자기 사본을 갱신한 날**이다. 같은 시험의 ctgov `lastUpdated` 는 `2022-03-14` 로 7일 앞서고, 두 번째 표본(NCT06045767)도 ctgov `2024-06-03` → ICTRP `10 June 2024` 로 같은 7일이다(주간 갱신과 일치). 그래서 `O` 가 아니라 `~` 다 — 자리는 있는데 CT.gov 의 그 필드와 같은 것을 가리키지 않는다. 아래는 당시의 진단으로 남긴다. ISRCTN `lastEdited`(dateTime, range 쿼리 가능) 확인. CRIS `date_updated` 필드가 공공데이터포털 API 응답에 존재함을 확인. jRCT `最終公表日`(가이드에 "최후에 갱신된 날"로 명시) 확인. ICTRP는 TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 "최종 갱신일"이 없다(**?** — 확인하려면 실제 trial 하나를 XML로 내려받아 레코드 안에 타임스탬프가 있는지, 또는 Web Service 계정을 발급받아 응답 스키마를 봐야 한다). **CTIS는 필드 자체는 있다** — 출처: [CTIS public portal: summary](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf)(EMA/441149/2024) 4/6쪽, "Last update: The most recent date when information about the clinical trial was updated." 다만 이 정의가 놓인 위치가 "Current status"·"Start date"("in a Member State")·"End (or early termination)"("in the relevant Member State")처럼 명시적으로 회원국별이라고 적힌 항목들과 같은 "Member State" 표 블록 안이고 그 사이에 새 섹션 헤더가 없다 — **"Last update"도 회원국별일 가능성이 높지만, 그 정의 문장 자체에는 "in each member state" 같은 명시적 문구가 없어서(Current status·Start date와 달리) 단정하지 못한다.** 그래서 O가 아니라 `~`로 둔다(status와 같은 구조적 문제를 가질 가능성 — §4 참고) |
 | locations | O | ~ | ~ | ~ | ~ | ~ | **좌표(`geo`)를 제공하는 곳은 CT.gov뿐이다.** ICTRP·ISRCTN은 TRDS/API 문서 모두 "국가" 단위까지만 필드가 있다(도시·기관명 없음 — ISRCTN `recruitmentCountry`는 국가 리스트 range 필드다). CTIS는 별도 "Locations and contact points" 탭이 있으나(사이트 안내에서 탭 존재만 확인) 좌표 제공 여부는 확인 못함. CRIS는 `참여기관`(기관명, 도시 수준 주소는 있을 수 있으나 좌표는 없음), jRCT는 `実施医療機関`(기관명+주소, 좌표 없음) |
 | hasResults | O | O | O | O | ? | ? | ICTRP는 TRDS 항목 23 "Summary Results"와 검색 포털의 "Results" 필터로 이중 확인됨. CTIS는 포털 탭 구성 자체에 "Trial Results" 탭이 별도로 있어 결과 유무를 판별할 수 있다. **ISRCTN은 실제 trial의 `default` XML(ISRCTN96189403, 위 studyType 행과 동일 출처)에서 확인했다** — 최상위에 `<results>` 섹션이 통째로 있고 그 안에 `<publicationDetails>`(관련 논문 링크 3건), `<basicReport>`(첨부 PDF), `<ipdSharingStatement>`, `<dataPolicies>`가 들어 있다. 구조화된 결과 섹션의 존재 자체가 결과 유무 판별 기준이 될 수 있다. CRIS는 `연구종료일`류 날짜 필드는 있으나 결과 공개 여부 플래그는 찾지 못했다(**?** — 실제로 결과가 등록된 중재연구의 상세 페이지를 열어 "연구결과" 항목이 있는지 확인해야 한다). jRCT는 "jRCT에서 치험결과 조회" 기능이 있으나 이는 진행상태(研究終了) 필터일 뿐 결과 데이터 유무를 나타내는 별도 필드인지는 확인 못했다(**?** — 실제 종료된 시험의 상세 페이지에 결과 섹션이 있는지 봐야 한다) |
 | crossIds | O | O | O | O | X | ? | **ICTRP TRDS 항목 3 "Secondary Identifying Numbers"가 사실상 crossIds 그 자체다** — WHO가 이 필드를 필수 24항목에 넣은 이유가 바로 중복 등록 추적이다. CTIS는 EMA 공식 필드 사전에 "ClinicalTrials.gov identifier (NCT number)", "ISRCTN number", "Additional registries"가 명시적으로 나열되어 있어 가장 확실하다. **ISRCTN은 실제 trial의 `default` XML(ISRCTN96189403, 위 studyType 행과 동일 출처)에서 확인했다** — `<externalRefs>` 섹션에 `<doi>`, `<protocolSerialNumber>`, `<clinicalTrialsGovNumber/>`, `<eudraCTNumber/>` 요소가 있다. 스키마 자체에 NCT/EudraCT 상호등록 슬롯이 있다는 게 확인됐다는 뜻이다(다만 이번 예시에서는 두 요소 다 비어 있었다 — 슬롯의 존재와 실제 값이 채워지는 빈도는 별개다). CRIS는 실제 상세 페이지(KCT0002018, **관찰연구 1건**) 확인 결과 WHO ICTRP·NCT 상호등록번호 필드가 **없었다** — 단 **이 X 판정은 근거가 약하다**: 확인한 표본이 1건뿐이고, 그마저 해외 이중등록 유인이 상대적으로 적은 국내 관찰연구다(해외 다기관이 참여하는 국내 중재연구라면 다를 수 있음). CRIS 자체가 한국의 WHO 1차 등록기관이라는 점도 감안해야 한다. jRCT는 API 문서/가이드에서 확인하지 못했다(**?** — 상세 페이지의 "その他の事項" 섹션 또는 JPMA 가이드 33쪽 이후 "기본용어" 부분을 봐야 한다 — 이번 조사에서는 가이드 1~22쪽만 확인했다) |
@@ -90,9 +90,53 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 이동한 필드가 없으므로 `TrialRecord` 타입이나 §2.3 폐쇄 어휘를 바꿀 필요는 없다. 다만 이번 조사에서 드러난 두 가지 구조적 함정은 향후 CTIS·ISRCTN 등 두 번째 어댑터를 만들 때 반드시 알아야 하는 정보이고, 스펙에 없으면 다음 구현자가 처음부터 다시 발견해야 한다. 스펙 §2.1에 짧은 참고 문단을 추가했다(코드 계약은 그대로, 안내문만 추가):
 
 1. **CTIS는 상태를 레코드당 1개가 아니라 회원국(EU/EEA)별로 따로 매긴다.** 출처: [CTIS public portal: summary](https://www.ema.europa.eu/en/documents/other/clinical-trial-information-system-ctis-public-portal-summary_en.pdf)(EMA/441149/2024, 2024-09-20) 4/6쪽 "Member State" 섹션의 "Current status" 필드 정의(위 Step 2 표에 원문 인용). `status`를 단일 값으로 접어야 하는 스펙의 전제와 구조적으로 다르다 — 대표값을 어떤 기준으로 고를지는 CTIS 어댑터가 결정하고, 전체 국가별 값은 `--raw`의 `source`로 보존해야 한다. **같은 표 블록에 `dates.lastUpdated`에 대응하는 "Last update" 필드도 있다**(위 dates.lastUpdated 행 참고) — 회원국별일 가능성이 높지만 정의 문장 자체엔 그 문구가 없어 단정하지 않았다. CTIS 어댑터를 만들 때 실물 페이지에서 먼저 확인해야 한다.
-2. **ISRCTN·CRIS·jRCT 세 곳은 목표(target) 등록 인원만 제공한다는 것이 확인됐다.** 이 세 곳을 위한 어댑터는 `enrollment.basis === 'actual'`을 채울 수 없다고 가정해야 한다. **ICTRP는 target-only로 단정하지 않는다** — WHO TRDS 항목 17의 공식 명칭이 "Target & final sample size"라 실제(최종)치도 포함할 가능성이 있으나 개별 레코드에서 채워지는지 미확인이다(위 "확인 못한 항목 요약" 표 참고). CTIS도 표본크기 필드 자체를 찾지 못해 미확정이다.
+2. **ISRCTN·CRIS·jRCT 세 곳은 목표(target) 등록 인원만 제공한다는 것이 확인됐다.** 이 세 곳을 위한 어댑터는 `enrollment.basis === 'actual'`을 채울 수 없다고 가정해야 한다. ~~**ICTRP는 target-only로 단정하지 않는다**~~ — **정정(2026-08-26): ICTRP 도 target-only 다.** 레코드의 라벨이 `Target sample size` 하나뿐임을 실측했다(아래 「ICTRP 접근 경로 실측」 절). 아래는 당시의 판단이다. WHO TRDS 항목 17의 공식 명칭이 "Target & final sample size"라 실제(최종)치도 포함할 가능성이 있으나 개별 레코드에서 채워지는지 미확인이다(위 "확인 못한 항목 요약" 표 참고). CTIS도 표본크기 필드 자체를 찾지 못해 미확정이다.
 
 `Capability.detail`에 새로 추가할 항목은 없다(§3.2 변경 없음) — detail 필드(eligibility/outcomes/contacts)는 이미 대부분의 레지스트리에서 확인됐고, 확인하지 못한 항목도 기존 capability 신고 메커니즘으로 충분히 표현된다.
+
+---
+
+## ICTRP 접근 경로 실측 (2026-08-26)
+
+이 절은 **위 접근 경로 표의 ICTRP 칸을 정정한다.** 원래 판단은 문서를 읽어서 나왔고, 이번에는
+실제로 쳤다. 이 저장소의 규율("읽지 말고 실행한다")대로다.
+
+| 경로 | 실측 결과 |
+| :-- | :-- |
+| `https://trialsearch.who.int/api` | **404.** REST/JSON API 는 없다 |
+| 포털 전체 | ASP.NET WebForms — `__doPostBack` + ViewState. 검색이 상태를 나르는 POST 로 돈다 |
+| `Default.aspx?<키>=<말>` | **GET 검색이 되긴 한다.** 그런데 **키 이름이 무시된다** — `SearchTermStat`·`SearchTerm`·`Condition`·`Intervention` 넷이 전부 같은 결과(`diabetes` → `397 records for 391 trials`)를 냈다. 문서화되지 않은 동작이고, ctgov 혼자 `condition=diabetes` 로 24,273건인 것과 비교하면 **이 축은 condition 이 아니다** — 무엇을 보는지 모른다 |
+| `Trial2.aspx?TrialID=<id>` · `Trial3.aspx?trialid=<id>` | **200, 레코드 전문(HTML).** 세션 없이 안정적인 GET 이다. 위 두 미확인 항목을 이걸로 닫았다 |
+| `crawl/crawl0.aspx` → `crawlN.aspx` | **로그인 없이 열린다.** 한 페이지에 `Trial3.aspx` 링크 11,000개, 4.2MB. 위 표는 "Crawling Service 는 아이디/비밀번호 발급이 전제" 라고 적었는데, **이 경로는 오늘 열려 있었다.** 다만 이것이 WHO 가 광고하는 그 유료/계정 Crawling Service 와 같은 것인지는 확인하지 못했다 — 확인한 사실은 "이 URL 이 인증 없이 목록을 낸다" 까지다 |
+| `ExportResults.aspx` | 에러 페이지. XML 내보내기는 결과 페이지의 postback 이라 **안정적인 GET 이 아니다** |
+
+**Web Service 는 유료다 — 위 표에 없던 사실이다.** WHO 안내문 원문: *"The ICTRP Secretariat needs
+to recoup the costs of conducting the work necessary to provide the service to potential users.
+The cost charged by ICTRP for accessing the ICTRP web service can be provided upon request."*
+용도도 제한된다("available to the public for research purposes only").
+
+**약관**(검색 결과 페이지에 붙어 나온다): 비상업 용도(`marketing, promotional or commercial
+purposes` 금지), 출처를 WHO ICTRP 로 표기, 데이터를 최신으로 유지, **WHO ICTRP 가 처리한 날짜를
+명시**. 이 프로젝트에 금지는 아니지만 제약이고, 마지막 조항은 위 `Last refreshed on` 과 직접
+맞물린다.
+
+### 이 표가 말하지 않는 더 큰 사실
+
+**ICTRP 는 peer 레지스트리가 아니라 집계자다.** ctgov·ISRCTN 레코드를 그 안에 담고 있으므로,
+`RegistryAdapter` 를 하나 더 붙이는 모양으로 연결하면 연합 조회가 거의 전부 중복이 된다 —
+`count` 는 `totals_not_summable`(I6)이 **매번** 발화해 변별력을 잃고(최종 리뷰 L11 과 같은 상태),
+`search` 는 같은 시험을 두 레코드로 낸다.
+
+뒤집으면, ICTRP 는 **이 CLI 가 구조적으로 못 하는 일을 이미 한다.** 검색 결과 페이지가 직접
+그렇게 적는다: *"Trials are sometimes recorded in more than one registry. These records can refer
+to each other using the 'Secondary ID' field. The search portal uses these Secondary IDs to group
+records about the same trial together."* 그래서 결과가 `397 records for 391 trials` 로 나온다 —
+`count.ts` 가 "레코드를 받지 않으므로 crossIds 를 볼 수 없다" 며 포기한 그 중복 제거다.
+TRDS 항목 3(Secondary Identifying Numbers)이 `crossIds` 그 자체라는 위 매트릭스의 관찰과 같은 사실이다.
+
+**결론: 연결한다면 여섯 번째 어댑터가 아니라 교차 레지스트리 해석기 모양이어야 한다**
+("이 시험이 어느 레지스트리들에 등록돼 있는가"). 네 메서드 인터페이스와 모양이 다르므로
+별도 설계가 필요하다.
 
 ---
 
@@ -101,9 +145,9 @@ detail 필드는 capability 로 신고하면 되므로 `X` 여도 문제가 없�
 | 항목 | 레지스트리 | 확인 못한 이유 | 무엇을 보면 확인되는가 |
 | :-- | :-- | :-- | :-- |
 | studyType | jRCT | JPMA 가이드 15쪽에서 `治験の区分`(trial category) 필드명은 확인했으나(용어 설명은 33쪽 이후로 미루고 있음) 값 목록을 확인 못함 | 실제 jRCT 상세 페이지의 해당 필드 값, 또는 공식 데이터 사전(가이드 33쪽 이후 "기본용어") |
-| enrollment.count(실제치 여부) | ICTRP | WHO TRDS 항목 17의 공식 명칭이 **"Target & final sample size"**라 목표치와 실제치를 함께 가리킬 수 있으나, 개별 trial 레코드에서 "final" 값이 실제로 채워지는지는 확인하지 못함 | 실제 ICTRP trial의 XML export(검색 결과를 XML로 내려받기)를 열어 final sample size 요소가 값을 갖고 있는지 확인. 다음 라운드로 미룬다 — 지금 당장 결론을 낼 필요는 없다 |
+| ~~enrollment.count(실제치 여부)~~ | ICTRP | **확인됨 (2026-08-26) — target only.** 레코드 라벨이 `Target sample size` 하나뿐이다(NCT04280705 → 1062). XML export 를 열 필요가 없었다 — `Trial2.aspx?TrialID=<id>` 가 레코드 전문을 낸다. 아래는 당시의 진단이다. WHO TRDS 항목 17의 공식 명칭이 **"Target & final sample size"**라 목표치와 실제치를 함께 가리킬 수 있으나, 개별 trial 레코드에서 "final" 값이 실제로 채워지는지는 확인하지 못함 | (해소됨) |
 | enrollment.count | CTIS | EMA 공식 필드 사전 두 건(Full trial information 7쪽, summary 6쪽) 어디에도 표본크기 필드가 없음 | 실제 trial 페이지의 Locations/Results 탭(두 공식 PDF에는 없다는 게 이번에 확인된 사실이라, 남은 후보는 화면 자체뿐) |
-| dates.lastUpdated | ICTRP | TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 없음 | 실제 trial의 XML export 원문, 또는 Web Service 계정으로 응답 스키마 확인 |
+| ~~dates.lastUpdated~~ | ICTRP | **확인됨 (2026-08-26) — 필드는 있으나 뜻이 다르다.** 레코드에 `Last refreshed on` 이 있는데 이것은 **ICTRP 가 사본을 갱신한 날**이지 시험이 갱신된 날이 아니다(두 표본에서 원본보다 7일 뒤). 위 매트릭스 행 참고. 당시의 진단: TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 없음 | (해소됨) |
 | dates.lastUpdated(회원국별 여부) | CTIS | "Last update" 정의 문장 자체에는 회원국별 문구가 없으나 같은 "Member State" 블록 안에 있고, 블록의 다른 필드는 모두 회원국별임이 명시됨 | 실제 CTIS trial 페이지에서 Last update 가 트라이얼당 1개인지 회원국당 1개인지 확인 |
 | hasResults | CRIS | 완료일 필드는 있으나 결과공개 플래그를 찾지 못함 | 결과가 등록된 실제 중재연구 상세 페이지 |
 | hasResults | jRCT | "치험결과 조회" 기능은 진행상태 필터일 뿐, 별도 필드인지 미확인 | 종료된 시험의 실제 상세 페이지에 결과 섹션 유무 확인 |

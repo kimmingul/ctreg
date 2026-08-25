@@ -575,8 +575,11 @@ EU CTIS 와 jRCT 는 공개 API 를 찾지 못했다(화면만).
 
 ## 조사에 남은 미확인 질문
 
-- **ICTRP 의 "final sample size" 가 실제로 채워지는가.** TRDS 항목 17 의 명칭이
-  "Target & final sample size" 라 실제치도 담을 수 있으나 미확인. 확인 방법은 조사 문서에 기록됨.
+- ~~**ICTRP 의 "final sample size" 가 실제로 채워지는가.**~~ — **확인됨(2026-08-26): target 뿐이다.**
+  레코드에 노출되는 라벨이 `Target sample size` 하나다. 같은 실측이 `dates.lastUpdated` 도 닫았다 —
+  `Last refreshed on` 필드는 있는데 **ICTRP 가 사본을 갱신한 날**이지 시험이 갱신된 날이 아니다.
+  근거와 접근 경로 정정은 `docs/registry-field-survey-2026-08-22.md` 의 「ICTRP 접근 경로 실측」 절이
+  정본이다(여기 복제하지 않는다).
 - **CTIS 의 `Last update` 가 레코드별인가 회원국별인가.** 같은 "Member State" 블록 안에 있으나
   정의문에 회원국별 문구가 없다. `status` 와 같은 구조적 문제일 수 있다.
 
