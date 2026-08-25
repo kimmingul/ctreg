@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COMMAND_OPTIONS, OPTION_NAMES, parseCliArgs, USAGE } from '../../src/cli/args.js';
+import { COMMAND_OPTIONS, COMMANDS, helpFor, OPTION_NAMES, parseCliArgs, USAGE } from '../../src/cli/args.js';
 import { CAPS } from '../../src/core/query.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
@@ -69,6 +69,46 @@ describe('커맨드가 못 쓰는 플래그', () => {
   it('모든 옵션이 적어도 한 커맨드에는 속한다', () => {
     const covered = new Set(Object.values(COMMAND_OPTIONS).flat());
     expect(OPTION_NAMES.filter((o) => !covered.has(o))).toEqual([]);
+  });
+});
+
+/**
+ * F3. 서브커맨드별 `--help` 가 없어 최상위와 바이트 단위로 동일했다 — 세 시나리오가
+ * 부딪혔다. `--help` 가 커맨드 단어를 버리고 `registries` 로 바꿔치기하고 있었던 것이
+ * 원인이다.
+ *
+ * F4 와 **같은 표** 를 읽는다. 커맨드가 무엇을 받는지 두 곳에 적으면 한쪽만 갱신된다.
+ */
+describe('커맨드별 --help', () => {
+  it('커맨드와 함께 주면 그 커맨드를 기억한다 — 예전에는 registries 로 바뀌었다', () => {
+    const a = parseCliArgs(['get', '--help']);
+    expect(a.help).toBe(true);
+    expect(a.command).toBe('get');
+  });
+
+  it('커맨드 없이 주면 전체 사용법이다', () => {
+    const a = parseCliArgs(['--help']);
+    expect(a.help).toBe(true);
+    expect(a.command).toBeUndefined();
+  });
+
+  it('그 커맨드가 받는 것만 적는다 — 표가 정본이다', () => {
+    const text = helpFor('get');
+    for (const o of COMMAND_OPTIONS.get) expect(text, `--${o} 이 없습니다`).toContain(`--${o}`);
+    // get 이 안 받는 것은 나오지 않는다. 이것이 F3 의 요점이다 — 최상위 사용법을
+    // 그대로 내면 서브커맨드 전용 표면을 확인할 방법이 여전히 없다.
+    for (const o of ['sort', 'page-size', 'condition']) expect(text).not.toContain(`--${o}`);
+  });
+
+  it('다섯 커맨드 전부 자기 사용법을 낸다', () => {
+    for (const c of COMMANDS) {
+      const text = helpFor(c);
+      expect(text, `'${c}' 의 사용법이 커맨드 이름을 안 적습니다`).toContain(c);
+    }
+  });
+
+  it('--help 는 어느 커맨드에서도 거절되지 않는다', () => {
+    for (const c of COMMANDS) expect(() => parseCliArgs([c, '--help'])).not.toThrow();
   });
 });
 

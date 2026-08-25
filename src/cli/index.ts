@@ -2,9 +2,9 @@ import { createAdapters } from '../adapters/index.js';
 import type { RegistryAdapter } from '../core/capability.js';
 import type { RegistryKey } from '../core/registry.js';
 import { loadConfig } from '../runtime/config.js';
-import { CtregError } from '../runtime/errors.js';
+import { CtregError, usageError } from '../runtime/errors.js';
 import type { HttpDeps } from '../runtime/http.js';
-import { USAGE, parseCliArgs } from './args.js';
+import { USAGE, helpFor, parseCliArgs } from './args.js';
 import { runCount } from './commands/count.js';
 import { IdRoutingError, runGet } from './commands/get.js';
 import { runRegistries } from './commands/registries.js';
@@ -27,7 +27,9 @@ export async function run(
     const args = parseCliArgs(argv);
     format = args.format;
     if (args.help) {
-      io.stdout(USAGE);
+      // 커맨드와 함께 물었으면 그 커맨드의 표면만 낸다(F3). 예전에는 커맨드 단어가
+      // 파싱에서 버려져 `ctreg get --help` 가 최상위 사용법과 바이트 단위로 같았다.
+      io.stdout(args.command ? helpFor(args.command) : USAGE);
       return EXIT.OK;
     }
 
@@ -37,6 +39,12 @@ export async function run(
     // COMMANDS 의 다섯 커맨드를 모두 덮는다. default 케이스를 두지 않는 것이 의도다 —
     // COMMANDS 에 커맨드를 더하면 envelope 이 확실히 대입되지 않아 컴파일이 깨지고,
     // 런타임에 "아직 연결되지 않았습니다" 를 만나는 대신 빌드에서 잡힌다.
+    // help 가 아니면 커맨드는 반드시 있다 — `parseCliArgs` 가 모르는 커맨드를 exit 2 로
+    // 이미 막는다. 타입은 그 사실을 모르므로 여기서 좁히고, 전제가 깨지면 조용히
+    // 넘어가는 대신 사용법 오류로 나간다. 아래 switch 에 default 를 두지 않는 것이
+    // 의도이므로(커맨드를 더하면 컴파일이 깨진다) 좁히는 자리가 여기여야 한다.
+    if (!args.command) throw usageError('커맨드가 없습니다', USAGE);
+
     let envelope: Envelope;
     switch (args.command) {
       case 'registries': envelope = runRegistries(args, adapters); break;

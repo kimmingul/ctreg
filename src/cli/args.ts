@@ -47,7 +47,13 @@ const INCLUDE_SECTIONS: IncludeSection[] = ['core', 'eligibility', 'outcomes', '
 const RESULT_SECTIONS = ['outcomes', 'adverse', 'flow', 'baseline'] as const;
 
 export type ParsedArgs = {
-  command: (typeof COMMANDS)[number];
+  /**
+   * `--help` 를 커맨드 없이 주면 `undefined` 다. 예전에는 이 자리에 `'registries'` 를
+   * 넣었는데, 그것은 거짓이었고 **커맨드 단어를 버리게 만들어** 서브커맨드별 사용법을
+   * 원리상 불가능하게 했다(F3). `help: true` 인 봉투는 커맨드를 실행하지 않으므로
+   * (index.ts 가 먼저 반환한다) 여기서 비는 것이 정확하다.
+   */
+  command: (typeof COMMANDS)[number] | undefined;
   positionals: string[];
   registries: RegistryKey[];
   query: NormalizedQuery;
@@ -125,6 +131,36 @@ export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof 
   registries: [...COMMON_OPTIONS],
 };
 
+/** 커맨드 한 줄 요약. `--help` 가 이것과 옵션 표를 함께 낸다. */
+const COMMAND_SUMMARY: Record<(typeof COMMANDS)[number], string> = {
+  search: '검색 축과 필터로 시험을 찾는다. 레코드를 받는다.',
+  count: 'search 와 같은 축·필터로 개수만 센다. 레코드를 받지 않아 빠르다.',
+  get: '접두사 붙은 ID 여럿을 한 번에 받아 온다. 검색이 아니라 조회다.',
+  results: 'ID 하나의 결과(평가변수·이상반응·흐름·기저)를 낸다. 기본은 요약이다.',
+  registries: '이 빌드가 다루는 레지스트리와 각 축이 무엇을 보는지 낸다. 네트워크를 타지 않는다.',
+};
+
+/**
+ * 커맨드별 사용법(F3). 옵션 목록의 정본은 `COMMAND_OPTIONS` 하나이므로, 여기서
+ * 손으로 다시 적지 않는다 — 두 벌로 두면 옵션이 하나 늘 때 거절하는 쪽과 안내하는
+ * 쪽이 어긋나고, 사용자는 "받는다고 적혀 있는데 exit 2" 를 만난다.
+ */
+export function helpFor(command: (typeof COMMANDS)[number]): string {
+  const opts = COMMAND_OPTIONS[command].map((o) => `--${o}`).join(' ');
+  const positional =
+    command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : '';
+  return `ctreg ${command}${positional}
+
+${COMMAND_SUMMARY[command]}
+
+받는 옵션
+  ${opts}
+
+값이 레지스트리마다 다른 축은 \`ctreg registries\` 가 말한다.
+전체 사용법은 \`ctreg --help\` 다.
+`;
+}
+
 /** 표에 없는 플래그를 실제로 준 경우에만 거절한다. 주지 않은 것은 `undefined`/`false` 다. */
 function assertCommandAccepts(command: (typeof COMMANDS)[number], v: Record<string, unknown>): void {
   const allowed = new Set<string>(COMMAND_OPTIONS[command]);
@@ -133,8 +169,8 @@ function assertCommandAccepts(command: (typeof COMMANDS)[number], v: Record<stri
     if (given === undefined || given === false) continue;
     if (allowed.has(name)) continue;
     throw usageError(
-      `'${command}' 는 --${name} 을 쓰지 않습니다`,
-      `--${name} 을 줘도 무시되는 대신 여기서 멈춥니다. '${command}' 가 받는 것: ` +
+      `'${command}' 커맨드는 --${name} 옵션을 쓰지 않습니다`,
+      `이 옵션을 줘도 무시되는 대신 여기서 멈춥니다. '${command}' 커맨드가 받는 것: ` +
         `${COMMAND_OPTIONS[command].map((o) => `--${o}`).join(' ')}`,
     );
   }
@@ -159,8 +195,11 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   const [command, ...positionals] = parsed.positionals;
 
   if (v.help) {
+    // 커맨드 단어를 **살린다.** 이것이 F3 의 전부다 — 버리면 `ctreg get --help` 와
+    // `ctreg --help` 가 같은 입력이 되어 서브커맨드별 사용법이 원리상 불가능해진다.
+    const asked = (COMMANDS as readonly string[]).includes(command ?? '') ? (command as (typeof COMMANDS)[number]) : undefined;
     return {
-      command: 'registries', positionals: [], registries: [...REGISTRY_KEYS],
+      command: asked, positionals: [], registries: [...REGISTRY_KEYS],
       query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true,
     };
   }

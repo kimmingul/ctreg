@@ -98,9 +98,9 @@ export async function runCount(
     warnings.push({
       code: 'totals_not_summable',
       message:
-        `${countedKeys.join(', ')} 를 함께 셌습니다. 한 시험이 여러 레지스트리에 등록될 수 있어 ` +
-        `레지스트리별 총계를 더한 값은 시험 수가 아니므로 합계를 내지 않습니다 — 그 합 ${total} 은 ` +
-        '합집합의 상한입니다. 레지스트리별 수는 registries[] 에 있습니다.',
+        `함께 센 레지스트리가 둘 이상입니다(${countedKeys.join(', ')}). 한 시험이 여러 레지스트리에 등록될 수 있어 ` +
+        `레지스트리별 총계를 더한 값은 시험 수가 아니므로 합계를 내지 않습니다 — 합집합의 상한은 ` +
+        `그 합 ${total} 입니다. 레지스트리별 수는 registries[] 에 있습니다.`,
     });
     return { query: args.query, registries, warnings, data: { total: null } };
   }
