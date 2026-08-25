@@ -17,15 +17,20 @@ export function missingAdapterError(key: RegistryKey) {
 }
 
 /**
- * 미지원 축을 조용히 무시하고 빈 결과를 내면, 에이전트가 "해당 시험 없음"과
- * "이 레지스트리는 그렇게 검색할 수 없음"을 구분하지 못한다. 반드시 exit 3 으로 알린다.
+ * 이 질의가 **실제로 쓴** 검색 축들. 질의 필드와 capability 축은 1:1 이 아니라
+ * (`near` 하나가 `geo` 이고, 날짜 축은 두 필드가 한 축이다) 그 대응을 아는 자리가
+ * 필요하다.
+ *
+ * 목록이 여기 한 벌만 있는 것이 요점이다. `assertSupported`(요청 **전** 에 돌며
+ * 미지원 축을 막고 `vocab_excludes_missing` 을 만든다)와 `zeroResultScope`(요청
+ * **후** 에 0건일 때만 쓰인다)가 같은 목록을 봐야 한다 — 두 벌로 갈리면 축이 하나
+ * 늘 때 한쪽만 갱신되고, 그 어긋남은 축이 늘기 전까지 아무 데도 나타나지 않는다.
+ *
+ * 축이 추가되면 여기에도 넣어야 한다. 잊으면 `guard.test.ts` 의 '모든 검색 축을
+ * 개별적으로 알아본다' 가 잡는다 — 타입은 이 배열의 전체성을 강제하지 못한다.
  */
-export function assertSupported(
-  cap: Capability,
-  q: NormalizedQuery,
-  fetch: FetchOpts,
-): { warnings: Warning[] } {
-  const axes: [keyof Capability['search'], boolean][] = [
+export function usedSearchAxes(q: NormalizedQuery): (keyof Capability['search'])[] {
+  const table: [keyof Capability['search'], boolean][] = [
     ['condition', q.condition !== undefined],
     ['intervention', q.intervention !== undefined],
     ['term', q.term !== undefined],
@@ -44,9 +49,22 @@ export function assertSupported(
     ['startRange', [q.startAfter, q.startBefore].some((d) => d !== undefined)],
     ['completionRange', [q.completionAfter, q.completionBefore].some((d) => d !== undefined)],
   ];
+  return table.filter(([, used]) => used).map(([axis]) => axis);
+}
 
-  for (const [axis, used] of axes) {
-    if (used && !cap.search[axis].supported) {
+/**
+ * 미지원 축을 조용히 무시하고 빈 결과를 내면, 에이전트가 "해당 시험 없음"과
+ * "이 레지스트리는 그렇게 검색할 수 없음"을 구분하지 못한다. 반드시 exit 3 으로 알린다.
+ */
+export function assertSupported(
+  cap: Capability,
+  q: NormalizedQuery,
+  fetch: FetchOpts,
+): { warnings: Warning[] } {
+  const axes = usedSearchAxes(q);
+
+  for (const axis of axes) {
+    if (!cap.search[axis].supported) {
       throw unsupportedError(
         `${cap.name} 은 '${axis}' 검색을 지원하지 않습니다`,
         `ctreg registries 로 이 레지스트리가 지원하는 축을 확인하세요. 결과가 없는 것이 아니라 조회 자체가 불가능합니다.`,
@@ -86,8 +104,8 @@ export function assertSupported(
    * 하면 이 근거를 먼저 봐야 한다.
    */
   const warnings: Warning[] = [];
-  for (const [axis, used] of axes) {
-    if (used && cap.search[axis].supported && cap.search[axis].exhaustive === false) {
+  for (const axis of axes) {
+    if (cap.search[axis].exhaustive === false) {
       warnings.push({
         code: 'vocab_excludes_missing',
         message:
@@ -99,6 +117,47 @@ export function assertSupported(
     }
   }
   return { warnings };
+}
+
+/**
+ * 결과가 0건일 때, 그 질의가 쓴 축들이 **실제로 무엇을 보는지**(`scope`)를 경고로 낸다.
+ *
+ * F2 의 나머지 절반이다. 선언에는 `scope` 가 실렸지만 응답에는 실리지 않아서,
+ * `search --registry ctgov --term "2015-000397-19"` 는 0건·경고 없음·exit 0 이었다 —
+ * 미리 `registries` 를 읽지 않은 호출자에게 그 0 은 "없음" 과 구별되지 않는다. 위
+ * `vocab_excludes_missing` 을 만든 논거(선언만으로는 미리 읽은 호출자만 알게 된다)가
+ * 여기에도 그대로 적용된다.
+ *
+ * **이 함수는 문구만 만들고 낼지 말지는 정하지 않는다.** `assertSupported` 는
+ * `adapter.search()` **전** 에 돌고(미지원 축이면 네트워크를 안 치려는 의도다) 0건이라는
+ * 사실은 그 **후** 에야 안다. 그래서 발화 시점만 커맨드로 넘긴다 — 정책(어떤 축을 보고,
+ * 무엇을 말하고, 무엇을 말하지 않는가)은 여기 한 군데 남는다. 커맨드가 직접 만들게 하면
+ * 같은 로직이 search 와 count 로 갈린다(M3 에서 페이지 크기로 겪은 그 문제).
+ *
+ * **0건일 때만 부른다.** 늘 내면 `vocab_excludes_missing` 이 모든 닫힌 어휘 축에서
+ * 100% 발화해 변별력을 잃었던 것(최종 리뷰 L11)과 같아진다. 모호함이 실제로 존재하는
+ * 자리에서만 말해야 신호가 된다.
+ *
+ * **원인을 단정하지 않는다.** 0건이 "해당하는 시험이 없다" 인지 "그 축이 그것을 보지
+ * 않는다" 인지 도구는 모른다. 아는 것은 그 축이 무엇을 보는지뿐이고, 문구는 딱 거기까지
+ * 말한다.
+ *
+ * 레지스트리당 한 건이다(축마다 한 건이 아니라). 이 경고의 단위는 축이 아니라 **질의**
+ * 이고, 축 다섯 개를 쓴 질의가 같은 말을 다섯 번 하면 `text` 출력이 도배된다. 대가는
+ * 축별로 기계가 파싱할 자리가 없다는 것 — 필요해지면 `Warning` 에 자리를 만드는 것이
+ * 먼저다.
+ */
+export function zeroResultScope(cap: Capability, q: NormalizedQuery): Warning[] {
+  const axes = usedSearchAxes(q);
+  if (axes.length === 0) return [];
+  const scopes = axes.map((axis) => `'${axis}' — ${cap.search[axis].scope}`).join(' / ');
+  return [{
+    code: 'zero_results_scope',
+    message:
+      `${cap.name} 에서 결과가 0건입니다. 이 질의가 쓴 축이 실제로 보는 범위는 다음과 같습니다: ${scopes}. ` +
+      '0건이 "해당하는 시험이 없다" 인지 "이 축이 그것을 보지 않는다" 인지는 이 도구가 구분하지 못합니다.',
+    registry: cap.key,
+  }];
 }
 
 /**

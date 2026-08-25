@@ -609,6 +609,52 @@ describe('레지스트리 키는 있는데 아직 어댑터가 없을 때', () =
   });
 });
 
+describe('zero_results_scope — 0건일 때만 축의 scope 를 말한다', () => {
+  /**
+   * 발화 시점을 커맨드가 정한다는 것이 이 설계의 핵심이라, 검사도 **부르는 자리**
+   * 를 겨눈다. `search.ts` 의 한 줄과 `count.ts` 의 한 줄이 각각 따로 빨개져야
+   * 한다 — 한 줄을 지웠는데 다른 테스트가 대신 잡아 주면 그 자리는 무방비다.
+   */
+  const empty = { search: vi.fn(async () => ({ data: [], warnings: [], total: 0 })), count: vi.fn(async () => ({ data: 0, warnings: [] })) };
+
+  it('search: 0건이면 쓴 축의 scope 가 봉투에 실린다', async () => {
+    const env = await runSearch(parseCliArgs(['search', '--term', '2015-000397-19']), stubAdapter(empty));
+    expect(env.warnings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'zero_results_scope', registry: 'ctgov' })]),
+    );
+    // 종료 코드는 바꾸지 않는다. 0건은 여전히 오류가 아니다.
+    expect(exitFor(env)).toBe(EXIT.OK);
+  });
+
+  it('search: 1건이라도 있으면 침묵한다 — 모호함이 없는 자리에서 말하면 변별력을 잃는다', async () => {
+    const env = await runSearch(parseCliArgs(['search', '--term', 'NSCLC']), stubAdapter());
+    expect(env.warnings.map((w) => w.code)).not.toContain('zero_results_scope');
+  });
+
+  /**
+   * 페이지 끝을 넘겨 받은 빈 페이지는 "이 축이 그것을 보지 않을 수도 있다" 의
+   * 사례가 아니다 — 업스트림은 걸린 것이 있다고 말하고 있다. `total` 을 함께 본다.
+   */
+  it('search: 총계가 있는데 이 페이지만 비면 침묵한다', async () => {
+    const past = { search: vi.fn(async () => ({ data: [], warnings: [], total: 42 })) };
+    const env = await runSearch(parseCliArgs(['search', '--term', 'NSCLC']), stubAdapter(past));
+    expect(env.warnings.map((w) => w.code)).not.toContain('zero_results_scope');
+  });
+
+  it('count: 0 이면 같은 경고를 싣는다', async () => {
+    const env = await runCount(parseCliArgs(['count', '--term', '2015-000397-19']), stubAdapter(empty));
+    expect(env.warnings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'zero_results_scope', registry: 'ctgov' })]),
+    );
+    expect(exitFor(env)).toBe(EXIT.OK);
+  });
+
+  it('count: 0 이 아니면 침묵한다', async () => {
+    const env = await runCount(parseCliArgs(['count', '--term', 'NSCLC']), stubAdapter());
+    expect(env.warnings.map((w) => w.code)).not.toContain('zero_results_scope');
+  });
+});
+
 describe('vocab_excludes_missing 는 봉투까지 간다', () => {
   /**
    * 가드가 경고를 만들어도 커맨드가 봉투에 싣지 않으면 사용자에게 도달하지 않는다.

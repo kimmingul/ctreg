@@ -3,7 +3,7 @@ import type { TrialRecord } from '../../core/record.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { applyLimits, assertSupported, missingAdapterError } from '../guard.js';
+import { applyLimits, assertSupported, missingAdapterError, zeroResultScope } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -36,6 +36,15 @@ export async function runSearch(
       warnings.push(...limited.warnings);
       const r = await adapter.search(limited.query, args.fetch);
       warnings.push(...r.warnings);
+      // 0건일 때만, 이 질의가 쓴 축이 무엇을 보는지 말한다(F2). 문구는 가드가 만들고
+      // 여기서는 **낼지 말지만** 정한다 — 0건이라는 사실은 search() 뒤에야 알 수 있어
+      // 가드가 발화 시점을 정할 수 없기 때문이다(guard.ts 의 zeroResultScope 주석).
+      //
+      // `total` 을 함께 보는 이유: 페이지 끝을 넘겨 받은 빈 페이지는 이 경고의 사례가
+      // 아니다. 업스트림이 걸린 것이 있다고 말하고 있으므로 모호함이 없다.
+      if (r.data.length === 0 && (r.total ?? 0) === 0) {
+        warnings.push(...zeroResultScope(adapter.capability(), limited.query));
+      }
       data.push(...r.data);
       registries.push({
         registry: key,

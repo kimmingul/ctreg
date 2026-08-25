@@ -2,7 +2,7 @@ import type { RegistryAdapter, Warning } from '../../core/capability.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError, unsupportedError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
-import { applyLimits, assertSupported, missingAdapterError } from '../guard.js';
+import { applyLimits, assertSupported, missingAdapterError, zeroResultScope } from '../guard.js';
 import type { Envelope, RegistryStatus } from '../output.js';
 
 /**
@@ -51,6 +51,9 @@ export async function runCount(
       warnings.push(...limited.warnings);
       const r = await adapter.count(limited.query, args.fetch);
       warnings.push(...r.warnings);
+      // search 와 같은 자리·같은 조건이다(그쪽 주석 참고). 여기서는 개수가 곧 결과라
+      // total 을 따로 볼 것이 없다.
+      if (r.data === 0) warnings.push(...zeroResultScope(cap, limited.query));
       total += r.data;
       counted = true;
       registries.push({ registry: key, status: 'ok', total: r.data });

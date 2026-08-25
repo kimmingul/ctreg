@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
-import { applyLimits, assertSupported } from '../../src/cli/guard.js';
+import { applyLimits, assertSupported, usedSearchAxes, zeroResultScope } from '../../src/cli/guard.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import { CAPS, type FetchOpts, type NormalizedQuery } from '../../src/core/query.js';
 import type { Capability, SearchAxis } from '../../src/core/capability.js';
@@ -158,6 +158,71 @@ describe('capability 가드', () => {
       search: { ...CTGOV_CAPABILITY.search, phase: { ...CTGOV_CAPABILITY.search.phase, exhaustive: false } },
     };
     expect(assertSupported(notExhaustive, { condition: 'x' }, fetchOpts).warnings).toEqual([]);
+  });
+});
+
+/**
+ * F2 의 나머지 절반. 선언에는 `scope` 가 실렸지만 **응답에는 실리지 않았다** —
+ * `search --registry ctgov --term "2015-000397-19"` 는 0건·경고 없음·exit 0 이라,
+ * 미리 `registries` 를 읽지 않은 호출자에게 그 0 은 "없음" 과 구별되지 않는다.
+ * `vocab_excludes_missing` 을 만든 논거(선언만으로는 미리 읽은 호출자만 알게 된다)가
+ * 여기에도 그대로 적용된다.
+ *
+ * 이 함수는 **문구만 만든다.** 낼지 말지는 커맨드가 결과를 보고 정한다 —
+ * `assertSupported` 는 `adapter.search()` **전에** 돌고 0건이라는 사실은 그 **후에**
+ * 알 수 있기 때문이다. 정책이 한 군데 남는 대신 발화 시점만 커맨드로 넘긴다.
+ */
+describe('0건일 때 쓰인 축의 scope', () => {
+  it('쓴 축의 scope 를 레지스트리당 경고 한 건으로 낸다', () => {
+    const w = zeroResultScope(CTGOV_CAPABILITY, { term: '2015-000397-19' });
+    expect(w).toHaveLength(1);
+    expect(w[0]).toMatchObject({ code: 'zero_results_scope', registry: 'ctgov' });
+    expect(w[0]!.message).toContain('term');
+    expect(w[0]!.message).toContain(CTGOV_CAPABILITY.search.term.scope);
+  });
+
+  /**
+   * 원인을 단정하면 안 된다. 0건이 "해당 시험이 없다" 인지 "그 축이 그것을 보지
+   * 않는다" 인지 도구는 모른다 — 아는 것은 그 축이 무엇을 보는지(`scope`)뿐이다.
+   * 이 검사가 붙들 수 있는 것은 문구가 두 갈래를 **모두 말한다** 는 사실뿐이고,
+   * 단정하는 다른 문장이 뒤에 붙는 것까지는 못 잡는다.
+   */
+  it('0건의 원인을 단정하지 않는다', () => {
+    const m = zeroResultScope(CTGOV_CAPABILITY, { term: 'x' })[0]!.message;
+    expect(m).toContain('구분하지 못합니다');
+  });
+
+  it('쓰지 않은 축의 scope 는 담지 않는다', () => {
+    const m = zeroResultScope(CTGOV_CAPABILITY, { term: 'x' })[0]!.message;
+    expect(m).not.toContain(CTGOV_CAPABILITY.search.patient.scope);
+  });
+
+  it('여러 축을 썼으면 한 경고 안에 전부 담는다', () => {
+    const w = zeroResultScope(CTGOV_CAPABILITY, { term: 'x', phase: ['phase_1'] });
+    expect(w).toHaveLength(1);
+    expect(w[0]!.message).toContain(CTGOV_CAPABILITY.search.term.scope);
+    expect(w[0]!.message).toContain(CTGOV_CAPABILITY.search.phase.scope);
+  });
+
+  it('축을 하나도 쓰지 않았으면 침묵한다', () => {
+    expect(zeroResultScope(CTGOV_CAPABILITY, {})).toEqual([]);
+  });
+});
+
+/**
+ * `assertSupported` 와 `zeroResultScope` 가 **같은 축 목록** 을 봐야 한다. 두 벌로
+ * 갈리면 축이 하나 늘 때 한쪽만 갱신되고, 그 어긋남은 축이 하나 늘기 전까지
+ * 관측되지 않는다 — 이 저장소가 이미 세 번 겪은 모양이다.
+ */
+describe('쓰인 축 목록', () => {
+  it('Capability.search 의 모든 축을 개별적으로 알아본다', () => {
+    for (const axis of Object.keys(CTGOV_CAPABILITY.search) as (keyof Capability['search'])[]) {
+      expect(usedSearchAxes(probeFor(axis)), `'${axis}' 를 쓴 질의인데 목록에 없습니다`).toContain(axis);
+    }
+  });
+
+  it('쓰지 않은 축은 알아보지 않는다', () => {
+    expect(usedSearchAxes({ term: 'x' })).toEqual(['term']);
   });
 });
 
