@@ -138,6 +138,28 @@ describe('run()', () => {
     expect(parsed.registries[0].status).toBe('unsupported');
   });
 
+  /**
+   * 함수가 아니라 **부르는 자리** 를 겨눈다. `helpFor` 자체는 args.test.ts 가 검사하지만,
+   * `run()` 이 그것을 실제로 내지 않으면 사용자에게는 F3 이 고쳐지지 않은 것과 같다.
+   * 사보타주로 확인하고 넣었다: index.ts 의 그 한 줄을 `USAGE` 로 되돌려도 478개가
+   * 전부 통과했다 — 이 저장소가 같은 형태의 구멍에 세 번 빠진 그 자리다.
+   */
+  it('커맨드와 함께 준 --help 는 그 커맨드의 사용법을 낸다', async () => {
+    const c = capture();
+    const code = await run(['get', '--help'], c.io, env());
+    expect(code).toBe(EXIT.OK);
+    expect(c.out()).toContain('ctreg get <ID...>');
+    // 최상위 사용법이 아니다. 예전에는 바이트 단위로 같았다.
+    expect(c.out()).not.toContain('--condition');
+  });
+
+  it('커맨드 없는 --help 는 전체 사용법을 낸다', async () => {
+    const c = capture();
+    const code = await run(['--help'], c.io, env());
+    expect(code).toBe(EXIT.OK);
+    expect(c.out()).toContain('--condition');
+  });
+
   it('모르는 커맨드는 exit 2 이고, 사용법은 stderr 로 가지만 stdout 도 파싱 가능한 오류 봉투를 낸다', async () => {
     const c = capture();
     const code = await run(['landscape'], c.io, env());

@@ -78,6 +78,8 @@ ctreg count --condition melanoma --status recruiting
 
 모든 커맨드는 JSON 봉투(envelope)를 stdout 에 낸다. 형식은 `{ query, registries, warnings, data, error? }` 이고, 실패해도 이 형태는 깨지지 않는다 — 파싱 자체가 실패하는 경우는 없다(아래 "출력 형식" 참고).
 
+**`ctreg <커맨드> --help` 는 그 커맨드가 받는 것만 낸다.** `ctreg --help` 는 전체 사용법이다. 커맨드가 쓰지 않는 플래그를 주면 조용히 무시하는 대신 **exit 2** 로 멈추고, 그 커맨드가 받는 것을 함께 알려준다 — `get` 은 배치 조회라 `--page-size`·`--sort` 가 성립하지 않는 식이다.
+
 ### `ctreg search` — 조건에 맞는 시험을 찾는다
 
 ```bash
