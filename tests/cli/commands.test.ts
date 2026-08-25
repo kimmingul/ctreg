@@ -183,6 +183,55 @@ describe('count 커맨드 — capability.count', () => {
    * 지워 버리면 성공한 레지스트리의 답까지 사라진다. 부분이라는 사실은 `registries[]`
    * 와 exit 5 가 말한다.
    */
+  /**
+   * I6. 레지스트리 둘을 실제로 세면 `total` 은 **무엇의 개수도 아니다** — 교차 등록은
+   * 흔하고(`crossIds` 가 존재하는 이유), 겹치는 두 수를 더한 값은 합집합이 아니다.
+   * 실측(2026-08-25): `count --registry ctgov --registry isrctn --condition diabetes`
+   * 가 24273 + 1118 = 25391 을 경고 없이 냈다.
+   *
+   * `count` 에서는 중복을 뺄 수 없다 — 레코드를 안 받으니 `crossIds` 를 볼 수 없고,
+   * 받으면 이 커맨드가 존재하는 이유가 사라진다. 그래서 빼는 대신 **숫자 자리에서
+   * 내린다.** 바로 위 '아무도 세지 못하면 data: null' 과 같은 논거다: 틀린 숫자를
+   * 숫자 자리에 두지 않는다.
+   *
+   * `data: null`(아무도 못 셌다)과는 **다른 모양**이어야 한다. 둘을 같은 값으로 뭉개면
+   * "셀 수 없었다" 와 "더할 수 없다" 가 구별되지 않는다 — 이 CLI 가 없애려는 혼동 그대로다.
+   */
+  it('둘 이상을 셌으면 total 은 null 이다 — 겹치는 수의 합은 개수가 아니다', async () => {
+    const a = stubAdapter().ctgov;
+    const b = stubAdapter({ count: vi.fn(async () => ({ data: 2, warnings: [] })) }, { ...CTGOV_CAPABILITY, key: 'other' as RegistryKey }).ctgov;
+    const adapters = { ctgov: a, other: b } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = { ...parseCliArgs(['count', '--condition', 'X']), registries: ['ctgov', 'other'] as unknown as RegistryKey[] };
+
+    const env = await runCount(args, adapters);
+
+    expect(env.data).toEqual({ total: null });
+    // 레지스트리별 수는 그대로 남는다 — 더하고 싶은 호출자는 자기가 무엇을 더하는지
+    // 알고 더할 수 있다. 지우는 것은 합계뿐이다.
+    expect(env.registries.map((r) => r.total)).toEqual([1, 2]);
+    expect(exitFor(env)).toBe(EXIT.OK);
+  });
+
+  it('왜 null 인지를 경고가 말한다 — 값만 지우면 호출자는 도구가 고장 났다고 읽는다', async () => {
+    const a = stubAdapter().ctgov;
+    const b = stubAdapter({ count: vi.fn(async () => ({ data: 2, warnings: [] })) }, { ...CTGOV_CAPABILITY, key: 'other' as RegistryKey }).ctgov;
+    const adapters = { ctgov: a, other: b } as unknown as Record<RegistryKey, RegistryAdapter>;
+    const args = { ...parseCliArgs(['count', '--condition', 'X']), registries: ['ctgov', 'other'] as unknown as RegistryKey[] };
+
+    const env = await runCount(args, adapters);
+
+    const w = env.warnings.find((x) => x.code === 'totals_not_summable');
+    expect(w, '겹칠 수 있는 총계를 내리면서 이유를 말하지 않았습니다').toBeDefined();
+    // 상한이라는 사실을 말한다 — 25391 은 답이 아니지만 합집합의 상한이기는 하다.
+    expect(w!.message).toContain('상한');
+  });
+
+  it('하나만 셌으면 total 은 그대로 숫자다 — 겹칠 상대가 없다', async () => {
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X']), stubAdapter());
+    expect(env.data).toEqual({ total: 1 });
+    expect(env.warnings.map((w) => w.code)).not.toContain('totals_not_summable');
+  });
+
   it('한쪽만 셌으면 그 부분 합은 남긴다 — exit 5 가 부분임을 말한다', async () => {
     const good = stubAdapter().ctgov;
     const bad = stubAdapter({}, {
@@ -333,7 +382,10 @@ describe('count 커맨드 — 레지스트리별 페이지 크기 상한', () =>
     expect(narrow.count).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 50 }), expect.anything());
     expect(wide.count).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 200 }), expect.anything());
     expect(args.query.pageSize).toBe(200); // 원본 쿼리도 훼손되지 않는다
-    expect(env.warnings).toEqual([
+    // 깎인 것은 narrow 뿐이다. 이 검사의 주제는 **클램프** 이므로 그 코드만 걸러
+    // 본다 — 봉투 전체를 고정하면 무관한 경고가 하나 늘 때마다 제목과 다른 이유로
+    // 빨개진다(연합 count 의 `totals_not_summable` 이 실제로 그랬다).
+    expect(env.warnings.filter((w) => w.code === 'page_size_clamped')).toEqual([
       expect.objectContaining({ code: 'page_size_clamped', registry: 'narrow' }),
     ]);
   });
