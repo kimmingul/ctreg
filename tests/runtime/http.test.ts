@@ -135,6 +135,20 @@ describe('HTTP 클라이언트', () => {
     expect(f).toHaveBeenCalledTimes(cfg.maxRetries + 1);
   });
 
+  /**
+   * CTREG_*_BASE_URL 로 스테이징/미러를 가리켰다가 그게 응답하지 않으면, 로그에
+   * 레지스트리 이름만 있고 어느 서버(URL)였는지가 없으면 원인을 못 좁힌다.
+   * 이 주장은 공유 루프(withReliability)로 옮기면서 한 번 깨졌던 것이라 회귀 방지용이다.
+   */
+  it('네트워크 실패 메시지에 어느 URL 로 보낸 요청인지 남는다', async () => {
+    const f = vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    });
+    await expect(getJson(cfg, opts('off'), deps(f as unknown as typeof fetch))).rejects.toMatchObject({
+      message: expect.stringContaining(`${cfg.ctgovBaseUrl}/studies`),
+    });
+  });
+
   // 이 테스트의 주장 자체가 "AbortSignal.timeout(cfg.timeoutMs) 이 실제로 발동한다"
   // 이므로 실제 타이머를 없앨 수 없다 — 타이머가 주장의 일부다. 대신 마진을 넉넉히
   // 준다: 20ms 는 CPU 부하 아래 스케줄링 지연에 잡아먹힐 수 있었으므로 200ms 로

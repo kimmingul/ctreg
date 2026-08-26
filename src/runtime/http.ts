@@ -73,6 +73,8 @@ async function bodyMessage(res: Response): Promise<string | undefined> {
 type SharedOpts = {
   registry: string;
   cacheKey: string;
+  /** 실패 메시지에만 쓴다 — 어느 서버로 보낸 요청이 안 되는지 로그에 남기기 위해서다. */
+  url: string;
   cacheMode: CacheMode;
   ratePerSec: number;
   signal?: AbortSignal;
@@ -128,7 +130,7 @@ async function withReliability<T>(
       res = await send(signal);
     } catch (cause) {
       if (attempt === cfg.maxRetries) {
-        throw upstreamError(`${o.registry} 요청 실패`, '네트워크 또는 타임아웃.', cause);
+        throw upstreamError(`${o.registry} 요청 실패: ${o.url}`, '네트워크 또는 타임아웃.', cause);
       }
       await sleep(Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** attempt) * (0.75 + 0.5 * Math.random()));
       continue;
@@ -195,6 +197,7 @@ export async function getJson<T>(
     {
       registry: o.registry,
       cacheKey: key,
+      url,
       cacheMode: o.cacheMode,
       ratePerSec: o.ratePerSec,
       ...(o.signal ? { signal: o.signal } : {}),
@@ -236,6 +239,7 @@ export async function postForm<T>(
     {
       registry: o.registry,
       cacheKey: cacheKey(o.registry, url, o.cacheKeyParams),
+      url,
       cacheMode: o.cacheMode,
       ratePerSec: o.ratePerSec,
       ...(o.signal ? { signal: o.signal } : {}),
