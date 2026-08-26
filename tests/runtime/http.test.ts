@@ -364,7 +364,7 @@ describe('postForm — 폼 POST', () => {
 
     const res = await postForm(cfg, {
       registry: 'ictrp', baseUrl: 'https://ictrp.example.test', path: '/AdvSearch.aspx',
-      form: { a: '1', b: 'x y' },
+      form: [['a', '1'], ['b', 'x y']],
       cacheKeyParams: { q: 'diabetes' },
       cacheMode: 'off', ratePerSec: 1000,
       decode: (text) => text,
@@ -392,8 +392,8 @@ describe('postForm — 폼 POST', () => {
       cacheKeyParams: { q: 'diabetes' }, cacheMode: 'use' as const, ratePerSec: 1000,
       decode: (t: string) => t,
     };
-    await postForm(cfg, { ...base, form: { __VIEWSTATE: 'AAA' } }, { fetchImpl, sleep: async () => {} });
-    const second = await postForm(cfg, { ...base, form: { __VIEWSTATE: 'BBB' } }, { fetchImpl, sleep: async () => {} });
+    await postForm(cfg, { ...base, form: [['__VIEWSTATE', 'AAA']] }, { fetchImpl, sleep: async () => {} });
+    const second = await postForm(cfg, { ...base, form: [['__VIEWSTATE', 'BBB']] }, { fetchImpl, sleep: async () => {} });
     expect(calls).toBe(1);
     expect(second.cached).toBe(true);
   });

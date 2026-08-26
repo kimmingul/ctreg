@@ -212,8 +212,15 @@ export type PostFormOpts<T> = {
   registry: string;
   baseUrl: string;
   path: string;
-  /** 그대로 폼 인코딩되어 본문이 된다. ViewState 를 포함한다. */
-  form: Record<string, string>;
+  /**
+   * 그대로 폼 인코딩되어 본문이 된다. ViewState 를 포함한다.
+   *
+   * `Record` 가 아니라 `[key, value][]` 인 이유: ICTRP 의 `ListBoxPhase` 는 다중 선택
+   * 컨트롤이라 같은 키를 여러 번 실어야 두 값을 함께 고른 것으로 서버가 읽는다
+   * (콤마로 이으면 페이지 자체가 깨진다 — `adapters/ictrp/query.ts` 참고). `Record` 는
+   * 같은 키를 두 번 담을 수 없어 이 모양을 표현할 수 없다.
+   */
+  form: readonly (readonly [string, string])[];
   /**
    * 캐시 키를 만드는 데 쓰는 **논리 질의**. `form` 이 아니라 이것을 쓰는 이유는
    * ViewState 가 요청마다 달라서, 그것을 키에 넣으면 캐시가 영원히 미스이기 때문이다.
@@ -233,7 +240,9 @@ export async function postForm<T>(
 ): Promise<{ value: T; fetchedAt: string; cached: boolean; warnings: Warning[] }> {
   const doFetch = deps.fetchImpl ?? fetch;
   const url = o.baseUrl + o.path;
-  const body = new URLSearchParams(o.form).toString();
+  // `URLSearchParams` 의 타입 선언이 `string[][]`(mutable)만 받아 `readonly` 배열을 그대로
+  // 못 받는다 — `map` 으로 얕은 사본만 만들어 넘긴다, 내용은 그대로다.
+  const body = new URLSearchParams(o.form.map(([k, v]) => [k, v])).toString();
   return withReliability(
     cfg,
     {
