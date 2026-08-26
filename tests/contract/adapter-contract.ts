@@ -474,7 +474,31 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         carries(ra, b) || carries(rb, a),
         '두 요청이 서로의 페이지 크기를 싣고 있습니다 — 어댑터가 q.pageSize 를 읽지 않고 고정값을 쓰는 것으로 보입니다.',
       ).toBe(false);
-    });
+    },
+    );
+
+    /**
+     * `pageSizeConfigurable: false` — 위 검사는 건너뛰지만 빈 자리로 남기지 않는다.
+     * `getSupported` 와 같은 규율이다: 성립하지 않는 가정을 뺐으면 실제로 무엇이
+     * 일어나는지를 **다른 검사가** 못박아야 한다. 이 레지스트리는 요청한 `q.pageSize`
+     * 가 아니라 자기 고정 페이지 크기(`limits.maxPageSize`)를 낸다는 것이 그 사실이다 —
+     * 작은 pageSize 를 요청해도 표본 응답 크기 그대로(고정 크기만큼) 돌아와야 한다.
+     * 경고가 실제로 붙는지는 어댑터마다 문구·코드가 다를 수 있어 여기서 보지 않는다 —
+     * 그건 각 어댑터의 전용 테스트(ICTRP 는 `tests/adapters/ictrp/adapter.test.ts`)의 몫이다.
+     */
+    (under.pageSizeConfigurable === false ? it : it.skip)(
+      '페이지 크기를 조절할 수 없는 레지스트리는 작은 q.pageSize 를 요청해도 고정 크기를 낸다',
+      async () => {
+        const cap = makeAdapter().capability();
+        const { adapter } = ok();
+        const r = await adapter.search({ condition: 'x', pageSize: 1 } as NormalizedQuery, fetchOpts);
+        expect(
+          r.data.length,
+          `표본 응답이 고정 페이지 크기(${cap.limits.maxPageSize})에 못 미쳐 이 검사가 공허하게 ` +
+            '통과합니다 — respond() 의 표본을 조정하세요.',
+        ).toBe(cap.limits.maxPageSize);
+      },
+    );
 
     /**
      * `getSupported: false` — get 이 성공한다는 가정 위에 선 아래 검사들(배치 분할,

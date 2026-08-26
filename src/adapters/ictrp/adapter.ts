@@ -1,4 +1,4 @@
-import type { AdapterResult, Capability, RegistryAdapter, SearchAxis } from '../../core/capability.js';
+import type { AdapterResult, Capability, RegistryAdapter, SearchAxis, Warning } from '../../core/capability.js';
 import type { FetchOpts, NormalizedQuery, ResultsOpts } from '../../core/query.js';
 import type { TrialRecord, TrialResults } from '../../core/record.js';
 import type { Config } from '../../runtime/config.js';
@@ -72,7 +72,29 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
         return o.raw ? { ...rec, source: res.raw } : rec;
       });
       const nextPageToken = page * pageSize >= res.page.records ? undefined : String(page + 1);
-      return { data, warnings: res.warnings, total: res.page.trials, ...(nextPageToken ? { nextPageToken } : {}) };
+
+      const warnings: Warning[] = [...res.warnings];
+      /**
+       * `applyLimits`(guard.ts) 는 요청이 상한을 **넘을 때만** 경고한다(`page_size_clamped`)
+       * — 상한보다 **작게** 요청했을 때는 그 함수의 소관 밖이고, 보통은 문제도 아니다
+       * (그보다 적게 받으면 그만이다). 그런데 이 레지스트리는 pageSize 를 실제로 받지
+       * 않고 언제나 고정 크기를 낸다(query.ts — `ddlPageSize` 를 실으면 0건이 된다).
+       * 그래서 작게 요청했는데 실제로 더 많이 돌아오면, 사용자의 축소 요청이 조용히
+       * 무시된 자리다. `page_size_clamped` 와 방향이 반대이므로 다른 코드를 쓴다 —
+       * 그쪽은 guard.ts 가 이미 안다.
+       */
+      if (q.pageSize !== undefined && q.pageSize < pageSize && data.length > q.pageSize) {
+        warnings.push({
+          code: 'page_size_floor',
+          message:
+            `요청한 페이지 크기 ${q.pageSize} 보다 많은 ${data.length}건이 돌아왔습니다 — ` +
+            `WHO ICTRP 의 결과 페이지는 언제나 ${pageSize}건입니다(더 작게는 받을 수 없습니다).`,
+          at: pageSize,
+          registry: 'ictrp',
+        });
+      }
+
+      return { data, warnings, total: res.page.trials, ...(nextPageToken ? { nextPageToken } : {}) };
     },
 
     async get(_ids: string[], _o: FetchOpts): Promise<AdapterResult<TrialRecord[]>> {
