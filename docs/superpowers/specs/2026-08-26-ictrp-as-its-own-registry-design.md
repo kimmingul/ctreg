@@ -107,6 +107,26 @@ ICTRP: `Phase 0` `Phase 1` `Phase 2` `Phase 3` `Phase 4`.
 `exhaustive` 는 **여기서 정하지 않는다.** 필드테스트가 실측한다(§4). P1 이 세운 규칙대로,
 지원되는 닫힌 어휘 축은 `exhaustive` 가 `null` 이면 계약 스위트가 막는다.
 
+**여러 단계를 고르면 키를 반복해 보낸다 — 콤마로 이으면 안 된다(실측 2026-08-26).**
+`ListBoxPhase` 는 multi-select 라 값 하나에 콤마로 둘을 넣으면 **페이지가 깨진다.**
+
+| 보낸 것 | diabetes(ALL) 결과 |
+| :-- | :-- |
+| phase 없음 | 36,264 trials |
+| `Phase 3` | 4,027 |
+| `Phase 2` | 2,749 |
+| `"Phase 2,Phase 3"` | **건수 문구 자체가 없음 — 깨진 페이지** |
+| 같은 키를 두 번 | 6,775 (≈ 합, 겹침 1건) |
+
+콤마 이음이 특히 나쁜 이유는 그냥 안 되는 것이 아니라 **조용히 0건이 되기** 때문이다. 깨진
+페이지에는 건수 문구가 없어 `parse.ts` 가 `records = 0` 으로 읽고, 자기 고장 감지(§6)는
+`records > 0` 일 때만 발화하므로 통과한다. 사용자에게는 "그런 시험 없음" 으로 도착한다.
+
+귀결: 폼 본문을 `Record<string, string>` 으로 표현할 수 없다(중복 키가 불가능하다).
+`buildForm` 의 반환과 `postForm` 의 `form` 을 **`[이름, 값]` 쌍의 배열**로 둔다.
+`new URLSearchParams(pairs)` 가 그 모양을 그대로 받으므로 인코딩 로직은 바뀌지 않는다.
+캐시 키를 만드는 `cacheKeyParams` 는 **논리 질의**이지 전송 본문이 아니므로 그대로 `Record` 다.
+
 ### 2.2 `status` 와 그것이 드러낸 구멍
 
 `ddlRecruitingStatus` 의 값은 `Recruiting` 과 `ALL` 둘뿐이다. **상태 어휘가 아니라
