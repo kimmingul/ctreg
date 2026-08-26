@@ -28,6 +28,33 @@ function stub(resultsHtml: string = results) {
   return fetchImpl;
 }
 
+/** 위 스텁과 같되 나간 POST 본문을 남긴다 — 어느 페이지를 실제로 요청했는지 보려면 필요하다. */
+function recordingStub(resultsHtml: string = results) {
+  const bodies: string[] = [];
+  const fetchImpl = (async (_url: string, init?: RequestInit) => {
+    const method = init?.method ?? 'GET';
+    if (method === 'POST') bodies.push(String(init?.body ?? ''));
+    return new Response(method === 'GET' ? form : resultsHtml, {
+      status: 200, headers: { 'content-type': 'text/html' },
+    });
+  }) as unknown as typeof fetch;
+  return { fetchImpl, bodies };
+}
+
+/**
+ * 레코드는 많이 남았다고 말하면서 페이저 링크는 하나도 내지 않는 결과 페이지.
+ * "다음 페이지가 있다(레코드가 남았다)" 와 "다음 페이지에 갈 수 있다(링크가 있다)" 는
+ * 다른 사실이고, 이 둘이 갈리는 자리가 바로 잘못된 토큰이 만들어지던 곳이다.
+ */
+function noPagerResultsHtml(): string {
+  const rows = Array.from(
+    { length: 10 },
+    (_, i) => `<tr><td>Recruiting</td><td>TEST${i}</td>` +
+      `<td><a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></td><td>2026-01-01</td></tr>`,
+  ).join('\n');
+  return `<html><body><span>40635 records for 36264 trials found!</span><table>${rows}</table></body></html>`;
+}
+
 /**
  * 전체가 페이지 크기(10)보다 적은 결과 페이지를 인라인으로 합성한다. `parse.ts` 가
  * 실제로 보는 모양(건수 문구 + `TrialID=` 를 포함한 행 셀들)만 갖추면 되므로, 커밋된
@@ -131,5 +158,85 @@ describe('ICTRP 어댑터 — location 축은 죽어 있다', () => {
   it('location 은 supported:false 이고 자유 텍스트 축의 모양(values: null)을 유지한다', () => {
     expect(ICTRP_CAPABILITY.search.location.supported).toBe(false);
     expect(ICTRP_CAPABILITY.search.location.values).toBeNull();
+  });
+});
+
+/**
+ * ICTRP 의 페이지 토큰은 불투명 커서가 아니라 **페이지 번호** 다(설계 §3.2 — ViewState 는
+ * 11.7KB 이상이라 봉투에 실을 수 없다). 그래서 다른 레지스트리의 토큰이나 사람이 손으로 쓴
+ * 값이 그대로 들어올 수 있는데, `Number()` 는 그것들을 조용히 삼킨다. 리뷰가 픽스처로
+ * 재현한 것들:
+ *
+ * - ctgov 모양의 `'CAESBnNvbWV0'` → NaN. 1페이지가 나가고 `nextPageToken` 이 `"NaN"` 이
+ *   되어, 토큰을 따라가는 호출자는 1페이지를 영원히 되풀이한다.
+ * - `'0'` → 1페이지, 다음 토큰 `"1"`. `'-3'` → 1페이지, 다음 토큰 `"-2"`.
+ * - `'2.7'` → 2페이지 행들이 `2.7` 페이지인 양 나가고 다음 토큰은 `"3.7"`.
+ *
+ * 넷 다 경고 없이 exit 0 이었다 — 요청한 것과 다른 페이지를 조용히 내주는 자리다.
+ * 인자 자체가 잘못된 경우이므로 exit 2(usage)로 낸다.
+ */
+describe('ICTRP 어댑터 — pageToken 검증', () => {
+  it('정수 페이지 번호는 그 페이지의 postback 까지 간다', async () => {
+    const s = recordingStub();
+    const adapter = createIctrpAdapter(cfg(), { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await adapter.search({ condition: 'diabetes', pageToken: '2' } as NormalizedQuery, fetchOpts);
+
+    // 2페이지는 검색 POST 뒤에 페이저 postback 한 번이다(form.ts: 2페이지가 ctl01).
+    expect(s.bodies).toHaveLength(2);
+    expect(s.bodies[1]).toContain(encodeURIComponent('dlPager2$ctl01$lnkPageNo'));
+  });
+
+  const 잘못된토큰: [string, string][] = [
+    ['ctgov 모양의 불투명 커서', 'CAESBnNvbWV0'],
+    ['0 — 페이지 번호는 1부터다', '0'],
+    ['음수', '-3'],
+    ['소수', '2.7'],
+  ];
+  for (const [설명, token] of 잘못된토큰) {
+    it(`${설명}(${token})은 exit 2 로 거부한다 — 조용히 다른 페이지를 내지 않는다`, async () => {
+      const s = recordingStub();
+      const adapter = createIctrpAdapter(cfg(), { fetchImpl: s.fetchImpl, sleep: async () => {} });
+
+      await expect(
+        adapter.search({ condition: 'diabetes', pageToken: token } as NormalizedQuery, fetchOpts),
+      ).rejects.toMatchObject({ code: 'usage', exit: 2 });
+      // 거부는 요청을 내기 **전에** 끝나야 한다 — 틀린 토큰으로 업스트림을 두드릴 이유가 없다.
+      expect(s.bodies).toHaveLength(0);
+    });
+  }
+
+  it('토큰이 없으면 1페이지다 — 기존 동작 그대로', async () => {
+    const s = recordingStub();
+    const adapter = createIctrpAdapter(cfg(), { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    const r = await adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts);
+
+    expect(s.bodies).toHaveLength(1); // 검색 POST 하나뿐 — 페이저를 부르지 않았다.
+    expect(r.data.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * 토큰은 **다음 페이지에 실제로 갈 수 있을 때만** 나와야 한다. 레코드가 남았다는 것만 보고
+ * 매 페이지 토큰을 찍어내면, 그 사슬을 따라간 호출자는 페이저 창 밖으로 걸어 나가
+ * 요청한 것과 다른 페이지를 받는다(client.test.ts 의 「도달할 수 없는 페이지」 참고).
+ * 잘못된 곳으로 데려가는 토큰은 없는 토큰보다 나쁘다.
+ */
+describe('ICTRP 어댑터 — nextPageToken 은 갈 수 있는 곳만 가리킨다', () => {
+  it('다음 페이지에 갈 수 있으면 토큰을 낸다', async () => {
+    const adapter = createIctrpAdapter(cfg(), { fetchImpl: stub(), sleep: async () => {} });
+    const r = await adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts);
+
+    expect(r.nextPageToken).toBe('2');
+  });
+
+  it('레코드가 남았어도 갈 수 없으면 토큰 대신 경고를 낸다', async () => {
+    const adapter = createIctrpAdapter(cfg(), { fetchImpl: stub(noPagerResultsHtml()), sleep: async () => {} });
+    const r = await adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts);
+
+    // 남은 레코드는 분명히 있다 — 그런데도 토큰을 만들면 안 된다.
+    expect(r.total).toBe(36264);
+    expect(r.nextPageToken).toBeUndefined();
+    // 침묵으로 끝내면 "이게 전부" 로 읽힌다 — 왜 여기서 멈췄는지는 말해야 한다.
+    expect(r.warnings.some((w) => w.code === 'pagination_depth_limit')).toBe(true);
   });
 });

@@ -2,7 +2,7 @@ import type { AdapterResult, Capability, RegistryAdapter, SearchAxis, Warning } 
 import type { FetchOpts, NormalizedQuery, ResultsOpts } from '../../core/query.js';
 import type { TrialRecord, TrialResults } from '../../core/record.js';
 import type { Config } from '../../runtime/config.js';
-import { unsupportedError } from '../../runtime/errors.js';
+import { unsupportedError, usageError } from '../../runtime/errors.js';
 import type { HttpDeps } from '../../runtime/http.js';
 import { makeClient } from './client.js';
 import { mapRow } from './map.js';
@@ -69,6 +69,35 @@ export const ICTRP_CAPABILITY: Capability = {
   limits: { maxPageSize: 10, ratePerSec: 1, maxBatchIds: 10 },
 };
 
+/**
+ * 이 레지스트리의 페이지 토큰은 불투명 커서가 아니라 **페이지 번호** 다(설계 §3.2 —
+ * ViewState 는 11.7KB 이상이라 봉투에 실을 수 없어 번호를 토큰으로 쓴다). 토큰이 사람이
+ * 읽고 쓸 수 있는 모양이라는 것은, 다른 레지스트리의 토큰이나 손으로 지어낸 값이 그대로
+ * 들어올 수 있다는 뜻이기도 하다 — 그리고 `Number()` 는 그것들을 **조용히** 삼킨다:
+ *
+ * - ctgov 모양의 `'CAESBnNvbWV0'` → `NaN` → 1페이지가 나가고 `nextPageToken` 이 `"NaN"`.
+ *   토큰을 따라가는 호출자는 1페이지를 영원히 되풀이한다.
+ * - `'0'` → 1페이지, 다음 토큰 `"1"`. `'-3'` → 1페이지, 다음 토큰 `"-2"`.
+ * - `'2.7'` → 2페이지 행들이 `2.7` 페이지인 양 나가고 다음 토큰은 `"3.7"`.
+ *
+ * 넷 다 경고 없이 exit 0 이었다. 인자 자체가 성립하지 않는 경우이므로 exit 2(usage)로
+ * 낸다 — 요청 전에 멈춘다. 빈 값과 없는 값은 종전대로 1페이지다(토큰 없이 첫 페이지).
+ */
+function parsePageToken(token: string | undefined): number {
+  if (token === undefined || token === '') return 1;
+  const n = Number(token);
+  // 정규식으로 모양부터 본다: `Number()` 는 `' 2 '`·`'2.0'`·`'0x2'` 를 전부 받아들인다.
+  if (!/^\d+$/.test(token) || !Number.isSafeInteger(n) || n < 1) {
+    throw usageError(
+      `ICTRP 의 페이지 토큰은 1 이상의 정수여야 합니다: '${token}'`,
+      'ICTRP 는 불투명 커서를 주지 않아 페이지 번호를 그대로 토큰으로 씁니다 — ' +
+        '첫 페이지는 --page-token 없이 조회하고, 그 다음부터는 앞선 응답의 nextPageToken 을 ' +
+        '그대로 넘기세요. 다른 레지스트리의 토큰은 여기서 쓸 수 없습니다.',
+    );
+  }
+  return n;
+}
+
 export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAdapter {
   const client = makeClient(cfg, ICTRP_CAPABILITY.limits.ratePerSec, deps);
 
@@ -78,7 +107,7 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
 
     async search(q: NormalizedQuery, o: FetchOpts) {
       const pageSize = ICTRP_CAPABILITY.limits.maxPageSize;
-      const page = q.pageToken ? Number(q.pageToken) : 1;
+      const page = parsePageToken(q.pageToken);
       const res = await client.search(q, pageSize, page, o.cacheMode);
       // ICTRP 는 구조화된 응답이 없다 — `--raw` 의 유일한 탈출구는 결과 페이지 원문
       // 그 자체다. `mapRow` 는 행 단위 매핑만 맡으므로(o.raw 를 모른다) 여기서 덧붙인다.
@@ -86,9 +115,30 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
         const rec = mapRow(row, res.fetchedAt);
         return o.raw ? { ...rec, source: res.raw } : rec;
       });
-      const nextPageToken = page * pageSize >= res.page.records ? undefined : String(page + 1);
+      /**
+       * 토큰은 **갈 수 있는 곳만** 가리킨다. 남은 레코드가 있느냐(`records`)와 다음
+       * 페이지에 도달할 수 있느냐(`nextPageReachable`)는 다른 사실이고, 앞의 것만 보고
+       * 토큰을 찍어내면 그 사슬을 따라간 호출자는 결과 화면의 페이저 창 밖으로 걸어 나가
+       * 요청한 것과 다른 페이지를 받는다(client.ts 참고). 잘못된 곳으로 데려가는 토큰은
+       * 없는 토큰보다 나쁘다.
+       */
+      const moreRecords = page * pageSize < res.page.records;
+      const nextPageToken = moreRecords && res.nextPageReachable ? String(page + 1) : undefined;
 
       const warnings: Warning[] = [...res.warnings];
+      if (moreRecords && !res.nextPageReachable) {
+        // 토큰을 그냥 빼기만 하면 "이게 전부다" 로 읽힌다 — 남은 게 있는데 여기서
+        // 멈춘다는 사실 자체를 말한다. 종료 코드는 바꾸지 않는다(오류가 아니다).
+        warnings.push({
+          code: 'pagination_depth_limit',
+          message:
+            `${res.page.records}건 중 ${page}페이지까지만 넘길 수 있습니다 — ` +
+            'WHO ICTRP 는 커서를 주지 않고 결과 화면의 페이저 링크로만 페이지를 넘기는데, ' +
+            '그 화면이 여기서 다음 페이지 링크를 내지 않았습니다. 질의를 더 좁혀 나눠 조회하세요.',
+          at: page,
+          registry: 'ictrp',
+        });
+      }
       /**
        * `applyLimits`(guard.ts) 는 요청이 상한을 **넘을 때만** 경고한다(`page_size_clamped`)
        * — 상한보다 **작게** 요청했을 때는 그 함수의 소관 밖이고, 보통은 문제도 아니다

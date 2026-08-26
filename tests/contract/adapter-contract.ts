@@ -636,8 +636,13 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      *
      * 그러니 결과가 아니라 **나간 요청** 을 본다: 접두사가 업스트림까지 새어 나가면 안 되고,
      * 벗긴 원문 ID 는 반드시 실려야 한다(뒤쪽이 없으면 ID 를 통째로 버리는 어댑터가 통과한다).
+     *
+     * `get` 도 `results` 도 없는 어댑터(ictrp)에서는 아래 두 분기가 **둘 다 거짓** 이라 이
+     * 테스트가 아무것도 검사하지 않고 초록으로 지나갔다 — 통과 목록에 이름이 오르는데
+     * 검사한 것은 없는, 제목이 거짓말하는 테스트다. 형제들과 같은 방식으로 건너뛴다.
      */
-    it('get/results 는 접두사 붙은 ID 를 받아 스스로 벗긴다 — 접두사가 업스트림에 새면 안 된다', async () => {
+    (under.getSupported === false && !makeAdapter().capability().results.supported ? it.skip : it)(
+      'get/results 는 접두사 붙은 ID 를 받아 스스로 벗긴다 — 접두사가 업스트림에 새면 안 된다', async () => {
       const { registryId } = parseTrialId(under.sampleId);
       const key = makeAdapter().key;
       const bare = registryId.toLowerCase();
@@ -670,7 +675,8 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       if (makeAdapter().capability().results.supported) {
         await check('results', (a) => a.results(under.sampleId, resultsOpts));
       }
-    });
+    },
+    );
 
     it('count 는 개수를 낸다 — 레코드가 아니라 수 하나다', async () => {
       const { adapter, calls } = ok();

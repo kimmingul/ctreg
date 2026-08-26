@@ -17,16 +17,37 @@ const cfg = () => ({
 });
 
 /** GET 이면 폼을, POST 면 결과를 낸다. 실제 흐름과 같은 순서다. */
-function stub() {
+function stub(resultsHtml: string = results) {
   const calls: { method: string; body?: string }[] = [];
   const fetchImpl = (async (_url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET';
     calls.push({ method, ...(init?.body ? { body: String(init.body) } : {}) });
-    return new Response(method === 'GET' ? form : results, {
+    return new Response(method === 'GET' ? form : resultsHtml, {
       status: 200, headers: { 'content-type': 'text/html' },
     });
   }) as unknown as typeof fetch;
   return { fetchImpl, calls };
+}
+
+/**
+ * 페이저 링크를 `ctl01`..`ctl<maxIndex>` 까지만 렌더하는 결과 페이지를 합성한다.
+ * 커밋된 픽스처(`results-page1.html`)는 `ctl01`..`ctl10` 을 내는데, 그 폭을 코드에
+ * 박아 두면 "화면에서 읽는다" 는 성질 자체를 검사할 수 없다 — 폭이 다른 페이지에서
+ * 상한이 따라 움직이는지를 보려면 폭을 마음대로 정할 수 있는 표본이 필요하다.
+ */
+function pagedResultsHtml(maxIndex: number): string {
+  const rows = Array.from(
+    { length: 10 },
+    (_, i) => `<tr><td>Recruiting</td><td>TEST${i}</td>` +
+      `<td><a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></td><td>2026-01-01</td></tr>`,
+  ).join('\n');
+  const links = Array.from({ length: maxIndex }, (_, i) => {
+    const ctl = String(i + 1).padStart(2, '0');
+    return `<a href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;` +
+      `ctl00$ContentPlaceHolder1$dlPager2$ctl${ctl}$lnkPageNo&quot;, &quot;&quot;))">${i + 2}</a>`;
+  }).join('\n');
+  return `<html><body><span>9999 records for 9000 trials found!</span>` +
+    `<table>${rows}</table><table id="ctl00_ContentPlaceHolder1_dlPager2">${links}</table></body></html>`;
 }
 
 describe('ICTRP 전송', () => {
@@ -104,5 +125,103 @@ describe('ICTRP 전송', () => {
     await c.search({ condition: 'diabetes', phase: ['phase_2', 'phase_3'] }, 20, 1, 'use');
     // 캐시를 얻어맞았다면 이 두 번째 검색은 POST 없이 끝났을 것이다.
     expect(s.calls.filter((x) => x.method === 'POST')).toHaveLength(2);
+  });
+});
+
+/**
+ * 필드테스트 실측(2026-08-26, `docs/ictrp-field-test-2026-08-26.md` 「심화 관찰 A」):
+ * 12페이지를 요청했더니 `condition=diabetes` 는 **전체의 마지막 페이지**(4행)로 건너뛰었고
+ * `title=covid` 는 재현 가능하게 **20행**(페이지 크기의 두 배)을 돌려주었다. 둘 다 오류
+ * 없이 exit 0 이었다 — 요청한 것과 다른 페이지를 조용히 내주는, 이 CLI 가 없애려는 실패다.
+ *
+ * 원인: 결과 페이지가 렌더하는 페이저 링크는 창(window)이라 `ctl01`..`ctl10` 뿐인데
+ * `client.ts` 는 절대 페이지 번호를 그대로 컨트롤 인덱스로 써서(`pagerTarget(p-1)`)
+ * 그 창 밖의 대상으로 postback 한다. 없는 대상을 받은 ASP.NET 은 오류를 내지 않는다.
+ */
+describe('ICTRP 전송 — 도달할 수 없는 페이지는 조용히 다른 페이지를 내지 않는다', () => {
+  it('픽스처가 내는 페이저 창(ctl01..ctl10) 너머를 요청하면 오류로 낸다', async () => {
+    const c = makeClient(cfg(), 1000, { fetchImpl: stub().fetchImpl, sleep: async () => {} });
+
+    // 요청한 페이지(12)와 갈 수 있는 가장 깊은 페이지(11)가 둘 다 문구에 있어야 한다 —
+    // 어느 한쪽이 빠지면 사용자는 무엇을 얼마나 줄여야 하는지 알 수 없다.
+    const err = await c.search({ condition: 'diabetes' }, 20, 12, 'off').catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'upstream' });
+    expect((err as Error).message).toContain('12');
+    expect((err as Error).message).toContain('11');
+  });
+
+  it('창 안쪽(11페이지)은 그대로 간다 — 실측에서 정상이던 깊이까지는 막지 않는다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    const r = await c.search({ condition: 'diabetes' }, 20, 11, 'off');
+
+    expect(r.page.rows.length).toBeGreaterThan(0);
+    // 마지막 postback 은 창의 마지막 대상(ctl10)이어야 한다.
+    expect(s.calls.at(-1)?.body).toContain(encodeURIComponent('dlPager2$ctl10$lnkPageNo'));
+  });
+
+  /** 상한은 코드에 박힌 11 이 아니라 **그 화면이 실제로 낸 링크** 에서 나와야 한다. */
+  it('페이저 창이 좁은 화면에서는 상한도 그만큼 좁아진다', async () => {
+    const c = makeClient(cfg(), 1000, { fetchImpl: stub(pagedResultsHtml(3)).fetchImpl, sleep: async () => {} });
+
+    const err = await c.search({ condition: 'diabetes' }, 20, 5, 'off').catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'upstream' });
+    expect((err as Error).message).toContain('5');
+    expect((err as Error).message).toContain('4');
+
+    // 창 안쪽(4페이지)은 같은 화면에서도 통과한다.
+    const ok = makeClient(cfg(), 1000, { fetchImpl: stub(pagedResultsHtml(3)).fetchImpl, sleep: async () => {} });
+    await expect(ok.search({ condition: 'diabetes' }, 20, 4, 'off')).resolves.toBeDefined();
+  });
+
+  /** 다음 페이지에 갈 수 있는지를 어댑터가 알 수 있어야 `nextPageToken` 을 멈출 수 있다. */
+  it('다음 페이지 도달 가능 여부를 화면에서 읽어 함께 낸다', async () => {
+    const c = makeClient(cfg(), 1000, { fetchImpl: stub().fetchImpl, sleep: async () => {} });
+    // 픽스처는 ctl01..ctl10 을 낸다 — 1페이지에서 2페이지(ctl01)로는 갈 수 있다.
+    expect((await c.search({ condition: 'diabetes' }, 20, 1, 'off')).nextPageReachable).toBe(true);
+
+    const narrow = makeClient(cfg(), 1000, {
+      fetchImpl: stub(pagedResultsHtml(0)).fetchImpl, sleep: async () => {},
+    });
+    // 페이저 링크가 하나도 없는 화면에서는 다음 페이지로 갈 방법이 없다.
+    expect((await narrow.search({ condition: 'diabetes' }, 20, 1, 'off')).nextPageReachable).toBe(false);
+  });
+});
+
+/**
+ * 이 파일 맨 위 `client.ts` 의 머리말은 폼 GET 을 캐시하지 않는 이유를 적어 두었다:
+ * 만료된 ViewState 를 캐시에서 꺼내 POST 하면 서버가 조용히 거절하고, 그렇게 돌아온
+ * 페이지에는 건수 문구가 없어 `parse.ts` 가 `records = 0` 으로 읽는다 — 자기 고장 감지는
+ * `records > 0` 일 때만 걸리므로 **경고 없는 0건** 이 된다. 그런데 페이저 사슬은 그
+ * 금지사항을 그대로 하고 있었다: 최대 `cacheTtlSec`(기본 1시간) 묵은 캐시 히트일 수 있는
+ * 중간 응답에서 `hiddenFields` 를 뽑아 다음 POST 에 실었다.
+ *
+ * 규칙: 캐시는 **답** 을 담지 **기계** 를 담지 않는다. 요청한 페이지가 캐시에 있으면
+ * 사슬 자체를 건너뛰고, 없으면 사슬의 중간 요청은 캐시를 읽지도 쓰지도 않는다.
+ */
+describe('ICTRP 전송 — 캐시는 답만 담는다', () => {
+  it('같은 페이지를 다시 요청하면 사슬 전체를 건너뛴다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+
+    await c.search({ condition: 'diabetes' }, 20, 2, 'use');
+    expect(s.calls.map((x) => x.method)).toEqual(['GET', 'POST', 'POST']);
+
+    await c.search({ condition: 'diabetes' }, 20, 2, 'use');
+    // 요청이 하나라도 늘었다면 답이 아니라 기계를 다시 얻으러 간 것이다.
+    expect(s.calls).toHaveLength(3);
+  });
+
+  it('다른 페이지를 요청하면 중간 응답을 캐시에서 꺼내지 않는다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+
+    await c.search({ condition: 'diabetes' }, 20, 2, 'use');
+    expect(s.calls).toHaveLength(3);
+
+    await c.search({ condition: 'diabetes' }, 20, 3, 'use');
+    // 3페이지 사슬은 GET + 검색 POST + postback 2번이다. 중간(2페이지) 응답을 캐시에서
+    // 꺼내 쓰면 여기서 요청이 하나 줄고, 그때 실리는 ViewState 는 최대 1시간 묵은 것이다.
+    expect(s.calls.slice(3).map((x) => x.method)).toEqual(['GET', 'POST', 'POST', 'POST']);
   });
 });

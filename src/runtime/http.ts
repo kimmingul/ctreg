@@ -233,6 +233,31 @@ export type PostFormOpts<T> = {
   signal?: AbortSignal;
 };
 
+/** `postForm` 과 `peekFormCache` 가 같은 키를 보게 하는 자리. 두 벌로 갈리면 peek 은 영원히 미스다. */
+const formCacheKey = (o: Pick<PostFormOpts<unknown>, 'registry' | 'baseUrl' | 'path' | 'cacheKeyParams'>) =>
+  cacheKey(o.registry, o.baseUrl + o.path, o.cacheKeyParams);
+
+/**
+ * `postForm` 이 쓸 캐시를 **요청을 내지 않고** 들여다본다.
+ *
+ * 있는 이유: 어떤 응답은 요청 한 번이 아니라 **사슬**의 끝에 나온다(ICTRP 의 N 페이지 =
+ * 폼 GET + 검색 POST + postback N-1 번). 그 사슬의 중간 응답은 답이 아니라 ViewState 를
+ * 실어 나르는 기계이고, 캐시에서 꺼낸 ViewState 는 만료돼 다음 POST 가 조용히 거절된다.
+ * 그러므로 중간 요청은 캐시를 쓰면 안 되는데, 그렇다고 사슬 전체를 매번 다시 몰면 캐시가
+ * 무의미해진다. 답이 이미 있는지를 **사슬을 시작하기 전에** 물을 자리가 필요하다.
+ *
+ * `cacheMode` 가 `'use'` 가 아니면 언제나 미스로 답한다 — `withReliability` 의 읽기 조건과
+ * 같아야 한다. 두 곳이 갈리면 `--refresh` 가 캐시를 우회하지 못한다.
+ */
+export async function peekFormCache<T>(
+  cfg: Config,
+  o: Pick<PostFormOpts<T>, 'registry' | 'baseUrl' | 'path' | 'cacheKeyParams' | 'cacheMode'>,
+  deps: HttpDeps = {},
+): Promise<{ value: T; fetchedAt: string } | undefined> {
+  if (o.cacheMode !== 'use') return undefined;
+  return readCache<T>(cfg.cacheDir, formCacheKey(o), cfg.cacheTtlSec, deps.now ?? Date.now);
+}
+
 export async function postForm<T>(
   cfg: Config,
   o: PostFormOpts<T>,
@@ -247,7 +272,7 @@ export async function postForm<T>(
     cfg,
     {
       registry: o.registry,
-      cacheKey: cacheKey(o.registry, url, o.cacheKeyParams),
+      cacheKey: formCacheKey(o),
       url,
       cacheMode: o.cacheMode,
       ratePerSec: o.ratePerSec,
