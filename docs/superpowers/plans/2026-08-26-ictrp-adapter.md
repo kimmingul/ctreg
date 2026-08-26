@@ -25,7 +25,9 @@
 
 - 베이스 URL: `https://trialsearch.who.int`, 폼 경로: `/AdvSearch.aspx`
 - 폼 필드 접두사: `ctl00$ContentPlaceHolder1$`
-- `limits.maxPageSize = 100`, `limits.ratePerSec = 1`
+- `limits.maxPageSize = 10`, `limits.ratePerSec = 1`
+  (**정정 2026-08-26:** 100 은 근거가 없었다. `ddlPageSize` 를 검색 POST 에 실으면 결과가
+  0건이 된다 — 그 컨트롤은 결과 페이지에만 있다. 검색 POST 에 **보내지 않는다.**)
 - 페이지 크기 컨트롤: `ddlPageSize`, 페이저: `dlPager2$ctlNN$lnkPageNo`
 - **`ddlRecruitingStatus` 는 언제나 명시한다** — `--status recruiting` 이면 `1`, 아니면 `ALL`
 
@@ -924,8 +926,14 @@ describe('ICTRP 질의 조립', () => {
     expect(buildForm({ phase: ['early_phase_1'] }, 20)[FIELD.phase]).toBe('Phase 0');
   });
 
-  it('페이지 크기를 폼이 받는 값으로 보낸다', () => {
-    expect(buildForm({ condition: 'c' }, 100)[FIELD.pageSize]).toBe('100');
+  /**
+   * **페이지 크기를 검색 POST 에 실으면 안 된다(실측 2026-08-26).** `ddlPageSize` 는 결과
+   * 페이지에만 렌더되므로, 그 이름을 검색 POST 에 담으면 ASP.NET 이 `__EVENTVALIDATION`
+   * 으로 POST 를 거절해 **결과가 0건**이 된다(안 보내면 10행, 50/100 을 보내면 0행).
+   * 조용히 틀린 답이 나가는 자리라 이 검사가 그것을 막는다.
+   */
+  it('페이지 크기를 검색 POST 에 싣지 않는다 — 실으면 결과가 0건이 된다', () => {
+    expect(FIELD.pageSize in buildForm({ condition: 'c' }, 100)).toBe(false);
   });
 
   it('검색 버튼 이름을 함께 보낸다 — 없으면 서버가 검색으로 보지 않는다', () => {
@@ -1016,7 +1024,12 @@ export function buildForm(q: NormalizedQuery, pageSize: number): Record<string, 
   // 위 주석 참고 — 이 줄이 빠지면 모든 결과가 조용히 모집중만이 된다.
   f[FIELD.status] = (q.status ?? []).includes('recruiting') ? '1' : 'ALL';
 
-  f[FIELD.pageSize] = String(pageSize);
+  // `ddlPageSize` 는 **싣지 않는다.** 그 컨트롤은 결과 페이지에만 렌더되므로 검색 POST 에
+  // 담으면 ASP.NET 이 __EVENTVALIDATION 으로 거절해 결과가 0건이 된다(실측 2026-08-26:
+  // 안 보내면 10행, 50/100 을 보내면 각각 0행). 첫 페이지는 언제나 10행이고, 더 받으려면
+  // 페이저 postback 으로 넘긴다. `pageSize` 인자는 이 함수의 시그니처에 남지만 폼에는 안 간다 —
+  // 지우면 호출자가 `limits.maxPageSize` 와의 관계를 잃는다.
+  void pageSize;
   f[FIELD.search] = 'Search';
   return f;
 }
@@ -1521,7 +1534,7 @@ export const ICTRP_CAPABILITY: Capability = {
   },
   count: { supported: true, scope: '결과 화면이 내는 시험 수(같은 시험의 여러 등록을 묶은 뒤의 수)' },
   results: { supported: false, scope: '구조화된 결과 데이터를 싣지 않는다' },
-  limits: { maxPageSize: 100, ratePerSec: 1 },
+  limits: { maxPageSize: 10, ratePerSec: 1 },
 };
 ```
 
