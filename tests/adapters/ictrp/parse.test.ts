@@ -28,13 +28,37 @@ describe('ICTRP 결과 파싱', () => {
       expect(r.trialId.length).toBeGreaterThan(0);
       expect(r.statusRaw.length).toBeGreaterThan(0);
       expect(r.title.length).toBeGreaterThan(0);
+      // 실제로 있었던 버그: 열이 하나씩 밀려서 title 칸에 trialId 가, registeredOn
+      // 칸에 빈 문자열이 들어갔다. 길이만 보면 이 corruption 을 못 잡는다 — 내용을 본다.
+      expect(r.title).not.toBe(r.trialId);
+      expect(r.title.length).toBeGreaterThan(r.trialId.length);
+      expect(r.registeredOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
 
   it('원 레지스트리가 섞인 ID 를 그대로 읽는다 — 슬래시·하이픈이 들어 있다', () => {
-    const p = parseResults(page1);
-    // 이 픽스처에 어떤 레지스트리가 섞였는지는 그날에 달렸으므로, 형식을 고정하지 않고
-    // "공백이 없는 토큰" 이라는 것만 본다.
+    // 이 픽스처에 마침 슬래시·하이픈이 든 ID 가 없으므로(그날의 검색 결과일 뿐이다),
+    // 실제 레지스트리 형태(CTRI, JPRN)를 흉내낸 합성 행을 파서에 직접 먹여서 본다.
+    const synthetic = `
+      <table>
+        <tr>
+          <td>Recruiting</td><td></td>
+          <td><a href="Trial2.aspx?TrialID=CTRI/2026/07/113311">CTRI/2026/07/113311</a></td>
+          <td></td>
+          <td>A Synthetic Study On Slash-Bearing Trial IDs</td>
+          <td>2026-08-06</td><td></td>
+        </tr>
+        <tr>
+          <td>Not Recruiting</td><td></td>
+          <td><a href="Trial2.aspx?TrialID=JPRN-jRCT1031260225">JPRN-jRCT1031260225</a></td>
+          <td></td>
+          <td>A Synthetic Study On Hyphen-Bearing Trial IDs</td>
+          <td>2026-08-05</td><td></td>
+        </tr>
+      </table>
+      <p>2 records for 2 trials found</p>`;
+    const p = parseResults(synthetic);
+    expect(p.rows.map((r) => r.trialId)).toEqual(['CTRI/2026/07/113311', 'JPRN-jRCT1031260225']);
     for (const r of p.rows) expect(r.trialId).not.toMatch(/\s/);
   });
 
@@ -46,6 +70,24 @@ describe('ICTRP 결과 파싱', () => {
    */
   it('건수가 있는데 행을 하나도 못 읽으면 업스트림 오류다', () => {
     const broken = page1.replace(/TrialID=/g, 'BROKEN=');
+    try {
+      parseResults(broken);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      expect((e as CtregError).exit).toBe(EXIT.UPSTREAM);
+    }
+  });
+
+  /**
+   * 열이 통째로 밀려서 행은 읽혔는데 제목만 전부 빈 채로 나오는 경우 — 실제로 있었던
+   * 버그의 재현이다. 행 수가 0 이 아니니 위의 자기 고장 감지로는 못 잡아서 따로 둔다.
+   */
+  it('행은 읽혔는데 전부 제목이 비면 업스트림 오류다 — 열 밀림 감지', () => {
+    // 제목 앵커의 속 텍스트만 비운다 — href 의 `TrialID=` 는 그대로 두므로 행 자체는
+    // 여전히 잡히고, 오직 제목만 사라진다. (이 페이지는 `TrialID=` 가 제목 칸의 링크
+    // href 에 있다 — 실측.)
+    const blankTitles = (html: string) => html.replace(/(<a[^>]*TrialID=[^>]*>)([\s\S]*?)(<\/a>)/gi, '$1$3');
+    const broken = blankTitles(page1);
     try {
       parseResults(broken);
       expect.unreachable('던져야 한다');
