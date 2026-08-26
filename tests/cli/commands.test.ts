@@ -735,3 +735,31 @@ describe('vocab_excludes_missing 는 봉투까지 간다', () => {
     );
   });
 });
+
+describe('신고하지 않은 값은 커맨드에서도 막힌다', () => {
+  const subsetCap = (): Capability => ({
+    ...CTGOV_CAPABILITY,
+    search: {
+      ...CTGOV_CAPABILITY.search,
+      status: { ...CTGOV_CAPABILITY.search.status, values: ['recruiting'] },
+    },
+  });
+
+  it('search 는 unsupported 로 표시하고 exit 3 이다', async () => {
+    const env = await runSearch(
+      parseCliArgs(['search', '--condition', 'X', '--status', 'completed']),
+      stubAdapter({}, subsetCap()),
+    );
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'unsupported' });
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+
+  it('count 도 마찬가지다', async () => {
+    const env = await runCount(
+      parseCliArgs(['count', '--condition', 'X', '--status', 'completed']),
+      stubAdapter({}, subsetCap()),
+    );
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'unsupported' });
+    expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+});

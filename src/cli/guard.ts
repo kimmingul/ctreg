@@ -72,6 +72,32 @@ export function assertSupported(
     }
   }
 
+  /**
+   * 축은 지원되는데 **그 값** 을 안 받는 경우. `values` 는 "받아들여지는 값의 목록"
+   * 이므로 그 밖의 값으로 거는 필터는 조회 자체가 불가능하다는 뜻이고, 축 미지원과
+   * 같은 exit 3 이다 — 사용자 입장에서 같은 사실이기 때문이다: 결과가 없는 것이
+   * 아니라 그렇게 물어볼 수 없다.
+   *
+   * `values === null` 은 자유 텍스트 축의 모양이라 대상이 아니다(목록이 없다는 뜻이지
+   * 아무 값도 안 받는다는 뜻이 아니다).
+   */
+  const requested: [keyof Capability['search'], string[]][] = [
+    ['status', q.status ?? []],
+    ['phase', q.phase ?? []],
+    ['studyType', q.studyType === undefined ? [] : [q.studyType]],
+  ];
+  for (const [axis, values] of requested) {
+    const declared = cap.search[axis].values;
+    if (declared === null || values.length === 0) continue;
+    const strays = values.filter((v) => !declared.includes(v));
+    if (strays.length === 0) continue;
+    throw unsupportedError(
+      `${cap.name} 은 '${axis}' 를 ${strays.join(', ')} 로 거를 수 없습니다`,
+      `이 레지스트리가 받는 값: ${declared.join(', ')}. ` +
+        'ctreg registries 로 축마다 받는 값을 확인하세요. 결과가 없는 것이 아니라 그렇게 물어볼 수 없습니다.',
+    );
+  }
+
   const wantAll = fetch.include.includes('all');
   const detailAxes: [keyof Capability['detail'], boolean][] = [
     ['eligibilityText', wantAll || fetch.include.includes('eligibility')],

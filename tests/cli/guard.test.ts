@@ -159,6 +159,55 @@ describe('capability 가드', () => {
     };
     expect(assertSupported(notExhaustive, { condition: 'x' }, fetchOpts).warnings).toEqual([]);
   });
+
+  /**
+   * 지금까지 두 어댑터는 닫힌 어휘를 **전부 신고하거나 축을 끄거나** 둘 중 하나였다.
+   * ICTRP 는 진부분집합을 신고하는 첫 어댑터다(`status` 는 `['recruiting']` 하나).
+   * 그대로 두면 `--status completed` 가 파싱과 가드를 통과한 뒤 필터가 조용히
+   * 사라진다 — 이 CLI 가 없애려는 실패 그 자체다.
+   */
+  it('신고하지 않은 값으로 필터하면 exit 3 이다', () => {
+    const subset: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: {
+        ...CTGOV_CAPABILITY.search,
+        status: { ...CTGOV_CAPABILITY.search.status, values: ['recruiting'] },
+      },
+    };
+    expect(() => assertSupported(subset, { status: ['recruiting'] }, fetchOpts)).not.toThrow();
+    expectUnsupported(() => assertSupported(subset, { status: ['completed'] }, fetchOpts), 'completed');
+  });
+
+  it('거절할 때 그 레지스트리가 받는 값을 말한다 — 막기만 하면 복구 경로가 없다', () => {
+    const subset: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: {
+        ...CTGOV_CAPABILITY.search,
+        status: { ...CTGOV_CAPABILITY.search.status, values: ['recruiting'] },
+      },
+    };
+    try {
+      assertSupported(subset, { status: ['completed'] }, fetchOpts);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      expect(`${(e as CtregError).message} ${(e as CtregError).hint}`).toContain('recruiting');
+    }
+  });
+
+  it('여러 값 중 하나만 밖이어도 잡는다', () => {
+    const subset: Capability = {
+      ...CTGOV_CAPABILITY,
+      search: {
+        ...CTGOV_CAPABILITY.search,
+        status: { ...CTGOV_CAPABILITY.search.status, values: ['recruiting'] },
+      },
+    };
+    expectUnsupported(() => assertSupported(subset, { status: ['recruiting', 'completed'] }, fetchOpts), 'completed');
+  });
+
+  it('자유 텍스트 축은 이 검사의 대상이 아니다 — values 가 null 이면 목록이 없다는 뜻이다', () => {
+    expect(() => assertSupported(CTGOV_CAPABILITY, { condition: '아무거나' }, fetchOpts)).not.toThrow();
+  });
 });
 
 /**
