@@ -6,9 +6,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { FIELD, hiddenFields, pagerTarget } from '../../../src/adapters/ictrp/form.js';
+import { FIELD, hiddenFields, pagerLinks } from '../../../src/adapters/ictrp/form.js';
 
 const form = readFileSync(join(__dirname, '../../fixtures/ictrp/advsearch-form.html'), 'utf8');
+// 페이저는 결과 화면에만 있다 — 폼 페이지에는 없다.
+const results = readFileSync(join(__dirname, '../../fixtures/ictrp/results-page1.html'), 'utf8');
 
 describe('ICTRP 폼 파싱', () => {
   it('ViewState 세 개를 모두 거둔다 — 하나라도 빠지면 POST 가 거절된다', () => {
@@ -46,9 +48,28 @@ describe('ICTRP 폼 파싱', () => {
     expect(form).not.toContain(FIELD.pageSize);
   });
 
-  /** 1페이지는 현재 페이지라 링크가 없다. 2페이지가 `ctl01` 이다(실측). */
-  it('페이저 대상은 0-기반 인덱스로 만든다', () => {
-    expect(pagerTarget(1)).toBe('ctl00$ContentPlaceHolder1$dlPager2$ctl01$lnkPageNo');
-    expect(pagerTarget(9)).toBe('ctl00$ContentPlaceHolder1$dlPager2$ctl09$lnkPageNo');
+  /**
+   * 예전에는 `pagerTarget(page - 1)` 로 컨트롤 이름을 **계산** 했다. 그 산술이 버그의
+   * 뿌리였다 — 창의 마지막 링크가 `Last` 라서 인덱스와 페이지 번호가 한 칸 어긋난다.
+   * 이제는 계산하지 않고 화면에서 라벨과 대상을 **한 앵커에서 함께** 읽는다.
+   */
+  it('번호 링크를 페이지 번호 → postback 대상으로 읽는다', () => {
+    const links = pagerLinks(results);
+    // 픽스처의 창은 1~10 이 번호 링크이고 ctl10 은 Last 다.
+    expect(links.get(2)).toBe('ctl00$ContentPlaceHolder1$dlPager2$ctl01$lnkPageNo');
+    expect(links.get(10)).toBe('ctl00$ContentPlaceHolder1$dlPager2$ctl09$lnkPageNo');
+  });
+
+  it('Last 는 페이지가 아니므로 잡지 않는다 — 이 한 칸이 옛 버그였다', () => {
+    const links = pagerLinks(results);
+    // ctl10 은 실재하지만 라벨이 'Last' 라 어느 페이지인지 화면이 말해 주지 않는다.
+    expect(results).toContain('dlPager2_ctl10_lnkPageNo');
+    expect(links.has(11)).toBe(false);
+    expect([...links.values()]).not.toContain('ctl00$ContentPlaceHolder1$dlPager2$ctl10$lnkPageNo');
+  });
+
+  it('현재 페이지는 링크가 아니라 잡히지 않는다', () => {
+    // 1페이지는 disabled 라 href 가 없다.
+    expect(pagerLinks(results).has(1)).toBe(false);
   });
 });

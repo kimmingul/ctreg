@@ -33,38 +33,33 @@ export const FIELD = {
 } as const;
 
 /**
- * 페이지 postback 의 `__EVENTTARGET`. `pageIndex` 는 0-기반이고 1페이지(0)는 현재
- * 페이지라 링크가 없다 — 2페이지가 `ctl01` 이다(실측).
+ * 이 화면이 실제로 렌더한 **번호 링크** 를 "페이지 번호 → postback 대상" 으로 읽는다.
+ *
+ * 왜 인덱스가 아니라 라벨인가 — 결과 화면의 페이저는 전체 목록이 아니라 **창(window)**
+ * 이고, **그 창의 마지막 링크는 페이지 번호가 아니라 `Last`** 다. 커밋된 픽스처가 그렇다:
+ * `ctl00`→`1` … `ctl09`→`10`, 그리고 `ctl10`→`Last`.
+ *
+ * 그래서 컨트롤 인덱스만 세면 한 칸이 남는다. 예전 판이 그랬다: `ctl10` 이 있으니
+ * 11페이지도 갈 수 있다고 판단하고 실제로는 `Last` 를 눌러 **전체의 마지막 페이지를
+ * 11페이지라고 내주었다.** 결과가 적은 질의일수록 빨리 닿는다 — 링크가 `ctl01`..`ctl03`
+ * (2~4페이지) + `ctl04`=`Last` 라면 5페이지 요청이 그렇게 된다.
+ *
+ * 구별할 근거는 화면에 있다. 앵커 본문이 곧 페이지 번호이고, 그 앵커의 `href` 안에
+ * postback 대상 이름이 들어 있다. 둘을 **한 앵커에서 함께** 읽으므로 번호와 대상이
+ * 어긋날 수 없다 — 인덱스 산술이 하던 추측이 사라진다.
+ *
+ * 현재 페이지의 링크는 `disabled` 라 `href` 가 없고, 그래서 여기 잡히지 않는다. 그것도
+ * 옳다: 지금 있는 페이지로 postback 할 일은 없다. `Last`·`>>` 처럼 번호가 아닌 라벨도
+ * 잡히지 않는다 — 그 자리가 몇 페이지인지 화면이 말해 주지 않기 때문이다.
  */
-export function pagerTarget(pageIndex: number): string {
-  return `${PREFIX}dlPager2$ctl${String(pageIndex).padStart(2, '0')}$lnkPageNo`;
-}
-
-/** `$` 는 정규식 메타문자다 — 컨트롤 이름을 패턴에 넣으려면 escape 해야 한다. */
-const PAGER_RE = new RegExp(`${PREFIX.replaceAll('$', '\\$')}dlPager2\\$ctl(\\d+)\\$lnkPageNo`, 'g');
-
-/**
- * 이 화면이 **실제로 렌더한** 페이저 postback 대상의 인덱스들(오름차순).
- *
- * 결과 화면의 페이저는 전체 페이지 목록이 아니라 **창(window)** 이다 — 커밋된 픽스처는
- * `ctl01`..`ctl10` 만 낸다. 그런데 `client.ts` 는 절대 페이지 번호를 그대로 컨트롤
- * 인덱스로 쓰므로(`pagerTarget(p-1)`), 그 창 밖을 요청하면 **그 화면에 존재하지 않는
- * 대상** 으로 postback 하게 된다. ASP.NET 은 그것을 오류로 내지 않는다: 실측
- * (2026-08-26, 필드테스트 「심화 관찰 A」) 12페이지 요청이 한 질의에서는 전체의 마지막
- * 페이지로 건너뛰었고 다른 질의에서는 20행(페이지 크기의 두 배)을 돌려주었다.
- *
- * 그래서 상한을 코드에 박지 않고 **화면에서 읽는다.** 창의 폭은 우리 계약이 아니라
- * 포털의 사정이고, 박아 둔 숫자는 포털이 바꾸는 날 조용히 틀려진다.
- *
- * 1페이지(`ctl00`)는 현재 페이지라 링크가 아니고 `href` 도 없어 여기 잡히지 않는다.
- * 창의 마지막 링크가 페이지 번호인지 "Last" 인지는 이 함수가 구별하지 않는다 — 구별할
- * 근거가 화면에 없다. 그래서 이 목록은 "여기까지는 postback 대상이 존재한다" 는 뜻이지
- * "그 페이지가 몇 번째다" 는 뜻이 아니다.
- */
-export function pagerIndexes(html: string): number[] {
-  const out = new Set<number>();
-  for (const m of html.matchAll(PAGER_RE)) out.add(Number(m[1]));
-  return [...out].sort((a, b) => a - b);
+export function pagerLinks(html: string): Map<number, string> {
+  const out = new Map<number, string>();
+  for (const m of html.matchAll(/<a\b[^>]*\bhref="[^"]*?(ctl00\$ContentPlaceHolder1\$dlPager2\$ctl\d+\$lnkPageNo)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const label = m[2]!.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    if (!/^\d+$/.test(label)) continue;
+    out.set(Number(label), m[1]!);
+  }
+  return out;
 }
 
 /**

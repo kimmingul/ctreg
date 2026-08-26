@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { makeClient } from '../../../src/adapters/ictrp/client.js';
 import { FIELD } from '../../../src/adapters/ictrp/form.js';
+import { EXIT } from '../../../src/cli/exit-codes.js';
 
 const form = readFileSync(join(__dirname, '../../fixtures/ictrp/advsearch-form.html'), 'utf8');
 const results = readFileSync(join(__dirname, '../../fixtures/ictrp/results-page1.html'), 'utf8');
@@ -138,26 +139,60 @@ describe('ICTRP 전송', () => {
  * `client.ts` 는 절대 페이지 번호를 그대로 컨트롤 인덱스로 써서(`pagerTarget(p-1)`)
  * 그 창 밖의 대상으로 postback 한다. 없는 대상을 받은 ASP.NET 은 오류를 내지 않는다.
  */
+/**
+ * 창의 **마지막 링크는 페이지 번호가 아니라 "Last"** 다. 커밋된 픽스처를 열어 보면
+ * `ctl00`→`1` … `ctl09`→`10`, 그리고 `ctl10`→`Last` 다.
+ *
+ * 그래서 컨트롤 인덱스만 세면 한 칸이 남는다: `ctl10` 이 있으니 11페이지도 갈 수 있다고
+ * 판단하고, 실제로는 "Last" 를 눌러 **전체의 마지막 페이지를 11페이지라고 내준다.**
+ * 결과가 적은 질의일수록 빨리 닿는다 — 링크가 `ctl01`..`ctl03`(2~4페이지) + `ctl04`=Last
+ * 라면 5페이지 요청이 그렇게 된다.
+ *
+ * 라벨이 화면에 있으므로 구별할 근거가 있다. 컨트롤이 아니라 **라벨** 로 판단한다.
+ */
+describe('ICTRP 전송 — 창의 마지막 링크가 Last 면 그 자리는 페이지가 아니다', () => {
+  it('픽스처의 창에서 11페이지는 갈 수 없다 — ctl10 은 Last 다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await expect(c.search({ condition: 'diabetes' }, 20, 11, 'off')).rejects.toMatchObject({
+      exit: EXIT.UPSTREAM,
+    });
+  });
+
+  it('같은 창에서 10페이지는 갈 수 있다 — ctl09 의 라벨이 10 이다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await expect(c.search({ condition: 'diabetes' }, 20, 10, 'off')).resolves.toBeDefined();
+  });
+});
+
 describe('ICTRP 전송 — 도달할 수 없는 페이지는 조용히 다른 페이지를 내지 않는다', () => {
-  it('픽스처가 내는 페이저 창(ctl01..ctl10) 너머를 요청하면 오류로 낸다', async () => {
+  it('픽스처가 내는 페이저 창(번호 링크 2~10) 너머를 요청하면 오류로 낸다', async () => {
     const c = makeClient(cfg(), 1000, { fetchImpl: stub().fetchImpl, sleep: async () => {} });
 
-    // 요청한 페이지(12)와 갈 수 있는 가장 깊은 페이지(11)가 둘 다 문구에 있어야 한다 —
+    // 요청한 페이지(12)와 갈 수 있는 가장 깊은 페이지(10)가 둘 다 문구에 있어야 한다 —
     // 어느 한쪽이 빠지면 사용자는 무엇을 얼마나 줄여야 하는지 알 수 없다.
+    // 10 인 이유: 창의 번호 링크는 2~10 이고 ctl10 은 Last 라 페이지가 아니다.
     const err = await c.search({ condition: 'diabetes' }, 20, 12, 'off').catch((e: unknown) => e);
     expect(err).toMatchObject({ code: 'upstream' });
     expect((err as Error).message).toContain('12');
-    expect((err as Error).message).toContain('11');
+    expect((err as Error).message).toContain('10');
   });
 
-  it('창 안쪽(11페이지)은 그대로 간다 — 실측에서 정상이던 깊이까지는 막지 않는다', async () => {
+  /**
+   * 이 검사는 예전에 11페이지를 요청하고 마지막 postback 이 `ctl10` 인지 보았다. 그것이
+   * 바로 버그였다 — `ctl10` 은 11페이지가 아니라 `Last` 다. 의도(창 안쪽은 막지 않는다)는
+   * 그대로 두고, 창의 **진짜** 끝인 10페이지로 바꾼다.
+   */
+  it('창 안쪽(10페이지)은 그대로 간다 — 도달 가능한 깊이까지는 막지 않는다', async () => {
     const s = stub();
     const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
-    const r = await c.search({ condition: 'diabetes' }, 20, 11, 'off');
+    const r = await c.search({ condition: 'diabetes' }, 20, 10, 'off');
 
     expect(r.page.rows.length).toBeGreaterThan(0);
-    // 마지막 postback 은 창의 마지막 대상(ctl10)이어야 한다.
-    expect(s.calls.at(-1)?.body).toContain(encodeURIComponent('dlPager2$ctl10$lnkPageNo'));
+    // 마지막 postback 은 10페이지의 링크(ctl09)여야 한다 — Last(ctl10)가 아니다.
+    expect(s.calls.at(-1)?.body).toContain(encodeURIComponent('dlPager2$ctl09$lnkPageNo'));
+    expect(s.calls.at(-1)?.body).not.toContain(encodeURIComponent('dlPager2$ctl10$lnkPageNo'));
   });
 
   /** 상한은 코드에 박힌 11 이 아니라 **그 화면이 실제로 낸 링크** 에서 나와야 한다. */

@@ -3,7 +3,7 @@ import type { CacheMode, NormalizedQuery } from '../../core/query.js';
 import type { Config } from '../../runtime/config.js';
 import { upstreamError } from '../../runtime/errors.js';
 import { getJson, peekFormCache, postForm, type HttpDeps } from '../../runtime/http.js';
-import { hiddenFields, pagerIndexes, pagerTarget } from './form.js';
+import { hiddenFields, pagerLinks } from './form.js';
 import { parseResults, type IctrpPage } from './parse.js';
 import { buildForm } from './query.js';
 
@@ -60,7 +60,7 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
         // `raw` 는 이 조회가 최종적으로 받은 결과 페이지 원문이다. `--raw` 가 레코드에
         // 실을 유일한 원문이므로(ICTRP 는 구조화된 응답이 없다) 여기서 그대로 넘긴다.
         page: parseResults(value), fetchedAt, warnings, raw: value,
-        nextPageReachable: pagerIndexes(value).includes(page),
+        nextPageReachable: pagerLinks(value).has(page + 1),
       });
 
       // 답이 이미 있으면 사슬을 아예 시작하지 않는다 — 요청 0번. 사슬을 돌면서 그 중간
@@ -104,9 +104,10 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
          * 없으면 `parse.ts` 의 자기 고장 감지와 같은 방식으로 던진다 — 조용히 틀린 답
          * 대신 시끄러운 오류다. 상한은 화면에서 읽으므로 창의 폭이 바뀌면 따라 움직인다.
          */
-        const available = pagerIndexes(html.value);
-        if (!available.includes(p - 1)) {
-          const deepest = (available.at(-1) ?? 0) + 1;
+        const links = pagerLinks(html.value);
+        const target = links.get(p);
+        if (target === undefined) {
+          const deepest = Math.max(p - 1, ...links.keys());
           throw upstreamError(
             `ICTRP 의 ${page}페이지를 요청했지만 ${deepest}페이지까지만 갈 수 있습니다`,
             'ICTRP 는 커서를 주지 않아 결과 화면의 페이저 링크를 눌러 가며 페이지를 넘깁니다. ' +
@@ -122,7 +123,7 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
             ...cacheable,
             form: [
               ...Object.entries(hiddenFields(html.value)),
-              ['__EVENTTARGET', pagerTarget(p - 1)],
+              ['__EVENTTARGET', target],
               ['__EVENTARGUMENT', ''],
             ],
             // 위와 같은 이유 — 사슬의 마지막(요청한 페이지)만 캐시한다.
