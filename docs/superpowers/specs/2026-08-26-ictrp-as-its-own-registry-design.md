@@ -32,13 +32,35 @@
 
 | 항목 | 실측 |
 | :-- | :-- |
-| 진짜 질의 표면 | `AdvSearch.aspx` 의 ViewState POST. quick search(`Default.aspx?...`)는 **다른 것**이고 훨씬 좁다(pembrolizumab 86 vs 1,013) |
+| 진짜 질의 표면 | `AdvSearch.aspx` 의 ViewState POST. quick search(`Default.aspx?...`)는 **다른 것**이고 훨씬 좁다(pembrolizumab 86 vs 1,013 — 후자는 모집중만, §1.1) |
+| 쿠키 | **필요 없다.** 검색 POST 도 페이지 postback 도 쿠키 없이 성립한다 |
+| 페이지 크기 컨트롤 | `ctl00$ContentPlaceHolder1$ddlPageSize` |
+| 결과 행이 싣는 것 | 모집상태 · TrialID · Public title · 등록일 |
 | 총계 | **절단 없음.** `title=a` → `120819 records for 110319 trials` |
 | 페이지 | `dlPager2$ctlNN$lnkPageNo` postback. 2페이지 확인, 1페이지와 겹침 0 |
 | 페이지 크기 | 폼이 10 / 20 / 50 / 100 을 제공 |
 | 결과 행 | `Trial2.aspx?TrialID=<id>` 링크. 한 결과에 NCT·CTRI·JPRN-jRCT·DRKS 혼재 |
 | 레코드 | `Trial2.aspx?TrialID=<id>` 는 **세션 없는 안정적 GET** |
 | 묶음 | 결과가 `N records for M trials` 로 나온다(pembrolizumab 1,435 → 1,013) |
+
+### 1.1 `ddlRecruitingStatus` 의 기본값 — 구현이 반드시 막아야 할 함정
+
+`ddlRecruitingStatus` 에는 `selected` 속성이 없다. 즉 **기본 선택이 첫 항목인 `1`(Recruiting)**
+이고, 폼 필드를 보내지 않으면 서버는 그 값을 쓴다. 실측:
+
+| 보낸 값 | diabetes 결과 |
+| :-- | :-- |
+| (보내지 않음) | `7107 records for 6844 trials` — 1페이지 상태 전부 `Recruiting` |
+| `1` | 같음 |
+| `ALL` | **`40635 records for 36264 trials`** — 1페이지에 `Not Recruiting` 9 / `Recruiting` 1 |
+
+**따라서 어댑터는 사용자가 `--status recruiting` 을 주지 않는 한 언제나 `ALL` 을 명시해야 한다.**
+명시하지 않으면 모든 질의가 조용히 모집중만으로 좁혀진다 — 이 CLI 가 없애려는 실패 그 자체이고,
+어느 경고도 붙지 않는다. 필드테스트가 이 불변식을 지킨다(§4).
+
+이 발견이 §2 의 `condition` 관찰도 뒤집는다: ICTRP 의 diabetes 는 **36,264 trials** 로 ctgov 의
+24,273 보다 **크다**(집계자이므로 당연하다). "ICTRP 가 ctgov 보다 좁다" 는 관찰은 기본값이
+만든 착시였다.
 
 **quick search 로 잰 초기 수치는 전부 폐기한다.** 「묶음 1.5–7.6%」·「키 이름이 무시된다」는
 그 표면의 성질이었고, 고급검색에는 해당하지 않는다.
@@ -68,9 +90,10 @@
 된다 — 조용히 다른 것을 걸러 놓고 사용자는 자기가 요청한 것을 받았다고 믿는다. 등록일 축을
 스키마에 더할지는 **별도 결정**이고 이 설계의 범위 밖이다.
 
-`condition` 의 `scope` 는 실측을 적는다: ICTRP 의 condition 은 ctgov 와 폭이 다르다
-(diabetes → ICTRP 6,844 trials vs ctgov 24,273). 좁다고 단정하지 않고 **다르다**고 적는다 —
-ctgov 쪽은 업스트림 동의어 확장이 일어난다고 이미 자기 `scope` 에 적고 있다.
+`condition` 의 `scope` 는 실측을 적는다: 모든 상태를 포함하면 ICTRP 의 diabetes 는
+**36,264 trials** 로 ctgov 의 24,273 보다 크다(§1.1). 집계자이므로 자연스럽다. 동의어 처리는
+양쪽이 다르므로(ICTRP 는 끄는 체크박스가 있고 ctgov 는 업스트림이 확장한다) `scope` 는
+**다르다**고만 적고 어느 쪽이 넓다고 단정하지 않는다.
 
 ### 2.1 `phase`
 
@@ -101,13 +124,27 @@ ICTRP: `Phase 0` `Phase 1` `Phase 2` `Phase 3` `Phase 4`.
 `--registry ictrp --status completed` 가 파싱과 가드를 통과한 뒤 필터가 조용히 사라진다 —
 이 CLI 가 없애려는 실패 그 자체다. 닫는 법은 §5.2.
 
+**레코드의 `status` 는 별개 문제다.** `TrialRecord.status` 는 필수인데 결과 행이 싣는 값은
+`Recruiting` / `Not Recruiting` **이진**이다(실측). 매핑:
+
+| ICTRP 행 | `status` | `statusRaw` |
+| :-- | :-- | :-- |
+| `Recruiting` | `recruiting` | `Recruiting` |
+| `Not Recruiting` | `other` | `Not Recruiting` |
+
+`other` 인 이유는 어휘의 정의 그대로다 — `unknown` 은 "레지스트리가 모른다", `other` 는
+**"매핑 없음"** 이다. `Not Recruiting` 은 ICTRP 가 아는 값이지만 완료·중단·모집종료를 한데
+묶은 굵은 통이라 여덟 개 중 어느 것과도 같지 않다. `completed` 로 접으면 거짓이 된다.
+원문은 `statusRaw` 가 보존한다.
+
 ## 3. 전송
 
 ### 3.1 검색
 
 1. `AdvSearch.aspx` 를 GET 해 hidden 필드(`__VIEWSTATE`·`__EVENTVALIDATION`·
-   `__VIEWSTATEGENERATOR`)를 수확한다. 쿠키 세션을 유지한다.
-2. 폼 필드에 질의를 채우고 `btnSearch` 로 POST 한다.
+   `__VIEWSTATEGENERATOR`)를 수확한다. **쿠키는 필요 없다**(실측).
+2. 폼 필드에 질의를 채우고 `btnSearch` 로 POST 한다. `ddlRecruitingStatus` 는
+   **언제나 명시한다**(§1.1) — 사용자가 `--status recruiting` 을 줬으면 `1`, 아니면 `ALL`.
 3. 결과 HTML 에서 건수(`N records for M trials found`)와 행(`Trial2.aspx?TrialID=…`)을 읽는다.
 
 ### 3.2 페이지 — `nextPageToken` 에 ViewState 를 싣지 않는다
@@ -155,9 +192,23 @@ ISRCTN 선례를 그대로 따른다(`scripts/isrctn-field-test.ts`). 스텁 기
 3. **선언은 capability 에서 읽는다.** 리터럴을 적으면 대조가 자기 자신을 검사하게 된다 —
    두 기존 스크립트의 같은 자리에 붙은 주석과 같은 이유이고, 그 이음매는 스위트가 못 잡는다.
 
-## 5. core 변경 둘
+## 5. core 변경 셋
 
-둘 다 ICTRP 때문에 필요해졌지만 **모든 어댑터가 덕본다.**
+전부 ICTRP 때문에 필요해졌지만 **모든 어댑터가 덕본다.**
+
+### 5.0 `http.ts` 에 POST
+
+지금 런타임이 내보내는 것은 `getJson` 하나이고 **GET 전용**이다. ICTRP 는 폼 POST 가 필요하다.
+그렇다고 어댑터가 `fetch` 를 직접 부르면 캐시·스로틀·재시도·타임아웃·`page_size_clamped`
+같은 신뢰성 장치를 통째로 다시 구현하게 되고, **레지스트리마다 신뢰성이 갈린다** — `decode`
+훅이 존재하는 이유와 같은 논거다(그 자리 주석 참고).
+
+그래서 캐시/스로틀/재시도 루프를 내부 함수로 뽑고 `getJson` 과 새 `postForm` 이 함께 쓴다.
+`getJson` 의 시그니처와 동작은 **바뀌지 않는다**.
+
+**캐시 키는 ViewState 가 아니라 논리 질의로 만든다.** ViewState 는 요청마다 달라서 그것을
+키에 넣으면 캐시가 영원히 미스다. 폼을 얻는 GET 은 캐시하지 않는다(ViewState 가 만료될 수
+있다). 캐시하는 것은 **최종 결과 페이지**이고, 키는 사용자가 준 질의 + 페이지 번호다.
 
 ### 5.1 `IdSpec` 에 "추론 대상 아님"
 
@@ -223,8 +274,18 @@ HTML 구조가 바뀌면 0건 · exit 0 이 아니라 오류가 나간다. 반�
 마지막 조항 때문에 레코드에 ICTRP 의 `Last refreshed on` 을 싣는다. 이 값은
 **시험이 갱신된 날이 아니라 ICTRP 가 자기 사본을 수확한 날**이다(실측: ctgov `2022-03-14` →
 ICTRP `2022-03-21`, `2024-06-03` → `2024-06-10` — 두 표본 다 7일 뒤). `dates.lastUpdated` 에
-그대로 넣으면 **다른 것을 같은 이름으로 신고하는** 것이 되므로, 그 자리에 넣지 않는다.
-어디에 싣고 어떻게 이름 붙일지는 구현 계획에서 정한다.
+그대로 넣으면 **다른 것을 같은 이름으로 신고하는** 것이 된다.
+
+**자리:** `TrialRecordSchema` 는 `strictObject` 라 임의 키를 받지 않는다. 그래서 선택 필드
+`sourceRefreshedAt?: string` 을 스키마에 더한다 — "이 레코드를 이 레지스트리가 마지막으로
+수확한 시각". 집계 레지스트리에만 의미가 있으므로 ctgov·ISRCTN 은 채우지 않는다. 이름에
+`source` 를 넣는 이유는 `dates.*` 가 **시험의** 날짜를 담는 자리이기 때문이다 — 그 안에 넣으면
+같은 뭉치 안에서 두 가지 뜻이 섞인다.
+
+첫 판은 `search` 만 있고 결과 행에는 이 값이 없다(행이 싣는 것은 상태·ID·제목·등록일뿐).
+따라서 **첫 판에서는 채워지지 않는다** — 필드와 그 뜻만 먼저 세우고, `get` 이 열릴 때
+`Trial2.aspx` 의 `Last refreshed on` 으로 채운다. 약관의 처리일 표시 의무는 그때 충족된다.
+그 전까지는 README 가 ICTRP 데이터의 출처와 수확 주기(주간, 실측)를 적는다.
 
 비상업 조항은 README 에 한 줄로 적는다.
 
