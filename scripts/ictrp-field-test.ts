@@ -75,14 +75,13 @@ async function safeCount(q: NormalizedQuery): Promise<{ ok: true; n: number } | 
  * true 로 신고한 축마다, **그 축을 실제로 쓰는** 질의 하나. 다른 조건과 섞으면 그쪽이
  * 결과를 만들어 죽은 축을 가려 준다 — ISRCTN 스크립트와 같은 이유다.
  *
- * `location` 의 프로브는 셋을 돌려 봐도(India/Zimbabwe/Iceland, 2026-08-26 실측)
- * 무필터 기준선과 **정확히 같은 수** 가 나왔다. 폼을 떠 보면 이유가 있다: 국가는
- * `txtFreeCountry` 에 값을 적는 것으로 끝나지 않고, `butAdd` 버튼이 그 값을
- * `lstCountriesSelected` 로 옮기는 별도의 postback 을 거쳐야 검색에 실제로 반영된다
- * (AdvSearch.aspx 실측). `buildForm` 은 `txtFreeCountry` 만 채우고 그 postback 을
- * 하지 않으므로, 이 축은 신고(`supported: true`)와 달리 **서버에 전혀 반영되지
- * 않는다** — 값이 틀린 게 아니라 애초에 전달되지 않는다. 아래 3절에서 이 축이 실패로
- * 나오는 것은 프로브를 잘못 골라서가 아니다.
+ * `location` 은 한 번 죽어 있던 축이다 — `txtFreeCountry` 만 채우면 그 값이
+ * `lstCountriesSelected` 로 옮겨지지 않아 필터가 서버에 도달하지 않았고, 이 스크립트가
+ * 그것을 잡아(나라 셋이 전부 무필터 기준선과 같은 수) 축이 꺼졌다. 그 뒤 `butAdd` 왕복이
+ * 실제로 필터를 건다는 것을 실측해(기준선 36,264 → `Japan` 2,981) 되살렸다.
+ *
+ * 그래서 아래 3절에서 이 축이 다시 "기준선과 같음" 으로 나오면 그것은 왕복이 빠졌다는
+ * 뜻이다 — 그 진단을 실패 문구가 그대로 달고 있다.
  */
 const AXIS_PROBE: Partial<Record<keyof Capability['search'], NormalizedQuery>> = {
   condition: { condition: 'diabetes' },
@@ -139,6 +138,31 @@ async function main() {
   record(v2);
   invariantRows.push(`| 알려진 질의가 0 이 아니다 | \`condition=diabetes\` (필터 없음) | ${LABEL[v2]} | ${note2} |`);
   console.error(`${LABEL[v2]}  알려진 질의가 0 이 아니다 — ${note2}`);
+
+  /**
+   * 3. **비표준 나라 표기는 거절돼야 한다.**
+   *
+   * 이 검사가 있는 이유: 목록에 없는 이름은 오류도 0건도 아니라 **조용히 좁혀진 수** 를
+   * 낸다(실측 2026-08-26: `South Korea` 94건 vs 표준 이름 `Korea, Republic of` 713건).
+   * 어댑터가 폼의 목록으로 걸러 내는데, 그 검증이 빠지면 사용자는 713건 대신 94건을 받고
+   * 그것이 답이라고 믿는다 — 스텁 스위트는 목록이 실물에서 온다는 사실을 검사할 수 없다.
+   */
+  const bogus = await safeCount({ condition: 'diabetes', location: 'South Korea' });
+  let v3: Verdict;
+  let note3: string;
+  if (!bogus.ok && /unsupported/.test(bogus.detail)) {
+    v3 = 'pass';
+    note3 = '거절됨(exit 3) — 표준 표기가 아닌 이름이 조용히 좁혀진 수를 내지 않습니다.';
+  } else if (!bogus.ok) {
+    v3 = 'inconclusive';
+    note3 = `거절이 아닌 다른 이유로 실패해 판정 못함: ${bogus.detail}`;
+  } else {
+    v3 = 'fail';
+    note3 = `**${bogus.n}건이 돌아왔습니다.** 표준 표기가 아닌 이름이 통과했다는 뜻이라, 나라 검증이 빠졌을 가능성이 높습니다 — 그 수는 진짜 답보다 작습니다.`;
+  }
+  record(v3);
+  invariantRows.push(`| 비표준 나라 표기는 거절된다 | \`--location "South Korea"\` | ${LABEL[v3]} | ${note3} |`);
+  console.error(`${LABEL[v3]}  비표준 나라 표기는 거절된다 — ${note3}`);
 
   console.error('\n--- 3. 지원한다고 신고한 축이 실제로 좁히는가 ---');
   const axisRows: string[] = [];
