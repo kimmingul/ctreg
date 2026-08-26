@@ -21,7 +21,9 @@ describe('Capability 계약', () => {
   });
 
   it('등록되지 않은 레지스트리 키는 거부한다', () => {
-    expect(() => CapabilitySchema.parse({ ...cap, key: 'ictrp' })).toThrow();
+    // 'ictrp' 는 이제 등록된 키라 미등록 프로브로 못 쓴다 — 레지스트리 이름이 될 리
+    // 없는 문자열을 쓴다(registry.test.ts 의 같은 결정 참고).
+    expect(() => CapabilitySchema.parse({ ...cap, key: 'nosuchreg' })).toThrow();
   });
 });
 

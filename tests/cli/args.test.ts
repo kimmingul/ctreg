@@ -211,7 +211,9 @@ describe('인자 파싱', () => {
 
   it('--registry 는 등록된 키만 받는다', () => {
     expect(parseCliArgs(['search']).registries).toEqual(['ctgov']);
-    expectUsage(() => parseCliArgs(['search', '--registry', 'ictrp']), 'ctreg registries');
+    // 'ictrp' 는 이제 등록된 키라 미등록 프로브로 못 쓴다 — 레지스트리 이름이 될 리
+    // 없는 문자열을 쓴다(registry.test.ts 의 같은 결정 참고).
+    expectUsage(() => parseCliArgs(['search', '--registry', 'nosuchreg']), 'ctreg registries');
   });
 
   // 중복을 그대로 두면 모든 네트워크 커맨드가 같은 레지스트리를 두 번 돈다.

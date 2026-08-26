@@ -54,7 +54,10 @@ describe('run()', () => {
     const c = capture();
     const f = stubFetch({});
     const code = await run(['registries'], c.io, env(), { http: { fetchImpl: f as unknown as typeof fetch } });
-    expect(code).toBe(EXIT.OK);
+    // REGISTRY_KEYS 에 ictrp 가 어댑터 없이 등록돼 있어(registries 는 기본으로 전체
+    // 키를 돈다) ctgov/isrctn 은 ok, ictrp 는 unsupported — exitFor 는 이 혼재를
+    // 5(부분)로 접는다. 전부 unsupported 일 때만 3이다.
+    expect(code).toBe(EXIT.PARTIAL);
     expect(f).not.toHaveBeenCalled();
     const parsed = JSON.parse(c.out());
     expect(parsed.data[0].key).toBe('ctgov');
@@ -62,6 +65,7 @@ describe('run()', () => {
     // 직렬화가 축을 다시 불리언으로 납작하게 만들면 `registries` 를 읽는 에이전트는
     // 예전과 똑같이 "무엇을 받는지" 를 알 수 없다.
     expect(parsed.data[0].search.geo).toEqual(CTGOV_CAPABILITY.search.geo);
+    expect(parsed.registries.find((r: { registry: string }) => r.registry === 'ictrp')?.status).toBe('unsupported');
   });
 
   it('count 는 개수만 낸다', async () => {

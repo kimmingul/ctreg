@@ -1,6 +1,6 @@
 import { unsupportedError, usageError } from '../runtime/errors.js';
 
-export const REGISTRY_KEYS = ['ctgov', 'isrctn'] as const;
+export const REGISTRY_KEYS = ['ctgov', 'isrctn', 'ictrp'] as const;
 export type RegistryKey = (typeof REGISTRY_KEYS)[number];
 
 /**
@@ -22,7 +22,23 @@ export function formatTrialId(registry: RegistryKey, registryId: string): string
   return `${registry.toUpperCase()}:${registryId}`;
 }
 
-type IdSpec = { pattern: RegExp; normalize: (s: string) => string };
+type IdSpec = {
+  pattern: RegExp;
+  normalize: (s: string) => string;
+  /**
+   * 접두사 없는 입력을 이 레지스트리로 **추론해도 되는가.**
+   *
+   * 아래 추론은 `REGISTRY_KEYS.find(...)` 라 배열 순서대로 첫 매치가 이긴다. 자기
+   * 형식이 뚜렷한 레지스트리는 안전하지만, **집계 레지스트리는 아니다** — ICTRP 의
+   * ID 는 스무 곳의 형식이 섞여 있어 패턴이 관대해질 수밖에 없고, 그러면 맨
+   * `NCT01234567` 이 ctgov 대신 그리로 가거나(기존 호출자 전원의 동작이 조용히
+   * 바뀐다) 지금 exit 2 가 나는 입력이 0건으로 바뀐다.
+   *
+   * 매치되지 않는 정규식으로 같은 효과를 낼 수 있지만 그것은 트릭이라, 다음 사람이
+   * 버그로 알고 "고칠" 위험이 있다. 이유를 그 자리에 남기는 것이 이 저장소의 규율이다.
+   */
+  inferable: boolean;
+};
 
 /**
  * 레지스트리별 접두사 없는 원문 ID 패턴. `Record<RegistryKey, ...>` 이므로
@@ -30,7 +46,7 @@ type IdSpec = { pattern: RegExp; normalize: (s: string) => string };
  * 어댑터를 늘릴 때는 두 곳을 다 채워야 하고, 컴파일러가 그것을 강제한다.
  */
 const ID_PATTERNS: Record<RegistryKey, IdSpec> = {
-  ctgov: { pattern: /^nct\d{8}$/i, normalize: (s) => s.toUpperCase() },
+  ctgov: { pattern: /^nct\d{8}$/i, normalize: (s) => s.toUpperCase(), inferable: true },
   /**
    * ISRCTN 은 자기 식별자를 두 가지로 쓴다 — `<isrctn>` 요소는 숫자만(`30583116`),
    * `publicIdentifierCanonical` 과 WHO 포맷의 `trial_id` 는 접두사까지(`ISRCTN30583116`).
@@ -38,7 +54,21 @@ const ID_PATTERNS: Record<RegistryKey, IdSpec> = {
    * id 를 갖고, not_found 대조와 캐시 키가 사용자가 어떻게 쳤는지에 따라 갈린다.
    * 숫자만 있는 형태가 ctgov 패턴과 겹치지 않으므로(NCT 접두사 필수) 추론도 안전하다.
    */
-  isrctn: { pattern: /^(isrctn)?\d{8}$/i, normalize: (s) => `ISRCTN${s.replace(/^isrctn/i, '')}` },
+  isrctn: {
+    pattern: /^(isrctn)?\d{8}$/i,
+    normalize: (s) => `ISRCTN${s.replace(/^isrctn/i, '')}`,
+    inferable: true,
+  },
+  /**
+   * ICTRP 는 집계자라 원문 ID 가 원 레지스트리의 것이다 — `NCT…`, `ISRCTN…`,
+   * `CTRI/2026/07/113311`, `JPRN-jRCT…`, `DRKS…`. 형식을 열거할 수 없으므로 패턴은
+   * "비어 있지 않은 것" 이고, 그래서 **추론에 참여하지 않는다**(`inferable: false`).
+   * `ICTRP:` 접두사가 언제나 필요하다.
+   *
+   * 귀결: 같은 시험이 `CTGOV:NCT07749586` 과 `ICTRP:NCT07749586` 두 개의 ctreg id 를
+   * 갖는다. 「연계하지 않는다」 는 설계의 직접적 귀결이고, 의도된 것이다.
+   */
+  ictrp: { pattern: /^\S+$/, normalize: (s) => s.trim(), inferable: false },
 };
 
 export function parseTrialId(input: string): {
@@ -62,7 +92,9 @@ export function parseTrialId(input: string): {
     return { registry: prefix, registryId, id: formatTrialId(prefix, registryId) };
   }
 
-  const inferred = REGISTRY_KEYS.find((key) => ID_PATTERNS[key].pattern.test(trimmed));
+  const inferred = REGISTRY_KEYS.find(
+    (key) => ID_PATTERNS[key].inferable && ID_PATTERNS[key].pattern.test(trimmed),
+  );
   if (!inferred) {
     throw usageError(
       `'${input}' 에서 레지스트리를 알아낼 수 없습니다`,

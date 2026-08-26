@@ -4,11 +4,12 @@ import { CtregError } from '../../src/runtime/errors.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 
 describe('ID 정규화', () => {
-  it('등록된 레지스트리는 ctgov 와 isrctn 이다', () => {
-    expect(REGISTRY_KEYS).toEqual(['ctgov', 'isrctn']);
+  it('등록된 레지스트리는 ctgov, isrctn, ictrp 다', () => {
+    expect(REGISTRY_KEYS).toEqual(['ctgov', 'isrctn', 'ictrp']);
     expect(isRegistryKey('ctgov')).toBe(true);
     expect(isRegistryKey('isrctn')).toBe(true);
-    expect(isRegistryKey('ictrp')).toBe(false);
+    expect(isRegistryKey('ictrp')).toBe(true);
+    expect(isRegistryKey('nosuchreg')).toBe(false);
   });
 
   it('접두사가 붙은 정규형을 파싱한다', () => {
@@ -83,5 +84,35 @@ describe('ISRCTN 식별자', () => {
 
   it('NCT 번호는 여전히 ctgov 로 간다 — 두 패턴이 겹치지 않는다', () => {
     expect(parseTrialId('NCT03831932').registry).toBe('ctgov');
+  });
+});
+
+describe('ICTRP 의 ID', () => {
+  /**
+   * ICTRP 의 ID 는 20여 레지스트리의 형식이 섞여 있다(NCT…, ISRCTN…,
+   * CTRI/2026/07/113311, JPRN-jRCT…, DRKS…). 접두사를 붙이면 그대로 통과해야 한다 —
+   * 슬래시·하이픈이 들어 있어도 마찬가지다.
+   */
+  it('접두사를 붙이면 어떤 원문 ID 든 받는다', () => {
+    for (const raw of ['NCT07749586', 'ISRCTN15819396', 'CTRI/2026/07/113311', 'JPRN-jRCT1031260225', 'DRKS00040777']) {
+      const r = parseTrialId(`ICTRP:${raw}`);
+      expect(r.registry).toBe('ictrp');
+      expect(r.registryId).toBe(raw);
+      expect(r.id).toBe(`ICTRP:${raw}`);
+    }
+  });
+
+  /**
+   * **접두사 없이는 절대 ICTRP 로 가지 않는다.** `parseTrialId` 의 추론은
+   * `REGISTRY_KEYS.find(...)` 라 배열 순서대로 첫 매치가 이긴다. ICTRP 의 패턴이
+   * 관대하면 맨 NCT 번호가 ctgov 대신 ICTRP 로 가거나(기존 호출자 전원의 동작이
+   * 조용히 바뀐다), 지금 깔끔하게 exit 2 가 나는 입력이 ICTRP 로 갔다가 0건이 된다.
+   */
+  it('접두사 없는 ID 는 ICTRP 로 추론되지 않는다', () => {
+    expect(parseTrialId('NCT01234567').registry).toBe('ctgov');
+    expect(parseTrialId('12345678').registry).toBe('isrctn');
+    // ICTRP 만 아는 형식이라도 접두사가 없으면 추론이 아니라 사용법 오류다.
+    expect(() => parseTrialId('CTRI/2026/07/113311')).toThrow();
+    expect(() => parseTrialId('DRKS00040777')).toThrow();
   });
 });
