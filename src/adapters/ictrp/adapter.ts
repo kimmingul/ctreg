@@ -86,9 +86,15 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
       if (q.pageSize !== undefined && q.pageSize < pageSize && data.length > q.pageSize) {
         warnings.push({
           code: 'page_size_floor',
+          // 이 응답이 몇 건을 실었는지(`data.length`)를 "언제나 10건" 처럼 고정값으로
+          // 단정하면 안 된다 — 전체가 10건보다 적은 질의(예: 실제로 4건뿐인 질의)에서는
+          // 이 문구가 그 응답 자체와 어긋나는 거짓이 된다. 그래서 이 응답이 실제로 낸
+          // 건수(data.length)와, 고정인 것은 "페이지 크기 상한(10)" 뿐이라는 메커니즘을
+          // 나눠 말한다 — 트리거(`data.length > q.pageSize`)는 그대로 두고 문장만 고쳤다.
           message:
-            `요청한 페이지 크기 ${q.pageSize} 보다 많은 ${data.length}건이 돌아왔습니다 — ` +
-            `WHO ICTRP 의 결과 페이지는 언제나 ${pageSize}건입니다(더 작게는 받을 수 없습니다).`,
+            `${q.pageSize}건을 요청했는데 ${data.length}건이 돌아왔습니다 — ` +
+            `WHO ICTRP 는 페이지 단위로만 결과를 내고 그 페이지 크기가 ${pageSize}건으로 고정돼 ` +
+            '있어, 더 작게 요청해도 그보다 작게 받을 수 없습니다.',
           at: pageSize,
           registry: 'ictrp',
         });

@@ -16,15 +16,30 @@ const cfg = () => ({
   ictrpBaseUrl: 'https://ictrp.example.test',
 });
 
-/** GET 이면 폼을, POST 면 결과를 낸다 — client.test.ts 의 스텁과 같은 모양이다. */
-function stub() {
+/** GET 이면 폼을, POST 면 `resultsHtml` 을 낸다 — client.test.ts 의 스텁과 같은 모양이다. */
+function stub(resultsHtml: string = results) {
   const fetchImpl = (async (_url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET';
-    return new Response(method === 'GET' ? form : results, {
+    return new Response(method === 'GET' ? form : resultsHtml, {
       status: 200, headers: { 'content-type': 'text/html' },
     });
   }) as unknown as typeof fetch;
   return fetchImpl;
+}
+
+/**
+ * 전체가 페이지 크기(10)보다 적은 결과 페이지를 인라인으로 합성한다. `parse.ts` 가
+ * 실제로 보는 모양(건수 문구 + `TrialID=` 를 포함한 행 셀들)만 갖추면 되므로, 커밋된
+ * 픽스처(`results-page1.html`)를 건드리지 않고도 "전체가 페이지보다 작을 때" 를
+ * 재현할 수 있다.
+ */
+function smallResultsHtml(n: number): string {
+  const rows = Array.from(
+    { length: n },
+    (_, i) => `<tr><td>Recruiting</td><td></td><td>TEST${i}</td>` +
+      `<td><a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></td><td>2026-01-01</td></tr>`,
+  ).join('\n');
+  return `<html><body><span>${n} records for ${n} trials found!</span><table>${rows}</table></body></html>`;
 }
 
 const fetchOpts: FetchOpts = {
@@ -69,5 +84,30 @@ describe('ICTRP 어댑터 — 페이지 크기 하한 경고', () => {
     const r = await adapter.search({ condition: 'diabetes', pageSize: 10 } as NormalizedQuery, fetchOpts);
 
     expect(r.warnings.some((w) => w.code === 'page_size_floor')).toBe(false);
+  });
+
+  /**
+   * 리뷰가 재현한 것: 전체가 4건뿐인 질의에 `pageSize: 2` 를 요청하면 4건이 그대로
+   * 돌아온다(자를 게 없다 — 이게 결과 전부다) — 그런데도 트리거(`data.length >
+   * q.pageSize`)는 맞게 발화해야 한다("2보다 많이 받았다" 는 참이다). 문제는 문구
+   * 였다: "언제나 10건" 이라고 단정하면 이 응답(4건)과 어긋나는 거짓말이 된다.
+   * 트리거는 그대로 두고 문구만 "몇 건을 요청했더니 몇 건이 왔다" + "메커니즘은
+   * 고정 페이지 크기다" 로 나눠 말해야 어떤 응답에 붙어도 참이다.
+   */
+  it('전체가 페이지 크기보다 적어도 경고 문구가 실제 응답과 어긋나는 수를 말하지 않는다', async () => {
+    const adapter = createIctrpAdapter(cfg(), { fetchImpl: stub(smallResultsHtml(4)), sleep: async () => {} });
+    const r = await adapter.search({ condition: 'diabetes', pageSize: 2 } as NormalizedQuery, fetchOpts);
+
+    expect(r.data.length, '합성 응답이 4건을 내지 않아 이 시나리오를 재현하지 못했습니다.').toBe(4);
+
+    const w = r.warnings.find((x) => x.code === 'page_size_floor');
+    expect(w, 'page_size_floor 경고가 없습니다 — 트리거(요청보다 많이 받음)는 여전히 참이어야 합니다.').toBeDefined();
+    // 요청한 수(2)와 실제로 받은 수(4)는 문구에 있어야 한다 — 이 응답 자체에 대한 사실이다.
+    expect(w?.message).toContain('2');
+    expect(w?.message).toContain('4');
+    // 이 응답은 4건만 실었다. "결과 페이지는 언제나 10건입니다" 류의, 이 응답과
+    // 어긋나는 확정 문장이 있으면 안 된다 — 고정값(10)은 "페이지 크기 상한" 이라는
+    // 메커니즘으로만 등장해야지, 이 응답이 실제로 낸 건수인 것처럼 말하면 안 된다.
+    expect(w?.message).not.toMatch(/언제나\s*10\s*건(입니다|이\s*(돌아왔|있)습니다)/);
   });
 });
