@@ -11,7 +11,14 @@ describe('설정', () => {
     expect(c.timeoutMs).toBe(30000);
     expect(c.maxRetries).toBe(3);
     expect(c.ctgovBaseUrl).toBe('https://clinicaltrials.gov/api/v2');
+    expect(c.ictrpBaseUrl).toBe('https://trialsearch.who.int');
     expect(c.cacheDir).toBe(`${homedir()}/.cache/ctreg`);
+  });
+
+  it('CTREG_ICTRP_BASE_URL 이 있으면 그것을 쓴다', () => {
+    expect(loadConfig({ CTREG_ICTRP_BASE_URL: 'https://ictrp.example.test' }).ictrpBaseUrl).toBe(
+      'https://ictrp.example.test',
+    );
   });
 
   it('CTREG_RATE_PER_SEC 이 없으면 ratePerSec 는 undefined 다 — 전역 오버라이드가 아니라 각 어댑터의 선언값을 쓰라는 신호다', () => {

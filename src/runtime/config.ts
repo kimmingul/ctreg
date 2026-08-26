@@ -19,6 +19,7 @@ export type Config = {
   ratePerSec?: number;
   ctgovBaseUrl: string;
   isrctnBaseUrl: string;
+  ictrpBaseUrl: string;
 };
 
 function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -52,5 +53,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // 사이트 루트에 바로 붙는다(API 문서 3: "base URL for all API calls is the URL of
     // the site"). 그래서 여기 담기는 것은 호스트까지다.
     isrctnBaseUrl: env.CTREG_ISRCTN_BASE_URL ?? 'https://www.isrctn.com',
+    ictrpBaseUrl: env.CTREG_ICTRP_BASE_URL ?? 'https://trialsearch.who.int',
   };
 }

@@ -19,6 +19,7 @@ beforeEach(() => {
     ratePerSec: 1000, // 테스트에서 실제 대기를 없앤다
     ctgovBaseUrl: 'https://example.test/api/v2',
         isrctnBaseUrl: 'https://isrctn.example.test',
+        ictrpBaseUrl: 'https://ictrp.example.test',
   };
 });
 
