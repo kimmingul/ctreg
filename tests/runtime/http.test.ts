@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { Config } from '../../src/runtime/config.js';
 import type { CtregError } from '../../src/runtime/errors.js';
-import { getJson } from '../../src/runtime/http.js';
+import { getJson, postForm } from '../../src/runtime/http.js';
 import { bucketPath } from '../../src/runtime/throttle.js';
 
 let cfg: Config;
@@ -332,5 +332,55 @@ describe('JSON 이 아닌 업스트림', () => {
     const f = vi.fn(async () => json({ ok: true }));
     const r = await getJson<{ ok: boolean }>(cfg, xmlOpts(), deps(f as unknown as typeof fetch));
     expect(r.value).toEqual({ ok: true });
+  });
+});
+
+describe('postForm — 폼 POST', () => {
+  /**
+   * ICTRP 는 REST API 가 없고 ViewState 폼만 있다. 어댑터가 fetch 를 직접 부르면
+   * 캐시·스로틀·재시도·타임아웃을 통째로 다시 구현하게 되고 레지스트리마다 신뢰성이
+   * 갈린다 — `decode` 훅이 존재하는 이유와 같은 논거다.
+   */
+  it('폼을 application/x-www-form-urlencoded 로 POST 한다', async () => {
+    let seen: { url?: string; init?: RequestInit } = {};
+    const fetchImpl = (async (url: string, init: RequestInit) => {
+      seen = { url, init };
+      return new Response('<html>ok</html>', { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const res = await postForm(cfg, {
+      registry: 'ictrp', baseUrl: 'https://ictrp.example.test', path: '/AdvSearch.aspx',
+      form: { a: '1', b: 'x y' },
+      cacheKeyParams: { q: 'diabetes' },
+      cacheMode: 'off', ratePerSec: 1000,
+      decode: (text) => text,
+    }, { fetchImpl, sleep: async () => {} });
+
+    expect(res.value).toBe('<html>ok</html>');
+    expect(seen.init?.method).toBe('POST');
+    expect(String((seen.init?.headers as Record<string, string>)['content-type']))
+      .toContain('application/x-www-form-urlencoded');
+    expect(String(seen.init?.body)).toBe('a=1&b=x+y');
+  });
+
+  /**
+   * 캐시 키는 ViewState 가 아니라 **논리 질의** 로 만든다. ViewState 는 요청마다
+   * 달라서 그것을 키에 넣으면 캐시가 영원히 미스다.
+   */
+  it('같은 논리 질의는 ViewState 가 달라도 캐시 히트다', async () => {
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls++;
+      return new Response('<html>ok</html>', { status: 200 });
+    }) as unknown as typeof fetch;
+    const base = {
+      registry: 'ictrp', baseUrl: 'https://ictrp.example.test', path: '/AdvSearch.aspx',
+      cacheKeyParams: { q: 'diabetes' }, cacheMode: 'use' as const, ratePerSec: 1000,
+      decode: (t: string) => t,
+    };
+    await postForm(cfg, { ...base, form: { __VIEWSTATE: 'AAA' } }, { fetchImpl, sleep: async () => {} });
+    const second = await postForm(cfg, { ...base, form: { __VIEWSTATE: 'BBB' } }, { fetchImpl, sleep: async () => {} });
+    expect(calls).toBe(1);
+    expect(second.cached).toBe(true);
   });
 });

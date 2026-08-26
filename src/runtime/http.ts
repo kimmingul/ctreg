@@ -70,27 +70,35 @@ async function bodyMessage(res: Response): Promise<string | undefined> {
   }
 }
 
-export async function getJson<T>(
+type SharedOpts = {
+  registry: string;
+  cacheKey: string;
+  cacheMode: CacheMode;
+  ratePerSec: number;
+  signal?: AbortSignal;
+};
+
+/**
+ * 캐시·스로틀·재시도·타임아웃. `getJson` 과 `postForm` 이 함께 쓴다 — 이 루프가
+ * 한 벌이어야 레지스트리마다 신뢰성이 갈리지 않는다. `send` 는 요청을 만드는 부분만
+ * 다르므로 콜백으로 받는다.
+ */
+async function withReliability<T>(
   cfg: Config,
-  o: GetJsonOpts<T>,
-  deps: HttpDeps = {},
+  o: SharedOpts,
+  send: (signal: AbortSignal) => Promise<Response>,
+  decode: (text: string) => Promise<T> | T,
+  deps: HttpDeps,
 ): Promise<{ value: T; fetchedAt: string; cached: boolean; warnings: Warning[] }> {
-  const doFetch = deps.fetchImpl ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = deps.now ?? Date.now;
   const warnings: Warning[] = [];
-  // 캐시 키에 base URL 이 들어가야 한다. 없으면 A 서버에서 받은 응답을 B 서버에 대한
-  // 요청에 그대로 내주는 false hit 이 된다 — CTREG_*_BASE_URL 로 다른 서버(스테이징,
-  // 미러, 테스트 스텁)를 가리켜도 이전 서버의 데이터가 이 서버 것인 양 나온다.
-  // cacheKey 의 endpoint 인자에 실어 보낸다 — 요청 URL 의 파라미터 앞부분 그대로다.
-  const key = cacheKey(o.registry, o.baseUrl + o.path, o.params);
 
   if (o.cacheMode === 'use') {
-    const hit = await readCache<T>(cfg.cacheDir, key, cfg.cacheTtlSec, now);
+    const hit = await readCache<T>(cfg.cacheDir, o.cacheKey, cfg.cacheTtlSec, now);
     if (hit) return { value: hit.value, fetchedAt: hit.fetchedAt, cached: true, warnings };
   }
 
-  const url = buildUrl(o.baseUrl, o.path, o.params);
   let lastStatus = 0;
   // cfg.ratePerSec 는 운영자가 명시적으로 준 전역 오버라이드일 때만 존재한다(config.ts 참고).
   // 없으면 이 레지스트리가 스스로 선언한 예산을 쓴다 — 어댑터 #2 가 다른 예산을 선언하면
@@ -117,10 +125,10 @@ export async function getJson<T>(
 
     let res: Response;
     try {
-      res = await doFetch(url, { signal, headers: { accept: o.accept ?? 'application/json' } });
+      res = await send(signal);
     } catch (cause) {
       if (attempt === cfg.maxRetries) {
-        throw upstreamError(`${o.registry} 요청 실패: ${url}`, '네트워크 또는 타임아웃.', cause);
+        throw upstreamError(`${o.registry} 요청 실패`, '네트워크 또는 타임아웃.', cause);
       }
       await sleep(Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** attempt) * (0.75 + 0.5 * Math.random()));
       continue;
@@ -129,9 +137,9 @@ export async function getJson<T>(
     lastStatus = res.status;
 
     if (res.ok) {
-      const value = o.decode ? o.decode(await res.text()) : ((await res.json()) as T);
+      const value = await decode(await res.text());
       const fetchedAt = new Date(now()).toISOString();
-      if (o.cacheMode !== 'off') await writeCache(cfg.cacheDir, key, value, fetchedAt, now);
+      if (o.cacheMode !== 'off') await writeCache(cfg.cacheDir, o.cacheKey, value, fetchedAt, now);
       return { value, fetchedAt, cached: false, warnings };
     }
 
@@ -167,4 +175,82 @@ export async function getJson<T>(
     );
   }
   throw upstreamError(`${o.registry} 가 ${cfg.maxRetries}회 재시도 후에도 ${lastStatus} 를 반환했습니다`);
+}
+
+export async function getJson<T>(
+  cfg: Config,
+  o: GetJsonOpts<T>,
+  deps: HttpDeps = {},
+): Promise<{ value: T; fetchedAt: string; cached: boolean; warnings: Warning[] }> {
+  const doFetch = deps.fetchImpl ?? fetch;
+  // 캐시 키에 base URL 이 들어가야 한다. 없으면 A 서버에서 받은 응답을 B 서버에 대한
+  // 요청에 그대로 내주는 false hit 이 된다 — CTREG_*_BASE_URL 로 다른 서버(스테이징,
+  // 미러, 테스트 스텁)를 가리켜도 이전 서버의 데이터가 이 서버 것인 양 나온다.
+  // cacheKey 의 endpoint 인자에 실어 보낸다 — 요청 URL 의 파라미터 앞부분 그대로다.
+  const key = cacheKey(o.registry, o.baseUrl + o.path, o.params);
+  const url = buildUrl(o.baseUrl, o.path, o.params);
+
+  return withReliability(
+    cfg,
+    {
+      registry: o.registry,
+      cacheKey: key,
+      cacheMode: o.cacheMode,
+      ratePerSec: o.ratePerSec,
+      ...(o.signal ? { signal: o.signal } : {}),
+    },
+    (signal) => doFetch(url, { signal, headers: { accept: o.accept ?? 'application/json' } }),
+    (text) => (o.decode ? o.decode(text) : (JSON.parse(text) as T)),
+    deps,
+  );
+}
+
+export type PostFormOpts<T> = {
+  registry: string;
+  baseUrl: string;
+  path: string;
+  /** 그대로 폼 인코딩되어 본문이 된다. ViewState 를 포함한다. */
+  form: Record<string, string>;
+  /**
+   * 캐시 키를 만드는 데 쓰는 **논리 질의**. `form` 이 아니라 이것을 쓰는 이유는
+   * ViewState 가 요청마다 달라서, 그것을 키에 넣으면 캐시가 영원히 미스이기 때문이다.
+   */
+  cacheKeyParams: Record<string, string | number>;
+  cacheMode: CacheMode;
+  ratePerSec: number;
+  decode: (text: string) => T;
+  accept?: string;
+  signal?: AbortSignal;
+};
+
+export async function postForm<T>(
+  cfg: Config,
+  o: PostFormOpts<T>,
+  deps: HttpDeps = {},
+): Promise<{ value: T; fetchedAt: string; cached: boolean; warnings: Warning[] }> {
+  const doFetch = deps.fetchImpl ?? fetch;
+  const url = o.baseUrl + o.path;
+  const body = new URLSearchParams(o.form).toString();
+  return withReliability(
+    cfg,
+    {
+      registry: o.registry,
+      cacheKey: cacheKey(o.registry, url, o.cacheKeyParams),
+      cacheMode: o.cacheMode,
+      ratePerSec: o.ratePerSec,
+      ...(o.signal ? { signal: o.signal } : {}),
+    },
+    (signal) =>
+      doFetch(url, {
+        method: 'POST',
+        signal,
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          accept: o.accept ?? 'text/html',
+        },
+        body,
+      }),
+    async (text) => o.decode(text),
+    deps,
+  );
 }
