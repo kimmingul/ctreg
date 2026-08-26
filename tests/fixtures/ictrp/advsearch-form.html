@@ -1,0 +1,920 @@
+
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+     <title>ICTRP Search Portal Advanced Search</title>
+    <link href="Css/StyleSheet.css" rel="stylesheet" type="text/css" />
+    
+  <style type ="text/css" >
+      <!--
+      .nounderline A {
+          text-decoration: none;
+      }
+
+      .highlight {
+          background: #89E3F6;
+      }
+
+      .highlight2 {
+          background: #92F8D0;
+      }
+      -->
+  </style>
+
+
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0NFGQ2PMZE"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-0NFGQ2PMZE');
+</script>
+<link href="/WebResource.axd?d=hE7CWwoNH_GTOEftHdda8uvQiIkbqz1is2yUN0eAXXzvDHE1cEcJLt0rW-LLUBvTNAbrCOTuuf4Aw3DbktsWlcCmqV5_IIxAqcgj5xnPWZdjsakKqWLmHjtV8BCWLuZm26OrFCQZ0By85mQpkdGN564JPIfCYcS8gH-Yd-8aOv41&amp;t=637602099335184922" type="text/css" rel="stylesheet" /><title>
+
+</title></head>
+<body>
+    <form name="aspnetForm" method="post" action="./AdvSearch.aspx" id="aspnetForm">
+<input type="hidden" name="ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField" id="ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+
+
+<script src="/WebResource.axd?d=Ea6pjflJzgG0bMCQxKkfT2YGx9WLYIctniyhoBHEVzKzCZ0a7r-aQP6tr4ncEBQktTfGdb7REmuMG9ru4nTYAsGGZMJ8bgmwLdd32wq5eYc1&amp;t=638901526200000000" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=xj_GazGgGQdjxpQEZZoJlnwnyHllLcvs3PUCDsw0A4CUn18MR9UWOULFjuZ_xAlU6cawlJM2o5s-oYIrQ3KJhim0Zn5IUSW7u8cJADBWcqC2GAllW6BGwWjAjEc7MAlYStKX3rZKVeLlUsMOewMgTA2&amp;t=ffffffffec54f2d7" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (typeof(Sys) === 'undefined') throw new Error('ASP.NET Ajax client-side framework failed to load.');
+//]]>
+</script>
+
+<script src="/AdvSearch.aspx?_TSM_HiddenField_=ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField&amp;_TSM_CombinedScripts_=%3b%3bAjaxControlToolkit%2c+Version%3d3.5.40412.0%2c+Culture%3dneutral%2c+PublicKeyToken%3d28f01b0e84b6d53e%3aen-US%3a1547e793-5b7e-48fe-8490-03a375b13a33%3ade1feab2%3af9cec9bc%3a35576c48%3aa67c2700%3af2c8e708%3a720a52bf%3a589eaa30%3a698129cf%3a59fb9c6f%3afcf0e993%3afb9b4c57%3accb96cf9" type="text/javascript"></script>
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="F6350304" />
+<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="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" />
+    <div>
+         <table style="width: 100%;" align="center" bgcolor="#6BA2CC" >
+           <tr>
+                <td align="center" >
+                
+                    <table bgcolor="#6BA2CC" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><a href="http://www.who.int/en/" target="_new"><img src="who_logo_en2.gif" alt="World Health Organization site" border="0"></a></td>
+
+</tr>
+
+</table>
+
+
+
+                </td>
+            </tr>
+          </table> 
+        <table align="center" style="color: #6ba2cc">
+          <tr>
+              <td style="height: 21px" align="center">
+                  <img alt="" src="ICTRP_logo4.jpg" style="height: 62px" /></td> 
+          </tr>  
+            </table>
+            <table bgcolor="gainsboro" bordercolor="gainsboro" cellspacing="0" class="nounderline" style="width: 100%">
+                <tr>
+                    <td>
+            <a href="#ctl00_Menu1_SkipLink"><img alt="Skip Navigation Links" src="/WebResource.axd?d=xcJNU7w2dlou18e4-Dh6Q9rpxMVThXbm5kHfk-sgIU2E8qZq0HlZMmP_ehwTkX59x5teQ0mQqaDw_-ux8Rcw9YecjJWKNogZfpBikXG7UeI1&amp;t=638901526200000000" width="0" height="0" border="0" /></a><table id="ctl00_Menu1" cellpadding="0" cellspacing="0" border="0" bgcolor="Gainsboro" width="70%">
+	<tr>
+		<td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n0"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="Default.aspx"><font face="Arial" color="#284E98" size="3">Home</font></a></td>
+			</tr>
+		</table></td><td width="3"></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n1"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="AdvSearch.aspx"><font face="Arial" color="#284E98" size="3">Advanced Search</font></a></td>
+			</tr>
+		</table></td><td width="3"></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" title="Listing By Health Topic/Regions/Countries" id="ctl00_Menu1n2"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="javascript:__doPostBack(&#39;ctl00$Menu1&#39;,&#39;List By&#39;)"><font face="Arial" color="#284E98" size="3">List By</font></a></td><td width="0"><img src="/WebResource.axd?d=uJ67jg4y3VmLp_IaWWmit0T87CjU7JaGMN5QSYsyv3V8CcPeFDg47s2C_WYmNW-7dR1EkZ4m2cOf3slCNv-2xpFzXp7WoKFa1O2lzbG03rvNMp-l1NA9ypM4Ym7xmGpb0&amp;t=638901526200000000" alt="Expand List By" valign="middle" /></td>
+			</tr>
+		</table></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n3"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="https://www.who.int/clinical-trials-registry-platform/the-ictrp-search-portal/search-tips" target="Blank"><font face="Arial" color="#284E98" size="3">Search Tips</font></a></td>
+			</tr>
+		</table></td><td width="3"></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" title="Universal Trial Number (UTN)" id="ctl00_Menu1n4"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="https://trialsearch.who.int/utn.aspx"><font face="Arial" color="#284E98" size="3">UTN</font></a></td><td width="0"><img src="/WebResource.axd?d=uJ67jg4y3VmLp_IaWWmit0T87CjU7JaGMN5QSYsyv3V8CcPeFDg47s2C_WYmNW-7dR1EkZ4m2cOf3slCNv-2xpFzXp7WoKFa1O2lzbG03rvNMp-l1NA9ypM4Ym7xmGpb0&amp;t=638901526200000000" alt="Expand UTN" valign="middle" /></td>
+			</tr>
+		</table></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n5"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="http://www.who.int/ictrp" target="_blank"><font face="Arial" color="#284E98" size="3">ICTRP website</font></a></td><td width="0"><img src="/WebResource.axd?d=uJ67jg4y3VmLp_IaWWmit0T87CjU7JaGMN5QSYsyv3V8CcPeFDg47s2C_WYmNW-7dR1EkZ4m2cOf3slCNv-2xpFzXp7WoKFa1O2lzbG03rvNMp-l1NA9ypM4Ym7xmGpb0&amp;t=638901526200000000" alt="Expand ICTRP website" valign="middle" /></td>
+			</tr>
+		</table></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n6"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="Contact.aspx"><font face="Arial" color="#284E98" size="3">Contact us</font></a></td>
+			</tr>
+		</table></td>
+	</tr>
+</table><div id="ctl00_Menu1n2Items" style="display:none;">
+	<table border="0" cellpadding="0" cellspacing="0">
+		<tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n7">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="ListBy.aspx?TypeListing=0"><font face="Arial" color="#284E98" size="3">List By Health Topic</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n8">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="ListBy.aspx?TypeListing=1"><font face="Arial" color="#284E98" size="3">List By Countries</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n9">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="ListBy.aspx?TypeListing=2"><font face="Arial" color="#284E98" size="3">List By Regions/Countries</font></a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table><div id="ctl00_Menu1n2ItemsUp" onmouseover="PopOut_Up(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=-LgYthJjkX0q27dKuablfmK-LRaCS8FET4PNgJ8mRx1tP6ZZOTtXs97ovRSnw0ikxa1crRkpT5X4ERS7pMkyK2ng-r_iZnEhBxzvMWYPyphUet_9xLWck4ZO5EEkykIL0&amp;t=638901526200000000" alt="Scroll up" />
+	</div><div id="ctl00_Menu1n2ItemsDn" onmouseover="PopOut_Down(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=Gz028kRe4z9L7lCBZ2KMYhlSHXYJ2QF_yYpbhxhRjuyYb9qZHwotewN8vqF4baSyi8Iihjo0IzIixKUQStfb6azV1_5K79Geox_9WDabwCikN0Oi3ILgG13_exPc24JR0&amp;t=638901526200000000" alt="Scroll down" />
+	</div>
+</div><div id="ctl00_Menu1n4Items" style="display:none;">
+	<table border="0" cellpadding="0" cellspacing="0">
+		<tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n10">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="https://trialsearch.who.int/utn.aspx"><font face="Arial" color="#284E98" size="3">UTN request</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n11">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="utnvalid.aspx"><font face="Arial" color="#284E98" size="3">UTN validation</font></a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table><div id="ctl00_Menu1n4ItemsUp" onmouseover="PopOut_Up(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=-LgYthJjkX0q27dKuablfmK-LRaCS8FET4PNgJ8mRx1tP6ZZOTtXs97ovRSnw0ikxa1crRkpT5X4ERS7pMkyK2ng-r_iZnEhBxzvMWYPyphUet_9xLWck4ZO5EEkykIL0&amp;t=638901526200000000" alt="Scroll up" />
+	</div><div id="ctl00_Menu1n4ItemsDn" onmouseover="PopOut_Down(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=Gz028kRe4z9L7lCBZ2KMYhlSHXYJ2QF_yYpbhxhRjuyYb9qZHwotewN8vqF4baSyi8Iihjo0IzIixKUQStfb6azV1_5K79Geox_9WDabwCikN0Oi3ILgG13_exPc24JR0&amp;t=638901526200000000" alt="Scroll down" />
+	</div>
+</div><div id="ctl00_Menu1n5Items" style="display:none;">
+	<table border="0" cellpadding="0" cellspacing="0">
+		<tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n12">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp" target="_blank"><font face="Arial" color="#284E98" size="3">In English</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n13">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/fr" target="_blank"><font face="Arial" color="#284E98" size="3">In French</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n14">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/es" target="_blank"><font face="Arial" color="#284E98" size="3">In Spanish</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n15">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/ar" target="_blank"><font face="Arial" color="#284E98" size="3">In Arabic</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n16">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/zh" target="_blank"><font face="Arial" color="#284E98" size="3">In Chinese</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n17">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/ru" target="_blank"><font face="Arial" color="#284E98" size="3">In Russian</font></a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table><div id="ctl00_Menu1n5ItemsUp" onmouseover="PopOut_Up(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=-LgYthJjkX0q27dKuablfmK-LRaCS8FET4PNgJ8mRx1tP6ZZOTtXs97ovRSnw0ikxa1crRkpT5X4ERS7pMkyK2ng-r_iZnEhBxzvMWYPyphUet_9xLWck4ZO5EEkykIL0&amp;t=638901526200000000" alt="Scroll up" />
+	</div><div id="ctl00_Menu1n5ItemsDn" onmouseover="PopOut_Down(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=Gz028kRe4z9L7lCBZ2KMYhlSHXYJ2QF_yYpbhxhRjuyYb9qZHwotewN8vqF4baSyi8Iihjo0IzIixKUQStfb6azV1_5K79Geox_9WDabwCikN0Oi3ILgG13_exPc24JR0&amp;t=638901526200000000" alt="Scroll down" />
+	</div>
+</div><a id="ctl00_Menu1_SkipLink"></a>
+
+        </td>
+                </tr>                
+                
+            </table>
+        
+         
+  <div style="top: 50%;left: 50%;position:fixed;margin-top:-100px;margin-left:-100px;">
+    <img src="images/ajax_loader_blue.gif" id="ImgLoading" style="width: 200px;height: 200px; display:none;" />
+  </div>
+  
+        
+        <table style="width: 100%" >
+            <tr valign="top">
+                <td class="TabArea" >
+                    <span id="ctl00_ContentPlaceHolder1_Label20" style="display:inline-block;"><font face="Arial" color="Teal" size="2">Fields can be left blank. Click on the field name hyperlink  for an explanation of each search field</font></span></td>
+            </tr>
+                  </table>
+                            <table style="width: 100%" >
+            <tr valign="top">
+                <td >
+                  <span id="ctl00_ContentPlaceHolder1_Label21"><b><font face="Arial" size="3">Look for trials with the exact phrase or contains</font></b></span> </td>
+                      </tr>
+                  </table>       
+                    <table style="width: 100%">
+                         <tr><td style="width: 45%; "   >
+                             <select name="ctl00$ContentPlaceHolder1$ddlTitle" id="ctl00_ContentPlaceHolder1_ddlTitle">
+	<option value="OperatorNone">   </option>
+	<option value="OperatorNOT">NOT</option>
+
+</select>
+                    <input name="ctl00$ContentPlaceHolder1$txtTitle" type="text" id="ctl00_ContentPlaceHolder1_txtTitle" /></td>
+                      
+                            <td style="width: 18%; text-align: left; " >
+                    <span id="ctl00_ContentPlaceHolder1_Label10"><font face="Arial" size="3">in the</font></span>
+                                <a id="ctl00_ContentPlaceHolder1_HyperLinkTitle" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Title</font></u></a>&nbsp;
+                                </td>
+                            <td style="width: 5%; border-top-width: 1pt; border-left-width: 1pt; border-left-color: gainsboro; border-bottom-width: 1pt; border-bottom-color: gainsboro; border-top-color: gainsboro; border-right-width: 1pt; border-right-color: gainsboro;" align="left" rowspan="3" valign="top" colspan="2" >
+                                    
+                                <div id="ctl00_ContentPlaceHolder1_Panel1" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel3">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Title</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                      Trials can be identified by a public title which should contain plain language, by a scientific title which uses more technical language, or by an acronym.<br />
+                                                      Use this box to specify search terms found anywhere in the public title, scientific title or acronym.<br />
+                                                      Multiple terms can be combined using AND, OR, NOT.</td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                                   <input type="hidden" name="ctl00$ContentPlaceHolder1$TextBoxWatermarkExtender2_ClientState" id="ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender2_ClientState" />
+                                   <div id="ctl00_ContentPlaceHolder1_Panel2" class="popupControl">
+	
+                                       
+                                       <input type="hidden" name="ctl00$ContentPlaceHolder1$TextBoxWatermarkExtender1_ClientState" id="ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender1_ClientState" />
+                                       
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel2">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; ">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Condition</td></tr>
+                                                    <tr><td style="font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                      Health condition(s) or problem(s) studied. These often refer to an illness, disorder or injury, 
+                                                      such as: asthma, learning disorders or bone fractures, but can also include any health issue such as pregnancy, 
+                                                      mobility, education etc.
+					                                  <br /> Use this box to specify the condition(s) or problem(s) being studied.<br />
+				                                        Multiple terms can be combined using AND, OR, NOT.                
+                                                </td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                              <input type="hidden" name="ctl00$ContentPlaceHolder1$TextBoxWatermarkExtender3_ClientState" id="ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender3_ClientState" />
+                              <div id="ctl00_ContentPlaceHolder1_Panel3" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel4">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; ">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Intervention</td></tr>
+                                                    <tr><td style="font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                     The treatment(s) or action(s) being studied and compared. These often refer to  medicines, procedures or devices, 
+                                                     but can also include actions such as educational programmes.
+					                                 <br /> Use this box to specify the treatment(s) or action(s) being studied and compared.<br />
+				                                       Multiple terms can be combined using AND, OR, NOT.  </td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                            </td>  </tr>
+                        <tr><td style="width: 45%;"  >
+                            <select name="ctl00$ContentPlaceHolder1$ddlOperatorCondition" id="ctl00_ContentPlaceHolder1_ddlOperatorCondition">
+	<option value="OperatorAND">AND</option>
+	<option value="OperatorANDNOT">AND NOT</option>
+	<option value="OperatorOR">OR</option>
+
+</select>
+                            <span style="font-size: 10pt; font-family: Arial"> </span>
+                    <input name="ctl00$ContentPlaceHolder1$txtCondition" type="text" id="ctl00_ContentPlaceHolder1_txtCondition" />
+                            
+                            </td>
+                                       <td style="width: 18%; text-align: left; ">
+                    <span id="ctl00_ContentPlaceHolder1_Label28"><font face="Arial" size="3">in the</font></span>
+                                           <a id="ctl00_ContentPlaceHolder1_HyperLinkCondition" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Condition</font></u></a>&nbsp;
+                                           </td>
+                                           <td>
+                                           
+                                       <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_cbWithoutSynonymsCondition" type="checkbox" name="ctl00$ContentPlaceHolder1$cbWithoutSynonymsCondition" /><label for="ctl00_ContentPlaceHolder1_cbWithoutSynonymsCondition">Without synonyms </label></font></span>
+                                           </td>
+                             </tr>
+                        <tr>
+                            <td style="width:45%;" >
+                                <select name="ctl00$ContentPlaceHolder1$ddlOperatorIntervention" id="ctl00_ContentPlaceHolder1_ddlOperatorIntervention">
+	<option value="OperatorAND">AND</option>
+	<option value="OperatorANDNOT">NOT</option>
+	<option value="OperatorOR">OR</option>
+
+</select>
+                    <input name="ctl00$ContentPlaceHolder1$txtIntervention" type="text" id="ctl00_ContentPlaceHolder1_txtIntervention" />
+                                   
+                            </td>
+                                                    <td style="width: 18%;  text-align: left; ">
+                    <span id="ctl00_ContentPlaceHolder1_Label18"><font face="Arial" size="3">in the</font></span>
+                                                        <a id="ctl00_ContentPlaceHolder1_HyperLinkIntervention" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Intervention</font></u></a>
+                                                        </td>
+                                                        <td>
+                                       <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_cbWithoutSynonymsIntervention" type="checkbox" name="ctl00$ContentPlaceHolder1$cbWithoutSynonymsIntervention" /><label for="ctl00_ContentPlaceHolder1_cbWithoutSynonymsIntervention">Without synonyms </label></font></span>
+                                                        </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_chkRestrictToCOVID" type="checkbox" name="ctl00$ContentPlaceHolder1$chkRestrictToCOVID" /><label for="ctl00_ContentPlaceHolder1_chkRestrictToCOVID">Restrict to COVID-19</label></font></span>
+                            </td>
+                        </tr>
+                        <tr><td style="width:45%;" >
+                    <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_chkSearchClinical" type="checkbox" name="ctl00$ContentPlaceHolder1$chkSearchClinical" /><label for="ctl00_ContentPlaceHolder1_chkSearchClinical">Search for </label></font></span><a id="ctl00_ContentPlaceHolder1_HyperLink3" href="https://www.who.int/clinical-trials-registry-platform/clinical-trials-in-children" target="_blank" style="display:inline-block;text-align:center "><font face="Arial" size="3">clinical trials in children</font></a></td>
+                            
+                            <td style="width: 18%;  text-align: left; " colspan="2">
+                           
+                            </td>
+                          </tr>                        
+                    </table>
+                            
+                             <table style="width: 100%">
+                        <tr> <td style="width: 18%; "   >
+                            &nbsp;</td>
+                            <td style="width: 42%; ">
+                                &nbsp;</td>
+                            <td align="left" rowspan="5" style="width: 35%; border-top-width: 1pt; border-left-width: 1pt; border-left-color: gainsboro; border-bottom-width: 1pt; border-bottom-color: gainsboro; border-top-color: gainsboro; border-right-width: 1pt; border-right-color: gainsboro;" valign="top">
+                       <div id="ctl00_ContentPlaceHolder1_Panel5" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel6">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Recruitment status</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                     Whether or not a trial is  currently accepting new participants. This is known as 'recruitment' or' enrolment'.<br />
+                                                     Use this drop-down to specify only trials that currently accept new participants ('Recruiting') or to include all trials regardless of recruitment status ('ALL')
+                                                    </td></tr>
+                                                </table>
+	</div>       
+                                
+</div>                         
+                               
+                             <div id="ctl00_ContentPlaceHolder1_Panel6" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel7">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Primary Sponsor</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                      The individual, organization or company responsible for initiating, managing and/or financing 
+                                                      a trial. The primary sponsor may or may not be the main funder.
+                                                    <br /> Use this box to specify the trial's primary sponsor. Use full names 
+                                                    (eg Medical Research Council), partial names (eg Medical Research) or common abbreviations (eg MRC).</td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                              <div id="ctl00_ContentPlaceHolder1_Panel7" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel8">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Secondary ID</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                    Trial identifying numbers issued by other agencies, such as protocol numbers, 
+                                                    funding agency numbers and identifiers issued by other trial registries.<br />
+                                                    Use this box to specify a secondary identifier or part of a secondary identifier.
+                                                    </td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                               <div id="ctl00_ContentPlaceHolder1_Panel8" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel9">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Countries of recruitment</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                      Countries and/or territories from which participants will be, are intended to be, or have been recruited. 
+                                                    <br /> Use the list to specify the countries of recruitment. Select a name and then click the 'Add country and/or territory' button. 
+                                                    As many countries as needed can be specified.</td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                                
+                                  <div id="ctl00_ContentPlaceHolder1_Panel9" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel10">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial; height: 12px;" >
+                                                  Help</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial; height: 26px;">
+                                                        Clicking this checkbox will search for clinical trials related to children only</td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+
+
+                            </td>
+                        </tr>
+                        <tr> <td style="width: 18%; height: 24px;" >
+                            <a id="ctl00_ContentPlaceHolder1_HyperLinkRecruitStatus" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Recruitment status</font></u></a>
+                            <span id="ctl00_ContentPlaceHolder1_Label4"><font face="Arial" size="3">is</font></span></td>
+                            <td style="width: 42%; height: 24px;">
+                                <select name="ctl00$ContentPlaceHolder1$ddlRecruitingStatus" id="ctl00_ContentPlaceHolder1_ddlRecruitingStatus">
+	<option value="1">Recruiting</option>
+	<option value="ALL">ALL</option>
+
+</select></td>
+                       </tr>
+                        <tr><td style="width:18%; height: 37px;"  >
+                            <a id="ctl00_ContentPlaceHolder1_HyperLink23" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Primary sponsor</font></u></a>
+                            <span id="ctl00_ContentPlaceHolder1_Label1"><font face="Arial" size="3">is or contains</font></span></td>
+        
+                            <td style="width: 42%; height: 37px;">
+                            <input name="ctl00$ContentPlaceHolder1$txtPrimarySponsor" type="text" id="ctl00_ContentPlaceHolder1_txtPrimarySponsor" /></td>
+                             </tr>
+             <tr><td style="width: 18%; "  >
+                 <a id="ctl00_ContentPlaceHolder1_HyperLink24" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Secondary ID</font></u></a>
+                 <span id="ctl00_ContentPlaceHolder1_Label14"><font face="Arial" size="3">is or contains</font></span></td>
+       
+                            <td style="width: 42%; ">
+                    <input name="ctl00$ContentPlaceHolder1$txtSecondaryID" type="text" id="ctl00_ContentPlaceHolder1_txtSecondaryID" /></td>
+                             </tr>
+              <tr> <td style="width: 18%; vertical-align: top; "  >
+                  <a id="ctl00_ContentPlaceHolder1_HyperLink25" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Countries of recruitment</font></u></a>
+                  <span id="ctl00_ContentPlaceHolder1_Label5"><font face="Arial" size="3">are</font></span>
+                  &nbsp;
+              </td>
+                   
+                            <td style="width: 42%; ">
+                                <div id="ctl00_ContentPlaceHolder1_UpdatePanel1">
+	
+                                        <table>
+                                            <tr>
+                                                <td rowspan="2">
+                                                    <select size="4" name="ctl00$ContentPlaceHolder1$lstCountries" id="ctl00_ContentPlaceHolder1_lstCountries">
+		<option value="Afghanistan">Afghanistan</option>
+		<option value="Albania">Albania</option>
+		<option value="Algeria">Algeria</option>
+		<option value="American Samoa">American Samoa</option>
+		<option value="Andorra">Andorra</option>
+		<option value="Angola">Angola</option>
+		<option value="Antigua and Barbuda">Antigua and Barbuda</option>
+		<option value="Argentina">Argentina</option>
+		<option value="Armenia">Armenia</option>
+		<option value="Australia">Australia</option>
+		<option value="Austria">Austria</option>
+		<option value="Azerbaijan">Azerbaijan</option>
+		<option value="Bahamas">Bahamas</option>
+		<option value="Bahrain">Bahrain</option>
+		<option value="Bangladesh">Bangladesh</option>
+		<option value="Barbados">Barbados</option>
+		<option value="Belarus">Belarus</option>
+		<option value="Belgium">Belgium</option>
+		<option value="Belize">Belize</option>
+		<option value="Benin">Benin</option>
+		<option value="Bhutan">Bhutan</option>
+		<option value="Bolivia">Bolivia (Plurinational States of)</option>
+		<option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+		<option value="Botswana">Botswana</option>
+		<option value="Brazil">Brazil</option>
+		<option value="Brunei Darussalam">Brunei Darussalam</option>
+		<option value="Bulgaria">Bulgaria</option>
+		<option value="Burkina Faso">Burkina Faso</option>
+		<option value="Burundi">Burundi</option>
+		<option value="Cabo Verde">Cabo Verde</option>
+		<option value="Cambodia">Cambodia</option>
+		<option value="Cameroon">Cameroon</option>
+		<option value="Canada">Canada</option>
+		<option value="Central African Republic">Central African Republic</option>
+		<option value="Chad">Chad</option>
+		<option value="Chile">Chile</option>
+		<option value="China">China</option>
+		<option value="Taiwan">China (Province of Taiwan)</option>
+		<option value="Hong Kong">China, Hong Kong SAR</option>
+		<option value="Colombia">Colombia</option>
+		<option value="Congo">Congo</option>
+		<option value="Cook Islands">Cook Islands</option>
+		<option value="Costa Rica">Costa Rica</option>
+		<option value="Cote D&#39;Ivoire">Cote D&#39;Ivoire</option>
+		<option value="Croatia">Croatia</option>
+		<option value="Cuba">Cuba</option>
+		<option value="Cyprus">Cyprus</option>
+		<option value="Czech Republic">Czech Republic</option>
+		<option value="Korea, Democratic People&#39;s Republic of">Democratic People&#39;s Republic of Korea</option>
+		<option value="Congo, The Democratic Republic of the">Democratic Republic of the Congo</option>
+		<option value="Denmark">Denmark</option>
+		<option value="Djibouti">Djibouti</option>
+		<option value="Dominica">Dominica</option>
+		<option value="Dominican Republic">Dominican Republic</option>
+		<option value="Ecuador">Ecuador</option>
+		<option value="Egypt">Egypt</option>
+		<option value="El Salvador">El Salvador</option>
+		<option value="Equatorial Guinea">Equatorial Guinea</option>
+		<option value="Eritrea">Eritrea</option>
+		<option value="Estonia">Estonia</option>
+		<option value="Ethiopia">Ethiopia</option>
+		<option value="Fiji">Fiji</option>
+		<option value="Finland">Finland</option>
+		<option value="France">France</option>
+		<option value="Gabon">Gabon</option>
+		<option value="Gambia">Gambia</option>
+		<option value="Georgia">Georgia</option>
+		<option value="Germany">Germany</option>
+		<option value="Ghana">Ghana</option>
+		<option value="Greece">Greece</option>
+		<option value="Grenada">Grenada</option>
+		<option value="Guadeloupe">Guadeloupe</option>
+		<option value="Guatemala">Guatemala</option>
+		<option value="Guinea">Guinea</option>
+		<option value="Guinea-Bissau">Guinea-Bissau</option>
+		<option value="Guyana">Guyana</option>
+		<option value="Haiti">Haiti</option>
+		<option value="Honduras">Honduras</option>
+		<option value="Hungary">Hungary</option>
+		<option value="Iceland">Iceland</option>
+		<option value="India">India</option>
+		<option value="Indonesia">Indonesia</option>
+		<option value="Iran">Iran (Islamic Republic of)</option>
+		<option value="Iraq">Iraq</option>
+		<option value="Ireland">Ireland</option>
+		<option value="Israel">Israel</option>
+		<option value="Italy">Italy</option>
+		<option value="Jamaica">Jamaica</option>
+		<option value="Japan">Japan</option>
+		<option value="Jordan">Jordan</option>
+		<option value="Kazakhstan">Kazakhstan</option>
+		<option value="Kenya">Kenya</option>
+		<option value="Kiribati">Kiribati</option>
+		<option value="Kuwait">Kuwait</option>
+		<option value="Kyrgyzstan">Kyrgyzstan</option>
+		<option value="Lao People&#39;s Democratic Republic">Lao People&#39;s Democratic Republic</option>
+		<option value="Latvia">Latvia</option>
+		<option value="Lebanon">Lebanon</option>
+		<option value="Lesotho">Lesotho</option>
+		<option value="Liberia">Liberia</option>
+		<option value="Libya">Libya</option>
+		<option value="Lithuania">Lithuania</option>
+		<option value="Luxembourg">Luxembourg</option>
+		<option value="Madagascar">Madagascar</option>
+		<option value="Malawi">Malawi</option>
+		<option value="Malaysia">Malaysia</option>
+		<option value="Maldives">Maldives</option>
+		<option value="Mali">Mali</option>
+		<option value="Malta">Malta</option>
+		<option value="Marshall Islands">Marshall Islands</option>
+		<option value="Martinique">Martinique</option>
+		<option value="Mauritania">Mauritania</option>
+		<option value="Mauritius">Mauritius</option>
+		<option value="Mexico">Mexico</option>
+		<option value="Micronesia">Micronesia (Federated States of)</option>
+		<option value="Monaco">Monaco</option>
+		<option value="Mongolia">Mongolia</option>
+		<option value="Montenegro">Montenegro</option>
+		<option value="Morocco">Morocco</option>
+		<option value="Mozambique">Mozambique</option>
+		<option value="Myanmar">Myanmar</option>
+		<option value="Namibia">Namibia</option>
+		<option value="Nauru">Nauru</option>
+		<option value="Nepal">Nepal</option>
+		<option value="Netherlands">Netherlands</option>
+		<option value="New Zealand">New Zealand</option>
+		<option value="Nicaragua">Nicaragua</option>
+		<option value="Niger">Niger</option>
+		<option value="Nigeria">Nigeria</option>
+		<option value="Niue">Niue</option>
+		<option value="Norway">Norway</option>
+		<option value="Oman">Oman</option>
+		<option value="Pakistan">Pakistan</option>
+		<option value="Palau">Palau</option>
+		<option value="Panama">Panama</option>
+		<option value="Papua New Guinea">Papua New Guinea</option>
+		<option value="Paraguay">Paraguay</option>
+		<option value="Peru">Peru</option>
+		<option value="Philippines">Philippines</option>
+		<option value="Poland">Poland</option>
+		<option value="Portugal">Portugal</option>
+		<option value="Puerto Rico">Puerto Rico</option>
+		<option value="Qatar">Qatar</option>
+		<option value="Korea, Republic of">Republic of Korea</option>
+		<option value="Moldova">Republic of Moldova</option>
+		<option value="Reunion">Reunion</option>
+		<option value="Romania">Romania</option>
+		<option value="Russian Federation">Russian Federation</option>
+		<option value="Rwanda">Rwanda</option>
+		<option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+		<option value="Saint Lucia">Saint Lucia</option>
+		<option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+		<option value="Samoa">Samoa</option>
+		<option value="Sao Tome and Principe">Sao Tome and Principe</option>
+		<option value="Saudi Arabia">Saudi Arabia</option>
+		<option value="Senegal">Senegal</option>
+		<option value="Serbia">Serbia</option>
+		<option value="Seychelles">Seychelles</option>
+		<option value="Sierra Leone">Sierra Leone</option>
+		<option value="Singapore">Singapore</option>
+		<option value="Slovakia">Slovakia</option>
+		<option value="Slovenia">Slovenia</option>
+		<option value="Solomon Islands">Solomon Islands</option>
+		<option value="Somalia">Somalia</option>
+		<option value="South Africa">South Africa</option>
+		<option value="South Sudan">South Sudan</option>
+		<option value="Spain">Spain</option>
+		<option value="Sri Lanka">Sri Lanka</option>
+		<option value="Sudan">Sudan</option>
+		<option value="Suriname">Suriname</option>
+		<option value="Swaziland">Swaziland</option>
+		<option value="Sweden">Sweden</option>
+		<option value="Switzerland">Switzerland</option>
+		<option value="Syria">Syrian Arab Republic</option>
+		<option value="Tajikistan">Tajikistan</option>
+		<option value="Thailand">Thailand</option>
+		<option value="Macedonia">The former Yugoslav Republic of Macedonia</option>
+		<option value="Timor-Leste">Timor-Leste</option>
+		<option value="Togo">Togo</option>
+		<option value="Tonga">Tonga</option>
+		<option value="Trinidad and Tobago">Trinidad and Tobago</option>
+		<option value="Tunisia">Tunisia</option>
+		<option value="Türkiye">T&#252;rkiye</option>
+		<option value="Turkmenistan">Turkmenistan</option>
+		<option value="Tuvalu">Tuvalu</option>
+		<option value="Uganda">Uganda</option>
+		<option value="Ukraine">Ukraine</option>
+		<option value="United Arab Emirates">United Arab Emirates</option>
+		<option value="United Kingdom">United Kingdom</option>
+		<option value="Tanzania">United Republic of Tanzania</option>
+		<option value="United States">United States of America</option>
+		<option value="Uruguay">Uruguay</option>
+		<option value="Uzbekistan">Uzbekistan</option>
+		<option value="Vanuatu">Vanuatu</option>
+		<option value="Venezuela">Venezuela (Bolivarian Republic of)</option>
+		<option value="Vietnam">Viet Nam</option>
+		<option value="Yemen">Yemen</option>
+		<option value="Zambia">Zambia</option>
+		<option value="Zimbabwe">Zimbabwe</option>
+
+	</select>
+                                                </td>
+                                                <td style="text-align:center">
+                                                    <span id="ctl00_ContentPlaceHolder1_lblText" style="display:inline-block;"><font face="Arial" size="3">Free Text Country :</font></span>
+                                                    <input name="ctl00$ContentPlaceHolder1$txtFreeCountry" type="text" id="ctl00_ContentPlaceHolder1_txtFreeCountry" />
+                                                    <input type="submit" name="ctl00$ContentPlaceHolder1$butAdd" value=">>" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$butAdd&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_butAdd" />
+                                        
+                                        
+                                                </td>
+                                                <td  rowspan="2">
+                                                    <select size="4" name="ctl00$ContentPlaceHolder1$lstCountriesSelected" id="ctl00_ContentPlaceHolder1_lstCountriesSelected">
+
+	</select>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="vertical-align:bottom;text-align:center">
+                                                    <input type="submit" name="ctl00$ContentPlaceHolder1$butSuppr" value="&lt;&lt;" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$butSuppr&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_butSuppr" />
+                                            
+                                                </td> 
+                                                <td style="vertical-align:bottom">
+                                                    
+                                                    <input type="submit" name="ctl00$ContentPlaceHolder1$btnClear" value="Clear" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnClear&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnClear" border="1" />
+                                                </td>                                               
+                                            </tr>
+                                        </table>
+                                        
+                              
+                                    
+</div>
+                            </td>
+                               </tr></table>
+              <table style="width: 100%">
+                               <tr> <td style="width: 23%; vertical-align: top; text-align: left; "  >
+                               
+                                <a id="ctl00_ContentPlaceHolder1_HyperLink4" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Date of registration</font></u></a>
+                                   <span id="ctl00_ContentPlaceHolder1_Label24"><font face="Arial" size="3"> is between</font></span>
+                                   
+                                  </td>
+                   <td style="text-align: left; vertical-align: top; " colspan="4">
+                                    <input name="ctl00$ContentPlaceHolder1$txtDateStart" type="text" id="ctl00_ContentPlaceHolder1_txtDateStart" /><input type="image" name="ctl00$ContentPlaceHolder1$ImgButCalendarStart" id="ctl00_ContentPlaceHolder1_ImgButCalendarStart" src="icn_calendrier_big.gif" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$ImgButCalendarStart&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" border="0" />
+                       <span id="ctl00_ContentPlaceHolder1_Label25" style="display:inline-block;"><font face="Arial" size="3">and</font></span>&nbsp;
+                                    <input name="ctl00$ContentPlaceHolder1$txtDateEnd" type="text" id="ctl00_ContentPlaceHolder1_txtDateEnd" style="text-align: left" /><input type="image" name="ctl00$ContentPlaceHolder1$ImgButCalendarEnd" id="ctl00_ContentPlaceHolder1_ImgButCalendarEnd" src="icn_calendrier_big.gif" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$ImgButCalendarEnd&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" border="0" /><br />
+                       <input type="hidden" name="ctl00$ContentPlaceHolder1$TextBoxWatermarkExtender4_ClientState" id="ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender4_ClientState" />
+                       
+                       
+                                
+                                <input type="hidden" name="ctl00$ContentPlaceHolder1$TextBoxWatermarkExtender5_ClientState" id="ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender5_ClientState" />
+                                
+                       &nbsp;&nbsp;
+                        <div id="ctl00_ContentPlaceHolder1_Panel10" class="popupControl" style="left: 256px; top: 192px">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel11">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" ;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Date of registration</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                      The date when a trial was officially registered and trial details published in the register.
+                                                    <br /> Use the two boxes to specify a time period for the date of registration.</td></tr>
+                                                </table>
+	</div>       
+                                
+</div>
+                                
+                   </td>
+                        </tr>
+                        </table>
+                        <table>
+                        <tr>
+                            <td style="width: 50%; height: 20px;">
+                                <a id="ctl00_ContentPlaceHolder1_hyperlinkPhase" title="Click for more information"><u><font face="Arial" color="Blue" size="3">Phases</font></u></a>
+                                <span id="ctl00_ContentPlaceHolder1_Label2"><font face="Arial" size="3">are</font></span>
+                            </td>
+                            <td style="width:42%; height: 20px;">
+                                <select size="4" name="ctl00$ContentPlaceHolder1$ListBoxPhase" multiple="multiple" id="ctl00_ContentPlaceHolder1_ListBoxPhase">
+	<option value="All">All</option>
+	<option value="Phase 0">Phase 0</option>
+	<option value="Phase 1">Phase 1</option>
+	<option value="Phase 2">Phase 2</option>
+	<option value="Phase 3">Phase 3</option>
+	<option value="Phase 4">Phase 4</option>
+
+</select>
+                            </td>
+                            <td>
+                                     <div id="ctl00_ContentPlaceHolder1_PanelPopUpPhase" class="popupControl">
+	
+                                    <div id="ctl00_ContentPlaceHolder1_UpdatePanel13">
+		
+                                         <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                          <tr>
+                                              <td style="font-weight: bold; font-size: x-small; font-family: Arial" >
+                                                   Phases</td></tr>
+                                                    <tr><td style=" font-size: x-small; vertical-align: top; font-family: Arial;">
+                                                     Hold down control key to select multiple phases.
+                                                    </td></tr>
+                                                </table>
+	</div>       
+                                
+</div>                         
+                               
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_chkWithResultsOnly" type="checkbox" name="ctl00$ContentPlaceHolder1$chkWithResultsOnly" /><label for="ctl00_ContentPlaceHolder1_chkWithResultsOnly">With results only</label></font></span><br />
+                                <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_chkRareDiseasesOnly" type="checkbox" name="ctl00$ContentPlaceHolder1$chkRareDiseasesOnly" /><label for="ctl00_ContentPlaceHolder1_chkRareDiseasesOnly">Rare diseases / orphan drugs</label></font></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span><font face="Arial" size="3"><input id="ctl00_ContentPlaceHolder1_chkGeneEditing" type="checkbox" name="ctl00$ContentPlaceHolder1$chkGeneEditing" /><label for="ctl00_ContentPlaceHolder1_chkGeneEditing">Genome editing</label></font></span>
+                            </td>
+                        </tr>
+                        </table>
+                        <table style="width: 100%">
+                        <tr>
+                            <td style="width: 23%; text-align: left;">
+                                
+                                
+                                </td>
+
+                            <td style="width: 20%;"  >
+                                <input type="submit" name="ctl00$ContentPlaceHolder1$btnSearch" value="Search" onclick="document.getElementById(&#39;ImgLoading&#39;).style.display=&#39;block&#39;;WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnSearch&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnSearch" style="height: 26px" />
+                                <input type="submit" name="ctl00$ContentPlaceHolder1$btnClearAllfields" value="Clear" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnClearAllfields&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnClearAllfields" />
+                                
+                                <a id="ctl00_ContentPlaceHolder1_HyperLink26" href="https://www.who.int/clinical-trials-registry-platform/the-ictrp-search-portal/search-tips" target="blank"><font face="Arial" size="3">Search Tips</font></a>
+                            </td>
+                                <td style="width: 5%;">
+                                </td> 
+                                <td style="width: 35%;" align="left"   >
+                                    <input name="ctl00$ContentPlaceHolder1$postbacktextbox" type="text" value="Advanced" id="ctl00_ContentPlaceHolder1_postbacktextbox" class="postbackControl" border="0" />
+                                        <input name="ctl00$ContentPlaceHolder1$postbacktextbox1" type="text" value="True" id="ctl00_ContentPlaceHolder1_postbacktextbox1" class="postbackControl" border="0" />
+                                </td>
+                                <td style="width: 15%;" align="left"   >
+                             </td> 
+                         </tr>
+                       
+        </table>
+        
+        
+    
+    <table align=center width="100%"   >
+                <tr>
+                    <td style="border-top: #6ba2cc thick solid"  >
+                        <span id="ctl00_ContentPlaceHolder1_Label31" style="display:inline-block;"><font face="Arial" size="2">Disclaimer: Trials posted on this search portal are not endorsed by WHO, but are provided as a service to our users. In no event shall the World Health Organization be liable for any damages arising from the use of the information linked to in this section. None of the information obtained through use of the search portal should in any way be used in clinical care without consulting a physician or licensed health professional. WHO is not responsible for the accuracy, completeness and/or use made of the content displayed for any trial record.</font></span></td>
+                </tr>
+                <tr>
+                
+                        <td align="center">
+                            <a id="ctl00_ContentPlaceHolder1_HyperLink8" href="http://www.who.int/about/copyright/en/" target="_blank" style="text-align: center"><b><font face="Arial" size="2">Copyright - World Health Organization</font></b></a>
+                            <span id="ctl00_ContentPlaceHolder1_Label32"><b><font face="Arial" size="2">- Version 3.6 -</font></b></span>
+                            <a id="ctl00_ContentPlaceHolder1_HyperLink6" href="ICTRP_Revisions_document.pdf" target="_blank" style="text-align: center"><b><font face="Arial" size="2">Version history</font></b></a>
+
+                        </td>
+            
+               </tr>
+   
+    </table>  
+       
+    </div>
+    
+
+<script type="text/javascript">
+//<![CDATA[
+(function() {var fn = function() {$get("ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField").value = '';Sys.Application.remove_init(fn);};Sys.Application.add_init(fn);})();var ctl00_Menu1_Data = new Object();
+ctl00_Menu1_Data.disappearAfter = 500;
+ctl00_Menu1_Data.horizontalOffset = 2;
+ctl00_Menu1_Data.verticalOffset = 0;
+ctl00_Menu1_Data.hoverClass = '';
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.TextBoxWatermarkBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender2_ClientState","WatermarkCssClass":"watermark","WatermarkText":"Example: Diphtheria NOT tetanus","id":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender2"}, null, null, $get("ctl00_ContentPlaceHolder1_txtCondition"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.TextBoxWatermarkBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender1_ClientState","WatermarkCssClass":"watermark","WatermarkText":"Example: liver cancer OR breast cancer","id":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_txtTitle"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel1","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLinkTitle"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel2","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender2"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLinkCondition"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.TextBoxWatermarkBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender3_ClientState","WatermarkCssClass":"watermark","WatermarkText":"Example: transplant AND immunosuppressant","id":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender3"}, null, null, $get("ctl00_ContentPlaceHolder1_txtIntervention"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel3","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender3"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLinkIntervention"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel5","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender5"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLinkRecruitStatus"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel6","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender6"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLink23"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel7","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender7"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLink24"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel8","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender8"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLink25"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.TextBoxWatermarkBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender4_ClientState","WatermarkCssClass":"watermark","WatermarkText":"dd/mm/yyyy","id":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender4"}, null, null, $get("ctl00_ContentPlaceHolder1_txtDateStart"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"button":$get("ctl00_ContentPlaceHolder1_ImgButCalendarStart"),"firstDayOfWeek":1,"format":"dd/MM/yyyy","id":"ctl00_ContentPlaceHolder1_CalendarExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_txtDateStart"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"firstDayOfWeek":1,"format":"dd/MM/yyyy","id":"ctl00_ContentPlaceHolder1_CalendarExtender3"}, null, null, $get("ctl00_ContentPlaceHolder1_txtDateStart"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"button":$get("ctl00_ContentPlaceHolder1_ImgButCalendarEnd"),"format":"dd/MM/yyyy","id":"ctl00_ContentPlaceHolder1_CalendarExtender2"}, null, null, $get("ctl00_ContentPlaceHolder1_txtDateEnd"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.TextBoxWatermarkBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender5_ClientState","WatermarkCssClass":"watermark","WatermarkText":"dd/mm/yyyy","id":"ctl00_ContentPlaceHolder1_TextBoxWatermarkExtender5"}, null, null, $get("ctl00_ContentPlaceHolder1_txtDateEnd"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"firstDayOfWeek":1,"format":"dd/MM/yyyy","id":"ctl00_ContentPlaceHolder1_CalendarExtender4"}, null, null, $get("ctl00_ContentPlaceHolder1_txtDateEnd"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_Panel10","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender10"}, null, null, $get("ctl00_ContentPlaceHolder1_HyperLink4"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.PopupControlBehavior, {"PopupControlID":"ctl00_ContentPlaceHolder1_PanelPopUpPhase","Position":3,"dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_PopupControlExtender4"}, null, null, $get("ctl00_ContentPlaceHolder1_hyperlinkPhase"));
+});
+//]]>
+</script>
+</form>
+</body>
+</html>
