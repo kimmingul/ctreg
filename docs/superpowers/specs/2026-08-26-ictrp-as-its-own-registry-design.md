@@ -76,7 +76,7 @@
 | `intervention` | `txtIntervention` (+ 동의어 끄기) | **true** |
 | `lead` | `txtPrimarySponsor` | **true** — primary sponsor 만 |
 | `id` | `txtSecondaryID` ("is or contains") | **true** |
-| `location` | `txtFreeCountry` + `lstCountries` | **false** — 아래 §2.3(필드테스트가 죽은 축임을 실측) |
+| `location` | `txtFreeCountry` + `butAdd` → `lstCountriesSelected` | **true** — 나라만, 포털의 표기만. 아래 §2.3 |
 | `phase` | `ListBoxPhase` = Phase 0/1/2/3/4 | **true**, 아래 §2.1 |
 | `status` | `ddlRecruitingStatus` = `Recruiting` / `ALL` | **true**, 값은 `['recruiting']` 하나. 아래 §2.2 |
 | `sponsor` | 없음(primary 만 있다) | **false** |
@@ -127,7 +127,18 @@ ICTRP: `Phase 0` `Phase 1` `Phase 2` `Phase 3` `Phase 4`.
 `new URLSearchParams(pairs)` 가 그 모양을 그대로 받으므로 인코딩 로직은 바뀌지 않는다.
 캐시 키를 만드는 `cacheKeyParams` 는 **논리 질의**이지 전송 본문이 아니므로 그대로 `Record` 다.
 
-### 2.3 `location` — 신고를 내렸다 (필드테스트 실측 2026-08-26)
+### 2.3 `location` — 껐다가 되살렸다 (실측 2026-08-26)
+
+> **되살렸다.** `butAdd` 왕복이 실제로 필터를 건다는 것을 실측했고(기준선 36,264 → `Japan`
+> 2,981), 함께 잰 것이 값 검증을 넣게 했다: `Seoul`(도시)과 `Zzzland`(오타)는 0건이라 눈에
+> 보이게 실패하지만 **`South Korea` 는 94건** 을 낸다 — 표준 이름 `Korea, Republic of` 의
+> 713건에 견주면 13% 이고, 성공한 필터처럼 보인다. 그래서 어댑터가 폼 페이지의 199개 목록으로
+> 걸러 내고 없는 이름은 **요청을 내기 전에** exit 3 으로 거절하며 가장 가까운 표기를 힌트로 단다.
+> 목록을 코드에 박지 않고 요청 시점에 읽는 이유는 박아 두면 포털이 나라를 더하는 날 조용히
+> 틀려지기 때문이다. 대가는 나라를 쓰는 질의만 요청이 하나 는다는 것이다.
+> 아래는 껐을 때의 진단으로 남긴다.
+
+### 2.3.1 껐던 이유 (필드테스트 실측 2026-08-26)
 
 원래 `true` 로 신고했다. **필드테스트가 첫 실행에서 그것이 거짓임을 잡았다:** 서로 다른 나라
 세 개를 각각 넣은 질의가 **전부 무필터 기준선(1,148,325건)과 같은 수**를 냈다. 수가 똑같다는 것은
