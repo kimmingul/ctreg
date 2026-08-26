@@ -21,7 +21,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "field-test": "bun run scripts/field-test.ts",
-    "isrctn-field-test": "bun run scripts/isrctn-field-test.ts"
+    "isrctn-field-test": "bun run scripts/isrctn-field-test.ts",
+    "ictrp-field-test": "bun run scripts/ictrp-field-test.ts"
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.0",
