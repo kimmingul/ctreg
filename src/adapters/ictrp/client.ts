@@ -27,7 +27,7 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
       pageSize: number,
       page: number,
       cacheMode: CacheMode,
-    ): Promise<{ page: IctrpPage; fetchedAt: string; warnings: Warning[] }> {
+    ): Promise<{ page: IctrpPage; fetchedAt: string; warnings: Warning[]; raw: string }> {
       const warnings: Warning[] = [];
 
       const formPage = await getJson<string>(
@@ -81,7 +81,9 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
         html = next;
       }
 
-      return { page: parseResults(html.value), fetchedAt: html.fetchedAt, warnings };
+      // `raw` 는 이 조회가 최종적으로 받은 결과 페이지 원문이다. `--raw` 가 레코드에
+      // 실을 유일한 원문이므로(ICTRP 는 구조화된 응답이 없다) 여기서 그대로 넘긴다.
+      return { page: parseResults(html.value), fetchedAt: html.fetchedAt, warnings, raw: html.value };
     },
   };
 }

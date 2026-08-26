@@ -3,6 +3,7 @@ import type { RegistryKey } from '../core/registry.js';
 import type { Config } from '../runtime/config.js';
 import type { HttpDeps } from '../runtime/http.js';
 import { createCtgovAdapter } from './ctgov/adapter.js';
+import { createIctrpAdapter } from './ictrp/adapter.js';
 import { createIsrctnAdapter } from './isrctn/adapter.js';
 
 /**
@@ -13,5 +14,9 @@ import { createIsrctnAdapter } from './isrctn/adapter.js';
  * 다섯 커맨드가 무엇을 하는지는 guard.ts 의 missingAdapterError 가 정한다.
  */
 export function createAdapters(cfg: Config, deps: HttpDeps = {}): Partial<Record<RegistryKey, RegistryAdapter>> {
-  return { ctgov: createCtgovAdapter(cfg, deps), isrctn: createIsrctnAdapter(cfg, deps) };
+  return {
+    ctgov: createCtgovAdapter(cfg, deps),
+    isrctn: createIsrctnAdapter(cfg, deps),
+    ictrp: createIctrpAdapter(cfg, deps),
+  };
 }

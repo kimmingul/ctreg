@@ -63,6 +63,29 @@ export type AdapterUnderTest = {
    * 어긋날 일이 없다.
    */
   wire?(url: string): { text: string; contentType: string };
+  /**
+   * `get()` 이 개별 ID 조회를 실제로 지원하는가. 기본 `true`.
+   *
+   * `Capability` 스키마에는 `get` 축이 없다 — get 미지원은 신고가 아니라 **던지는
+   * 것**으로 알린다(get.ts 가 CtregError.code === 'unsupported' 를 그대로 받아
+   * RegistryStatus 로 옮긴다). 이 스위트는 원래 두 어댑터(ctgov, isrctn) 만 알았고
+   * 둘 다 배치 ID 조회 창구가 있어 get 이 항상 성공한다고 가정했다 — ICTRP 가 그
+   * 가정을 깬 첫 사례다: 결과 화면에는 ID 로 건 배치 조회가 없고, 장소 데이터도
+   * 아예 싣지 않는다. `false` 로 두면 get 이 성공한다고 가정하는 검사들(배치 분할,
+   * 장소 절단, 캡 좁히기, prefix 벗기기의 get 쪽 절반)을 건너뛰고 대신 get 이
+   * unsupported 로 던지는지만 확인한다.
+   */
+  getSupported?: boolean;
+  /**
+   * `q.pageSize` 가 업스트림 요청 파라미터로 전달되는가. 기본 `true`.
+   *
+   * ICTRP 는 예외다 — 결과 페이지 크기 컨트롤(`ddlPageSize`)이 검색 POST 에는
+   * 렌더되지 않아, 그 필드를 실으면 ASP.NET 이 `__EVENTVALIDATION` 으로 거절해
+   * 0건이 된다(실측, query.ts 참고). 즉 pageSize 를 흘려보내지 **않는 것** 이
+   * 올바른 동작이라, `q.pageSize 가 업스트림 요청까지 간다` 검사와 정면으로
+   * 충돌한다. `false` 로 두면 그 검사를 건너뛴다.
+   */
+  pageSizeConfigurable?: boolean;
 };
 
 const json = (body: unknown, status = 200) =>
@@ -212,7 +235,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * 표본 ID 의 끝자리를 바꿔 합성한다 — 존재하지 않는 시험이어도 상관없다. 여기서
      * 보는 것은 응답이 아니라 **요청이 어떻게 나뉘었는가** 이기 때문이다.
      */
-    it('maxBatchIds 를 넘는 ID 는 실제로 나눠 보낸다 — 숫자를 신고하는 것과 지키는 것은 다르다', async () => {
+    (under.getSupported === false ? it.skip : it)(
+      'maxBatchIds 를 넘는 ID 는 실제로 나눠 보낸다 — 숫자를 신고하는 것과 지키는 것은 다르다',
+      async () => {
       const cap = makeAdapter().capability();
       const limit = cap.limits.maxBatchIds;
       const { registry, registryId } = parseTrialId(under.sampleId);
@@ -248,7 +273,8 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         `요청한 ID ${dropped.length}개가 어떤 요청에도 실리지 않았습니다: ${dropped.slice(0, 3).join(', ')}…. ` +
           '상한을 넘는 ID 를 나누지 않고 버리면 조회 자체가 조용히 부분 조회가 됩니다.',
       ).toEqual([]);
-    });
+    },
+    );
 
     /**
      * 신고해 놓고 거부하는 어댑터를 잡는다. **이 검사를 쓰기 직전까지 ISRCTN 이
@@ -426,7 +452,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * 싣고 상대의 값은 싣지 않는지만 본다 — 값 하나만 보면 우연히 다른 파라미터와 같은
      * 수여서 통과할 수 있다.
      */
-    it('q.pageSize 가 업스트림 요청까지 간다 — 어댑터가 자기 기본값으로 덮으면 안 된다', async () => {
+    (under.pageSizeConfigurable === false ? it.skip : it)(
+      'q.pageSize 가 업스트림 요청까지 간다 — 어댑터가 자기 기본값으로 덮으면 안 된다',
+      async () => {
       const carries = (reqs: { url: string; body: string }[], n: number) =>
         reqs.some((r) => [...new URL(r.url).searchParams.values()].includes(String(n)) || r.body.includes(String(n)));
 
@@ -448,7 +476,20 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       ).toBe(false);
     });
 
-    it('get 은 ID 배치를 계약을 지키는 레코드로 낸다', async () => {
+    /**
+     * `getSupported: false` — get 이 성공한다는 가정 위에 선 아래 검사들(배치 분할,
+     * 장소 절단, 캡 좁히기) 대신, get 이 실제로 unsupported 로 던지는지만 확인한다.
+     * `code` 가 'unsupported' 여야 get.ts 의 catch 가 이걸 RegistryStatus 로 옮긴다 —
+     * 다른 코드로 던지면 그 자리에서 전체 커맨드가 죽는다.
+     */
+    if (under.getSupported === false) {
+      it('get 은 미지원을 exit 3 으로 신고한다 — 빈 결과가 아니라 던진다', async () => {
+        const { adapter } = ok();
+        await expect(adapter.get([under.sampleId], fetchOpts)).rejects.toMatchObject({ code: 'unsupported' });
+      });
+    }
+
+    (under.getSupported === false ? it.skip : it)('get 은 ID 배치를 계약을 지키는 레코드로 낸다', async () => {
       const { adapter, calls } = ok();
       const r = await adapter.get([under.sampleId], fetchOpts);
 
@@ -470,7 +511,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * CAPS.locations.default 를 넘는 장소를 담은 레코드를 내지 않으면 이 검사는 아무것도
      * 확인하지 못하고 공허하게 통과하므로, 먼저 절단이 실제로 일어났는지부터 못박는다.
      */
-    it('장소가 잘리면 locations_truncated 경고가 반드시 딸려온다 — 경고 배열이 있다는 것만으론 부족하다', async () => {
+    (under.getSupported === false ? it.skip : it)(
+      '장소가 잘리면 locations_truncated 경고가 반드시 딸려온다 — 경고 배열이 있다는 것만으론 부족하다',
+      async () => {
       // 캡을 1 로 낮춰서 묻는다. 예전에는 기본 캡(10)으로 물었는데, 그러면 표본이 장소를
       // 11곳 이상 담은 레지스트리에서만 이 검사가 작동한다 — 장소를 국가 단위로만 주는
       // 레지스트리(ISRCTN 은 WHO 포맷에서 모집 국가 서너 곳이 전부다)에서는 절단이 일어날
@@ -493,7 +536,8 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
           `${rec.id} 는 장소가 잘렸는데(locationsTotal=${rec.locationsTotal}, locations=${rec.locations!.length}) locations_truncated 경고가 없습니다.`,
         ).toBe(true);
       }
-    });
+    },
+    );
 
     /**
      * I4. 위 `locations_truncated` 검사는 캡을 *무시하는* 어댑터도 잡기는 한다 —
@@ -507,7 +551,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * 두 번 받는 것이 핵심이다 — 좁은 요청 하나만 보면 그 축을 아예 안 채우는 어댑터가
      * 공허하게 통과한다.
      */
-    it('o.caps 를 좁히면 그만큼만 담는다 — 캡은 CLI 가 정하고 어댑터는 읽기만 한다', async () => {
+    (under.getSupported === false ? it.skip : it)(
+      'o.caps 를 좁히면 그만큼만 담는다 — 캡은 CLI 가 정하고 어댑터는 읽기만 한다',
+      async () => {
       const NARROW = { locations: 1, eligibilityChars: 40, outcomes: 1 };
       const wide: FetchOpts = {
         ...fetchOpts,
@@ -555,7 +601,8 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
           );
         }
       }
-    });
+    },
+    );
 
     /**
      * I5. `get()`/`results()` 가 받는 ID 는 **접두사가 붙은 형태**(`CTGOV:NCT03831932`)다
@@ -593,7 +640,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         ).toBe(true);
       };
 
-      await check('get', (a) => a.get([under.sampleId], fetchOpts));
+      if (under.getSupported !== false) {
+        await check('get', (a) => a.get([under.sampleId], fetchOpts));
+      }
       if (makeAdapter().capability().results.supported) {
         await check('results', (a) => a.results(under.sampleId, resultsOpts));
       }
