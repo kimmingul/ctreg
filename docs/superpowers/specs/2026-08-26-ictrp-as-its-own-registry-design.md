@@ -76,7 +76,7 @@
 | `intervention` | `txtIntervention` (+ 동의어 끄기) | **true** |
 | `lead` | `txtPrimarySponsor` | **true** — primary sponsor 만 |
 | `id` | `txtSecondaryID` ("is or contains") | **true** |
-| `location` | `txtFreeCountry` + `lstCountries` | **true** — **국가 단위뿐** |
+| `location` | `txtFreeCountry` + `lstCountries` | **false** — 아래 §2.3(필드테스트가 죽은 축임을 실측) |
 | `phase` | `ListBoxPhase` = Phase 0/1/2/3/4 | **true**, 아래 §2.1 |
 | `status` | `ddlRecruitingStatus` = `Recruiting` / `ALL` | **true**, 값은 `['recruiting']` 하나. 아래 §2.2 |
 | `sponsor` | 없음(primary 만 있다) | **false** |
@@ -126,6 +126,26 @@ ICTRP: `Phase 0` `Phase 1` `Phase 2` `Phase 3` `Phase 4`.
 `buildForm` 의 반환과 `postForm` 의 `form` 을 **`[이름, 값]` 쌍의 배열**로 둔다.
 `new URLSearchParams(pairs)` 가 그 모양을 그대로 받으므로 인코딩 로직은 바뀌지 않는다.
 캐시 키를 만드는 `cacheKeyParams` 는 **논리 질의**이지 전송 본문이 아니므로 그대로 `Record` 다.
+
+### 2.3 `location` — 신고를 내렸다 (필드테스트 실측 2026-08-26)
+
+원래 `true` 로 신고했다. **필드테스트가 첫 실행에서 그것이 거짓임을 잡았다:** 서로 다른 나라
+세 개를 각각 넣은 질의가 **전부 무필터 기준선(1,148,325건)과 같은 수**를 냈다. 수가 똑같다는 것은
+그 절이 서버에 도달조차 하지 않는다는 뜻이다.
+
+원인: `AdvSearch.aspx` 는 `txtFreeCountry` 에 적은 값을 **`butAdd` postback** 으로
+`lstCountriesSelected` 로 옮겨야 검색에 반영한다. `buildForm` 은 텍스트 상자만 채우므로 그 값은
+어디에도 쓰이지 않는다.
+
+**그래서 `supported: false` 다.** 조용히 전체를 돌려주는 축을 지원한다고 신고하는 것은 이 CLI 가
+없애려는 실패 그 자체이고, ISRCTN 이 죽은 필드를 `false` 로 신고한 것과 같은 자리다.
+지금은 `--location` 이 exit 3 으로 즉시 거절된다(네트워크를 치지도 않는다).
+
+**되살리는 길:** 검색 POST 전에 `butAdd` 왕복을 한 번 더 하면 된다. 첫 판에서 뺀 이유는 요청이
+질의마다 하나 더 늘고, 그 왕복이 실제로 필터를 걸어 주는지 **재지 않았기** 때문이다. 재고 나서 켠다.
+
+**이것이 필드테스트를 만든 이유 그 자체다.** 스텁 계약 스위트는 원리상 이것을 잡을 수 없다 —
+스텁은 무엇을 물어보든 같은 픽스처로 답하기 때문이다.
 
 ### 2.2 `status` 와 그것이 드러낸 구멍
 
