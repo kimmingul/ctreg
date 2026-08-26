@@ -2,7 +2,8 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createIctrpAdapter } from '../../../src/adapters/ictrp/adapter.js';
+import { assertSupported } from '../../../src/cli/guard.js';
+import { createIctrpAdapter, ICTRP_CAPABILITY } from '../../../src/adapters/ictrp/adapter.js';
 import { CAPS, type FetchOpts, type NormalizedQuery } from '../../../src/core/query.js';
 
 const form = readFileSync(join(__dirname, '../../fixtures/ictrp/advsearch-form.html'), 'utf8');
@@ -109,5 +110,26 @@ describe('ICTRP 어댑터 — 페이지 크기 하한 경고', () => {
     // 어긋나는 확정 문장이 있으면 안 된다 — 고정값(10)은 "페이지 크기 상한" 이라는
     // 메커니즘으로만 등장해야지, 이 응답이 실제로 낸 건수인 것처럼 말하면 안 된다.
     expect(w?.message).not.toMatch(/언제나\s*10\s*건(입니다|이\s*(돌아왔|있)습니다)/);
+  });
+});
+
+/**
+ * 필드테스트 실측(2026-08-26): 국가 세 개를 각각 걸어도 세 번 다 미적용 기준선과
+ * 같은 건수가 나왔다 — `txtFreeCountry` 는 채워지지만 `butAdd` postback 없이는
+ * `lstCountriesSelected` 로 옮겨지지 않아 필터가 서버까지 가지 않는다. `location`
+ * 을 `off()` 로 돌린 결정을 여기 못박는다 — 이 테스트가 없으면 나중에 누군가
+ * "폼에 필드가 있으니" 하고 `free()` 로 되돌릴 수 있고, 그러면 이 축은 다시
+ * 조용히 전 세계를 돌려주는 축으로 돌아간다.
+ */
+describe('ICTRP 어댑터 — location 축은 죽어 있다', () => {
+  it('location 을 쓰면 assertSupported 가 exit 3 으로 거부한다', () => {
+    expect(() =>
+      assertSupported(ICTRP_CAPABILITY, { location: 'Korea' } as NormalizedQuery, fetchOpts),
+    ).toThrowError(/location/);
+  });
+
+  it('location 은 supported:false 이고 자유 텍스트 축의 모양(values: null)을 유지한다', () => {
+    expect(ICTRP_CAPABILITY.search.location.supported).toBe(false);
+    expect(ICTRP_CAPABILITY.search.location.values).toBeNull();
   });
 });

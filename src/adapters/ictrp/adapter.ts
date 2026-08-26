@@ -21,7 +21,22 @@ export const ICTRP_CAPABILITY: Capability = {
     title: free('공개 제목'),
     lead: free('주 스폰서만 본다 — 공동 스폰서 자리가 폼에 없다'),
     id: free('Secondary ID 를 포함 검색한다. ICTRP 사본이 원 레지스트리보다 이 필드를 덜 실은 사례가 있다(표본 1건)'),
-    location: free('국가만 본다 — 도시·기관 자리가 없다'),
+    /**
+     * 필드테스트 실측(2026-08-26): 국가 세 개로 각각 걸어도 세 번 다 걸지 않은
+     * 기준선(1,148,325건)과 정확히 같은 수가 나왔다 — 조건절이 서버까지 가지 않았다는
+     * 뜻이다. 원인: `txtFreeCountry` 는 입력칸일 뿐이고, 그 값이 실제 필터로 쓰이는
+     * `lstCountriesSelected` 로 옮겨지려면 별도의 `butAdd` postback 이 필요하다
+     * (`AdvSearch.aspx` 의 폼 구조). `buildForm` 은 텍스트칸만 채우고 그 postback 을
+     * 하지 않으므로, 이 필드는 채워도 아무 효과가 없다 — ISRCTN 의 죽은 필드들과
+     * 같은 모양이라 같은 이유로 끈다: 조용히 전체를 돌려주는 축을 지원한다고 신고할
+     * 수 없다. 다시 켜려면 `butAdd` 왕복(폼에 국가를 채우고 그 버튼으로 postback 해
+     * `lstCountriesSelected` 에 실제로 들어가는지 확인)을 구현하고 실측으로 증명해야
+     * 한다 — 별도 작업으로 남겨 둔다.
+     */
+    location: off('폼에 국가 입력칸(txtFreeCountry)이 있지만 실측 결과 죽어 있다 — 국가 세 개를 각각 걸어도 ' +
+      '셋 다 미적용 기준선(1,148,325건)과 같은 수가 나왔다(2026-08-26). txtFreeCountry 는 ' +
+      '별도의 butAdd postback 으로 lstCountriesSelected 에 옮겨져야 실제 필터가 되는데 이 ' +
+      '어댑터는 그 postback 을 하지 않는다 — 구현하고 실측으로 증명하기 전까지는 끈다'),
     status: {
       supported: true,
       values: ICTRP_FILTERABLE.status,
