@@ -1,9 +1,9 @@
 import type { Warning } from '../../core/capability.js';
 import type { CacheMode, NormalizedQuery } from '../../core/query.js';
 import type { Config } from '../../runtime/config.js';
-import { upstreamError } from '../../runtime/errors.js';
+import { unsupportedError, upstreamError } from '../../runtime/errors.js';
 import { getJson, peekFormCache, postForm, type HttpDeps } from '../../runtime/http.js';
-import { hiddenFields, pagerLinks } from './form.js';
+import { countryOptions, countrySelected, FIELD, hiddenFields, pagerLinks } from './form.js';
 import { parseResults, type IctrpPage } from './parse.js';
 import { buildForm } from './query.js';
 
@@ -75,13 +75,71 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
       );
       warnings.push(...formPage.warnings);
 
+      /**
+       * 나라는 **포털이 가진 표기여야 한다.** 아무 문자열이나 보내면 조용히 좁혀진다 —
+       * 실측(2026-08-26, `condition=diabetes` · 상태 ALL): `Japan` 2,981건인데
+       * `South Korea` 는 94건이고 표준 이름 `Korea, Republic of` 는 713건이다. 즉 비표준
+       * 표기는 오류도 0건도 아닌 **그럴듯하게 좁혀진 수** 를 낸다. 도시(`Seoul`)와
+       * 오타(`Zzzland`)는 0건이라 눈에 보이지만 이쪽은 보이지 않는다.
+       *
+       * 목록은 방금 받은 폼 페이지에서 읽는다 — 코드에 박으면 포털이 바꾸는 날 조용히
+       * 틀려진다. 대조는 대소문자만 무시하고, 실어 보내는 것은 **포털의 표기** 다.
+       */
+      let country: string | undefined;
+      if (q.location !== undefined && q.location !== '') {
+        const options = countryOptions(formPage.value);
+        country = options.find((o) => o.toLowerCase() === q.location!.toLowerCase());
+        if (country === undefined) {
+          const needle = q.location.toLowerCase();
+          const near = options.filter((o) => {
+            const s = o.toLowerCase();
+            return s.includes(needle) || needle.split(/[\s,]+/).some((w) => w.length > 2 && s.includes(w));
+          });
+          throw unsupportedError(
+            `WHO ICTRP 는 '${q.location}' 를 나라 이름으로 알지 못합니다`,
+            (near.length > 0 ? `이런 이름을 찾으셨나요: ${near.slice(0, 5).join(' / ')}. ` : '') +
+              'ICTRP 의 나라 필터는 포털이 가진 표기만 받습니다. 다른 표기를 보내면 오류가 아니라 ' +
+              '조용히 좁혀진 결과가 나오므로(실측: South Korea 94건 vs Korea, Republic of 713건) ' +
+              '여기서 막습니다. 도시나 기관 이름은 이 레지스트리가 아예 받지 않습니다.',
+          );
+        }
+      }
+
+      /**
+       * 나라는 텍스트 상자에 적는 것만으로는 검색에 반영되지 않는다. `butAdd` 로 한 번
+       * 왕복해 `lstCountriesSelected` 로 옮겨야 한다 — 그러지 않으면 필터가 통째로
+       * 사라져 무필터 결과가 나온다(필드테스트가 그렇게 잡았다). 나라를 쓸 때만 이
+       * 요청이 하나 는다.
+       */
+      let formHidden = hiddenFields(formPage.value);
+      const selected: [string, string][] = [];
+      if (country !== undefined) {
+        const added = await postForm<string>(
+          cfg,
+          {
+            ...base, path: PATH,
+            form: [...Object.entries(formHidden), [FIELD.country, country], [FIELD.butAdd, '>>']],
+            cacheKeyParams: { butAdd: country },
+            // 이 응답은 답이 아니라 ViewState 를 나르는 기계다 — 캐시에서 꺼내면 만료된
+            // 것이 POST 에 실린다(아래 사슬과 같은 이유).
+            cacheMode: 'off',
+            decode: (t) => t,
+          },
+          deps,
+        );
+        warnings.push(...added.warnings);
+        formHidden = hiddenFields(added.value);
+        for (const o of countrySelected(added.value)) selected.push([FIELD.countrySelected, o]);
+      }
+
       // 배열로 쌓는 이유: `ListBoxPhase` 처럼 같은 키가 여러 번 나올 수 있는 필드를
       // 객체 스프레드로 합치면 뒤 값이 앞 값을 덮어써 조용히 사라진다(query.ts 참고).
       let html = await postForm<string>(
         cfg,
         {
           ...cacheable,
-          form: [...Object.entries(hiddenFields(formPage.value)), ...query],
+          form: [...Object.entries(formHidden),
+              ...selected, ...query],
           // 이 응답이 요청한 페이지일 때만 캐시한다. 아닐 때는 사슬의 중간이고, 중간을
           // 캐시하면 다음 호출이 묵은 ViewState 를 꺼내 POST 에 싣게 된다.
           cacheMode: page === 1 ? cacheMode : 'off',

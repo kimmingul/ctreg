@@ -148,16 +148,34 @@ describe('ICTRP 어댑터 — 페이지 크기 하한 경고', () => {
  * "폼에 필드가 있으니" 하고 `free()` 로 되돌릴 수 있고, 그러면 이 축은 다시
  * 조용히 전 세계를 돌려주는 축으로 돌아간다.
  */
-describe('ICTRP 어댑터 — location 축은 죽어 있다', () => {
-  it('location 을 쓰면 assertSupported 가 exit 3 으로 거부한다', () => {
+/**
+ * 이 축은 한 번 꺼졌다가 다시 켜졌다. 끈 이유는 `txtFreeCountry` 만 채우면 필터가 서버에
+ * 도달하지 않아 **조용히 무필터 결과** 가 나왔기 때문이고(필드테스트가 잡았다), 켤 수 있게
+ * 된 이유는 `butAdd` 왕복이 실제로 필터를 건다는 것을 실측했기 때문이다(2026-08-26:
+ * 기준선 36,264 → 왕복 후 `Japan` 2,981).
+ *
+ * 예전 검사 둘은 축이 꺼져 있다는 것을 고정하고 있었다. 사실이 바뀌었으므로 검사도 바꾼다 —
+ * 다만 **약화하지 않는다**: 이제 고정하는 것은 "축이 켜졌다" 가 아니라 "켜졌고, 값 검증이
+ * 그대로 붙어 있다" 이다. 검증이 없으면 `South Korea` 가 713건 대신 94건을 조용히 낸다.
+ */
+describe('ICTRP 어댑터 — location 축은 되살아났다', () => {
+  it('location 을 쓰면 이제 가드가 막지 않는다', () => {
     expect(() =>
-      assertSupported(ICTRP_CAPABILITY, { location: 'Korea' } as NormalizedQuery, fetchOpts),
-    ).toThrowError(/location/);
+      assertSupported(ICTRP_CAPABILITY, { location: 'Japan' } as NormalizedQuery, fetchOpts),
+    ).not.toThrow();
   });
 
-  it('location 은 supported:false 이고 자유 텍스트 축의 모양(values: null)을 유지한다', () => {
-    expect(ICTRP_CAPABILITY.search.location.supported).toBe(false);
+  it('자유 텍스트 축의 모양(values: null)이다 — 목록은 요청 시점에 포털에서 읽는다', () => {
+    expect(ICTRP_CAPABILITY.search.location.supported).toBe(true);
     expect(ICTRP_CAPABILITY.search.location.values).toBeNull();
+  });
+
+  it('scope 가 나라만 본다는 것과 표기 제약을 함께 말한다', () => {
+    const scope = ICTRP_CAPABILITY.search.location.scope;
+    expect(scope).toContain('나라');
+    // 도시·기관을 못 본다는 것과, 표기가 틀리면 거절된다는 것 둘 다 말해야 한다.
+    expect(scope).toMatch(/도시/);
+    expect(scope).toMatch(/exit 3|거절/);
   });
 });
 

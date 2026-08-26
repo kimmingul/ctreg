@@ -6,11 +6,42 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { FIELD, hiddenFields, pagerLinks } from '../../../src/adapters/ictrp/form.js';
+import { countryOptions, FIELD, hiddenFields, pagerLinks } from '../../../src/adapters/ictrp/form.js';
 
 const form = readFileSync(join(__dirname, '../../fixtures/ictrp/advsearch-form.html'), 'utf8');
 // 페이저는 결과 화면에만 있다 — 폼 페이지에는 없다.
 const results = readFileSync(join(__dirname, '../../fixtures/ictrp/results-page1.html'), 'utf8');
+
+/**
+ * 나라 목록은 폼 페이지가 `lstCountries` 로 들고 있다(199개). 이 목록을 **코드에 박지
+ * 않는 것** 이 요점이다 — 박아 두면 포털이 나라를 더하거나 이름을 바꾸는 날 조용히
+ * 틀려지고, 그 어긋남은 아무도 못 본다.
+ *
+ * 왜 검증이 필요한가(실측 2026-08-26, `condition=diabetes` · 상태 ALL):
+ * 목록에 있는 `Japan` 은 2,981건, 도시 이름 `Seoul` 과 오타 `Zzzland` 는 0건이라 눈에
+ * 보이게 실패한다. 위험한 것은 **`South Korea` 가 94건** 이라는 것이다 — 성공한 필터처럼
+ * 보이는데 표준 이름 `Korea, Republic of` 의 713건에 견주면 13% 뿐이다. 조용히 좁히는,
+ * 이 도구가 없애려는 실패 그 자체다.
+ */
+describe('ICTRP 나라 목록', () => {
+  it('폼 페이지에서 표준 나라 이름을 읽는다', () => {
+    const names = countryOptions(form);
+    expect(names.length).toBeGreaterThan(150);
+    expect(names).toContain('Japan');
+    // 값은 `Korea, Republic of` 형태다 — 라벨(`Republic of Korea`)과 다르다.
+    expect(names).toContain('Korea, Republic of');
+  });
+
+  it('사람이 흔히 쓰는 비표준 표기는 목록에 없다 — 그래서 걸러야 한다', () => {
+    const names = countryOptions(form);
+    expect(names).not.toContain('South Korea');
+    expect(names).not.toContain('Seoul');
+  });
+
+  it('결과 페이지에는 그 목록이 없다 — 폼 페이지에서만 읽을 수 있다', () => {
+    expect(countryOptions(results)).toEqual([]);
+  });
+});
 
 describe('ICTRP 폼 파싱', () => {
   it('ViewState 세 개를 모두 거둔다 — 하나라도 빠지면 POST 가 거절된다', () => {

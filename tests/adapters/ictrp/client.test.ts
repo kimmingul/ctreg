@@ -51,6 +51,59 @@ function pagedResultsHtml(maxIndex: number): string {
     `<table>${rows}</table><table id="ctl00_ContentPlaceHolder1_dlPager2">${links}</table></body></html>`;
 }
 
+/**
+ * `location` 은 한 번 죽어 있던 축이다 — `txtFreeCountry` 만 채우면 그 값이
+ * `lstCountriesSelected` 로 옮겨지지 않아 필터가 서버에 도달하지 않았고, 필드테스트가
+ * 그것을 잡아 축을 껐다(실측: 나라 셋이 전부 무필터 기준선과 같은 수).
+ *
+ * 되살리는 길은 `butAdd` 왕복이고 그것이 실제로 걸린다는 것도 실측했다(2026-08-26,
+ * `condition=diabetes` · 상태 ALL): 기준선 36,264 → `Japan` 2,981.
+ *
+ * 함께 잰 것이 이 검사들의 이유다. `Seoul`(도시)과 `Zzzland`(오타)는 0건이라 눈에 보이게
+ * 실패하지만, **`South Korea` 는 94건** 을 낸다 — 성공한 필터처럼 보이는데 표준 이름
+ * `Korea, Republic of` 의 713건에 견주면 13% 다. 그래서 어댑터가 폼 페이지의 목록으로
+ * 걸러 내고, 걸리면 exit 3 으로 거절한다.
+ */
+describe('ICTRP 전송 — 나라 필터', () => {
+  it('butAdd 왕복을 한 뒤에 검색한다 — 그러지 않으면 필터가 죽는다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await c.search({ condition: 'diabetes', location: 'Japan' }, 20, 1, 'off');
+
+    // GET(폼) → POST(butAdd) → POST(검색). 나라를 쓸 때만 요청이 하나 는다.
+    expect(s.calls.map((x) => x.method)).toEqual(['GET', 'POST', 'POST']);
+    const add = new URLSearchParams(s.calls[1]?.body ?? '');
+    expect(add.get(FIELD.country)).toBe('Japan');
+    expect(add.has('ctl00$ContentPlaceHolder1$butAdd')).toBe(true);
+  });
+
+  it('나라를 안 쓰면 butAdd 왕복도 없다 — 요청이 늘지 않는다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await c.search({ condition: 'diabetes' }, 20, 1, 'off');
+    expect(s.calls.map((x) => x.method)).toEqual(['GET', 'POST']);
+  });
+
+  it('표준 목록에 없는 이름은 요청을 내지 않고 exit 3 이다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    const err = await c.search({ condition: 'diabetes', location: 'South Korea' }, 20, 1, 'off')
+      .catch((e: unknown) => e);
+    expect(err).toMatchObject({ exit: EXIT.UNSUPPORTED });
+    // 가장 가까운 표준 이름을 알려 줘야 한 번 더 쳐서 고칠 수 있다.
+    expect(`${(err as Error).message} ${(err as { hint?: string }).hint ?? ''}`)
+      .toContain('Korea, Republic of');
+  });
+
+  it('대소문자는 무시한다 — 표기가 같으면 같은 나라다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await c.search({ condition: 'diabetes', location: 'japan' }, 20, 1, 'off');
+    // 폼에는 포털이 가진 표기 그대로 실어야 한다.
+    expect(new URLSearchParams(s.calls[1]?.body ?? '').get(FIELD.country)).toBe('Japan');
+  });
+});
+
 describe('ICTRP 전송', () => {
   it('폼을 먼저 받아 ViewState 를 실어 POST 한다', async () => {
     const s = stub();

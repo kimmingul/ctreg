@@ -33,10 +33,12 @@ export const ICTRP_CAPABILITY: Capability = {
      * `lstCountriesSelected` 에 실제로 들어가는지 확인)을 구현하고 실측으로 증명해야
      * 한다 — 별도 작업으로 남겨 둔다.
      */
-    location: off('폼에 국가 입력칸(txtFreeCountry)이 있지만 실측 결과 죽어 있다 — 국가 세 개를 각각 걸어도 ' +
-      '셋 다 미적용 기준선(1,148,325건)과 같은 수가 나왔다(2026-08-26). txtFreeCountry 는 ' +
-      '별도의 butAdd postback 으로 lstCountriesSelected 에 옮겨져야 실제 필터가 되는데 이 ' +
-      '어댑터는 그 postback 을 하지 않는다 — 구현하고 실측으로 증명하기 전까지는 끈다'),
+    location: free('나라만 본다 — 도시·기관 자리가 없다. 포털이 가진 표기(폼의 199개 목록)만 받고 ' +
+      '그 밖의 이름은 exit 3 으로 거절한다: 비표준 표기는 오류도 0건도 아니라 조용히 좁혀진 수를 ' +
+      '내기 때문이다(실측 2026-08-26: South Korea 94건 vs Korea, Republic of 713건). 목록은 요청 ' +
+      '시점에 폼 페이지에서 읽으므로 포털이 나라를 더하면 따라간다. 나라를 쓰면 요청이 하나 는다 ' +
+      '— butAdd 왕복으로 선택 목록에 옮겨야 필터가 실제로 걸린다(그 왕복이 없으면 죽는다: 실측 ' +
+      '36,264건 → 왕복 후 Japan 2,981건)'),
     status: {
       supported: true,
       values: ICTRP_FILTERABLE.status,

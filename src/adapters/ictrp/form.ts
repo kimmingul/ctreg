@@ -26,6 +26,10 @@ export const FIELD = {
   sponsor: `${PREFIX}txtPrimarySponsor`,
   secondaryId: `${PREFIX}txtSecondaryID`,
   country: `${PREFIX}txtFreeCountry`,
+  /** `butAdd` 가 나라를 옮겨 넣는 자리. 검색에 실제로 반영되는 것은 이쪽이다. */
+  countrySelected: `${PREFIX}lstCountriesSelected`,
+  /** 텍스트 상자의 나라를 선택 목록으로 옮기는 버튼. 이 왕복이 없으면 필터가 죽는다. */
+  butAdd: `${PREFIX}butAdd`,
   phase: `${PREFIX}ListBoxPhase`,
   status: `${PREFIX}ddlRecruitingStatus`,
   pageSize: `${PREFIX}ddlPageSize`,
@@ -60,6 +64,60 @@ export function pagerLinks(html: string): Map<number, string> {
     out.set(Number(label), m[1]!);
   }
   return out;
+}
+
+/**
+ * `butAdd` 왕복 뒤 응답에서 **선택된** 나라들을 읽는다.
+ *
+ * 이 값이 검색에 실제로 반영되는 자리다. 텍스트 상자(`txtFreeCountry`)만 채운 POST 는
+ * 필터가 통째로 사라져 무필터 결과를 낸다 — 필드테스트가 그렇게 잡았다.
+ */
+export function countrySelected(html: string): string[] {
+  const block = new RegExp(
+    `<select[^>]*name="${PREFIX.replaceAll('$', '\\$')}lstCountriesSelected"[\\s\\S]*?</select>`,
+    'i',
+  ).exec(html);
+  if (!block) return [];
+  return [...block[0].matchAll(/<option[^>]*value="([^"]*)"/gi)]
+    .map((m) => decodeEntities(m[1]!))
+    .filter((v) => v !== '');
+}
+
+/**
+ * 폼 페이지가 들고 있는 **표준 나라 이름** 들(`lstCountries` 의 옵션 값).
+ *
+ * 목록을 코드에 박지 않고 화면에서 읽는 이유: 박아 두면 포털이 나라를 더하거나 이름을
+ * 바꾸는 날 조용히 틀려지고, 그 어긋남은 아무도 보지 못한다. 검색 전에 폼 페이지를 어차피
+ * 한 번 받으므로 그 응답에서 그대로 읽는다 — 요청이 늘지 않는다.
+ *
+ * 왜 이 목록이 필요한가(실측 2026-08-26, `condition=diabetes` · 상태 ALL): 목록에 있는
+ * `Japan` 은 2,981건이고, 도시 이름 `Seoul` 과 오타 `Zzzland` 는 0건이라 눈에 보이게
+ * 실패한다. 위험한 것은 **`South Korea` 가 94건** 이라는 것이다 — 성공한 필터처럼 보이는데
+ * 표준 이름 `Korea, Republic of` 의 713건에 견주면 13% 뿐이다. 조용히 좁히는, 이 도구가
+ * 없애려는 실패 그 자체이므로 어댑터가 이 목록으로 걸러 낸다.
+ *
+ * 값과 라벨이 다르다 — 값이 `Korea, Republic of` 이고 라벨이 `Republic of Korea` 다.
+ * 폼에 실어 보내야 하는 것은 **값** 이므로 값을 읽는다.
+ *
+ * 결과 페이지에는 이 select 가 없다. 그래서 빈 배열이 나오고, 그것이 옳다.
+ */
+export function countryOptions(html: string): string[] {
+  const block = new RegExp(
+    `<select[^>]*name="${PREFIX.replaceAll('$', '\\$')}lstCountries"[\\s\\S]*?</select>`,
+    'i',
+  ).exec(html);
+  if (!block) return [];
+  return [...block[0].matchAll(/<option[^>]*value="([^"]*)"/gi)]
+    .map((m) => decodeEntities(m[1]!))
+    .filter((v) => v !== '');
+}
+
+/** 옵션 값에는 `&#39;` 같은 엔티티가 그대로 들어 있다(`Korea, Democratic People&#39;s ...`). */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(Number(n)))
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"');
 }
 
 /**
