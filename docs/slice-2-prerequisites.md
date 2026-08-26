@@ -575,7 +575,7 @@ EU CTIS 와 jRCT 는 공개 API 를 찾지 못했다(화면만).
 
 **어댑터 #3 도 landed — WHO ICTRP(`ictrp`).** 설계와 실측 근거는
 `docs/superpowers/specs/2026-08-26-ictrp-as-its-own-registry-design.md`(구현 커밋
-`a6dc3f6..6dc1e47`)가 정본이고, 신고값을 실물 포털에 대조한 결과는
+`9c004d5..6dc1e47`)가 정본이고, 신고값을 실물 포털에 대조한 결과는
 `docs/ictrp-field-test-2026-08-26.md` 가 정본이다 — 내용을 여기 복제하지 않는다.
 
 ## 조사에 남은 미확인 질문

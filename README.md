@@ -41,9 +41,11 @@ ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 
 | `--location` | 폼에 국가 상자가 있지만 그 값을 검색에 반영하려면 별도 postback(`butAdd`)이 필요한데 어댑터가 아직 그것을 하지 않는다. 서로 다른 나라 세 개를 넣어도 전부 무필터 기준선과 같은 건수가 나온 것으로 확인했다 — 필터가 서버에 도달하지 않는다는 뜻이라 지원하지 않는다고 신고했다. |
 | `--status` 의 대부분의 값 | 포털은 "모집중만" 과 "전부" 둘만 구분한다. 그래서 걸리는 값은 `recruiting` 하나뿐이고, 그 밖의 상태(`completed`, `terminated` 등)로는 거를 수 없다 — 레코드 자체의 상태도 `recruiting` 아니면 `other` 로 뭉뚱그려 나오고(원문은 `statusRaw` 에 남는다), 그 값으로 필터를 걸면 exit 3 이다. |
 
-페이지도 다르게 움직인다. **페이지 크기는 10으로 고정이고 검색 시점에 바꿀 수 없다** — 이 CLI 의 기본 페이지 크기는 20이라 아무 옵션 없이 `ctreg search --registry ictrp` 를 돌리면 `page_size_clamped` 경고가 늘 붙는다. 10보다 작게 달라고 하면 그 요청은 대신 `page_size_floor` 경고로 거절된다(부분 페이지를 못 돌려주는 레지스트리라서다). 그리고 ICTRP 는 커서를 주지 않기 때문에, **N 페이지째를 받으려면 검색을 처음부터 다시 몰아 N+1 번 요청한다** — `limits.ratePerSec` 를 1로 신고한 이유다.
+페이지도 다르게 움직인다. **페이지 크기는 10으로 고정이고 검색 시점에 바꿀 수 없다** — 이 CLI 의 기본 페이지 크기는 20이라 아무 옵션 없이 `ctreg search --registry ictrp` 를 돌리면 `page_size_clamped` 경고가 늘 붙는다. 10보다 작게 달라고 해도 요청이 거절되지는 않는다 — WHO ICTRP 는 페이지 단위로만 결과를 내놓기 때문에(부분 페이지를 돌려줄 수 없다) 요청보다 **더 많이** 돌아온다: `--page-size 3` 을 줘도 `returned: 10` 이 오고, exit 0 에 `page_size_floor` 경고가 "3건을 요청했는데 10건이 돌아왔다"고 두 숫자를 함께 말해 준다. 그리고 ICTRP 는 커서를 주지 않기 때문에, **N 페이지째를 받으려면 검색을 처음부터 다시 몰아 N+1 번 요청한다** — `limits.ratePerSec` 를 1로 신고한 이유다.
 
 **약관과 최신성.** WHO ICTRP 데이터는 비상업 용도로만 쓸 수 있고, 인용할 때는 출처를 WHO ICTRP 로 표기해야 한다. 또 이것은 실시간 원본이 아니라 **수확된 사본**이다 — 표본 2건으로 잰 결과 원본보다 약 7일 뒤처져 있었다.
+
+**레코드가 얇다.** 검색 결과 화면이 애초에 싣는 것은 모집상태·ID·제목·등록일뿐이라, 좌표(`locations`)·조건(`conditions`)·등록 인원(`enrollment`) 같은 필드는 **언제나 비어 있다** — 이 레지스트리가 가끔 빠뜨리는 것이 아니라 그 정보를 실어 나르는 화면 자체가 없고, 어댑터도 그것을 지어내지 않는다.
 
 **같은 시험이 두 ctreg id 를 가질 수 있다.** `CTGOV:NCT07749586` 과 `ICTRP:NCT07749586` 은 같은 시험을 각자의 어댑터로 가져온 서로 다른 사본이고, 이 도구는 둘을 묶거나 중복 제거하지 않는다 — ICTRP 로 찾은 시험의 ID 는 그 시험이 원본으로 등록된 레지스트리와 무관하게 언제나 `ICTRP:` 접두사를 붙여야 한다(접두사 없이는 추론되지 않는다).
 
@@ -183,8 +185,9 @@ ctreg registries
 ```
 
 ```json
-{ "query": { "registries": ["ctgov", "isrctn"] },
-  "registries": [ { "registry": "ctgov", "status": "ok" }, { "registry": "isrctn", "status": "ok" } ],
+{ "query": { "registries": ["ctgov", "isrctn", "ictrp"] },
+  "registries": [ { "registry": "ctgov", "status": "ok" }, { "registry": "isrctn", "status": "ok" },
+                  { "registry": "ictrp", "status": "ok" } ],
   "warnings": [],
   "data": [ {
     "key": "ctgov", "name": "ClinicalTrials.gov", "region": "US / global",
@@ -237,6 +240,27 @@ ctreg registries
     "count": { "supported": true,
       "scope": "default 포맷의 limit=0 응답에서 총계만 읽는다" },
     "limits": { "maxPageSize": 200, "ratePerSec": 1, "maxBatchIds": 10 }
+  }, {
+    "key": "ictrp", "name": "WHO ICTRP", "region": "global (집계)",
+    "search": { "…": "…",
+      "location": { "supported": false, "values": null, "exhaustive": null,
+        "scope": "폼에 국가 입력칸(txtFreeCountry)이 있지만 실측 결과 죽어 있다 — 서로 다른 나라를 걸어도 무필터 기준선과 같은 수가 나왔다" },
+      "status": { "supported": true, "values": ["recruiting"], "exhaustive": false,
+        "scope": "모집중인지 아닌지 둘뿐이다 — 완료·중단·모집종료를 가려낼 수 없다" },
+      "phase": { "supported": true,
+        "values": ["early_phase_1", "phase_1", "phase_2", "phase_3", "phase_4"],
+        "exhaustive": false,
+        "scope": "Phase 0~4. na 자리가 없어 단계를 신고하지 않은 시험은 어디에도 안 걸린다" },
+      "…": "…" },
+    "detail": {
+      "eligibilityText": { "supported": false, "scope": "검색 결과 화면에 없다" },
+      "outcomes": { "supported": false, "scope": "검색 결과 화면에 없다" },
+      "contacts": { "supported": false, "scope": "검색 결과 화면에 없다" } },
+    "results": { "supported": false,
+      "scope": "구조화된 결과 데이터를 싣지 않는다" },
+    "count": { "supported": true,
+      "scope": "결과 화면이 내는 시험 수(같은 시험의 여러 등록을 묶은 뒤의 수)" },
+    "limits": { "maxPageSize": 10, "ratePerSec": 1, "maxBatchIds": 10 }
   } ]
 }
 ```
