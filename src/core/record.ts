@@ -96,6 +96,18 @@ export const TrialRecordSchema = z.strictObject({
 
   // 출처
   fetchedAt: z.string().min(1),
+  /**
+   * 이 레코드를 **이 레지스트리가 마지막으로 수확한 시각.** 집계 레지스트리에만
+   * 의미가 있다 — ICTRP 는 다른 레지스트리의 사본을 주기적으로 거둬 오고, 그 수확일은
+   * **시험이 갱신된 날이 아니다**(실측: ctgov 2022-03-14 → ICTRP 2022-03-21,
+   * 2024-06-03 → 2024-06-10, 둘 다 7일 뒤). 그래서 `dates.lastUpdated` 에 넣지 않는다 —
+   * `dates.*` 는 **시험의** 날짜를 담는 자리이고, 그 안에 넣으면 한 뭉치에 두 가지
+   * 뜻이 섞인다.
+   *
+   * WHO ICTRP 이용 약관이 "데이터를 처리한 날짜를 명시" 하라고 요구하는 것도 이 자리다.
+   * ctgov·ISRCTN 은 사본이 아니라 원본이므로 채우지 않는다.
+   */
+  sourceRefreshedAt: z.string().optional(),
   source: z.unknown().optional(),
 });
 export type TrialRecord = z.infer<typeof TrialRecordSchema>;
