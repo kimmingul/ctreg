@@ -71,4 +71,38 @@ describe('ICTRP 전송', () => {
     await c.search({ condition: 'diabetes' }, 20, 1, 'off');
     expect(s.calls).toHaveLength(2);
   });
+
+  /**
+   * `ListBoxPhase` 는 다중 선택이라 같은 키가 두 번 나와야 한다(query.ts 참고).
+   * 이 테스트는 그 pair 가 `client.ts` 를 거쳐 실제 POST 본문까지 살아남는지 —
+   * 즉 `buildForm` 이 낸 것을 `client.ts` 가 객체로 접지 않는지 — 를 확인한다.
+   */
+  it('다중 phase 를 POST 본문에 반복 키로 싣는다', async () => {
+    const s = stub();
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+    await c.search({ condition: 'diabetes', phase: ['phase_2', 'phase_3'] }, 20, 1, 'off');
+
+    const body = new URLSearchParams(s.calls[1]?.body ?? '');
+    expect(body.getAll(FIELD.phase)).toEqual(['Phase 2', 'Phase 3']);
+  });
+
+  /**
+   * 캐시 키가 `Object.fromEntries` 로 phase pair 를 접으면, 서로 다른 phase 조합이
+   * 같은 키를 갖게 되어 두 번째 검색이 첫 번째의 캐시를 조용히 돌려받는다 — 틀린
+   * 결과인데 경고도, 실패도 없다. 두 번째 검색이 **여전히 POST 를 낸다** 는 것으로
+   * 캐시 키가 실제 질의(반복 키 포함)를 구별한다는 것을 확인한다.
+   */
+  it('캐시 모드에서도 phase 조합이 다르면 서로 다른 캐시 키를 쓴다', async () => {
+    const s = stub();
+    // 같은 cacheDir 을 두 검색이 공유해야 캐시 충돌 여부를 볼 수 있다 — cfg() 를 두 번
+    // 부르면 매번 새 임시 디렉터리가 나와 이 테스트가 아무것도 검증하지 못한다.
+    const c = makeClient(cfg(), 1000, { fetchImpl: s.fetchImpl, sleep: async () => {} });
+
+    await c.search({ condition: 'diabetes', phase: ['phase_3'] }, 20, 1, 'use');
+    expect(s.calls.filter((x) => x.method === 'POST')).toHaveLength(1);
+
+    await c.search({ condition: 'diabetes', phase: ['phase_2', 'phase_3'] }, 20, 1, 'use');
+    // 캐시를 얻어맞았다면 이 두 번째 검색은 POST 없이 끝났을 것이다.
+    expect(s.calls.filter((x) => x.method === 'POST')).toHaveLength(2);
+  });
 });

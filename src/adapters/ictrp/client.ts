@@ -38,7 +38,11 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
       warnings.push(...formPage.warnings);
 
       const query = buildForm(q, pageSize);
-      const cacheKeyParams = { ...Object.fromEntries(query), page };
+      // 캐시 키는 **쌍을 뭉개지 않고** 만든다. `Object.fromEntries` 로 접으면 같은 이름이 여러 번
+      // 나오는 축(다중 선택 phase)이 마지막 하나만 남아, 서로 다른 질의가 같은 키를 갖는다 —
+      // 그러면 --phase phase_2 --phase phase_3 검색이 --phase phase_3 의 캐시를 조용히 돌려받는다.
+      // 실제로 보내는 `query` 를 그대로 직렬화하므로 키가 요청과 어긋날 수 없다.
+      const cacheKeyParams = { form: JSON.stringify(query), page };
 
       // 배열로 쌓는 이유: `ListBoxPhase` 처럼 같은 키가 여러 번 나올 수 있는 필드를
       // 객체 스프레드로 합치면 뒤 값이 앞 값을 덮어써 조용히 사라진다(query.ts 참고).
