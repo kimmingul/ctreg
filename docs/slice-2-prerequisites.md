@@ -573,6 +573,11 @@ F2 는 **절반만** 닫혔다. 선언에는 근거가 실렸지만 응답에는
 를 포함한 core 필드 대부분이 확인됐다(`docs/registry-field-survey-2026-08-22.md`).
 EU CTIS 와 jRCT 는 공개 API 를 찾지 못했다(화면만).
 
+**어댑터 #3 도 landed — WHO ICTRP(`ictrp`).** 설계와 실측 근거는
+`docs/superpowers/specs/2026-08-26-ictrp-as-its-own-registry-design.md`(구현 커밋
+`a6dc3f6..6dc1e47`)가 정본이고, 신고값을 실물 포털에 대조한 결과는
+`docs/ictrp-field-test-2026-08-26.md` 가 정본이다 — 내용을 여기 복제하지 않는다.
+
 ## 조사에 남은 미확인 질문
 
 - ~~**ICTRP 의 "final sample size" 가 실제로 채워지는가.**~~ — **확인됨(2026-08-26): target 뿐이다.**
