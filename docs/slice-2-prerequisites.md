@@ -648,8 +648,18 @@ EU CTIS 와 jRCT 는 공개 API 를 찾지 못했다(화면만).
   `Last refreshed on` 필드는 있는데 **ICTRP 가 사본을 갱신한 날**이지 시험이 갱신된 날이 아니다.
   근거와 접근 경로 정정은 `docs/registry-field-survey-2026-08-22.md` 의 「ICTRP 접근 경로 실측」 절이
   정본이다(여기 복제하지 않는다).
-- **CTIS 의 `Last update` 가 레코드별인가 회원국별인가.** 같은 "Member State" 블록 안에 있으나
-  정의문에 회원국별 문구가 없다. `status` 와 같은 구조적 문제일 수 있다.
+- ~~**CTIS 의 `Last update` 가 레코드별인가 회원국별인가.**~~ — **확인됨(2026-08-27): 레코드별이다.**
+  CTIS 공개 API(`POST https://euclinicaltrials.eu/ctis-public-api/search`, 인증 불요)의 레코드가
+  스스로 그 구분을 드러낸다: **회원국별 필드는 국가 코드 접두사가 붙고 `…Overall` 형제를 갖는다.**
+  회원국 9곳짜리 시험(`2022-501417-31-00`)에서
+  `decisionDate` 는 `AT: 06/03/2023, BE: 02/03/2023, FR: …, DE: …` 로 아홉 개가 나열되고
+  `decisionDateOverall` 이 따로 `02/03/2023` 인데, **`lastUpdated` 는 접두사도 형제도 없이
+  값 하나(`06/03/2023`)** 다. 회원국 1곳짜리 시험에서도 같은 모양이다.
+  즉 PDF 정의문이 "Member State" 블록 안에 있다는 것만으로는 회원국별이라고 볼 수 없었고,
+  **자료가 그 구분을 스스로 표시한다.** `status` 와 같은 구조적 문제가 아니다.
+  (덤으로 확인: CTIS 는 공개 REST API 가 있다 — 조사 문서가 "화면만 확인함" 으로 적어 둔 것과
+  다르다. `searchCriteria` 를 담은 POST 가 12,308건을 낸다. `retrieve/{id}` 도 있다.
+  어댑터 #4 를 볼 때의 출발점이다.)
 
 ## 이연된 사소한 항목
 
