@@ -21,8 +21,20 @@ export const ICTRP_CAPABILITY: Capability = {
     intervention: free('중재 문자열'),
     title: free('공개 제목'),
     lead: free('주 스폰서만 본다 — 공동 스폰서 자리가 폼에 없다'),
-    // 고급검색 화면에 사람 이름 칸이 없다.
-    investigator: off('검색 폼에 연구자 이름 칸이 없다'),
+    /**
+     * **폼에 칸이 없는 정도가 아니라, ICTRP 에 그 자료가 없다.** 세 가지로 확인했다
+     * (2026-08-28):
+     *
+     * 1. 고급검색 폼의 보이는 입력 24개 중 사람 이름을 받는 칸이 없다.
+     * 2. 레코드 화면이 스스로 "24 elements of the WHO Trial Registration Data Set" 만
+     *    보여준다고 적고 있고, 그 24개에 연락처·연구자가 없다.
+     * 3. 기본 검색도 사람 이름에 닿지 않는다 — `Min-Gul` 0건인데 `Chong Kun Dang`(의뢰기관)
+     *    5건, `metformin` 39건으로 다른 축은 정상이다.
+     *
+     * 그러므로 이 축은 ICTRP 를 더 파도 열리지 않는다. 연구자는 **원 레지스트리** 에 있다
+     * (한국은 CRIS 의 `charge_name`). docs/slice-2-prerequisites.md 참고.
+     */
+    investigator: off('포털이 내는 24개 요소에 사람 이름이 없다 — 검색에도 레코드에도 없다'),
     id: free('Secondary ID 를 포함 검색한다. ICTRP 사본이 원 레지스트리보다 이 필드를 덜 실은 사례가 있다(표본 1건)'),
     /**
      * 필드테스트 실측(2026-08-26): 국가 세 개로 각각 걸어도 세 번 다 걸지 않은
