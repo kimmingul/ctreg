@@ -9,7 +9,7 @@ import { runSearch } from '../../src/cli/commands/search.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import { REGISTRY_KEYS } from '../../src/core/registry.js';
 import { run } from '../../src/cli/index.js';
-import { exitFor } from '../../src/cli/output.js';
+import { exitFor, type Envelope, type RegistryStatus } from '../../src/cli/output.js';
 import type { Capability, RegistryAdapter } from '../../src/core/capability.js';
 import type { TrialRecord } from '../../src/core/record.js';
 import type { RegistryKey } from '../../src/core/registry.js';
@@ -761,5 +761,80 @@ describe('신고하지 않은 값은 커맨드에서도 막힌다', () => {
     );
     expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'unsupported' });
     expect(exitFor(env)).toBe(EXIT.UNSUPPORTED);
+  });
+});
+
+/**
+ * O2 — 필드 테스트가 두 번 관찰하고 재현하지 못한 `data: null`.
+ *
+ * 세 가설이 기각됐다고 기록돼 있는데 **그 가설이 무엇이었는지는 어디에도 남아 있지 않다.**
+ * 그래서 재현을 다시 시도하는 대신 다른 각도로 닫는다: `data: null` 을 낼 수 있는 자리를
+ * **빠짐없이 세어** 그중 어느 것도 조용할 수 없음을 고정한다.
+ *
+ * 세어 보면 다섯이다 — `count` 가 하나(아무도 못 셌다), `results` 가 넷(어댑터 없음 ·
+ * results 미지원 · not_found · 그 밖의 CtregError), 그리고 `index.ts` 의 최상위 catch.
+ * `search`·`get`·`registries` 는 배열을 내므로 애초에 `null` 이 될 수 없다.
+ *
+ * 관찰자가 `data: null` 만 보고 당황했다면, 봉투 어딘가에 이미 이유가 있었는데 그것을
+ * 보지 않은 것이다. 그 주장이 참인지를 여기서 검사한다 — 거짓이면 진짜 결함을 찾은 것이다.
+ */
+describe('data: null 은 조용할 수 없다 (O2)', () => {
+  /** 봉투가 `null` 을 설명하는가 — 에러든, 경고든, ok 가 아닌 레지스트리든. */
+  const explained = (env: Envelope) =>
+    env.data !== null ||
+    env.error !== undefined ||
+    env.warnings.length > 0 ||
+    env.registries.some((r: RegistryStatus) => r.status !== 'ok');
+
+  it('count: 아무도 세지 못한 경우', async () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, count: { ...CTGOV_CAPABILITY.count, supported: false } };
+    const env = await runCount(parseCliArgs(['count', '--condition', 'X']), stubAdapter({}, cap));
+    expect(env.data).toBeNull();
+    expect(explained(env), '이유 없이 조용한 null 입니다').toBe(true);
+  });
+
+  it('results: 등록된 키인데 어댑터가 없는 경우', async () => {
+    const env = await runResults(parseCliArgs(['results', 'NCT00000001']), {});
+    expect(env.data).toBeNull();
+    expect(explained(env)).toBe(true);
+  });
+
+  it('results: 그 레지스트리가 결과를 싣지 않는 경우', async () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, results: { ...CTGOV_CAPABILITY.results, supported: false } };
+    const env = await runResults(parseCliArgs(['results', 'NCT00000001']), stubAdapter({}, cap));
+    expect(env.data).toBeNull();
+    expect(explained(env)).toBe(true);
+  });
+
+  /**
+   * **이 자리가 가장 헷갈린다.** `registries[0].status` 가 `'ok'` 인데 `data` 가 `null` 이다 —
+   * 요청은 정상이었고 그 시험이 없었을 뿐이라 그것이 맞다. 설명은 `not_found` 경고가 진다.
+   * O2 의 관찰자가 본 것이 이 모양이었을 가능성이 가장 높다.
+   */
+  it('results: 시험을 찾지 못한 경우 — status 는 ok 인데 data 는 null 이다', async () => {
+    const notFound = vi.fn(async () => {
+      throw new CtregError('없음', 'not_found', EXIT.UPSTREAM);
+    });
+    const env = await runResults(
+      parseCliArgs(['results', 'NCT00000001']),
+      stubAdapter({ results: notFound as never }),
+    );
+    expect(env.data).toBeNull();
+    expect(env.registries[0]?.status).toBe('ok');
+    // 그래서 설명은 경고가 진다. 이것이 빠지면 진짜로 조용한 null 이 된다.
+    expect(env.warnings.map((w) => w.code)).toContain('not_found');
+    expect(explained(env)).toBe(true);
+  });
+
+  it('results: 그 밖의 업스트림 오류', async () => {
+    const boom = vi.fn(async () => {
+      throw new CtregError('터짐', 'upstream', EXIT.UPSTREAM);
+    });
+    const env = await runResults(
+      parseCliArgs(['results', 'NCT00000001']),
+      stubAdapter({ results: boom as never }),
+    );
+    expect(env.data).toBeNull();
+    expect(explained(env)).toBe(true);
   });
 });
