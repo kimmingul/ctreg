@@ -67,7 +67,13 @@ export const ICTRP_CAPABILITY: Capability = {
     outcomes: { supported: false, scope: '검색 결과 화면에 없다' },
     contacts: { supported: false, scope: '검색 결과 화면에 없다' },
   },
-  count: { supported: true, scope: '결과 화면이 내는 시험 수(같은 시험의 여러 등록을 묶은 뒤의 수)' },
+  count: {
+    supported: true,
+    scope: '같은 시험의 여러 등록을 묶은 뒤의 **시험 수** 다. 결과 화면은 두 수를 함께 내는데' +
+      '(예: 40,635 records for 36,264 trials) 이 값은 뒤쪽이고 **페이지는 앞쪽(레코드) 위를 걷는다** — ' +
+      '그래서 페이지별 건수를 끝까지 더하면 이 수보다 많아진다(실측 약 12%). 어느 쪽도 틀린 수가 ' +
+      '아니라 세는 대상이 다른 것이고, ICTRP 가 둘을 합쳐 주지 않으므로 이 도구도 합치지 않는다',
+  },
   results: { supported: false, scope: '구조화된 결과 데이터를 싣지 않는다' },
   limits: { maxPageSize: 10, ratePerSec: 1, maxBatchIds: 10 },
 };

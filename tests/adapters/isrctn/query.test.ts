@@ -64,8 +64,15 @@ describe('ISRCTN 질의 조립', () => {
     expect(q({ phase: ['phase_3'] })).toBe('phase:"Phase III"');
   });
 
-  /** ISRCTN 의 phase 어휘에 early phase 1 에 해당하는 값이 없다(문서 3.2.1.12). */
-  it('ISRCTN 어휘에 없는 단계는 조용히 빠지지 않고 exit 2 다', () => {
+  /**
+   * ISRCTN 의 phase 어휘에 early phase 1 에 해당하는 값이 없다(문서 3.2.1.12).
+   *
+   * 이 검사는 `buildQuery` 를 직접 부르므로 그 층이 던지는 것을 본다. **CLI 로는 여기까지
+   * 오지 않는다**(2026-08-27 실측): 가드가 요청 값을 그 레지스트리가 신고한 `values` 에
+   * 먼저 대조해 `--phase early_phase_1 --registry isrctn` 은 **exit 3** 이다. 이 방어선은
+   * 어댑터를 직접 부르는 자리(필드테스트·스크립트)를 위해 남아 있다.
+   */
+  it('ISRCTN 어휘에 없는 단계는 조용히 빠지지 않고 buildQuery 가 거부한다', () => {
     expectUsage(() => buildQuery({ phase: ['early_phase_1'] }), 'early_phase_1');
   });
 

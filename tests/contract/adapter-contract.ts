@@ -278,8 +278,12 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
 
     /**
      * 신고해 놓고 거부하는 어댑터를 잡는다. **이 검사를 쓰기 직전까지 ISRCTN 이
-     * 정확히 그랬다** — phase 어휘에 early_phase_1 자리가 없어 exit 2 로 거부하는데
+     * 정확히 그랬다** — phase 어휘에 early_phase_1 자리가 없어 `buildQuery` 가 거부하는데
      * 선언에는 그 사실이 없었다. 신고와 구현이 어긋나면 사용자는 부딪혀야만 안다.
+     *
+     * (그 거부가 사용자에게 **어떤 종료 코드로** 도착하는지는 이 검사의 관심이 아니다.
+     * 지금은 가드가 먼저 서서 exit 3 이다 — 예전 주석이 "exit 2" 라고 적었던 것은
+     * `buildQuery` 가 던지는 오류 객체의 필드였지 프로세스 코드가 아니었다.)
      *
      * `supported: false` 인 축은 건너뛴다 — 그 축은 애초에 `buildQuery` 가 읽지
      * 않으므로 값 하나만 실어 보내면 "검색 조건이 적어도 하나 필요합니다" 같은,
