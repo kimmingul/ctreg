@@ -26,6 +26,16 @@ const fetchOpts: FetchOpts = {
  */
 const CLOSED_VOCAB_AXES = ['status', 'phase', 'studyType'] as const;
 
+/**
+ * 자유 텍스트 축 — 값을 레지스트리 문법으로 번역하지 않고 그대로 싣는 축들. 닫힌 어휘
+ * 셋과 좌표·날짜 축을 뺀 나머지다. `Record<FreeTextAxis, ...>` 로 쓰이므로 축이 늘면
+ * 컴파일 단계에서 잡힌다 — 리뷰어가 눈치채길 기다리지 않는다.
+ */
+type FreeTextAxis = Exclude<
+  keyof Capability['search'],
+  (typeof CLOSED_VOCAB_AXES)[number] | 'geo' | 'updatedRange' | 'startRange' | 'completionRange'
+>;
+
 const resultsOpts: ResultsOpts = {
   sections: ['outcomes', 'adverse', 'flow', 'baseline'],
   full: false,
@@ -443,6 +453,55 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         expect(typeof w.code).toBe('string');
         expect(typeof w.message).toBe('string');
       }
+    });
+
+    /**
+     * **신고한 축은 값을 실제로 실어 보내야 한다.**
+     *
+     * 축을 `supported: true` 로 신고해 놓고 어댑터가 그 값을 업스트림에 안 보내면, 필터가
+     * 증발한 결과가 필터된 것처럼 나간다 — 조용히 넓은 답이고, 사용자는 좁혀졌다고 믿는다.
+     * 지금까지 이것을 잡는 것이 없었다: 실측 2026-08-28 에 isrctn 의 `investigator` 신고를
+     * `true` 로 뒤집는 사보타주가 스위트를 통과했다.
+     *
+     * 닫힌 어휘 축(`values` 가 배열)은 제외한다 — 그쪽은 값이 레지스트리 문법으로 번역되어
+     * 원문이 그대로 남지 않는다(`recruiting` → `RECRUITING`). 자유 텍스트 축(`values === null`)
+     * 은 번역할 것이 없으므로 원문이 요청 어딘가에 그대로 있어야 한다. 실측으로 확인했다:
+     * ctgov 11축, isrctn 6축 전부 탐침 문자열을 그대로 싣는다.
+     */
+    it('supported 로 신고한 자유 텍스트 축은 값을 업스트림까지 보낸다', async () => {
+      // 다른 파라미터 값과 겹치지 않게 이 검사에서만 쓰는 문자열.
+      const PROBE = 'ZzAxisProbe17';
+      /**
+       * 축 이름과 질의 필드의 대응. 1:1 이 아닌 축(geo·날짜)은 자유 텍스트가 아니라
+       * 여기 없다. 축이 늘면 `never` 소진 검사가 컴파일 단계에서 잡는다.
+       */
+      const FIELD: Record<FreeTextAxis, keyof NormalizedQuery> = {
+        condition: 'condition', intervention: 'intervention', term: 'term', title: 'title',
+        sponsor: 'sponsor', lead: 'lead', location: 'location', id: 'id', patient: 'patient',
+        outcomeQuery: 'outcomeQuery', investigator: 'investigator',
+      };
+
+      const missing: string[] = [];
+      for (const [axis, field] of Object.entries(FIELD) as [FreeTextAxis, keyof NormalizedQuery][]) {
+        const declared = ok().adapter.capability().search[axis];
+        // 자유 텍스트로 신고한 축만 본다.
+        if (!declared.supported || declared.values !== null) continue;
+
+        const { adapter, requests } = ok();
+        try {
+          await adapter.search({ [field]: PROBE, pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
+        } catch {
+          // 축이 던지는 것도 "조용히 무시" 가 아니므로 이 검사의 관심사가 아니다.
+          continue;
+        }
+        if (!requests.some((r) => `${r.url} ${r.body}`.includes(PROBE))) missing.push(axis);
+      }
+
+      expect(
+        missing,
+        `이 축들을 supported 로 신고했는데 값이 업스트림 요청에 실리지 않았습니다: ${missing.join(', ')} — ` +
+          '필터가 증발한 결과가 필터된 것처럼 나갑니다.',
+      ).toEqual([]);
     });
 
     /**
