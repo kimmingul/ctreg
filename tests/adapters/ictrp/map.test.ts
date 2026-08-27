@@ -19,6 +19,18 @@ describe('ICTRP 행 매핑', () => {
     expect(r.registryId).toBe('NCT07749586');
   });
 
+  /**
+   * 예전에는 `registryId` 만 단언했다 — `encodeURIComponent` 를 지우거나 두 번 걸어도
+   * 스위트가 못 잡았다. URL 은 레코드가 사람에게 주는 유일한 실물 연결이므로 함께 고정한다.
+   */
+  it('슬래시가 든 ID 도 그대로 담고, URL 은 한 번만 인코딩한다', () => {
+    const r = mapRow(row({ trialId: 'CTRI/2026/07/113311' }), AT);
+    expect(r.registryId).toBe('CTRI/2026/07/113311');
+    expect(r.url).toBe('https://trialsearch.who.int/Trial2.aspx?TrialID=CTRI%2F2026%2F07%2F113311');
+    // 이중 인코딩(%252F)이면 포털이 다른 ID 로 읽는다.
+    expect(r.url).not.toContain('%252F');
+  });
+
   it('슬래시가 든 ID 도 그대로 담는다', () => {
     expect(mapRow(row({ trialId: 'CTRI/2026/07/113311' }), AT).registryId).toBe('CTRI/2026/07/113311');
   });

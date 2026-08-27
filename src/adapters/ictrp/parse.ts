@@ -51,7 +51,24 @@ export function parseResults(html: string): IctrpPage {
     const body = tr[1] ?? '';
     const idm = /TrialID=([^"'&]+)/i.exec(body);
     if (!idm) continue;
-    const trialId = decodeURIComponent(idm[1]!);
+    /**
+     * 홀로 선 `%` 가 있으면 `decodeURIComponent` 가 `URIError` 를 던진다. 그대로 새어
+     * 나가면 `CtregError` 가 아니라 커맨드 루프가 삼키지 않고 크래시가 되는데, 이 CLI 는
+     * 실패도 파싱 가능한 봉투로 내는 것이 규칙이다(F7 이 같은 부류였다).
+     *
+     * 포털이 href 를 인코딩해 내므로 이 일이 실제로 일어난다면 포털이 깨진 것이고, 그때
+     * 오류를 내는 것은 맞다 — 다만 **어떤 오류인지** 는 우리가 정한다.
+     */
+    let trialId: string;
+    try {
+      trialId = decodeURIComponent(idm[1]!);
+    } catch {
+      throw upstreamError(
+        `ICTRP 가 낸 시험 ID '${idm[1]!}' 를 읽지 못했습니다`,
+        '결과 화면의 링크가 올바르게 인코딩되어 있지 않습니다. 포털 쪽 문제일 수 있으니 ' +
+          '잠시 뒤 다시 시도하거나 다른 레지스트리를 쓰세요.',
+      );
+    }
     const cells = [...body.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => strip(c[1] ?? ''));
 
     /**

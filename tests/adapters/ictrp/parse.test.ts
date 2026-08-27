@@ -104,6 +104,27 @@ describe('ICTRP 결과 파싱', () => {
   });
 
   /**
+   * ID 에 홀로 선 `%` 가 있으면 `decodeURIComponent` 가 `URIError` 를 던진다. 그것이
+   * 그대로 새어 나가면 `CtregError` 가 아닌 예외라 커맨드 루프가 삼키지 않고 크래시가
+   * 된다 — 이 CLI 는 실패도 파싱 가능한 봉투로 내는 것이 규칙이다(F7 이 같은 부류였다).
+   *
+   * 실제로 일어날 일인지는 모른다. 포털이 href 를 인코딩해 내므로 홀로 선 `%` 는 포털이
+   * 깨졌다는 뜻이고, 그때는 오류가 맞다 — 다만 **어떤 오류인지** 는 우리가 정해야 한다.
+   */
+  it('ID 를 디코드하지 못하면 크래시가 아니라 업스트림 오류다', () => {
+    const bad = '<html><body>1 records for 1 trials found' +
+      '<table><tr><td>Recruiting</td><td></td>' +
+      '<td><a href="Trial2.aspx?TrialID=CTRI/2026%/113311">깨진 ID</a></td>' +
+      '<td></td><td>제목</td><td>2026-01-01</td></tr></table></body></html>';
+    try {
+      parseResults(bad);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      expect((e as CtregError).exit).toBe(EXIT.UPSTREAM);
+    }
+  });
+
+  /**
    * 못 잡는 것: 건수 **문구 자체** 의 형식이 바뀌면 건수도 행도 0 이 되어 진짜 0건과
    * 구별되지 않는다. 그 경우는 `scripts/ictrp-field-test.ts` 의 "알려진 질의가 0 이
    * 아니다" 검사가 잡는다 — 스텁으로는 원리상 못 잡는다.
