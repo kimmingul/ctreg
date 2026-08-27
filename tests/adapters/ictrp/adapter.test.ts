@@ -50,7 +50,7 @@ function noPagerResultsHtml(): string {
   const rows = Array.from(
     { length: 10 },
     (_, i) => `<tr><td>Recruiting</td><td>TEST${i}</td>` +
-      `<td><a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></td><td>2026-01-01</td></tr>`,
+      `<td><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl${String(i + 2).padStart(2, '0')}_Label1">` + `<a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></span></td><td>2026-01-01</td></tr>`,
   ).join('\n');
   return `<html><body><span>40635 records for 36264 trials found!</span><table>${rows}</table></body></html>`;
 }
@@ -65,7 +65,7 @@ function smallResultsHtml(n: number): string {
   const rows = Array.from(
     { length: n },
     (_, i) => `<tr><td>Recruiting</td><td></td><td>TEST${i}</td>` +
-      `<td><a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></td><td>2026-01-01</td></tr>`,
+      `<td><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl${String(i + 2).padStart(2, '0')}_Label1">` + `<a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></span></td><td>2026-01-01</td></tr>`,
   ).join('\n');
   return `<html><body><span>${n} records for ${n} trials found!</span><table>${rows}</table></body></html>`;
 }

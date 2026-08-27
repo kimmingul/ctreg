@@ -23,6 +23,74 @@ const strip = (s: string) => s.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').r
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * 결과 페이지에서 **본 그리드의 행** 만 잘라 낸다.
+ *
+ * 두 가지가 함께 틀렸었다.
+ *
+ * 1. **비탐욕 정규식으로 행을 자를 수 없다.** 여러 곳에 등록된 시험은 접히는 패널을
+ *    다는데 그 패널이 중첩 `<table>` 이다. `/<tr>([\s\S]*?)<\/tr>/` 는 안쪽 표의
+ *    `</tr>` 에서 먼저 닫혀 행이 도중에 잘리고, 뒤따르는 제목·등록일 칸이 사라진다.
+ *    게다가 이 페이지에는 닫히지 않은 `<tr>` 도 있다(실측: 65 열림 / 64 닫힘).
+ *    그래서 `<table>` 깊이를 세면서, 같은 깊이의 `</tr>`·다음 `<tr>`·`</table>`
+ *    셋 중 먼저 오는 것에서 행을 닫는다.
+ *
+ * 2. **`TrialID` 가 든 행이 곧 결과 행은 아니다.** 그 패널 안에는 **같은 시험의 다른
+ *    등록** 이 또 `TrialID` 링크를 달고 들어 있다. 그것까지 세면 한 시험이 여러 건으로
+ *    부풀어 보인다(실측 2026-08-27: 시험 10개짜리 페이지가 16건으로 나왔고 그중 4건은
+ *    제목이 비어 있었다). 포털이 본 그리드 행에만 붙이는 `GridViewSearch_ctlNN_Label1`
+ *    을 **정확히 하나** 가진 행이 결과 행이다 — 전체를 감싸는 행은 열 개를 갖고, 패널
+ *    안의 등록은 하나도 갖지 않는다.
+ *
+ * 컨트롤 이름에 기대는 것이 이 함수의 약점이다. 다만 포털이 이름을 바꾸면 행이 0이 되고,
+ * `parseResults` 가 「건수는 있는데 행이 없다」로 **소리 내어 실패한다** — 조용히 틀린
+ * 목록을 내는 것보다 낫다.
+ */
+const ROW_LABEL = /GridViewSearch_ctl\d+_Label1/g;
+
+function rowBodies(html: string): string[] {
+  const TAG = /<(\/?)(table|tr)\b[^>]*>/gi;
+  const spans: { start: number; end: number }[] = [];
+  const open: { start: number; depth: number }[] = [];
+  let depth = 0;
+
+  const closeTo = (d: number, end: number): void => {
+    while (open.length > 0 && open[open.length - 1]!.depth >= d) {
+      spans.push({ start: open.pop()!.start, end });
+    }
+  };
+
+  for (let m = TAG.exec(html); m !== null; m = TAG.exec(html)) {
+    const closing = m[1] === '/';
+    if (m[2]!.toLowerCase() === 'table') {
+      if (!closing) {
+        depth += 1;
+        continue;
+      }
+      closeTo(depth, m.index);
+      depth -= 1;
+      continue;
+    }
+    closeTo(depth, m.index);
+    if (!closing) open.push({ start: m.index + m[0].length, depth });
+  }
+  closeTo(0, html.length);
+
+  return spans
+    .sort((a, b) => a.start - b.start)
+    .map((s) => html.slice(s.start, s.end))
+    .filter((body) => (body.match(ROW_LABEL) ?? []).length === 1);
+}
+
+/**
+ * 한 행의 칸들. 중첩 표(접히는 패널) 안의 글자는 이 행의 데이터가 아니므로 지운 뒤 읽는다 —
+ * 안 지우면 패널의 열 이름("Recruitment status Main ID Public title …")이 제목으로 뽑힌다.
+ */
+function rowCells(row: string): string[] {
+  const withoutPanels = row.replace(/<table\b[\s\S]*?<\/table>/gi, ' ');
+  return [...withoutPanels.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => strip(c[1] ?? ''));
+}
+
+/**
  * 결과 페이지에서 건수와 행을 읽는다.
  *
  * **건수 > 0 인데 행이 0 이면 던진다.** 계약이 없는 HTML 표면이라 언제든 깨질 수
@@ -39,6 +107,11 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
  * 구별되지 않는다 — 필드테스트의 "알려진 질의가 0 이 아니다" 검사가 잡는다. (2) 일부
  * 행만 제목이 비고 나머지는 정상이면 여전히 못 잡는다 — "전부 비었다" 만 보기 때문이다.
  * 행별 부분 오염은 원리상 이 자기 고장 감지의 사각지대다.
+ *
+ * **(2) 는 실제로 물렸다**(2026-08-27). 중첩 표 때문에 16행 중 4행이 제목과 등록일을
+ * 잃었는데 나머지 12행이 멀쩡해서 이 감지가 조용히 통과했다. 사람이 CLI 를 써 보다가
+ * 빈 제목을 눈으로 보고서야 드러났다. 행 추출을 고쳐 원인은 없앴지만 **감지의 사각지대
+ * 자체는 그대로다** — 다음 번 부분 오염도 같은 방식으로만 발견된다.
  */
 export function parseResults(html: string): IctrpPage {
   const m = /([0-9,]+)\s+records\s+for\s+([0-9,]+)\s+trials\s+found/i.exec(strip(html));
@@ -47,8 +120,7 @@ export function parseResults(html: string): IctrpPage {
   const trials = num(m?.[2]);
 
   const rows: IctrpRow[] = [];
-  for (const tr of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
-    const body = tr[1] ?? '';
+  for (const body of rowBodies(html)) {
     const idm = /TrialID=([^"'&]+)/i.exec(body);
     if (!idm) continue;
     /**
@@ -69,7 +141,7 @@ export function parseResults(html: string): IctrpPage {
           '잠시 뒤 다시 시도하거나 다른 레지스트리를 쓰세요.',
       );
     }
-    const cells = [...body.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => strip(c[1] ?? ''));
+    const cells = rowCells(body);
 
     /**
      * 열 위치가 아니라 내용의 모양으로 찾는다. 실측(2026-08-26 픽스처): 행마다 셀이

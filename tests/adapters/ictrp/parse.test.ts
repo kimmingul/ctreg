@@ -39,18 +39,20 @@ describe('ICTRP 결과 파싱', () => {
   it('원 레지스트리가 섞인 ID 를 그대로 읽는다 — 슬래시·하이픈이 들어 있다', () => {
     // 이 픽스처에 마침 슬래시·하이픈이 든 ID 가 없으므로(그날의 검색 결과일 뿐이다),
     // 실제 레지스트리 형태(CTRI, JPRN)를 흉내낸 합성 행을 파서에 직접 먹여서 본다.
+    // 파서가 본 그리드 행을 `GridViewSearch_ctlNN_Label1` 로 알아보므로 합성 행도 그
+    // 구조를 갖춰야 한다 — 이 편이 실제 페이지에 더 가깝기도 하다.
     const synthetic = `
       <table>
         <tr>
           <td>Recruiting</td><td></td>
-          <td><a href="Trial2.aspx?TrialID=CTRI/2026/07/113311">CTRI/2026/07/113311</a></td>
+          <td><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_Label1"><a href="Trial2.aspx?TrialID=CTRI/2026/07/113311">CTRI/2026/07/113311</a></span></td>
           <td></td>
           <td>A Synthetic Study On Slash-Bearing Trial IDs</td>
           <td>2026-08-06</td><td></td>
         </tr>
         <tr>
           <td>Not Recruiting</td><td></td>
-          <td><a href="Trial2.aspx?TrialID=JPRN-jRCT1031260225">JPRN-jRCT1031260225</a></td>
+          <td><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_Label1"><a href="Trial2.aspx?TrialID=JPRN-jRCT1031260225">JPRN-jRCT1031260225</a></span></td>
           <td></td>
           <td>A Synthetic Study On Hyphen-Bearing Trial IDs</td>
           <td>2026-08-05</td><td></td>
@@ -132,5 +134,45 @@ describe('ICTRP 결과 파싱', () => {
   it('건수 문구가 아예 없으면 0 으로 읽는다(위 주석의 한계)', () => {
     const p = parseResults('<html><body>아무것도 없음</body></html>');
     expect(p.records).toBe(0);
+  });
+});
+
+/**
+ * 두 번째 픽스처는 `condition=gastric cancer` · `country=Korea, Republic of` 의 실제
+ * 결과 페이지다(2026-08-27). 첫 픽스처와 **행의 모양이 다르다** — 일부 행이 접히는
+ * 패널을 달고 나오는데 그 패널이 중첩 `<table>` 이다.
+ *
+ * 이것이 실제로 문 결함이다. `<tr>` 을 비탐욕 정규식으로 자르면 중첩 표의 **안쪽**
+ * `</tr>` 에서 행이 먼저 끊겨 제목 칸이 잘려 나간다. 16행 중 4행이 제목 없이 나왔고,
+ * 자기 고장 감지는 「전부 비었을 때」만 던지므로 조용히 통과했다 — parse.ts 의 주석이
+ * 사각지대라고 적어 둔 바로 그 경우다.
+ */
+const nestedPanel = readFileSync(join(__dirname, '../../fixtures/ictrp/results-nested-panel.html'), 'utf8');
+
+describe('ICTRP 결과 파싱 — 중첩 표를 단 행', () => {
+  it('접히는 패널이 달린 행에서도 제목을 읽는다', () => {
+    const p = parseResults(nestedPanel);
+    expect(p.rows.length).toBeGreaterThan(0);
+    const empty = p.rows.filter((r) => r.title.trim() === '');
+    // 실패할 때 어느 행인지 보이게 한다 — 개수만 보면 다음 사람이 다시 파야 한다.
+    expect(empty.map((r) => r.trialId)).toEqual([]);
+  });
+
+  it('중첩 표 안의 하위 등록을 결과 행으로 세지 않는다', () => {
+    const p = parseResults(nestedPanel);
+    // 포털이 한 페이지에 내는 시험 수는 10 이다 — 두 픽스처가 모두 그렇고, 페이지가
+    // 스스로 붙이는 `GridViewSearch_ctlNN_Label1` 도 열 개다. 패널 안의 하위 등록까지
+    // 세면 이 수가 부풀어(고치기 전 실측: 16), 사용자는 한 시험을 여러 건으로 본다.
+    expect(p.rows.length).toBe(10);
+    expect(new Set(p.rows.map((r) => r.trialId)).size).toBe(p.rows.length);
+  });
+
+  it('모든 행이 ID·상태·등록일을 갖춘다', () => {
+    for (const r of parseResults(nestedPanel).rows) {
+      expect(r.trialId.length).toBeGreaterThan(0);
+      expect(r.statusRaw.length).toBeGreaterThan(0);
+      expect(r.title).not.toBe(r.trialId);
+      expect(r.registeredOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
   });
 });

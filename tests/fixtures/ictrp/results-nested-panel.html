@@ -1,0 +1,714 @@
+
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+     <title>ICTRP Search Portal Advanced Search</title>
+    <link href="Css/StyleSheet.css" rel="stylesheet" type="text/css" />
+    
+  <style type ="text/css" >
+      <!--
+      .nounderline A {
+          text-decoration: none;
+      }
+
+      .highlight {
+          background: #89E3F6;
+      }
+
+      .highlight2 {
+          background: #92F8D0;
+      }
+      -->
+  </style>
+
+
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0NFGQ2PMZE"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-0NFGQ2PMZE');
+</script>
+<link href="/WebResource.axd?d=hE7CWwoNH_GTOEftHdda8uvQiIkbqz1is2yUN0eAXXzvDHE1cEcJLt0rW-LLUBvTNAbrCOTuuf4Aw3DbktsWlcCmqV5_IIxAqcgj5xnPWZdjsakKqWLmHjtV8BCWLuZm26OrFCQZ0By85mQpkdGN564JPIfCYcS8gH-Yd-8aOv41&amp;t=637602099335184922" type="text/css" rel="stylesheet" /><title>
+
+</title></head>
+<body>
+    <form name="aspnetForm" method="post" action="./AdvSearch.aspx" id="aspnetForm">
+<input type="hidden" name="ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField" id="ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="MM/a37pepWLj0DLszpqLMp1dfVtWDGqhzCvv7eEvInVP390kXhtuhLp38ey01CwivP1BT4oxjkkip7ZUwWnaEMP00FM+ZqsTM4TXkZT8bP0VtW+9jgffbEMNinuJUhmH/w0G7fpBee0b64Dk+6Ln+Rn9BoAGRn+6qQrDTKOZxZa57HOFVGRiGrY/l0Bpz9qtXjdfO2HTBnTkU8FbGPN7nxPcGg+SS1/Lk+FoBacKLNegM4g7aNxcSxF91OtMA/p36Dhssds7CsOiNtQfHvV7OzD9HVXiNPH4DLpoQbAjdLLw3Zt/BpJU1kdrVQlDhSvv4Jc2NsBmZguXuQxIQpvNc/FDO84jkrVRFom7njcgpGTvgb/Lcpv1k8JvvHOnkUitl7IFTrr4pKr5UsOzPbPcCKvSpXshNZP8x//tq9VPS4zdhhdALrl0n7X8r6V+Xm1WCJw3KbJpXx3UCEI7kkmRc2/hFA7WzNMwOR5rj+fpbG1ILaixnPRfT2rbv6C0/BVtiOnQ8KDocrssBTlQUzT0JS6TS0YJNWU5+FK1SjWmkhzPZqVEz//oM6QTZlMs6iQb3C/Kx3ES8dhv6Z5RzfcJ8AiJEA8qzSGaqngZAK28tW85A+xUDZTNvIXB0x3ILJYT6hg5HtfXFdOwgysKh/epngM2aig0elXq6WrATedpEMqAciDR/gnp0c8zcKArbfUkjB0XpzR4dTw58ndK1p+hqiv8wkD63ugkUVZPg5VVUb+ZPmJWVMSm3GM9Mz1pQPFEoA77wiL+SJUfjrOOJJF4TbQfOjLQKn/BApmWZ0s4ObmE6lPGPC1MnAV63nD/eEbpPQaMiWQkZ1kE/hd0FfEl5G/JEQwsLAN6kkD8SFDMdnCgug0LeKVApZJN3GDxQQ9vxWA9HAJiZOgwn00ut5PQyIiPraMmCI28Ct9Xk4LF55vlWTYEXsHy9VCveSiw7J0ZDqFJCplAnDM1qGvImxj1ZSLJ/llhIBb//l37n5ejgl/pAkmhdPO3qWdalJk8GHnbxGsx3AXmn5qReJUm0ZI4PhegcBYqbIPNaULIH/uEeSyIL1VbI2cMOa+StOzdPCZSwvP1s2vyEsxAjSlcdRWgJzU+9DgGG7oQJ0cyrQk+gabCy5TJDmW8fLnfyAtpXFPFIXmXxWQnpYA7qZB77awQiC1lGUWPxfcG3TcuZhlW63dl9jdRF5INMkh6UbFByTpMSjDBlo8clp9DltapbT2ufX3wmKUBhZlcXIZPEnTzKR3tT18k7UKabBH2AN7aTTrdURPh34DQGqkUdiC3issFLUjTx6/rbPz7otaHj9iGFySKgguRUF2SqHLPWRLD6Y0C1gvn4gAQJ0zMnaYR83YEKyuF+RJ+eblNnIRdKnxCpuLA9ZmlYOn7eC7RHcAuyglNJ+dIraRX95ecLroKVslSoPqpOy5tZwh6HLt8WsF9o8VmJrQJ3SOo+YMVkLBtrWD6IGRoR9UHqxUDNSahGFg4BJgvAntEYcy7YTgKY7ZJKm+QQYPMcS49/QXII3uhQoVCal7cplnFJa6v7nnV1Wk1uO1KtE/6fWPnE3hXpqt5dEWrouvLATJiipNhFKsbgxDdC4foxTkpQrJJo5Zj9y2QDrXetaJIXf6CPWMAbd9qvEr8l/UHSz9UmswsPWIIX1p7kHffMZMoz/Lt/F2FUiAJHGpJ5LXTegqT3cticKM92ezjP+/3SEfgUOrozhrv2CXIY0ur5TseU8wSI5dFuduNMGyY5Tv8jx5Ny61CMc4PzaCP/nFqkCR5+BoZLrBU2bofdPxffbXSvuctV43iOzV801IdTAwgIITKl252q20kxdf4pHGywEflsUIQ/z/4C7ML8k830SXhtzoHIEEbXDhTYkYsdkkBwKlRxsY5EWeHt2n1kVm9lkjuKCnM+ga0eh+PdppnwgIjYMQntDqoAhH2LTkax3bEcp5wKWyWQ2Opcux7/qQJvB2FDGn7A51bFz3PgEk5P8xxjg0tvZnN4sXVBfeFZB9IhOV/b2LR/a1zHUVaOmySMvpkxEbrc8E47bAeivcT5Ez4vtdNga7eV1LSgjAzwnpBw46XO+FzfzzHJn6xA+HNQjK4Rr6SQcahK0sj9Ca0ZmuZ5XRAUrWy9wWadIQCFyF+nW2LtEZSx4BTvpkzy0OHR52WvVccnieI1nebqU7GTICqEeCZnLHV0wrEeML0WqVZGtLriGmNiAOFdFwI9a1pDrZx+Gzo1cIXrJO9BWdYuQ1ql03+LMV1bcOlMWIOY3RTaFTean+qPiXdThMB0ThzbxLg9YVK2PARz/9UvwBr4/C4EWmapw/DjSPH9CPrM2Mm66sXOqNAM4G8lpljBMCrqLaGSM2SD/mngwLmmHRVs5YkLlVujisoqa4Xls4DfjWHKTTpnUi1aWWRDp8nzd+vU6vWIhqZC31sGaVJ/4ODsuwrRBEsFuRp+8lirV4PVk3Qth4Geyh/4HYtjAwNxJTuOAErwGEr9Kolk7uWK7IGSwlsh7bCm+ZIoKbl/ef7kR3FjoyM+AeAfEy+VXYwzCPdaMeLd/8EGUIjCbATew1Yc3CCKe1jNC1LDlZeh0NRHj1DDtyaTOUKyVa8eoPqAJDzdlewZP58J8BgC1PFnrhk+iiVrNg6Tc/7s25CKw/Qi2cTxp3nfXI+hJps4TZcqh0AsYgi25ejrWgY64TA635uVkatbzBkAcqTvKc5oYowDux/3GJMZn30SPCbUzRSA+Fuh6cBzR/yUyhLbjKFz50Qci0UIHSmezLhkYFjxReu7aUnFMy2/h5WyhXC+obiGZ576JSxXqgKTdKgvE0PghJm+mJzlwTW6eBIglofFtyHMbRde5NYucW5aJEfHyLK4YZhUPkmnTeqnhTFDjbqUG128W0gFoHn3QD15Z7Ec79BcA+OcaEyh31dROK9gVDW6hHqYdnfiKkMIQXuxNva1tx6h41xRVrtgMy/6Z1wQWx96uyKfMkD9MKYxqGASbvvOU07HyTerSWgLCa+r5DsjqJlOpAwWIRS7zfUfnL1fMv84cibY1P5DwMQaxw7xV6UA0zJyLvGxhccl8peue6Y8Za0bI4V0wK/H33D5mvtSwYr+6qCX80yO4TnnCXyv0XCkk1UMMlb0/JpaS0XBTA+JjmzlVooZnpBvyaNZ/EPLjzaGLuPj1d7nPq6R2EfN8DG8EvlRI9wFUDGayMn1fKzx7Xixo0PSo6U6dT1CHPY7f4aiDfPU98ArNq7Q5EuXB7gnjhSSXh02KGi0D15T1l87ydgbObnSc++NyaY76AYnvniDNskWnqGabmmE0pVeHvrNqPyfkdkByJ+xjfNf+XEaN02kICkfIpiNYTiNIMtmszfPvNo6dN7x3msJvqxd0uSk8SJWBumocpSfdt3TA76xbIjCUg2mW1lPZqnXYPvTStxPV1WLlfC3CVAURfkatFjZqiANObU8PrxZa0NTv0q62+5vGDuLtighRCev5KNtrIaYaiC+F9J9jqvjo86cEUj4NG3lrgjt0ept4Y3StsOjE2Eb2ug/Hpw/OeX1TKRsx7Q7x+2HRWpjgyc5hh0Zm4pgbTc17hTyRDMDpYpgdHnnhsl9zKeUJKYQ8uYe1IqOY/K55SAlqPKUfLeTbW2biuE9VGnwmF+mbEYcjZxWapeY6zN7rg6GQhFSDWKiDmY66FW7nJFMh4IVuFfbRr+6ogRViSDlrjFUvTo5edFko2xShe21iHPdTkDvvm+dE3FUUATHFxxy6tHrUex2WU1d6ptyclWjTP+xTo77qQp0hWDA6dRq+17ksWqMVqHXC5sbyb6owK4mzZn0Nzs5OC3IMyo/syKOv6w5CpxMVtpwDmo8966Rh4OMC5BgwOzgvhlke47L1CQmotjcvPlpu1FpHx0GVP49xiq+yAiMGMU7AtcJJQSGp1mAnkJWLjsJkfPnPTzax0B6fnG/YWSqANwXjwlBEdZ9zZR8Vbwn3/gjveWLRuYUN9691jq9woJkLiUbXDdDjpYExL12xMQvdivZm1DgODABw3YmuK7ceHOT/3cex5CyDNhusu/Vuq8X/LkN6fODIRt6hV0JGBwcdPuedFoeV+0EhIKg0C3V9sOZZY3sB8+isU6RqT/5uZCjQ2y8q9IsHvEBdD1HsPJpgtIvx8QwIAc6Fmp0R3HIVt7njMj9ayya+xXsstWVG4X8/36yHrtbb7kelZvpR0xkT5h4xTjfY9CGDFC1KVTSfcq6l50zfHH8+TFvWM3g12nYpuIIMHMZ0+fGS4HJqt0i24keN1SsO177rvcikKaEBrDhFQujdEYiR0suJSK6dfPzJEaQ6g6S8YvlUuVgjWJYEKdEeVXd3WIBEw82HRAydzl6Up7+2GcXxD10rEOA2kbDvn9UAIyJ4Fy4Y05iQZHK6WT7yCfLqTRg6cKNVNA9+uTUKKEvH7EcDoji6MlxaTxT0pG8/nV+2EELM10yO8ku3fnepia3Z+NQKQf6OXQR5Kmdx2GhK3FdSqIFntazzWpMR5jB8ZJlFcF90J9OH635Nb09VSGo4prnYFMVKTfovDlNK+8lYQH1i++oDeYIZZyge2oMPUYlQspCg9L9FUFs1a8/MQet+q9l+h/+ihzIE339JcMzBtp4pt0vKCUkdwlaPXOcbvD0kzEygMzRcT8UGvt5dWl5GGaVQH0Yhr3vQWU1ZHVKyVRxwsN4uNR3DkBUTgH6XMyJqyNnm8ZrRaRHJxYFxbtax06ubKzXcPc919kGxPkghBvdVDm/rhJbeGqGWgaTtX0Gd2ypgWmPL/bzKYoCHd/UAuKPRTKqiYBP8ENLlzcWRndj1u5GLRg7iwofN8QdPnWTdgyZmdQ8JrL/UrdNYsx4eWUkd++8nXG3c4UBmNewpdhl0JOUczQmKAPG5UBK88+RYffvYbQXNuhXvEg/mD+cyGh1ByvQ5J+w+P1YinIqzPLNfmXLKBLofCtYiqqcKmJhV2FayqcCi2e4PkM/rPN/nN8M0gT/lHmUOlgLkRBFp0XfVyDuuSzLJOdzkLPp/AlHY1cYt/9ijDS22mKPGgfyz5Qiinuzh9zChuBaeHpmkxkkjrR0nuGnmx7UQdisLh/qgWr0wfAzvR1R2NzdOZ/mEPkit8jloZon9YIR9fo9WIiI7cCpw1yMc/M+ir22Gttae2iSRlOHL/Y9BU/8xDHZCOiXoTWdurwU2xL+f3Dfbj7DDe11UCTfooxRtgu36m4ChTliehBnoJsEZETPPNNDYhYCxoCUCGjnbvmvZUaX7R0Ss8Rq+CNTYiC1RyZk4QSzQQvrzA9G786p7MsWutJ4WU9/sEyPz6WUmgR1hUa4kJ8DlSE29boNHEtW/CmwWyXypMTZyNQicD7e3SXO7uwEpxpTWqSrh9J765eR9VFSK1ghIEQk7rA7N2+mi9h3ssLQbfAhxTqr+1TI1h4rs+HeCwC0iTCrkzIMX5bOA9pd6yW+b4VwrfxsjtH83ZDx6akiqK94lqcxIlJ+fnmc2hhXTAUCNgR7YqS5zTH9a9pOWJThvvplqaPhpPw40RqN7nV0TEyevWFxrRyUzRxcnxwcXXP7xrV22YIDModix7IOjmO2DlCJrLwcWBlutm/xK3PpdiviPpIB5cl0Lxrvvcaw3SAixTJ2vozlsZ8+VKaoizh/hwynvXL/y1fOUX+xpod7jiOo9x1inn1Ar0Q7+fCCIToyWvoEzWOMSyfcdvCpFYM0roRCPo34+3Eyrv6VvI3A4qwwt7q9k/GrIyyzqGzadrsPaVCi8KI7NVDAb/iQuP6kLwuUFA62D5yDi3LrGz9xAAuT1XeZT7wP4H260yz/S0Tk62kCD2wCQpZWRp16iwIJE+Xa6blGCpoHZYtVz5AbXLrB8Zy7flod0IuWrbHLTQA3DzGKbSStsJJ/iz2JUAekxHKGzzy7CGVWNmRx1b8l4GiI5suSY3YS0ksmkT9yN2eGXxqu7m95A3bMbpn18ujHjWCMwtAf0SaSihLIsWTfg8qIMkZBWuEjq/lxGM67GcI5+v6HvNU6jk/ionaVYdGlSs573EIjTkCaxi1efrQpf9cIkQlY71K5Vhx8MAbEWFBn1Jb3LVft0VYMZx0rKzE+OnVJwwrbVCIUdkZLV6KTX2bIM3X8bP/oBQwAGtNUM6a28omEjJZVhEnojnHI8IF5NiogwwNsnEDjr0RxNJ3PXIVz1ibbBYJcadAmDHM5rAesq3IeeDZULIzIiBmw/8CasSE+1CuaWWwQQumejHfYgeptUoO9UVLHmfGvuqJHNrJSZoYBfMzu2K6nbPF8HUu620qCN2LZDWnCz6Nds7ofr0+aDdyeWUJswDcg8F0zgPrcqciyG3H+TIevJsUTa+yI5wmGIGrdICyt2+Ij/r8p/DoeC8us1v+WORMgoPRMsSzcBJnZ9irexAZ7YNBmiYC0nIcrawfTNg5EwXylKtNuu2Dqpd+rt9TwnyCAmz1puBkYHhB1nlPyDZDus3FPGpPrn1y7crLfKvO0E5GUmxtCZsomiuApv78mYSdFb16ayslhvG9/Dw+i6aHE8m/DfuS9loBgd53GHGneIb4/yFsbbYghURg+a/4r9Vj0QAy1McMeuvuL7EYw0UvJJ5LbtDMMze+qO72YwFTLFE35A4bqbDr/ZJCKwkEfHX4PX/WYJX9LzrC0tNxCWFyVSisT6FY3CTPrLZnpofbbBwlR1hlLBpSiuNbBuA9zFYr2X0T5SjuGMCO5PMxYTFVs9uMnXRnIjF9LR0SCHeK0IXLN6ApJn/6ZoQgTjOHGMSdFRAqoU65FGccry3RTB+mWvKuaWeG5SAdtqkixgnrAg+3jhrrU3IRIRaqRc7LibnsLY1YK7NzDD9uicU9vYK+7/TXkjB42oynJWVw4UE+K/EtGYCndcGlogtnXPmGR9LjVUd5dgQLw9zy5Wr3LoFdYhoGlvIxZgbt+688JUKl8sfPUlHgkwXpJv0aaxule9CaTxDLybfgdH0jrkSDpWJnua1XwegP94CwygSwtPlQHG2NVx4Ys1NNKDCrkAZd8cf2WX9iJ5v2Fqz/8fwktWyOda6eOxcE8poYpoEEQDBHKPtYY271MAp8qdimvtYwwGb/QVIuBIh3jl9aI1Fiit1DnyRiYa3fxRFmlh0TyyAzOxBiJ5uILjgriK4wYvbARZUTODj2FL5tLBGukqrtV3lCKXQFbly2tWOouSdZj6VsCmq+DJMPKvW7lHinrHbv0+PPafGWrH27GgcT+fK/va+PgS0rBsyB2F0UH8ZjWlAVHZEoFbMIYBVzbTo3xFvwLtIALcxzmOtwSDppPYljC69if9UQMZgjq8j1ourOgc3U98OUzhZ0Jku1mB83E1snoK+48PA2Uc4t6sLMKQXIzBATWTaC1eYr7RIRkklEvP1FaAVWWuU9X6Cdo5VqGRW0Gw9jX237Pb31TQUFfyi8AIc/QH/Os40rOUvcXR08BBADAXij5LrGGjjnNhWgp0s45oUoCg5QtX80zxe0Gu23PeW/pyAvsibO8Je4aIWtghjsVHLzDUj88+u+YIN0NxwFzDDlja6CESedUYlYAPW0znL+E4xsPWnRJrPAZ44mQ3y1txYSSywWKH1xc7sRU6V7CMZWF8Fdrti4/k+a2+nqd4BKpZDtsaQUIRaz1qvhEx2w7j1EkCLqvm4VPwTJefn5+zJ0v0T+oNwnE5FAVoo9tLWW/0jJOr/em8TQ/ryNenAb1mE7eE5oJiFbMdIDvkmS9eiH1A5TZ4nrI0DhPNldLCrck6pU3fAz+IzvT1bt21hP5eGivBqaRF+d4t5sU4vmPyuWgbn72z97dGQAklUUyU3ogn3PX0mKGPs3GmFhO1/MnE/TSZ4+IT49FIu6wBvgKSZrGo81kKZvv+TUomY94KeQ44d8AeoB1O7IV0+ml+He0QhsqVWkjAU5YXyDh2wuVePKstNGNkLhEVR6Qfe40SKOJg6nFScr0CFtwk1kU74v/HWr7nhY/jfg5HmTw0Q4CW8cG+aPqMjtFl2KbDGmo0DzIzyxCmEP1GExwARb6wTAFgvyzmUBIVQz4gLuVnzk+OMfNva2ufbixgbtWWEFIBdj+Q25ntAkisgEbiS4vT39DIkPyLy50jaNW6gPbrYc42t6LEo8fEAn8UWngr6DNgYlBxB9CVHCdfTzGRi0dyxpRDPX9Y3P4K8+GhYcMvMSLCX2ewfIhs/ukv4JfOo3gdfGtJuNd1ABzQr5aFBUXDZejdl0XUv6+5PSbOJWqh1s17BfdZAQ2TB3gPY0Qv3cTlOP658gZ5NgXmJA1Z3mADcJ4Ux1O9jNZyHrUfDNp8HrNI5/pFYe7roE2DgdDID/met3BWnub2WiJJbHb3mte8tY7ZmYQJyiOwxypWKubZVkkgc6xbWX5dxahDrq7TQazaSs87iKrABdLiByNJGDtifqW/toVeVmyJ4INqfZjG0+Y7UaOparN5a1z8bxpWCbsckQaef59S0YX5upJmzy2oRkix0zPNvDi1SMuy28XWCy5/IlbnYa030CgjIaL+R3B+S5kFPP2/PpDVShn4E0IEk46OR3T2ElmgWf96FmYNREAgsezHws2zKqvHMfF+HEnBmkOBjvMr60peQVk5/qE5m8/zTQb72M1WtbbH8/qj3tBw4HKmmwXAN8UOxAXYkbqeIqfJMuiP0ut+c24IfoM3gx2+2sy1PLmadq7IxYrFhq0rhvGnJxqhmg52YyOxTMhqdiYzy/pnS9Q9lrVPkZJQ9KL+LfbC4vv09+nHkNHR6o/BNZ+xBuILuZIFOhU7DqM+9u0fghw3J6ABbRAVw4vcbp4C/s+M3FUu+hpUM1POnK/+XnifLqeyNMORSNmB5BtYSVn/IAqfSU9Ke8ArjLEexS5cxnT3ceoQ/S0q8xTivh0f/RBpn41RgaJiyGb4I9w7vzR3s4VR7j6idz+8hwlxsCNooCaZYY0tdgv17yHYJkUHOALqbSDAt/LCYDgTI5GAbsncvcHK3Mi5hN/OY0kTEA9R6Cwmn/Ig09N93gCEfSyarzV0gD5Bxvx/cKDsNtVVg5bUO4EQn+l5Oz/NPATHZINpKEmvy470LjwX1U0nv2W9IEVZxrTUkduOEWMbGHdoy+1O3nXTCR+gvsmch7bglMKFAwmiuD5VkW1g583s3Qv8cm40EHzMuFSb04s08smpk8aWNIo6G2xnI0RbPQf5Lz5GiCFnuTR3KspguARwx14c1rLGLFNdL3FoDfBPSEmA0cTaVAJYgC5Kn09QmL/PUdoxQysMpxOYdMp1v9gc8HtyAGDIC6E9B1jrBglGuUfBYayAlHajcWSqyOwJzY3ZvY+C5sZLPoxBDPs8yFrEyy5FHwVEVAuCj6UrU3JVbvR1zNBPkvJiZaUyFkJMX4a4HEAAbv/z5op7HdUVtBf9sMXHcsod5lNKD9WaxY9iwCed4hqBX0QvUTAEn6ptQhGzUTH9hQGU86ctMU/6WlGXoWGUveDGXegvwIw9RdcAouwCmvMTfql7hkEf90yk/g0VCKr6Dtrd/mqjL4DfyExwuOCP9dNwuIFST1jb1PxHbGqAC5CUaBvpFAb81HveKyK59F5VCMAsnfZeA4O32laYBFlDaE6iBZYjq8X+VHWvk3gqgWzviHx4ML1DFhtTQcGBX1VhpK02ib1b++rxDOXENCBGAi29VNIzBAl9UDHNPQyeF74xDpwTguoAkiEPEC87lvk15nMw+N2avSx5nKgsly1QIBvNozVMiqKr3BMQ7vvBqWMWUmQXBXHIV+CUNL8UIFftqc9iFM1pBr1wo4UvYe2gZTtTcqGjNn+1dhn8JH8NGrVXQD65xgpIk0J6veJZO8uesr80QZvAv16DAT/ODqN3qhIoWicnRrohzLB6I9QFAs/F+wDVKzUC2DBLhkBs5a7xD6Hh1M2MfaWX4kwMxrL9pUd+Yz909/cjysv5akWWwOJIU2BLfAHvPuOLAPVpSbuaKgg4Ar6PKdq9jDFlPTmWdGcjh8H1lDxE5NXLGBa7EBXwKlXYnWwD1nQhpKe73f+KXx0uBo43VMDN5VYx7N21pvuH9yD7dnUdR1cjYYdjvxTL6LyL+6BgBLbjiG+rt1w81M5KDXJJ52SjMvf3eSuxH2adaCXqaw1c9+wZR0HUz8vzBkAQC3/SAwyBSw2ZnsoqEm0PHHwCn97wPTxXiJ2+fhaXDryzu2r7xqAeLO+MVBh08DyxfsCsOE5c/WpPMjl3BVTYWzDIrHkTDLvqVUiTgrJ6Y2Mj6AM4/RDHZBFsu+Hq8SPmst8q8yMf5YnSReXguR9Zzaf8Kuvs0XDduTy0Q4hMvDg2Gjv6tLQys0EIMQE+pIEBa1ATN6rpbACv3ACT4mQJ2hTJsfKFy4ZbLZ51YzUI6usotCOiFYoabDWbEsdGObKRNntTQCqlVilO7E6Td3h+y1zj+L+PyInnVQhnLV4olIYHJ6rPCeQI3/hHNJR1TSIbIOD6sEFyPW78KiK3ePQmeblblYVzmCO00JQFw25vTPsrDcu0cyGmhpUQDumuYdiDfSAI418m0RISV+gRlLQYC2SMbtwSE3GMXRMyBu/9s+SxKvUCMFPp0OSulu7jpqJItaZlcKC6xGarOBRoeXdZODKSQ3HF160l5UM2eCQc3rc5P9nBohrTJ3rTpvMz9+1p0JfA5OP57C/JDngvHLR6Vmy8M+CddjNlc/abvV5dyqbY0k/XtvXVAaT7g4etWv1St2oRQgOhn8WM5VymUKyAOyWPF7GT1Kz2c7jktE1PKVMB1/89k5Kmn5iFFJex7OdpOwxMHmMEsbbnD3DkJVeKrUsbYBe19VjWX5lzv9PUFIkgAzgpshTxGXaC7PjCRn1VdDQju4qi+EFeUdOkcHlMauwZ8Ml8ay4I0ccktXhxdg8DHJBTwTRV6toL/jkmNZzeKtKvZ3OfZOZON2hr/URLUAW/9S+KAWXOjfSgAIpZ0d4+axBoTl+YOqx11X3ytwtuwsnf63iZKPZySrXffxCG0UgsNih3/CBDe9HL315oyu9VNGUJlUeHoXbLrBpUa6XCCneWZmMv1UI10Db/66n/IroaZ8R5VgmcXGzH42ebVTTtSFBFpCcvx6qIQEYxia+AAe+gAVsrX1CURSyTP8hHkKe2ApKvoFvqSwx3i8V7XUg0GeEbh0fMBlWW+OOxr2h1Q0j4ZQZstAU/QzFJpr9f5dna4rd/N+DoSexQdCbA8u4FYVSl2V+uiRbxaLj8K2T2/qkyj5hHPsR1P/FWFRZg2QFSEhY9UgZGoRy0Rfwfph+e6P3sMIwDlybxtOG8UD8pjgLNtTQVc62bMjcmmsCsEabTzMr+2u5W54inDXuKMySmPQ+/t+7TrOIK62QML6UHOhhpQPLwIK0KyZ83ls0lfiBNqvP+Xq6L+oQWM7xGUFyiXBulA1pg3k4hj2KgbGp/+Pnc97DWpVTsoW/pADMNri5TNF3TAduqPO/pJrwz66y5r3gljvduVMo7s89mHP4Jkb3mIqFt+TiQTDm6ixH5KelOifK+yjDoGM2iYHT7U7mn50D58FAJRX87x2h9cyh+rX1825VusksRAnkItroH3B81Bj6pAG7NRFhEFYpGK65f+97J/DWVhjm9u0zpGoQWvFjUj6Ab02lqlVkgS4if4YRRiv+sjfwDQ59ugCe486n5op5V8njcqZY2j3Jc5qMaxrbchtWR49PwC48hL6iQeF6T8ej9B2Lx5VpSlOCOoek+vadPUaNdP/oLUkdB20xIDwW1D0CI9ciPIryuWbQ9z29AoqsrinwvpClzKQY54sDudCJzO9N39w+oLMRvllVoARvm4+2n5oMWNBh2FXZhBeY5OFvQDk9CO86V6aKhPImx0WOawe8XzB580d8TmvRjioq3c3YCUhH4SBOxOH+FXQTIGkYlseFl9pHjorjnTw6QyNcRpURrg1nASq/iSoiZyBBBUP3Fcn/6ckhhzeLzB0rHU9drDs8wRs5h52+JFx3hmjLO1CSwuuDA/pZiZ/WePquK4fSGON+p1Cp0qJND0EwbjdcKhm9VC9Bt66POPx45wiPfrPyuloxQ69LQ8weslIH1TZnIRDeKJhiOlN4ehmWgnKwPzq7g8zIxPN53dekzwqLFLkydUsT+42qBw/TFebUsiVXseA7CU4aUQZusu7ldctIY6vpcgw+JvlfGcHImBSaHiSEniNwWwPTNhz5mR3OFbvZSfQ9WvJQmMqL6cdHI7ui6C7N6k+jWSib3tgHK9ki64nj2+CBgNAf3Y7zDyRNCICssHVsH4sfWqjs/yeexlCI8Bh9izwxTpTOCpt5fIlP5+y8ORQMgAmIPq6QOgv20gp/st0AIJxAllvOMW7/Mg/sFv48aVlAuu9eXAkFSxDwzjcrpTyLJQolp/mH/0KG3Z/S01O5l22dVovxZyedm7Md/6PzVPLAFzHjpQ6GRTxfInGcpi12F3q2IR/L8N7EIs1TXs4qgpj1xQN2B3JTf+GoaBdtPiYjiHMb4DJa0mHrmXOUAgw4oCtb2QATq6YRlWLjuZUSAzl9hoGxB4D2FvQZcUUmAqiBFy5RDg1lbE5NaF2Eg0NPJEuAJshy4BVGP0B9KzHWWitQT87OgCNfq72FKDoVbMhksvQ7UGtsmF5WgMkyeligOlVrQfim+xzb4fkT/hE7ih/S0yRO/agwoTXTZ5lmhB9XltXNfS/Z1YIF9ApsLF4HzXzKRTPwjkE29CZ7BJycSYlFsqILiSxPXalFCoaK3N+k8E1rLWRw+R4WQ0wrqRBcrghTwKUA2GmnYxc2uwE+zyzaw+9f0Jru0mvaNrr7Fp27QOhYYgI3J3OWQetAyJH68SB0Kn3WK8DTCLmPg3VX6LPGPQpl7HTtv+x2i44nrBbPyYYq4kfnmT0noVi0kwDbQclV5gJIS4z0CZwl8SOwW939t2h6CX1x+4T7z15VIOD5iNE0i3gdxSwi5jflLzlsUtNhv+5CVhqB8X0AG8bLwX897qIyyikCrkMILKlY8NojCbWmvKDpRnnaomHuRLSk9OWglh6IMrNadALp3omXC713sGQK0EgafZmXoBNOUkLk4xqvs81ZhqvDLIAPqh3py/JEevlXucemdVLrwbU/Fyb0xfEkCoVQeOYdxI/vSuNd8fkqD2UfnC8JHeBKpEl4AwuVopmRgKCAVXisuwT8PV4M2D37BahrobTfaMg/7WQyYrT+4E5WSiEpAFpiVe8P7gSeW9yu6iGyYBHUAPcLOw5ubTCJeHGIEdpaympp16sy9E8irBum0/GzvUgsx09fjX6IYfIFxsDvsSxsZfm0p0t03ctK0ZovvOFSHiwESa4PILbeJkHZ7N69qgkpTROovPL02EyLnXWXOzGdpp/UdgbFG0swL4/kz4FDp97HtI7RW6wcgmJwRwxtEHmlQAW2u1tEqK1LU7c+1FosRzfIClXeXOMEm5uriSyaHTZFrLWIUzpDr0pmonOB2/+kwy4Ss7+dNbjATLjD4e76JhBIcbx4j3TxDlcI3CZiRpweM3xf+MCpxYFZuF3oLCz8qM4bb+i3aB93VQBJR7Tg5t7fp69Glb09DMKFQbyeaRtj78zIEzN8xQJZ1l/c4eDORxT/FABAjfsieiXKHO8A91l1FtA1k7q7qTAmyx0fK7Aq3iQ8+T1OxkAVTk+7yoU7K3LACE+pKiirWduCM1NzkXFYNXdlfqAl0FAXizyLMJZimNJmC+JTHFjvsUy1lPcmhUgl5/Zgfn2RS3hkpuzMbKRfkZ7Kt3aP9+g0XQZNNw/EvFoz5L8Gtjb2KGGfVcj/ZQveKbmZ+E2Ss4vklqE9A+Nl0wSypi6pL20/MAK1MBpaDWClEJbtgj9WtIVE8ngTTXklWTq3hE/oyCYGsScDRiVcwZew9zDHGsVzMAU69X5gMBN2zz9G+56cI7E1FpAXCw6TDIenpJwGmcv6hFZjA7ghw/vX1Ztd4ytsl9oWzDPND1AFgZmhosEjwm9zxVjeWDjJtcpq9GGIs24QT7PxU0fiQ41uR1d9s0o60ynwPcmuh92aK0PtwINZoc+cS85SA3AnpSs6goiM5JHehTc2kysT9tupHmmy1dlQFxEjDw7ZeroIs+Khhp3ZTEAV8P+NWfjnKCseDZas1zz5TVao++qdgSHYUf0NVaXDqfjqYYa/JwlVmDwKVbmXIiqQ4f6gW0ScjWsuCYpWLQyovWtZl/xijbU87eRT956rnmohNBBC9YUfbDTtBTIjU9nNpi+Oi50p+aq6FolFqeg1ugXRwiM5vYJ1XmrHwhdOAZvpkHDWC4mhIPqnRnB8cTf/u6XM0EJvtuGO4nkXaS6Zm+MdKpZyYIvrcSr4BdlxvMudVtxrceL83T5pfngo2v0Bo5bfO6O+7WgnRBBXBTNID/BnrdtuAyZe5HcI43OCkjnFCkDM8z3ksmJS5TprumFM4Efze50qZ5uzYC6CFUNQ4lqfBFu+MqESWEs+3Z9o0RbBJHs6cEO0lNW3dLN5JVspvYN9bKQRPJpOKuvzB+UoAtHBiTcQfAxSJoaq8AmNaJc/s/kuTjrzqeR7B+DsHsh2UbSCEBDKU0hVJvFTmx2ybzB9zBwBPZxe1lnqEWXXzfjKRlZ+Xzkdh+WbFIP0u7FWTHswnPEV4euIOEXAugJH+Tcg4FN+ejSajp26KmoJAx89xkpu1qZkhnr/1Udwb3puRvpGt7aVOAIJmWEBWYcpKmKe6Iy0t+FawBB86SXHpFFiSwDaAcoxRWNj7JEbOoE0rEMw0ZHPJ4oy3Dd2K7Ls3U/0UBgyM3DgTgyL0RWaFgeE7eAQtB7IG9CwsrHmF6ilxSDpa2qfeLwwG0t6qQyvhcQa+ZPBFU5oxFsurs6XM0DfxweOmFtU/vb+5AOX7qZuaqnpOAig/a/HjMbMKikJg/owahfv6gYsEG7Hgpc1QlHpO9wZRCVvsCnfSjnxHkAXX3wOdxBsyuojtkm5YwGUmihXL0mfAEQp0j0HV9tRgzGYkXnbIVKchi13fqJ7/zsDZ8RVfkor7VHVJI0iCJzhF8dSLT6ODcvT8gX48ciIlR/lGKoFYPhskH0IfmQuSQEHpbbfobdIfV0Kh5QYiK1wy9k9/gUrSEeNwbY9C0+7jnyRnhk+hzE/q5qwOtj/njw/u8pNzQsv8RYTmAnfdExgJsL1WYV8kj//18KxZ4ZHkxJic45RKuLVaiCx5f4L0tBm2mmyYNiYzi8U6uDkmOttk4JNY9Xsb0uAHvJl12EZUwOp8EJ5qn8mLsMfQf3og1MXJQm9n0N9y8NBz4CF0GK8+34YTJKcVFJeYxVb4NtBYioAEsabfgorGySgky+9oDZ0bRBOGsgjTMTxo+IL9+1ky/BjSQOQMY8oJn51cFO/hMo86P/mwJp8sdyZEJC64ISstg/pErpXsITge/Q9TlodyblRoTazbOV2rYLpf1wZsKPMCpwk7foHx0bw0bU/SJ1j73DlmWYZDT5Z44JiJesSXJxC3/X63XJRsRKbrfysvmg7QLafI5pmQvpVFFFf4Y/tGLOOMJBcZLqarCntfUGQtj94t3e0ZDoFEmfoB8wmuS2fV53I1uRQRvOMdXvVwx2OxHjh64ARd1/T7d6WFpUidtVexTHYi57379ZDA5cOCQAKvFb0LEZdrbqgfRDVTbz5AZsZs+bjOUqyLBym3ebMmx1uWNYxUJ6vSfNTdk9OX2GdkIQ1pswGSdhRYBxwM+bKwE1/dXoJZyN6MTWZhTSMmKwejL6Pz7T5BtYzO7s1BlNCddTZ/1dlOpQjDcULrZhVPX/ZdUyocT0ZgbMW5T42sondo8WusZjaupO4IDlNPQU2MNVyYDFHx3AZMAkI5C1wGjHo6Bs7aZayEcOk5w8QGEB6Awfv3JJT0wBgKjnvJBbkfGPvSErG/QWOMFudZHh34yfU+rrJWVJUgJpveeOA6KNOibXuq+Z/XHSuuz3PlOUjGNSb5jutl1ePDwWYhj27lTKpezJDFTLSYg+892vuj/z8cqzFJH0uRLh98KsKb9SQ80AMWfwBpPsLOV+bMMwid8KtmAZfw3oTqfUyNM7mAocsPwLU6Pv+pAv9H45dWgnSeYHZ9ze5Icjtz6+dvRr+8NlIWRPnuMJ4UM+CVR5pmjjO6nGoeE0UO16lEObMuTfbU2bykiDbKc6FnWIPKTyEwpZ+JSx75zot19xzVFRbLZS15ufsDQyF38uU83QXkSZpButdSCraPHuw3iDespWhKk4ZGB5mOonpiTaeLIA9nMZ+qR284SaSIbTLffic7jlZiE3OZfyU4fggVPa+oJyNqVSd/uCnxXyQ0Hqwku2qrgR3k9P2n6ZvW87Y0oaRNhNAmC4QevH4Rli0j/nKrWQh8/obX13gaclBX4DSTccuSNCaBxqrmZjY5+dBpM7JEePJD0ZVVHJ9iSNs32Dq+YNMLhUJiB4oV3XW7lkwkTPxm4Gpvup96/i1+rEeS8NnT9UzTQEyC9dVKUbuIhBtcw/FO2GtEPKX7bt/S9iZh/RQxpOF0nUmRhi8HlBtc4c+RVF0VbDe1w6/fMtkgXRdwDMY2pNeN+WMXew+bSxxttmv2vyJ6BPp+A4GaA74P+1cCPpq5voa1CYyl9P3VbuITj9QVjC5NjosG0ihQvT1WuEFzlgzkfwBIovkFJRyhBmPbbD+5H+ctyNTRo/y8s3mjZdrh5GFrmQNnSc2w9BM+hzJOVpMsoO+/xXhfi0gtfUPI6iuDMDb6pUyyeir+/iJdlKeXa544E1anpY8M3iR6VQOcme4j+urJxtvrVyhQB9HBSvTfItCDJUVPR/086sFf2lMqpWGZnAxd6EwzqC0zI6AYVX0IHIpL+It3WaD/NQP0gIFCgzXjSdVUic2YmEz55N1g1tAkPPHRcHxqRjNnnoNA4yz7xk3XTI4KLctedC9x3Zt/eu9s8SH4Xy0i27gjACpEBadZ2fqhkehLzL3tCvivgFf64/lTFgStWROhtID500ANQxaYgPPoLQGtj0M3I0xRS4caBEbfRSY7MOR3hETXG7w1SRcQcmMVpQJAmjdNvI+53Kggxb47SdpHOU43PzoI2yT4KhpzvzW54LooPDr5rIXGYmupsRDlDC3IsSz95/QaPjs0IWx3SqHgpi9JFSmWIK4saZrz42ksWELx3T/+pnZ7c/0X5irBeP5KYlbIThK4xruegB7+J+sz3WxwhIDJ1KxDZmrOU6oQs4Ojo1TcDMPQEKIiKs4tHF1HmsPCCj4ouA+qQooFpAJIW4n0YivBhOORGt/HUrODwb3UDwfYhC0epQgyoKnTVsaGZzxgUjaL6adL1B4Z08zksMmX9rnZSnFWKEWriLSvW/RyWP04FI4blGtbOQWokGmmnUhIAp0PadBLuyg0t1fmY7/2uEph6+zRP5GhBo34daFbGB5fN5Y3aLd+dYhCL8srtEjpB68Sp55gBnG2+NTSPZyAFOQ3M0pRXF4deR3CY4Ty1z/FxxQK48xPmmeY+51ikdfZLjiQwgKfwopSjz46QA8jauvFlCOMBjMhGNGQIzXWK3tqsp85GKB+LMFmrX4NdCpgl7CnGNampMV78ZbbirTJVdfrufsXo0Geqy5dEoA392umu9PCLhhzJUHP1ruGfqKVGcmsIQQphxxHlLJNLxN+IVnQUoz3Y71LDGiiuR60Sxh2hDaG4vhmKoZNY8Pg0ThV1pLIHr7kOBRQ+nPVEDtoDv9uRUjbhxUguWKdPmNZjQvZOZItEEGxi92IvPNHa4DhNGrFSbI4ITKfZds4tMzpkX7f1RlaWx67Tr6na9Qy1jaieMIxXJtUI/fBmkfsi20XMx6DFRXrTl35NaaHoeiNa4VyOBg6094CZ7UsETJaBxA0Dn9p6G6nV4y+pPElwXemGnE9LgQQ2s/GAkPQDsdJfpSgyEl0MXu6+pmdWQUPOJBG9W/jDluGfC10TLQmUHLCAdeefjP6qfD/bEPjlNqBTXxUqm9WwamxXy1Nvp/XrKwX9Y0Rfr0eMMCr+/FA2ndYUQ8N/xygiuoLM5FMnCfsRYCtTXfk6vSxxLz7FWuYIl/3WEEUFRSDFXd6bGr4JPP5Zblzf75PZ/oKbip5OdfShMnNOGbUH4JGW6vPqhQfPFrMRTbhPtomvBa/cTFuiHzlSQSqDzk2EmfXPO4QX8AyWLr00lmaFk7YyGuqyJoMfbt6MHpWlqdUEOj3Z3FT11YtFPg/C2sAcJUdDY6e12jbzuMb3ws1QXDmZLWtSb6WPFZvVQhML92HjsH0MPPtfCtY8TEyhd6veJ55++RSZnYdy5MptuIxFLmXLB6lV2pHOZpJTgdgT1vksKWOyq16XsnFQpyyg7JE5vEOpcuUwu0iLANXozo/e+YDI8LhW+vuOl9ixjFN3283b/FieEHNy1GsPWL4INHHP1cVg+dwXmRtk4j98AwApk9oYNsFWqRNLZvcVaJ91HCSEhK2pYM2lo88thCQfPnZKhZy32waUPt7gRHFqXfLczt0Uo8XmCi20f8RaLQJF/3GHVSCmIF+i7mpkTiPs0rl3qsMT1BN1JZWbwaZ3ZLU60R12psPzJIBlKHYfcBOM1SjLNQRNv8nz3Ge8LQpbQjbahz4/VyjjVofoZu+kMceJe6zadQ8pN9ESSsJ4ax7AiOyBd0GWYbM64yEnMSfoubVR2qJLkHj4E379R6kE/bBXQaWxK+fJJmslJryE7rmVcplX+B+Hr3HeaAjiC57ItxVQ99d3dZCy7oO5Hx+Mc0v5f1CDwzAa9Lp2/aKHi+ueV0lkGdVQdc/VStAcKK0f3WN5fzYMQbXBKm9KMlhcSqrYS1MDtWs5XlkZ+4woXICafuILt8BRvE/raNX7Y/qg6I1SepUZRrLwSdRD1GSPz0Zpd9Koh2muLEiIUY1AZEora2+2PFaB7WNAC7aygPwrS+dgy1PTRz6rs0PIbpqKGvWmPTAvfHl3w1DJHSDJZOraI35YFq5lOfuLbl//AR+yV3/4ALTPLKVLEI2zL2kcE81LOvsfmKTFFXzfdw9vVtJPVtqlcHYCC5tEUGit5ZQdM7go0psL09M0y+5ZRa2wcf8z0TPLQR4m1yYstg+Sm2YpU5lhEbBoWmnjRsBlq5lg2kzmXcBgwO2JYKb1akdV822bL8XK3qAqdkaVTVdfgzJrmNsbJwuvX2XZWqppy/Q38sRZoMOJVPluxlRJREEPUlqbzg+tei9LJCtcNKtV4RWmDId6K1BdQCMV98jwagN3RNY7RXs06jwV5rbqQVKH7Pk0f9pKSaCV2dVNivuLGPkssdEcpaAYo8FUwKf0Ctxkx3k2GlLUN/SxsKNi23hWolicEE7ZVkN+AqpVKSug7FCQS91AA0QsmDtLB38YuFhnTlcyIiQzWWicReTHiiQUnsnaq3I1MPTOBeuak4EiS2LawYG4hJGTLgaNGlHE2wvT1d6KLzm0rGsi7ALMQ1U/hEVlWpGA5626hH8a2VHqHJbwvWJ2eIE0VuJF40DmOiGaiH3CcMqR/s9PptKtbArEeEgvN+PcpoqWQsexeGom6LH1370cuO4nJUSoAURFoBzzY+Ix1JaJIPAePWGG2EdAk1jsP44lcCHCrX2fTwdf6wPSgWh5tUqlrT7ALOi5B6hiZbe8uuI/msDfFmt+tjn/C9t1YEA9ZwkUQaHTfbx34EtUkZcptSG9H4Vk0Zg62K+GVdELSpIQyxIEonbkw0GctT1bdDRfi3XlslECnj92eJuxSctngWS4jT1nJRIBngJfPkADompD8u7hBedmcg6x2gK9iWZXzJtR02qJEZoDMrdG0hAJ26cSNRQ0uZmKl7xeWZ+zGANfT/I3gS1X2/8xDgfSkllYOOz6J4uLR2G6to/0EYlWj7XJOU+Xt+FTy2H/71KQOK0HP7llUk0jl3k3/NpRJ1I/X4dEoRjSHI/rLB4iovxZCrOhqM9AN1fbyys23hvZVJ72tCYAPU7lE5pfk/3rASHbNlIy7+WkfS8lMwD519TPIKdbLrummnpKsopVINazJ1gQq/u8mJUH/4L8TyZ60fDUEbFTHBjTL5PqVfP4dP776Hs+RtJanek/2lEbgs3m3ZGGwTMO2R6S2w9Ia3SNikjo1z/EdTpELXY6kv1aMFEThiEsfm50xySVs25IjnO4bLTi2NGWaf7UP2/8Jg14wD+oCelPLs5lNo7tuv58BuNFE4blClUOQwkQWyPKM+Hjw5ZDa9B2Jmjkn0wc/8AiGYJjqmr7NXE2CdYQtIqD8zXjPnLnfTbzs8JGNDaLQCRdQDDfeQYjdTIx3F8OlX1sveSA0AQmfIQsyOCls6k9Fxg4D2lnW6mjSAaG9/bblesc0PyKBQ2mAuvuJ0eS5gJeLYVRZSlBiRdTqHLnqapG78MXkeMGfZ/Zi1+WHhUKQ8M1x0N1+h3MkJlJu+nsys4FbMFjIvcbM17yuFnwEqUSVcNsco2g/xDNDxYjkXhFWsU6WakLJU9D4+C/+G8tqY5meZ4L5K4V25pNsm0ffRYyz/MKgTTs1wtZoWfWRBqVFQkp/Agw8GpreXF2hRRAfbiG9LtUP+dhBVweDnq3OBjdio1OtY5FBZA/UZBdJ2/+kSW3vDnkIqlVtEgjZ0s5FcYcidBQjKpbG7Jz7/I4hzFpAHtNJyLm2yPP9q5vxdw4HnSjnbfsT3CH3FVKCOCY53PpzfQNGk4dcaK3vmh978NVn0CGADFB23Ke4ZLzdT8J2+vge5YhXc+McqcGJCfWAU/X3Ghf2ld/WPgt3M0ya67Dn3rcXP7dhm0veq7HjHFphI1buhjCjr1s/ID/R5mbZP5a0UJjKSu2Cu0WhmuNcTwn7vW6WA54rUyHPaGrsEBbyVlPMEDervdkz+Pe9fqxCBhnTYB+NnCnupUUrNU7aVh33HLvwe/s0cT08kk4FoPUbMXARRwEuPmR5c9kEAhKhCB6fqmJYl39H0OO5+RhBMPibpm3vZZixOr9P2TeGpqECAq16dNctA4pPJhAmEk+xpA/djguImi6igQYSESUXTVVpj+yvrr8bmlslOaZ6Rny02u5tCnGhZhtE8WW7sYf3lLCnZ36X78tjK2mSysaUtRXSi2LvLMM5OB2akbfgwLVM+oDFLH3Mi2PVqdqjDG5kX7i76gbHxntDtvstioqZogUBwEbfNucHzrGpFCgwkUjtHxFpKgOM9aVhyltBV18cOh9MTbZi8YjqbCcCf5cXUSSpUxrBh5VP4wRJj9dUfR8IfeOWMwJFbY/1vdp/duAcK007U3pLHEWxYIbw38kwdyouQMiVRXWgyLBvXilGqN1pTcrlbLeShev412D6vBhljRBUX2YIe9nULJqL5cem0FsRsDLVueo+081Uxfmmtef7z0xkvmEaqgqEF7PCyQjcrfokgd1YUMnJRIqiIfDk1tvbuRQb0gXmshQV+gfSYS5sfZ/Os32rtHuPNNK7sA/OqRTKxFnAjuaeFbSc5s3GDqAEzR8KlVpisAfv81wi9Q/ctuRzM0rQUZNW9Piz571eDR46vPDmT3di/VczNleP5Y/Y00G/+vRGTCPi+RO25FlI+IrOBhMfSC2G8Ib7skTnMd435W0vnv1thJXsJvXRFO3IPm3dYbaK1w==" />
+
+
+<script src="/WebResource.axd?d=Ea6pjflJzgG0bMCQxKkfT2YGx9WLYIctniyhoBHEVzKzCZ0a7r-aQP6tr4ncEBQktTfGdb7REmuMG9ru4nTYAsGGZMJ8bgmwLdd32wq5eYc1&amp;t=638901526200000000" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=xj_GazGgGQdjxpQEZZoJlnwnyHllLcvs3PUCDsw0A4CUn18MR9UWOULFjuZ_xAlU6cawlJM2o5s-oYIrQ3KJhim0Zn5IUSW7u8cJADBWcqC2GAllW6BGwWjAjEc7MAlYStKX3rZKVeLlUsMOewMgTA2&amp;t=ffffffffec54f2d7" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (typeof(Sys) === 'undefined') throw new Error('ASP.NET Ajax client-side framework failed to load.');
+//]]>
+</script>
+
+<script src="/AdvSearch.aspx?_TSM_HiddenField_=ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField&amp;_TSM_CombinedScripts_=%3b%3bAjaxControlToolkit%2c+Version%3d3.5.40412.0%2c+Culture%3dneutral%2c+PublicKeyToken%3d28f01b0e84b6d53e%3aen-US%3a1547e793-5b7e-48fe-8490-03a375b13a33%3ade1feab2%3af9cec9bc%3aa67c2700%3af2c8e708%3a720a52bf%3a589eaa30%3a698129cf%3a59fb9c6f%3a8613aea7%3a3202a5a2%3aab09e3fe%3a87104b7c%3abe6fb298%3a4a2c8239" type="text/javascript"></script>
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="F6350304" />
+<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="SSsdGkB5JC3QF0WSxxZa13Y/D5i14O/cMM8wSDd/Sx9ZWJjxzwZJNFNkFC+dEt8P5CZbL6++o63N6gTSGFZ1fn0sAK/fEUyeA5ddluJ0WZjat6cw2gGT2zOjNHV0UJVYUvRRB9YrpbRE2QCs8kQHoWQB0ZTzPWvDw7qntxs9C5q3/ES51kd7osz+tWFwzpzhZhEMKnIg6q7VSkHeBKvW9r+pTrQdaWzPh3h7orwZfFe3jxJcZ9VfDDpQeqdI4nirr3VTikRLi4RVsICwOphHMDQcx/Bxt26/tYYjKpaJD1CLUpriZq4kb/8+/tRuLEnncItnnnsSN3J2+wG9su6D9szTorVJE5lxtXgNHG3RtL1dNpCLVrdzedC48iYU07tZK+1ctcf63ifeWeGVzF9xWcL6jonwjYBl/eXUSGcdnkiELlrlBTCsUamDofMY0laVFc9AB4Co6UQsObOg1JRh870g5NMAEkx5x4EEB6H9cOLQ8WSes6EYdbMSuO51ClZvu5dISJUvL4pBMkZAwYObODpDH90Ee2oqcjjjJIbBmaRHWlp/Q6+ebJEwyW+K022HSpPLHXng2SnNBpy4fHGqd9kCQZFfTex2lq6QQd+Kf11rDnN1x17EVFg2RboaqsL6jV5z0TgWtXiqEMlW0KNU7CBwUbQGTZp8dzxwgxodS+4IK2s0wSgayG9bUiOq7JH7yALJjsEhlUPEIqD86qzLes75UJjsG9TjBDX/H5iCpkUWojLIUqAUgGshnYLHG5sueJXhSsPvHiqxFVeaWqEtXi7KtqFZR3/LQKIP7xt4EGSMCi8XVqymU3mxnwb3Va4eGVAz36BZcpIIIRwzXXoZwKqJRMNaBgLyvqksuW6GLwyo46KOr/v4bTfaQVXYOS1ZAQkQvsHMc67JWSoQGtW2dWlKHJOfmGFEy988dVh+PhHzJTNaTMN+FcWpYU8LVA8f/aFDFV77ZO5HrXAqLneOQVpcOulQhAxgVFukHY9gMug7U3hK7Rgz4g6v4lsQKZUnF485GNrAqh2wsGAYM9sisk9zZboZVegExULKPVt+/BsSwA4FKA9ThoYqrbJD1SZl" />
+    <div>
+         <table style="width: 100%;" align="center" bgcolor="#6BA2CC" >
+           <tr>
+                <td align="center" >
+                
+                    <table bgcolor="#6BA2CC" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><a href="http://www.who.int/en/" target="_new"><img src="who_logo_en2.gif" alt="World Health Organization site" border="0"></a></td>
+
+</tr>
+
+</table>
+
+
+
+                </td>
+            </tr>
+          </table> 
+        <table align="center" style="color: #6ba2cc">
+          <tr>
+              <td style="height: 21px" align="center">
+                  <img alt="" src="ICTRP_logo4.jpg" style="height: 62px" /></td> 
+          </tr>  
+            </table>
+            <table bgcolor="gainsboro" bordercolor="gainsboro" cellspacing="0" class="nounderline" style="width: 100%">
+                <tr>
+                    <td>
+            <a href="#ctl00_Menu1_SkipLink"><img alt="Skip Navigation Links" src="/WebResource.axd?d=xcJNU7w2dlou18e4-Dh6Q9rpxMVThXbm5kHfk-sgIU2E8qZq0HlZMmP_ehwTkX59x5teQ0mQqaDw_-ux8Rcw9YecjJWKNogZfpBikXG7UeI1&amp;t=638901526200000000" width="0" height="0" border="0" /></a><table id="ctl00_Menu1" cellpadding="0" cellspacing="0" border="0" bgcolor="Gainsboro" width="70%">
+	<tr>
+		<td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n0"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="Default.aspx"><font face="Arial" color="#284E98" size="3">Home</font></a></td>
+			</tr>
+		</table></td><td width="3"></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n1"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="AdvSearch.aspx"><font face="Arial" color="#284E98" size="3">Advanced Search</font></a></td>
+			</tr>
+		</table></td><td width="3"></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" title="Listing By Health Topic/Regions/Countries" id="ctl00_Menu1n2"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="javascript:__doPostBack(&#39;ctl00$Menu1&#39;,&#39;List By&#39;)"><font face="Arial" color="#284E98" size="3">List By</font></a></td><td width="0"><img src="/WebResource.axd?d=uJ67jg4y3VmLp_IaWWmit0T87CjU7JaGMN5QSYsyv3V8CcPeFDg47s2C_WYmNW-7dR1EkZ4m2cOf3slCNv-2xpFzXp7WoKFa1O2lzbG03rvNMp-l1NA9ypM4Ym7xmGpb0&amp;t=638901526200000000" alt="Expand List By" valign="middle" /></td>
+			</tr>
+		</table></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n3"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="https://www.who.int/clinical-trials-registry-platform/the-ictrp-search-portal/search-tips" target="Blank"><font face="Arial" color="#284E98" size="3">Search Tips</font></a></td>
+			</tr>
+		</table></td><td width="3"></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" title="Universal Trial Number (UTN)" id="ctl00_Menu1n4"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="https://trialsearch.who.int/utn.aspx"><font face="Arial" color="#284E98" size="3">UTN</font></a></td><td width="0"><img src="/WebResource.axd?d=uJ67jg4y3VmLp_IaWWmit0T87CjU7JaGMN5QSYsyv3V8CcPeFDg47s2C_WYmNW-7dR1EkZ4m2cOf3slCNv-2xpFzXp7WoKFa1O2lzbG03rvNMp-l1NA9ypM4Ym7xmGpb0&amp;t=638901526200000000" alt="Expand UTN" valign="middle" /></td>
+			</tr>
+		</table></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n5"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="http://www.who.int/ictrp" target="_blank"><font face="Arial" color="#284E98" size="3">ICTRP website</font></a></td><td width="0"><img src="/WebResource.axd?d=uJ67jg4y3VmLp_IaWWmit0T87CjU7JaGMN5QSYsyv3V8CcPeFDg47s2C_WYmNW-7dR1EkZ4m2cOf3slCNv-2xpFzXp7WoKFa1O2lzbG03rvNMp-l1NA9ypM4Ym7xmGpb0&amp;t=638901526200000000" alt="Expand ICTRP website" valign="middle" /></td>
+			</tr>
+		</table></td><td onmouseover="Menu_HoverStatic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n6"><table cellpadding="0" cellspacing="0" border="0" width="100%">
+			<tr>
+				<td nowrap="nowrap"><a href="Contact.aspx"><font face="Arial" color="#284E98" size="3">Contact us</font></a></td>
+			</tr>
+		</table></td>
+	</tr>
+</table><div id="ctl00_Menu1n2Items" style="display:none;">
+	<table border="0" cellpadding="0" cellspacing="0">
+		<tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n7">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="ListBy.aspx?TypeListing=0"><font face="Arial" color="#284E98" size="3">List By Health Topic</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n8">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="ListBy.aspx?TypeListing=1"><font face="Arial" color="#284E98" size="3">List By Countries</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n9">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="ListBy.aspx?TypeListing=2"><font face="Arial" color="#284E98" size="3">List By Regions/Countries</font></a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table><div id="ctl00_Menu1n2ItemsUp" onmouseover="PopOut_Up(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=-LgYthJjkX0q27dKuablfmK-LRaCS8FET4PNgJ8mRx1tP6ZZOTtXs97ovRSnw0ikxa1crRkpT5X4ERS7pMkyK2ng-r_iZnEhBxzvMWYPyphUet_9xLWck4ZO5EEkykIL0&amp;t=638901526200000000" alt="Scroll up" />
+	</div><div id="ctl00_Menu1n2ItemsDn" onmouseover="PopOut_Down(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=Gz028kRe4z9L7lCBZ2KMYhlSHXYJ2QF_yYpbhxhRjuyYb9qZHwotewN8vqF4baSyi8Iihjo0IzIixKUQStfb6azV1_5K79Geox_9WDabwCikN0Oi3ILgG13_exPc24JR0&amp;t=638901526200000000" alt="Scroll down" />
+	</div>
+</div><div id="ctl00_Menu1n4Items" style="display:none;">
+	<table border="0" cellpadding="0" cellspacing="0">
+		<tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n10">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="https://trialsearch.who.int/utn.aspx"><font face="Arial" color="#284E98" size="3">UTN request</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n11">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="utnvalid.aspx"><font face="Arial" color="#284E98" size="3">UTN validation</font></a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table><div id="ctl00_Menu1n4ItemsUp" onmouseover="PopOut_Up(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=-LgYthJjkX0q27dKuablfmK-LRaCS8FET4PNgJ8mRx1tP6ZZOTtXs97ovRSnw0ikxa1crRkpT5X4ERS7pMkyK2ng-r_iZnEhBxzvMWYPyphUet_9xLWck4ZO5EEkykIL0&amp;t=638901526200000000" alt="Scroll up" />
+	</div><div id="ctl00_Menu1n4ItemsDn" onmouseover="PopOut_Down(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=Gz028kRe4z9L7lCBZ2KMYhlSHXYJ2QF_yYpbhxhRjuyYb9qZHwotewN8vqF4baSyi8Iihjo0IzIixKUQStfb6azV1_5K79Geox_9WDabwCikN0Oi3ILgG13_exPc24JR0&amp;t=638901526200000000" alt="Scroll down" />
+	</div>
+</div><div id="ctl00_Menu1n5Items" style="display:none;">
+	<table border="0" cellpadding="0" cellspacing="0">
+		<tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n12">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp" target="_blank"><font face="Arial" color="#284E98" size="3">In English</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n13">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/fr" target="_blank"><font face="Arial" color="#284E98" size="3">In French</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n14">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/es" target="_blank"><font face="Arial" color="#284E98" size="3">In Spanish</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n15">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/ar" target="_blank"><font face="Arial" color="#284E98" size="3">In Arabic</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n16">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/zh" target="_blank"><font face="Arial" color="#284E98" size="3">In Chinese</font></a></td>
+				</tr>
+			</table></td>
+		</tr><tr onmouseover="Menu_HoverDynamic(this)" onmouseout="Menu_Unhover(this)" onkeyup="Menu_Key(event)" id="ctl00_Menu1n17">
+			<td><table cellpadding="0" cellspacing="0" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap" width="100%"><a href="http://www.who.int/ictrp/ru" target="_blank"><font face="Arial" color="#284E98" size="3">In Russian</font></a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table><div id="ctl00_Menu1n5ItemsUp" onmouseover="PopOut_Up(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=-LgYthJjkX0q27dKuablfmK-LRaCS8FET4PNgJ8mRx1tP6ZZOTtXs97ovRSnw0ikxa1crRkpT5X4ERS7pMkyK2ng-r_iZnEhBxzvMWYPyphUet_9xLWck4ZO5EEkykIL0&amp;t=638901526200000000" alt="Scroll up" />
+	</div><div id="ctl00_Menu1n5ItemsDn" onmouseover="PopOut_Down(this)" onmouseout="PopOut_Stop(this)" align="center" style="display:none;">
+		<img src="/WebResource.axd?d=Gz028kRe4z9L7lCBZ2KMYhlSHXYJ2QF_yYpbhxhRjuyYb9qZHwotewN8vqF4baSyi8Iihjo0IzIixKUQStfb6azV1_5K79Geox_9WDabwCikN0Oi3ILgG13_exPc24JR0&amp;t=638901526200000000" alt="Scroll down" />
+	</div>
+</div><a id="ctl00_Menu1_SkipLink"></a>
+
+        </td>
+                </tr>                
+                
+            </table>
+        
+         
+  <div style="top: 50%;left: 50%;position:fixed;margin-top:-100px;margin-left:-100px;">
+    <img src="images/ajax_loader_blue.gif" id="ImgLoading" style="width:200px;height:200px;display:none;" />
+  </div>
+  
+        
+        <table style="width: 100%">
+            
+            <tr valign="top">
+                <td class="TabArea" style="width: 421px" > <input type="submit" name="ctl00$ContentPlaceHolder1$btnBackSearch" value="Back to Search" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnBackSearch&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnBackSearch" />
+                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+                    
+                    <td align="center">  &nbsp;<span id="ctl00_ContentPlaceHolder1_lblCount" style="text-align: left"><font face="Arial" color="Black" size="3">593 records for 383 trials found!</font></span>
+                       
+                                    <div id="ctl00_ContentPlaceHolder1_Panel13" class="popupControl">
+	
+                            <div id="ctl00_ContentPlaceHolder1_UpdatePanel12">
+		
+                                    <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;"  >
+                                        <tr>
+                                            <td style="font-size: x-small; vertical-align: top; text-align:left; font-family: Arial;">
+                                                Trials are sometimes recorded in more than one registry. 
+                                                These records can refer to each other using the 'Secondary ID' field. 
+                                                The search portal uses these Secondary IDs to group records about the same trial together in the search results. <br />
+                                                Each group of records referring to a trial is displayed in table that is seen by pressing the + symbol. 
+                                                The record with the earliest date of registration is always shown first.
+</td>
+                                        </tr>
+                                    </table>
+                                
+	</div>
+                                  
+</div>
+                            
+                  </td>
+                   <td style="text-align: right;">
+                 
+                  </td>  
+                    <tr valign="top">
+                        <td class="TabArea" style="width: 421px">
+                
+                            &nbsp;
+                     <div id="ctl00_ContentPlaceHolder1_Panel11" class="popupControl">
+	
+                         &nbsp;
+</div>
+                            &nbsp;
+                    
+                    </td>
+                        <td>
+                            &nbsp;
+                        </td>
+                        <td style="text-align: right">
+                            </td>
+                    </tr>
+                     <tr valign="top">
+                        <td class="TabArea" style="width: 421px">
+                    </td>
+                        <td>
+                            &nbsp;
+                        </td>
+                        <td style="text-align: right" valign="bottom">
+                            <span id="ctl00_ContentPlaceHolder1_Label33"><font face="Arial" size="2">Show</font></span><select name="ctl00$ContentPlaceHolder1$ddlPageSize" id="ctl00_ContentPlaceHolder1_ddlPageSize">
+	<option selected="selected" value="10">10</option>
+	<option value="20">20</option>
+	<option value="50">50</option>
+	<option value="100">100</option>
+
+</select><span id="ctl00_ContentPlaceHolder1_Label34"><font face="Arial" size="2">records per page</font></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnLaunchDialogTerms" value="Export results to XML" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnLaunchDialogTerms&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnLaunchDialogTerms" />
+                        </td>
+                    </tr>
+              
+        </table>
+                         
+            <table style="width: 100%">
+            <tr><td>
+                <div id="ctl00_ContentPlaceHolder1_UpdatePanel5">
+	
+                        <a id="ctl00_ContentPlaceHolder1_lnkButExtendSynonyms" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$lnkButExtendSynonyms&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))"><font face="Arial" size="3">Display synonyms</font></a>
+                        
+                    
+</div>                
+                <br />  
+                <table id="ctl00_ContentPlaceHolder1_dlPager2" cellspacing="0" cellpadding="10" align="Center" border="0">
+	<tr>
+		<td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl00_lnkPageNo" disabled="disabled">1</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl01_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl01$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">2</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl02_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl02$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">3</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl03_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl03$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">4</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl04_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl04$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">5</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl05_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl05$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">6</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl06_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl06$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">7</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl07_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl07$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">8</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl08_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl08$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">9</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl09_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl09$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">10</a>
+                   </font></td><td><font face="Arial" size="3">
+                      <a id="ctl00_ContentPlaceHolder1_dlPager2_ctl10_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager2$ctl10$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">Last</a>
+                   </font></td>
+	</tr>
+</table>               
+                 <div>
+	<table cellspacing="0" cellpadding="4" border="0" id="ctl00_ContentPlaceHolder1_GridViewSearch" width="100%" style="left: 26px; font-family: Arial;
+                                top: 262px;">
+		<tr bgcolor="#507CD1">
+			<th scope="col"><font color="White" size="3"><b><a href="javascript:__doPostBack(&#39;ctl00$ContentPlaceHolder1$GridViewSearch&#39;,&#39;Sort$Recruitment_status_code&#39;)"><font color="White">Recruitment status</font></a></b></font></th><th scope="col"><font color="White" size="3"><b>Prospective Registration</b></font></th><th scope="col"><font color="White" size="3"><b><a href="javascript:__doPostBack(&#39;ctl00$ContentPlaceHolder1$GridViewSearch&#39;,&#39;Sort$TrialID&#39;)"><font color="White">Main ID</font></a></b></font></th><th scope="col"><font color="White" size="3"><b>&nbsp;</b></font></th><th scope="col"><font color="White" size="3"><b><a href="javascript:__doPostBack(&#39;ctl00$ContentPlaceHolder1$GridViewSearch&#39;,&#39;Sort$Public_title&#39;)"><font color="White">Public Title</font></a></b></font></th><th scope="col"><font color="White" size="3"><b><a href="javascript:__doPostBack(&#39;ctl00$ContentPlaceHolder1$GridViewSearch&#39;,&#39;Sort$Date_registration3&#39;)"><font color="White">Date of Registration</font></a></b></font></th><th scope="col"><font color="White" size="3"><b><a href="javascript:__doPostBack(&#39;ctl00$ContentPlaceHolder1$GridViewSearch&#39;,&#39;Sort$results_yes_no&#39;)"><font color="White">Results available</font></a></b></font></th>
+		</tr><tr valign="top" bgcolor="#EFF3FB">
+			<td width="100"><font color="#333333" size="3">Not Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_Label1">CTIS2025-523923-22-00</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_HyperLink2" href="Trial2.aspx?TrialID=CTIS2025-523923-22-00" target="_blank">A Phase 2 Study of Lirafugratinib in Non-CCA Solid Tumors With FGFR2 Fusion or Rearrangement</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl02$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2026-03-17</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="White">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_Label1">NCT07431281</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_HyperLink2" href="Trial2.aspx?TrialID=NCT07431281" target="_blank">Sonesitatug Vedotin in Combination With Capecitabine With or Without Rilvegostomig in Participants With Advanced or Metastatic Gastric, Gastroesophageal Junction, or Esophageal Adenocarcinoma Expressing Claudin18.2</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+					<table cellspacing="0" rules="all" border="1" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_GridViewTrialDetails" width="700">
+						<tr>
+							<th scope="col"><font color="#333333" size="3">Recruitment status</font></th><th scope="col"><font color="#333333" size="3">Main ID</font></th><th scope="col"><font color="#333333" size="3">Public title</font></th><th scope="col"><font color="#333333" size="3">Date of registration</font></th><th scope="col"><font color="#333333" size="3">Results available</font></th>
+						</tr><tr>
+							<td><font color="#333333" size="3">Recruiting</font></td><td><font color="#333333" size="3">CTIS2024-519787-40-00</font></td><td><font color="#333333" size="3">
+                                                                
+                                                                <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_GridViewTrialDetails_ctl02_HyperLink2" href="Trial2.aspx?TrialID=CTIS2024-519787-40-00" target="_blank">A trial to learn how well sonesitatug vedotin and capecitabine with or without rilvegostomig work and how safe they are in adults with cancers of the stomach and esophagus.</a>
+                                                             </font></td><td><font color="#333333" size="3">19/02/2026</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+						</tr>
+					</table>
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl03$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2026-01-16</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="#EFF3FB">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_Label1">CTIS2025-523165-19-00</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_pnlIconPlus" class="collapsePanelHeader">
+				<img id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_ImgPlus" src="images/plus.gif" border="0" />
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_HyperLink2" href="Trial2.aspx?TrialID=CTIS2025-523165-19-00" target="_blank">A Phase 1a/1b, Open-Label Study Evaluating the Safety, Tolerability, Pharmacokinetics, Pharmacodynamics, and Preliminary Antitumor Activity of BG-75098 Alone and in Combination With Other Agents in Patients With Advanced Solid Tumors</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+					<table cellspacing="0" rules="all" border="1" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_GridViewTrialDetails" width="700">
+						<tr>
+							<th scope="col"><font color="#333333" size="3">Recruitment status</font></th><th scope="col"><font color="#333333" size="3">Main ID</font></th><th scope="col"><font color="#333333" size="3">Public title</font></th><th scope="col"><font color="#333333" size="3">Date of registration</font></th><th scope="col"><font color="#333333" size="3">Results available</font></th>
+						</tr><tr>
+							<td><font color="#333333" size="3">Recruiting</font></td><td><font color="#333333" size="3">NCT07226349</font></td><td><font color="#333333" size="3">
+                                                                
+                                                                <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_GridViewTrialDetails_ctl02_HyperLink2" href="Trial2.aspx?TrialID=NCT07226349" target="_blank">A Study of BG-75098 Alone and in Combination With Other Agents in Adults With Advanced Solid Tumors</a>
+                                                             </font></td><td><font color="#333333" size="3">06/11/2025</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+						</tr>
+					</table>
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl04$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2025-10-30</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="White">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_Label1">JPRN-jRCT2031250156</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_pnlIconPlus" class="collapsePanelHeader">
+				<img id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_ImgPlus" src="images/plus.gif" border="0" />
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_HyperLink2" href="Trial2.aspx?TrialID=JPRN-jRCT2031250156" target="_blank">BGB-A317-316</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+					<table cellspacing="0" rules="all" border="1" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_GridViewTrialDetails" width="700">
+						<tr>
+							<th scope="col"><font color="#333333" size="3">Recruitment status</font></th><th scope="col"><font color="#333333" size="3">Main ID</font></th><th scope="col"><font color="#333333" size="3">Public title</font></th><th scope="col"><font color="#333333" size="3">Date of registration</font></th><th scope="col"><font color="#333333" size="3">Results available</font></th>
+						</tr><tr>
+							<td><font color="#333333" size="3">Recruiting</font></td><td><font color="#333333" size="3">CTIS2025-522862-58-00</font></td><td><font color="#333333" size="3">
+                                                                
+                                                                <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_GridViewTrialDetails_ctl02_HyperLink2" href="Trial2.aspx?TrialID=CTIS2025-522862-58-00" target="_blank">The purpose of this study is to determine whether Tislelizumab, when given as a subcutaneous (SC) injection, reaches the same drug levels in the body as Tislelizumab given intravenously (IV). This study will also assess whether SC Tislelizumab is as safe and effective as the IV version. Tislelizumab IV, when combined with chemotherapy, has already been shown to be effective and safe in patients with metastatic gastric or gastroesophageal junction adenocarcinoma.</a>
+                                                             </font></td><td><font color="#333333" size="3">18/07/2025</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+						</tr><tr>
+							<td><font color="#333333" size="3">Recruiting</font></td><td><font color="#333333" size="3">NCT07043400</font></td><td><font color="#333333" size="3">
+                                                                
+                                                                <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_GridViewTrialDetails_ctl03_HyperLink2" href="Trial2.aspx?TrialID=NCT07043400" target="_blank">A Study to Investigate Tislelizumab Administered as Subcutaneous Injection Versus Intravenous Infusion Plus Chemotherapy in Patients With Unresectable or Metastatic Gastric or Gastroesophageal Junction Adenocarcinoma</a>
+                                                             </font></td><td><font color="#333333" size="3">20/06/2025</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+						</tr>
+					</table>
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl05$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2025-06-10</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="#EFF3FB">
+			<td width="100"><font color="#333333" size="3">Not Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_Label1">CTIS2024-519773-19-00</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_pnlIconPlus" class="collapsePanelHeader">
+				<img id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_ImgPlus" src="images/plus.gif" border="0" />
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_HyperLink2" href="Trial2.aspx?TrialID=CTIS2024-519773-19-00" target="_blank">A Study of Zolbetuximab Together with Pembrolizumab and Chemotherapy in Adults with Gastric Cancer</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+					<table cellspacing="0" rules="all" border="1" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_GridViewTrialDetails" width="700">
+						<tr>
+							<th scope="col"><font color="#333333" size="3">Recruitment status</font></th><th scope="col"><font color="#333333" size="3">Main ID</font></th><th scope="col"><font color="#333333" size="3">Public title</font></th><th scope="col"><font color="#333333" size="3">Date of registration</font></th><th scope="col"><font color="#333333" size="3">Results available</font></th>
+						</tr><tr>
+							<td><font color="#333333" size="3">Not Recruiting</font></td><td><font color="#333333" size="3">JPRN-jRCT2031250021</font></td><td><font color="#333333" size="3">
+                                                                
+                                                                <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_GridViewTrialDetails_ctl02_HyperLink2" href="Trial2.aspx?TrialID=JPRN-jRCT2031250021" target="_blank">A study of zolbetuximab together with pembrolizumab and chemotherapy in adults with gastric cancer</a>
+                                                             </font></td><td><font color="#333333" size="3">22/04/2025</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+						</tr><tr>
+							<td><font color="#333333" size="3">Recruiting</font></td><td><font color="#333333" size="3">NCT06901531</font></td><td><font color="#333333" size="3">
+                                                                
+                                                                <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_GridViewTrialDetails_ctl03_HyperLink2" href="Trial2.aspx?TrialID=NCT06901531" target="_blank">A Study of Zolbetuximab Together With Pembrolizumab and Chemotherapy in Adults With Gastric Cancer</a>
+                                                             </font></td><td><font color="#333333" size="3">27/03/2025</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+						</tr>
+					</table>
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl06$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2025-03-18</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="White">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_Label1">NCT06839716</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_HyperLink2" href="Trial2.aspx?TrialID=NCT06839716" target="_blank">Comparison of Ropivacaine-Poloxamer 407 Hydrogel and TAP Block for Postoperative Pain Management in Laparoscopic/Robotic Gastrectomy</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl07$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2025-02-17</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="#EFF3FB">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_Label1">NCT06841484</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_HyperLink2" href="Trial2.aspx?TrialID=NCT06841484" target="_blank">Comparison of Full Robotic Instrumentation and Assistant-Controlled Laparoscopic Instrumentation in Robotic Distal Gastrectomy</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl08$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2025-02-17</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="White">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_Label1">NCT06778954</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_HyperLink2" href="Trial2.aspx?TrialID=NCT06778954" target="_blank">Ropivacaine-Poloxamer 407 Gel for Pain Control After Open Gastrectomy</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl09$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2025-01-05</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="#EFF3FB">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_Label1">NCT06767436</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_HyperLink2" href="Trial2.aspx?TrialID=NCT06767436" target="_blank">A Multi-center Real-world Efficacy and Safety of Trastuzumab-deruxtecan in Advanced Gastric Cancer</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl10$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2024-12-26</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr valign="top" bgcolor="White">
+			<td width="100"><font color="#333333" size="3">Recruiting</font></td><td width="100"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_lblRetrospectiveGrid"></span></font></td><td width="200"><font color="#333333" size="3"><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_Label1">NCT06767449</span></font></td><td><font color="#333333" size="3">
+                                            <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_pnlIconPlus" disabled="disabled" class="collapsePanelHeader">
+				
+                                            
+			</div>
+                                        </font></td><td align="left" width="700"><font color="#333333" size="3">
+                                    
+                                                 <a id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_HyperLink2" href="Trial2.aspx?TrialID=NCT06767449" target="_blank">Zolbetuximab Claudin18.2 Positive, HER2 Negative, Advanced Gastric Cancer</a>
+                                        <div id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_pnlGridTrialID" class="collapsePanel">
+				
+                                            <div>
+
+				</div>
+                                             
+
+                                        
+			</div>
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$GridViewSearch$ctl11$CollapsiblePanelExtender1_ClientState" id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_CollapsiblePanelExtender1_ClientState" /></font></td><td width="100"><font color="#333333" size="3">2024-12-24</font></td><td><font color="#333333" size="3">&nbsp;</font></td>
+		</tr><tr align="right" bgcolor="#507CD1">
+			<td><font color="White" size="3"><b>&nbsp;</b></font></td><td><font color="White" size="3"><b>&nbsp;</b></font></td><td><font color="White" size="3"><b>&nbsp;</b></font></td><td><font color="White" size="3"><b>&nbsp;</b></font></td><td><font color="White" size="3"><b></b></font></td><td><font color="White" size="3"><b>&nbsp;</b></font></td><td><font color="White" size="3"><b>&nbsp;</b></font></td>
+		</tr>
+	</table>
+</div>
+                            <table id="ctl00_ContentPlaceHolder1_dlPager" cellspacing="0" cellpadding="10" align="Center" border="0">
+	<tr>
+		<td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl00_lnkPageNo" disabled="disabled">1</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl01_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl01$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">2</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl02_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl02$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">3</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl03_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl03$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">4</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl04_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl04$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">5</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl05_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl05$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">6</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl06_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl06$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">7</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl07_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl07$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">8</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl08_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl08$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">9</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl09_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl09$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">10</a>
+                                </font></td><td><font face="Arial" size="3">
+                                   <a id="ctl00_ContentPlaceHolder1_dlPager_ctl10_lnkPageNo" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$dlPager$ctl10$lnkPageNo&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">Last</a>
+                                </font></td>
+	</tr>
+</table>
+              </td>
+            </tr>
+        </table>
+            <div id="ctl00_ContentPlaceHolder1_PanelTermsAndConditions" class="modalPopup" style="display: none"><font face="Arial" size="3">
+	 
+                      <div style="top: 50%;left: 50%;position:fixed;margin-top:-100px;margin-left:-100px;">
+                        <img src="images/ajax_loader_blue.gif" id="ImgLoadingExportXML" style="width: 200px;height: 200px; display:none;" />
+                      </div>
+     
+                   <p style=" font-weight:bold ">Terms and Conditions for Use of WHO ICTRP Data</p>
+                   <p>1. Introduction<br />
+                   The following Terms and Conditions apply for use of the WHO ICTRP data. 
+                   Downloading the WHO ICTRP data indicates your acceptance of the following Terms and Conditions. 
+                   These Terms and Conditions apply to all data obtained from the WHO ICTRP , 
+                   independent of format and method of acquisition.<br />
+                   2. WHO ICTRP Database<br />
+                   The World Health Organization, through its International Clinical Trials Registry Platform, 
+                   has developed the ICTRP database to provide patients, family members and members of the 
+                   public current information about clinical research studies. The ICTRP database contains 
+                   information about clinical trials being conducted throughout the world. 
+                   This data is provided to the ICTRP by registries conforming to WHO standards. 
+                   ICTRP is updated weekly. Trial data posted on this search portal are not endorsed by WHO, 
+                   but are provided as a service to our users. In no event shall the World Health Organization 
+                   be liable for any damages arising from the use of the  data in the ICTRP database. 
+                   None of the information obtained through use of the search portal should in any way be used 
+                   in clinical care without consulting a physician or licensed health professional. 
+                   WHO is not responsible for the accuracy, completeness and/or use made of the content displayed 
+                   for any trial record.<br />
+                   3. Availability<br />
+                   ICTRP data are publicly available to all requesters, at no charge.<br />
+                   4. Use of ICTRP Data<br />
+                   a. Neither the WHO ICTRP, nor any of its data providers, make any warranties, expressed or implied, 
+                   with respect to data contained in the database, and, furthermore, assume no liability for any party's use, 
+                   or the results of such use, of any part of the database.<br /> 
+                   b. In any publication or distribution of these data (1) you should, to the extent possible and appropriate, attribute the source of the data as WHO ICTRP; 
+                   (2) you should update the data such that they are current at all times; (3) you should clearly display the date 
+                   the data were processed by WHO ICTRP;<br />  
+                   c. You shall not assert any proprietary rights to any portion of the ICTRP database.<br />
+                   d. You shall not use information extracted from the ICTRP database for marketing, promotional or commercial purposes.<br />
+                   e. You shall not use the name or emblem of WHO in association with the use of data from the ICTRP database.<br />
+                   These terms and conditions are in effect as long as the user retains any of the data obtained from the WHO ICTRP database . 
+ 
+
+                   
+                   </p>
+                   
+                           <input type="submit" name="ctl00$ContentPlaceHolder1$btnExport" value="I agree" onclick="document.getElementById(&#39;ImgLoadingExportXML&#39;).style.display=&#39;block&#39;;WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnExport&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnExport" />
+                           <input type="submit" name="ctl00$ContentPlaceHolder1$btnCancel" value="No thanks" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnCancel&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnCancel" />
+                      
+                            
+</font></div>
+    
+    
+    <table align=center width="100%"   >
+                <tr>
+                    <td style="border-top: #6ba2cc thick solid"  >
+                        <span id="ctl00_ContentPlaceHolder1_Label31" style="display:inline-block;"><font face="Arial" size="2">Disclaimer: Trials posted on this search portal are not endorsed by WHO, but are provided as a service to our users. In no event shall the World Health Organization be liable for any damages arising from the use of the information linked to in this section. None of the information obtained through use of the search portal should in any way be used in clinical care without consulting a physician or licensed health professional. WHO is not responsible for the accuracy, completeness and/or use made of the content displayed for any trial record.</font></span></td>
+                </tr>
+                <tr>
+                
+                        <td align="center">
+                            <a id="ctl00_ContentPlaceHolder1_HyperLink8" href="http://www.who.int/about/copyright/en/" target="_blank" style="text-align: center"><b><font face="Arial" size="2">Copyright - World Health Organization</font></b></a>
+                            <span id="ctl00_ContentPlaceHolder1_Label32"><b><font face="Arial" size="2">- Version 3.6 -</font></b></span>
+                            <a id="ctl00_ContentPlaceHolder1_HyperLink6" href="ICTRP_Revisions_document.pdf" target="_blank" style="text-align: center"><b><font face="Arial" size="2">Version history</font></b></a>
+
+                        </td>
+            
+               </tr>
+   
+    </table>  
+       
+    </div>
+    
+
+<script type="text/javascript">
+//<![CDATA[
+(function() {var fn = function() {$get("ctl00_ContentPlaceHolder1_ToolkitScriptManager_HiddenField").value = '';Sys.Application.remove_init(fn);};Sys.Application.add_init(fn);})();var ctl00_Menu1_Data = new Object();
+ctl00_Menu1_Data.disappearAfter = 500;
+ctl00_Menu1_Data.horizontalOffset = 2;
+ctl00_Menu1_Data.verticalOffset = 0;
+ctl00_Menu1_Data.hoverClass = '';
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"BackgroundCssClass":"modalBackground","CancelControlID":"ctl00_ContentPlaceHolder1_btnCancel","DropShadow":true,"PopupControlID":"ctl00_ContentPlaceHolder1_PanelTermsAndConditions","dynamicServicePath":"/AdvSearch.aspx","id":"ctl00_ContentPlaceHolder1_ModalPopupExtender2"}, null, null, $get("ctl00_ContentPlaceHolder1_btnLaunchDialogTerms"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl02_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl03_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl04_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl05_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl06_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl07_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl08_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl09_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl10_pnlGridTrialID"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CollapsiblePanelBehavior, {"ClientStateFieldID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_CollapsiblePanelExtender1_ClientState","CollapseControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_pnlIconPlus","Collapsed":true,"CollapsedImage":"images/plus.gif","CollapsedText":"Show related records","ExpandControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_pnlIconPlus","ExpandedImage":"images/minus.gif","ExpandedText":"Hide related records","ImageControlID":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_ImgPlus","SuppressPostBack":true,"id":"ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_CollapsiblePanelExtender1"}, null, null, $get("ctl00_ContentPlaceHolder1_GridViewSearch_ctl11_pnlGridTrialID"));
+});
+//]]>
+</script>
+</form>
+</body>
+</html>
