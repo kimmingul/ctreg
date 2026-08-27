@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAPS, type FetchOpts } from '../../../src/core/query.js';
+import { CAPS, type FetchOpts, type NormalizedQuery } from '../../../src/core/query.js';
 import { EXIT } from '../../../src/cli/exit-codes.js';
 import type { CtregError } from '../../../src/runtime/errors.js';
 import { buildFields, buildIdsParams, buildSearchParams } from '../../../src/adapters/ctgov/query.js';
@@ -145,5 +145,55 @@ describe('CT.gov 쿼리 조립', () => {
     // raw 가 아니면 그대로 투영한다 — 기본 경로의 페이로드 절감은 유지된다.
     expect(buildSearchParams({ condition: 'NSCLC' }, opts).params.fields).toBeDefined();
     expect(buildIdsParams(['NCT01234567'], opts).fields).toBeDefined();
+  });
+});
+
+/**
+ * `--investigator` 를 왜 따로 두는가 — 실측 2026-08-28.
+ *
+ * `--term "Min-Gul Kim"` 은 ctgov 에서 **문서 전체에 대한 토큰 AND** 다. 구(phrase)도
+ * 아니고 같은 필드도 아니어서, 서로 다른 사람에게서 토큰이 하나씩 걸려도 맞는다:
+ *
+ *   NCT06072131 — Min ← "Min Kyoung Kim"(대구 연락담당)
+ *                 Gul ← "Gul Cebecioglu Hasancebi"(터키 세부연구자)
+ *                 Kim ← 여럿
+ *
+ * 그래서 49건 중 1건이 다른 사람이었다. 실측한 수: `Min-Gul Kim` 49,
+ * `"Min-Gul Kim"` 48(손으로 검증한 집합과 정확히 일치),
+ * `AREA[OverallOfficialName] OR AREA[ResponsiblePartyInvestigatorFullName]` 45.
+ *
+ * 45 가 이 축이 뜻하는 것이다 — **연구자로 이름이 올라간 시험**. 나머지 셋은 연락처로만
+ * 올라간 것이라 다른 사실이고, 하나로 합치면 둘을 구분할 수 없게 된다.
+ */
+describe('investigator 축', () => {
+  const q = (v: string) => buildSearchParams({ investigator: v, pageSize: 10 } as NormalizedQuery, opts).params;
+
+  it('연구자 필드를 지정해서 묻는다 — 문서 전체 토큰 AND 로 흘리지 않는다', () => {
+    const filter = String(q('Min-Gul Kim')['filter.advanced'] ?? '');
+    expect(filter).toContain('AREA[OverallOfficialName]');
+    expect(filter).toContain('AREA[ResponsiblePartyInvestigatorFullName]');
+    expect(filter).toContain('OR');
+  });
+
+  it('이름을 구로 묶는다 — 낱말이 흩어져 걸리면 다른 사람이 잡힌다', () => {
+    const filter = String(q('Min-Gul Kim')['filter.advanced'] ?? '');
+    expect(filter).toContain('"Min-Gul Kim"');
+  });
+
+  it('query.term 자리를 쓰지 않는다 — 두 축이 같은 자리를 다투면 하나가 조용히 진다', () => {
+    expect(q('Min-Gul Kim')['query.term']).toBeUndefined();
+  });
+
+  it('term 과 함께 줘도 둘 다 살아남는다', () => {
+    const { params: p } = buildSearchParams(
+      { investigator: 'Min-Gul Kim', term: 'metformin', pageSize: 10 } as NormalizedQuery, opts,
+    );
+    expect(p['query.term']).toBe('metformin');
+    expect(String(p['filter.advanced'] ?? '')).toContain('AREA[OverallOfficialName]');
+  });
+
+  /** 이름에 따옴표가 들어오면 구가 깨져 조용히 다른 질의가 된다. */
+  it('따옴표가 든 이름은 사용법 오류다', () => {
+    expect(() => q('Min "Gul" Kim')).toThrow();
   });
 });

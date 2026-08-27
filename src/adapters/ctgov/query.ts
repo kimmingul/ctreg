@@ -111,6 +111,29 @@ export function buildSearchParams(
   }
 
   const advanced: string[] = [];
+  /**
+   * **연구자는 필드를 지정해서 묻는다.** `query.term` 에 실으면 ctgov 가 문서 전체에 대한
+   * 토큰 AND 로 처리해서, 서로 다른 사람에게서 낱말이 하나씩 걸린 시험까지 맞는다
+   * (실측 2026-08-28: `Min-Gul Kim` 49건 중 1건은 Min Kyoung Kim · Gul Cebecioglu ·
+   * Kim 셋이 각각 한 낱말씩 댄 것이었다).
+   *
+   * 두 필드를 OR 로 묶는다 — 한 사람이 시험마다 연구책임자로도, 책임당사자 연구자로도
+   * 올라간다(실측: 44 / 2, OR 45). 하나만 보면 나머지가 조용히 빠진다.
+   *
+   * 이름은 **구로 묶는다.** 안 묶으면 필드 안에서 다시 낱말이 흩어진다.
+   */
+  if (q.investigator !== undefined) {
+    if (q.investigator.includes('"')) {
+      throw usageError(
+        `--investigator 값에는 따옴표(")를 쓸 수 없습니다: ${q.investigator}`,
+        '따옴표가 들어가면 이름을 구로 묶을 수 없고, ctgov 는 깨진 질의를 오류가 아니라 다른 결과로 되돌립니다. 따옴표를 빼고 다시 시도하세요.',
+      );
+    }
+    const name = `"${q.investigator}"`;
+    advanced.push(
+      `AREA[OverallOfficialName]${name} OR AREA[ResponsiblePartyInvestigatorFullName]${name}`,
+    );
+  }
   if (q.phase?.length) advanced.push(q.phase.map((p) => `AREA[Phase]${fromPhase(p)}`).join(' OR '));
   if (q.studyType) advanced.push(`AREA[StudyType]${fromStudyType(q.studyType)}`);
 

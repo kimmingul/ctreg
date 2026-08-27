@@ -21,6 +21,8 @@ export const ICTRP_CAPABILITY: Capability = {
     intervention: free('중재 문자열'),
     title: free('공개 제목'),
     lead: free('주 스폰서만 본다 — 공동 스폰서 자리가 폼에 없다'),
+    // 고급검색 화면에 사람 이름 칸이 없다.
+    investigator: off('검색 폼에 연구자 이름 칸이 없다'),
     id: free('Secondary ID 를 포함 검색한다. ICTRP 사본이 원 레지스트리보다 이 필드를 덜 실은 사례가 있다(표본 1건)'),
     /**
      * 필드테스트 실측(2026-08-26): 국가 세 개로 각각 걸어도 세 번 다 걸지 않은

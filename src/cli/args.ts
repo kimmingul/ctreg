@@ -23,7 +23,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
   ctreg registries
 
 검색 축   --condition --intervention --term --title --location --outcome-query
-          --sponsor --lead --id --patient
+          --sponsor --lead --id --patient --investigator
 필터      --status ${FILTERABLE_STATUS.slice(0, 3).join('|')}|
           ${FILTERABLE_STATUS.slice(3).join('|')}
           --phase ${FILTERABLE_PHASE.join('|')}
@@ -70,6 +70,7 @@ const flag = { type: 'boolean' } as const;
 const OPTIONS = {
   condition: str, intervention: str, term: str, title: str, location: str,
   'outcome-query': str, sponsor: str, lead: str, id: str, patient: str,
+  investigator: str,
   status: multi, phase: multi, 'study-type': str,
   near: str, radius: str,
   'updated-since': str, 'updated-before': str,
@@ -92,7 +93,7 @@ const NETWORK_OPTIONS = ['no-cache', 'refresh', 'raw'] as const;
 /** search 와 count 가 공유하는 질의 표면. 둘의 차이는 레코드를 받느냐뿐이다. */
 const QUERY_OPTIONS = [
   'condition', 'intervention', 'term', 'title', 'location', 'outcome-query',
-  'sponsor', 'lead', 'id', 'patient', 'status', 'phase', 'study-type',
+  'sponsor', 'lead', 'id', 'patient', 'investigator', 'status', 'phase', 'study-type',
   'near', 'radius',
   'updated-since', 'updated-before', 'start-after', 'start-before',
   'completion-after', 'completion-before',
@@ -412,7 +413,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   const query: NormalizedQuery = {
     condition: v.condition, intervention: v.intervention, term: v.term, title: v.title,
     location: v.location, outcomeQuery: v['outcome-query'], sponsor: v.sponsor,
-    lead: v.lead, id: v.id, patient: v.patient,
+    lead: v.lead, id: v.id, patient: v.patient, investigator: v.investigator,
     ...(status.length ? { status } : {}),
     ...(phase.length ? { phase } : {}),
     ...(studyType ? { studyType } : {}),

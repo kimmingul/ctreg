@@ -25,6 +25,13 @@ export const CTGOV_CAPABILITY: Capability = {
     title: free('공식 제목과 간략 제목에만 걸린다 — 본문은 보지 않는다'),
     sponsor: free('주 스폰서와 공동 스폰서를 모두 본다'),
     lead: free('주 스폰서만 본다 — 공동 스폰서는 제외된다'),
+    /**
+     * 실측 2026-08-28(`Min-Gul Kim`): `AREA[OverallOfficialName]` 44,
+     * `AREA[ResponsiblePartyInvestigatorFullName]` 2, 둘의 OR 45. 같은 이름을
+     * `--term` 으로 물으면 49 가 나오는데 그중 하나는 **다른 사람** 이었다 — term 은
+     * 문서 전체에 대한 토큰 AND 라 세 사람에게서 낱말이 하나씩 걸린 것이었다.
+     */
+    investigator: free('연구책임자와 책임당사자 연구자 이름만 본다 — 연락담당으로만 올라간 사람은 걸리지 않는다'),
     location: free('시험 사이트의 기관명·도시·주·국가'),
     id: free('NCT 번호와 업스트림이 기재한 보조 식별자'),
     patient: free('term 과는 다른 업스트림 검색 에어리어라 같은 단어를 넣어도 결과가 갈린다. "62세 EGFR 양성" 같은 긴 서술은 0건이고 단순 문구는 걸린다(실측) — 긴 서술이 0건인 것이 이 에어리어가 적격 기준을 해석하지 않아서인지 그 문구가 안 맞아서인지는 재지 못했다'),

@@ -40,6 +40,7 @@ export function usedSearchAxes(q: NormalizedQuery): (keyof Capability['search'])
     ['lead', q.lead !== undefined],
     ['id', q.id !== undefined],
     ['patient', q.patient !== undefined],
+    ['investigator', q.investigator !== undefined],
     ['outcomeQuery', q.outcomeQuery !== undefined],
     ['status', (q.status?.length ?? 0) > 0],
     ['phase', (q.phase?.length ?? 0) > 0],

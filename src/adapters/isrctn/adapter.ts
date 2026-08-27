@@ -49,6 +49,14 @@ export const ISRCTN_CAPABILITY: Capability = {
     title: free('제목 필드(title) 하나. 레코드에는 공개 제목과 학술 제목이 따로 실려 나오는데 축은 하나뿐이라 둘을 갈라 물을 수 없다'),
     sponsor: free('스폰서 기관명(sponsorOrganisation) — 자금 제공자는 별개다'),
     lead: off('ISRCTN 에는 주 스폰서와 공동 스폰서를 가르는 검색 축이 없다'),
+    /**
+     * **필드 지정이 통하지 않는다.** 실측 2026-08-28: `contact:"Min-Gul Kim"` 과
+     * `zzznonsensefield:"Min-Gul Kim"` 이 같은 1건을 냈다 — 없는 필드 이름도 같은 수를
+     * 내므로 이 API 는 필드 접두사를 조용히 버리고 전체 검색으로 떨어진다(`overallStartDate`
+     * 가 무시되는 것과 같은 부류). 그러면 이름이 어디에 실렸든 걸리므로 이 축이 약속하는
+     * 것을 지킬 수 없다. 지원한다고 신고하면 그 순간 조용히 틀린 답이 된다.
+     */
+    investigator: off('필드 이름을 조용히 무시해서 연구자만 골라낼 수 없다'),
     location: off('자유 문자열 장소 축이 없다 — 살아 있는 것은 국가 이름 완전일치뿐이다. ctreg 는 이 축을 0건으로 답하지 않고 exit 3 으로 거부한다'),
     id: off('식별자 전용 축이 전부 죽어 있다 — isrctn:·secondaryNumber:·clinicalTrialsGovNumber: 모두 0건'),
     patient: off('환자 친화 문장을 받는 검색 에어리어가 없다 — 나이·성별 같은 조건을 문장으로 넘길 자리가 없다. 가장 가까운 것은 본문 전반을 훑는 term 이지만 그쪽도 글자를 맞출 뿐 적격 기준을 해석하지는 않는다'),

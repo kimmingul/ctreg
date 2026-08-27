@@ -20,6 +20,12 @@ export type NormalizedQuery = {
   outcomeQuery?: string;
   sponsor?: string;
   lead?: string;
+  /**
+   * 연구자 이름. `term` 과 다른 축인 이유(실측 2026-08-28): ctgov 의 `term` 은 문서 전체에
+   * 대한 **토큰 AND** 라 서로 다른 사람에게서 낱말이 하나씩 걸려도 맞는다. 그렇게 잡힌
+   * 시험은 그 사람의 것이 아니다 — 축을 나눠 필드를 지정해서 묻는다.
+   */
+  investigator?: string;
   id?: string;
   patient?: string;
 

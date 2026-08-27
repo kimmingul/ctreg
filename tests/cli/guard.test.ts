@@ -52,6 +52,7 @@ function probeFor(axis: keyof Capability['search']): NormalizedQuery {
     case 'lead': return { lead: 'x' };
     case 'id': return { id: 'x' };
     case 'patient': return { patient: 'x' };
+    case 'investigator': return { investigator: 'x' };
     case 'outcomeQuery': return { outcomeQuery: 'x' };
     case 'status': return { status: ['recruiting'] };
     case 'phase': return { phase: ['phase_1'] };

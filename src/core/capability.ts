@@ -62,6 +62,13 @@ export const CapabilitySchema = z.strictObject({
     title: SearchAxisSchema,
     sponsor: SearchAxisSchema,
     lead: SearchAxisSchema,
+    /**
+     * **사람 이름으로 묻는 축.** 자유 텍스트 축과 나눠 두는 이유는 레지스트리마다 이것을
+     * 할 수 있느냐가 갈리기 때문이다 — ctgov 는 필드를 지정할 수 있고(`AREA[...]`),
+     * ISRCTN 은 필드 이름을 **조용히 무시** 하며(실측: 없는 필드명도 같은 건수를 낸다),
+     * ICTRP 화면에는 그런 칸이 아예 없다.
+     */
+    investigator: SearchAxisSchema,
     location: SearchAxisSchema,
     id: SearchAxisSchema,
     patient: SearchAxisSchema,
