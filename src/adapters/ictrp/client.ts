@@ -5,6 +5,7 @@ import { unsupportedError, upstreamError } from '../../runtime/errors.js';
 import { getJson, peekFormCache, postForm, type HttpDeps } from '../../runtime/http.js';
 import { countryOptions, countrySelected, FIELD, hiddenFields, pagerLinks } from './form.js';
 import { parseResults, type IctrpPage } from './parse.js';
+import { parseRecord, type IctrpRecord } from './record.js';
 import { buildForm } from './query.js';
 
 const PATH = '/AdvSearch.aspx';
@@ -28,6 +29,33 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
   const base = { registry: 'ictrp' as const, baseUrl: cfg.ictrpBaseUrl, ratePerSec };
 
   return {
+    /**
+     * ID 하나의 레코드 페이지. ICTRP 에 배치 엔드포인트가 없어 **ID 하나당 요청 하나** 다.
+     *
+     * 내용이 없는 껍데기 페이지는 `undefined` 로 온다(`record.ts` 주석 참고) — 호출자가
+     * 그것을 `not_found` 로 신고한다. 200 을 받았다고 레코드가 있는 것이 아니다.
+     */
+    async record(
+      registryId: string,
+      cacheMode: CacheMode,
+    ): Promise<{ record: IctrpRecord | undefined; fetchedAt: string; raw: string; warnings: Warning[] }> {
+      const res = await getJson<string>(
+        cfg,
+        {
+          ...base,
+          path: '/Trial2.aspx',
+          params: { TrialID: registryId },
+          cacheMode,
+          accept: 'text/html',
+          decode: (t) => t,
+        },
+        deps,
+      );
+      return {
+        record: parseRecord(res.value), fetchedAt: res.fetchedAt, raw: res.value, warnings: res.warnings,
+      };
+    },
+
     /** `page` 는 1-기반. 2 이상이면 검색 뒤에 페이저 postback 을 그만큼 더 한다. */
     async search(
       q: NormalizedQuery,

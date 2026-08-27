@@ -1,11 +1,12 @@
 import type { AdapterResult, Capability, RegistryAdapter, SearchAxis, Warning } from '../../core/capability.js';
 import type { FetchOpts, NormalizedQuery, ResultsOpts } from '../../core/query.js';
 import type { TrialRecord, TrialResults } from '../../core/record.js';
+import { formatTrialId, parseTrialId } from '../../core/registry.js';
 import type { Config } from '../../runtime/config.js';
 import { unsupportedError, usageError } from '../../runtime/errors.js';
 import type { HttpDeps } from '../../runtime/http.js';
 import { makeClient } from './client.js';
-import { mapRow } from './map.js';
+import { mapRecord, mapRow } from './map.js';
 import { ICTRP_FILTERABLE } from './query.js';
 
 const free = (scope: string): SearchAxis => ({ supported: true, values: null, exhaustive: null, scope });
@@ -170,11 +171,47 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
       return { data, warnings, total: res.page.trials, ...(nextPageToken ? { nextPageToken } : {}) };
     },
 
-    async get(_ids: string[], _o: FetchOpts): Promise<AdapterResult<TrialRecord[]>> {
-      throw unsupportedError(
-        'ICTRP 는 ID 로 개별 시험을 조회할 수 없습니다',
-        'ctreg search --registry ictrp 로 검색해 원하는 시험을 찾으세요.',
-      );
+    /**
+     * ICTRP 에 배치 엔드포인트가 없다 — **ID 하나당 요청 하나** 이고 `ratePerSec: 1` 이라
+     * 10개를 조회하면 10초쯤 걸린다. `maxBatchIds` 가 10인 이유가 그것이다.
+     *
+     * 레코드 페이지는 검색 결과 행보다 충실하다(TRDS 24항목). 특히 **상태가 이진이
+     * 아니다** — 같은 시험이 `search` 로 오면 `recruiting`/`other` 이고 여기서는
+     * 레지스트리가 신고한 값 그대로다. 경로에 따라 충실도가 다른 것은 사실이고 README 가
+     * 그것을 말한다.
+     *
+     * 내용 없는 껍데기 페이지는 `not_found` 로 신고하고 레코드를 만들지 않는다 —
+     * ctgov 가 배치에서 빠진 ID 를 다루는 것과 같은 자리다.
+     */
+    async get(ids: string[], o: FetchOpts): Promise<AdapterResult<TrialRecord[]>> {
+      const data: TrialRecord[] = [];
+      const warnings: Warning[] = [];
+      for (const id of ids) {
+        const { registryId } = parseTrialId(id);
+        const res = await client.record(registryId, o.cacheMode);
+        warnings.push(...res.warnings);
+        if (res.record === undefined) {
+          warnings.push({
+            code: 'not_found',
+            message: 'WHO ICTRP 에서 찾지 못했습니다 — 그 ID 의 레코드 화면이 비어 있습니다.',
+            id: formatTrialId('ictrp', registryId),
+          });
+          continue;
+        }
+        const rec = mapRecord(res.record, registryId, res.fetchedAt, o.caps.locations);
+        if ((rec.locationsTotal ?? 0) > (rec.locations?.length ?? 0)) {
+          warnings.push({
+            code: 'locations_truncated',
+            message:
+              `이 시험의 모집 국가 ${rec.locationsTotal}곳 중 ${rec.locations!.length}곳만 담았습니다. ` +
+              '전부 받으려면 --include locations 로 캡을 올리세요.',
+            id: rec.id,
+            at: rec.locations!.length,
+          });
+        }
+        data.push(o.raw ? { ...rec, source: res.raw } : rec);
+      }
+      return { data, warnings };
     },
 
     async results(_id: string, _o: ResultsOpts): Promise<AdapterResult<TrialResults>> {

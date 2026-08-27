@@ -6,7 +6,12 @@ import { runAdapterContract } from './adapter-contract.js';
 
 const form = readFileSync(join(__dirname, '../fixtures/ictrp/advsearch-form.html'), 'utf8');
 const results = readFileSync(join(__dirname, '../fixtures/ictrp/results-page1.html'), 'utf8');
+const record = readFileSync(join(__dirname, '../fixtures/ictrp/record-nct.html'), 'utf8');
 void form;
+
+/** 레코드 조회는 `Trial2.aspx` 로 간다 — 검색과 URL 이 다르므로 이건 가를 수 있다. */
+const isRecord = (url: string) => url.includes('Trial2.aspx');
+const bodyFor = (url: string) => (isRecord(url) ? record : results);
 
 /**
  * ICTRP 는 HTML 만 낸다. `wire` 가 선으로 나가는 바이트이고 `respond` 는 그것을
@@ -28,11 +33,10 @@ runAdapterContract('ictrp', {
       },
       { fetchImpl, sleep: async () => {} },
     ),
-  respond: () => results,
-  wire: () => ({ text: results, contentType: 'text/html' }),
-  sampleId: 'ICTRP:NCT07749586',
-  // ICTRP 는 배치 ID 조회 창구가 없다 — get() 은 unsupportedError 를 던진다(adapter.ts).
-  getSupported: false,
+  respond: (url) => bodyFor(url),
+  wire: (url) => ({ text: bodyFor(url), contentType: 'text/html' }),
+  // 픽스처가 담고 있는 시험이라야 `get` 이 실제로 그 레코드를 돌려준다.
+  sampleId: 'ICTRP:NCT04280705',
   // ddlPageSize 를 실으면 검색이 0건으로 깨진다(query.ts) — pageSize 는 항상 고정 10이다.
   pageSizeConfigurable: false,
 });
