@@ -193,6 +193,33 @@ function assertCommandAccepts(command: (typeof COMMANDS)[number], v: Record<stri
   }
 }
 
+/**
+ * `YYYY-MM-DD` 이면서 **달력에 실제로 있는 날** 만 통과시킨다.
+ *
+ * 왜 모양만으로는 모자란가(실측 2026-08-28) — 검증이 없을 때 `--updated-since`
+ * `2026-02-30` 은 ctgov 에서 2,596 건을 내고 exit 0 으로 끝났고, `2026-13-45` 는
+ * 0 건 · exit 0 이었다. 앞은 **그럴듯하지만 틀린 답**, 뒤는 오타가 "그런 시험이 없다" 로
+ * 읽히는 것 — 이 CLI 가 없애려는 두 실패가 다 여기서 나왔다.
+ *
+ * 레지스트리마다 이상한 날짜를 다르게 다루므로(무시·0건·오류) 업스트림에 맡길 수 없다.
+ * 사용자가 손으로 치는 값이라 오타도 흔하다. 그래서 보내기 전에 여기서 막는다.
+ */
+function dateOpt(raw: string | undefined, name: string): string | undefined {
+  if (raw === undefined) return undefined;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  const hint = `${name} 은 YYYY-MM-DD 형식의 실재하는 날짜여야 합니다(예: 2026-02-28).`;
+  if (m === null) throw usageError(`${name} 을 날짜로 읽지 못했습니다: '${raw}'`, hint);
+
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  // Date 는 2026-02-30 을 3월 2일로 굴려 버린다 — 굴러갔는지를 되짚어 확인한다.
+  const asDate = new Date(Date.UTC(y, mo - 1, d));
+  const roundTrips =
+    asDate.getUTCFullYear() === y && asDate.getUTCMonth() === mo - 1 && asDate.getUTCDate() === d;
+  if (!roundTrips) throw usageError(`${name} 에 달력에 없는 날이 왔습니다: '${raw}'`, hint);
+
+  return raw;
+}
+
 function intOpt(raw: string | undefined, name: string, max: number): number | undefined {
   if (raw === undefined) return undefined;
   const n = Number(raw);
@@ -326,9 +353,12 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     ...(studyType ? { studyType } : {}),
     ...(near ? { near } : {}),
     ...(radius ? { radius } : {}),
-    updatedSince: v['updated-since'], updatedBefore: v['updated-before'],
-    startAfter: v['start-after'], startBefore: v['start-before'],
-    completionAfter: v['completion-after'], completionBefore: v['completion-before'],
+    updatedSince: dateOpt(v['updated-since'], '--updated-since'),
+    updatedBefore: dateOpt(v['updated-before'], '--updated-before'),
+    startAfter: dateOpt(v['start-after'], '--start-after'),
+    startBefore: dateOpt(v['start-before'], '--start-before'),
+    completionAfter: dateOpt(v['completion-after'], '--completion-after'),
+    completionBefore: dateOpt(v['completion-before'], '--completion-before'),
     // 기본값을 여기서 못박는다 — 어댑터가 각자 채우면 정책이 어댑터 수만큼 생긴다
     // (caps 채널과 같은 규칙, core/query.ts 의 resolvePageSize 주석 참고).
     pageSize: resolvePageSize({ pageSize: intOpt(v['page-size'], '--page-size', CAPS.pageSize.max) }),

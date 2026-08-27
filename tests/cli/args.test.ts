@@ -300,3 +300,43 @@ describe('--help 는 값 어휘를 적는다', () => {
     }
   });
 });
+
+/**
+ * 실측 2026-08-28: 날짜 옵션에 검증이 전혀 없었다. 모양만 맞으면 달력에 없는 날도
+ * 그대로 레지스트리에 실려 나갔고, **그 결과가 조용히 틀렸다**.
+ *
+ *   --updated-since 2026-02-30  → ctgov 가 2,596 건을 내고 exit 0. 2월 30일은 없다.
+ *   --updated-since 2026-13-45  → 0 건, exit 0. 오타 하나가 "그런 시험이 없다" 가 된다.
+ *
+ * 둘 다 이 CLI 가 없애려는 실패 그 자체다. 날짜는 사용자가 손으로 치는 값이고 오타가
+ * 흔하므로, 레지스트리에 보내기 전에 여기서 막는다.
+ */
+describe('날짜 옵션은 달력에 있는 날만 받는다', () => {
+  const DATE_OPTS = [
+    '--updated-since', '--updated-before',
+    '--start-after', '--start-before',
+    '--completion-after', '--completion-before',
+  ];
+
+  it('제대로 된 날짜는 그대로 통과한다', () => {
+    const a = parseCliArgs(['search', '--updated-since', '2026-02-28', '--start-before', '2024-02-29']);
+    expect(a.query.updatedSince).toBe('2026-02-28');
+    // 2024 는 윤년이다 — 2월 29일이 있다.
+    expect(a.query.startBefore).toBe('2024-02-29');
+  });
+
+  it('달력에 없는 날은 여섯 옵션 모두에서 사용법 오류다', () => {
+    for (const opt of DATE_OPTS) {
+      expectUsage(() => parseCliArgs(['search', opt, '2026-02-30']), opt);
+      expectUsage(() => parseCliArgs(['search', opt, '2026-13-45']), opt);
+      // 2026 은 윤년이 아니다.
+      expectUsage(() => parseCliArgs(['search', opt, '2026-02-29']), opt);
+    }
+  });
+
+  it('모양이 어긋난 값도 사용법 오류다 — 업스트림까지 가지 않는다', () => {
+    for (const bad of ['2026-1-1', '20260101', 'abc', '2026-01-01T00:00:00Z', '']) {
+      expectUsage(() => parseCliArgs(['search', '--updated-since', bad]));
+    }
+  });
+});
