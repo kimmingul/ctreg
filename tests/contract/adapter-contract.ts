@@ -446,6 +446,39 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     });
 
     /**
+     * `sort.supported` 는 **레지스트리가 아니라 이 어댑터에 대한 사실** 이다 — `q.sort`
+     * 를 업스트림까지 실어 보내는가. 그래서 네트워크 없이 여기서 잴 수 있다.
+     *
+     * 왜 재야 하는가(실측 2026-08-28) — 신고가 아예 없던 때 isrctn 과 ictrp 는 `--sort`
+     * 를 조용히 무시했다: exit 0, 경고 없음, 업스트림 기본 순서. 이제 셋 다 신고하지만
+     * **신고가 거짓이어도 아무것도 잡지 못했다** — ictrp 의 신고를 `true` 로 바꾸는
+     * 사보타주가 스위트를 통과했다. 그 구멍을 막는 것이 이 검사다.
+     */
+    it('sort 신고가 실제 동작과 맞는다 — 신고했으면 싣고, 안 했으면 싣지 않는다', async () => {
+      // 다른 파라미터 값과 우연히 겹치지 않도록 이 검사에서만 쓰는 문자열을 고른다.
+      const KEY = 'ZzSortProbe17';
+      const { adapter, requests } = ok();
+      await adapter.search({ condition: 'x', pageSize: 10, sort: KEY } as NormalizedQuery, fetchOpts);
+      expect(requests.length, 'search 가 업스트림 요청을 보내지 않았습니다.').toBeGreaterThan(0);
+
+      const carried = requests.some((r) => `${r.url} ${r.body}`.toLowerCase().includes(KEY.toLowerCase()));
+
+      if (adapter.capability().sort.supported) {
+        expect(
+          carried,
+          'sort.supported: true 로 신고했는데 q.sort 가 어떤 요청에도 실리지 않았습니다 — ' +
+            '정렬이 조용히 무시되고, 사용자는 정렬된 목록을 봤다고 믿게 됩니다.',
+        ).toBe(true);
+      } else {
+        expect(
+          carried,
+          'sort.supported: false 로 신고했는데 q.sort 가 요청에 실렸습니다 — ' +
+            '가드가 exit 3 으로 막고 있어서 실제로 되는 정렬을 못 쓰게 됩니다.',
+        ).toBe(false);
+      }
+    });
+
+    /**
      * M3. 캡(`o.caps.*`)과 마찬가지로 페이지 크기도 **CLI 가 정하고 어댑터는 읽는다.**
      * 어댑터가 `q.pageSize` 를 무시하고 자기 기본값을 쓰면 `--page-size` 가 조용히
      * 사라지고, 사용자는 자기가 요청한 것보다 적은(또는 많은) 결과를 받는다 — 적게 받는
