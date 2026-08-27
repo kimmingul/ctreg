@@ -39,6 +39,7 @@
  * 결과는 docs/ictrp-field-test-<날짜>.md 로 남는다.
  */
 import { writeFileSync } from 'node:fs';
+import type { TrialRecord } from '../src/core/record.js';
 import { ICTRP_CAPABILITY, createIctrpAdapter } from '../src/adapters/ictrp/adapter.js';
 import { ICTRP_FILTERABLE } from '../src/adapters/ictrp/query.js';
 import type { Capability, SearchAxis } from '../src/core/capability.js';
@@ -61,6 +62,18 @@ const fetchOpts = {
 };
 
 /** `adapter.count` 를 감싸 실패를 예외가 아니라 값으로 돌려준다 — 사이트가 502/타임아웃을 낼 때 이 스크립트가 죽지 않고 "측정 못함" 으로 적기 위해서다. */
+/** `safeCount` 와 같은 규율 — 요청 실패를 pass/fail 이 아니라 inconclusive 로 가른다. */
+async function safeGet(
+  id: string,
+): Promise<{ ok: true; record: TrialRecord | undefined } | { ok: false; detail: string }> {
+  try {
+    const r = await adapter.get([id], fetchOpts);
+    return { ok: true, record: r.data[0] };
+  } catch (e) {
+    return { ok: false, detail: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 async function safeCount(q: NormalizedQuery): Promise<{ ok: true; n: number } | { ok: false; detail: string }> {
   try {
     const { data } = await adapter.count(q, fetchOpts);
@@ -163,6 +176,35 @@ async function main() {
   record(v3);
   invariantRows.push(`| 비표준 나라 표기는 거절된다 | \`--location "South Korea"\` | ${LABEL[v3]} | ${note3} |`);
   console.error(`${LABEL[v3]}  비표준 나라 표기는 거절된다 — ${note3}`);
+
+  /**
+   * 4. **`get` 이 검색보다 충실한가.**
+   *
+   * 스텁 스위트로는 이것을 잡을 수 없다 — 스텁은 우리가 준 픽스처를 되돌려 줄 뿐이라
+   * 실물 레코드 화면이 아직 그 항목들을 싣는지 말해 주지 못한다. 특히 상태는 경로에
+   * 따라 갈린다: 검색 화면은 `Recruiting`/`Not Recruiting` 이진이라 그 밖은 `other` 가
+   * 되지만, 레코드 화면은 레지스트리가 신고한 값 그대로를 낸다. 그 차이가 사라지면
+   * `get` 을 연 이유 자체가 없어진다.
+   */
+  const got = await safeGet('ICTRP:NCT04280705');
+  let v4: Verdict;
+  let note4: string;
+  if (!got.ok) {
+    v4 = 'inconclusive';
+    note4 = `요청 실패로 측정 못함: ${got.detail}`;
+  } else if (got.record === undefined) {
+    v4 = 'fail';
+    note4 = '**레코드가 비어 있습니다.** 이 시험은 내용이 있던 것이라(2026-08-27 실측), 레코드 화면 마크업이 바뀌어 `record.ts` 가 못 읽고 있을 가능성이 높습니다.';
+  } else if (got.record.status === 'other' || got.record.sourceRefreshedAt === undefined) {
+    v4 = 'fail';
+    note4 = `**검색 경로와 다를 바가 없습니다** — status=\`${got.record.status}\`, sourceRefreshedAt=\`${got.record.sourceRefreshedAt ?? '없음'}\`. 레코드 화면에서만 오는 항목이 비었다는 뜻입니다.`;
+  } else {
+    v4 = 'pass';
+    note4 = `status=\`${got.record.status}\`(원문 \`${got.record.statusRaw}\`), sourceRefreshedAt=\`${got.record.sourceRefreshedAt}\` — 레코드 화면에서만 오는 항목이 실제로 옵니다.`;
+  }
+  record(v4);
+  invariantRows.push(`| get 이 검색보다 충실하다 | \`get ICTRP:NCT04280705\` | ${LABEL[v4]} | ${note4} |`);
+  console.error(`${LABEL[v4]}  get 이 검색보다 충실하다 — ${note4}`);
 
   console.error('\n--- 3. 지원한다고 신고한 축이 실제로 좁히는가 ---');
   const axisRows: string[] = [];
