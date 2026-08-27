@@ -66,7 +66,7 @@ export function assertSupported(
   for (const axis of axes) {
     if (!cap.search[axis].supported) {
       throw unsupportedError(
-        `${cap.name} 은 '${axis}' 검색을 지원하지 않습니다`,
+        `${cap.name}: '${axis}' 검색을 지원하지 않습니다`,
         `ctreg registries 로 이 레지스트리가 지원하는 축을 확인하세요. 결과가 없는 것이 아니라 조회 자체가 불가능합니다.`,
       );
     }
@@ -92,9 +92,22 @@ export function assertSupported(
     const strays = values.filter((v) => !declared.includes(v));
     if (strays.length === 0) continue;
     throw unsupportedError(
-      `${cap.name} 은 '${axis}' 를 ${strays.join(', ')} 로 거를 수 없습니다`,
+      `${cap.name}: '${axis}' 를 ${strays.join(', ')} 로 거를 수 없습니다`,
       `이 레지스트리가 받는 값: ${declared.join(', ')}. ` +
         'ctreg registries 로 축마다 받는 값을 확인하세요. 결과가 없는 것이 아니라 그렇게 물어볼 수 없습니다.',
+    );
+  }
+
+  /**
+   * 정렬은 축이 아니라서 `usedSearchAxes` 에 들어가지 않지만, 무시됐을 때의 피해는
+   * 같다 — 사용자는 정렬된 목록을 봤다고 믿고 앞 몇 건으로 판단한다. 같은 exit 3.
+   */
+  if (q.sort !== undefined && !cap.sort.supported) {
+    throw unsupportedError(
+      `${cap.name}: 'sort' 를 지원하지 않습니다`,
+      `이 레지스트리는 정렬 키를 받지 않아 ${cap.sort.scope}. ` +
+        '--sort 없이 조회하거나 정렬을 지원하는 레지스트리를 쓰세요. ' +
+        '조용히 무시하면 정렬되지 않은 목록을 정렬된 것으로 읽게 됩니다.',
     );
   }
 
@@ -107,7 +120,7 @@ export function assertSupported(
   for (const [axis, used] of detailAxes) {
     if (used && !cap.detail[axis].supported) {
       throw unsupportedError(
-        `${cap.name} 은 '${axis}' 를 제공하지 않습니다`,
+        `${cap.name}: '${axis}' 를 제공하지 않습니다`,
         'ctreg registries 로 제공 섹션을 확인하세요.',
       );
     }
@@ -206,7 +219,7 @@ export function applyLimits(cap: Capability, q: NormalizedQuery): { query: Norma
     query: { ...q, pageSize: clamped },
     warnings: [{
       code: 'page_size_clamped',
-      message: `${cap.name} 의 페이지 크기 상한은 ${clamped} 입니다. 요청한 ${q.pageSize} 대신 ${clamped} 을 썼습니다.`,
+      message: `${cap.name} 의 페이지 크기 상한은 ${clamped} 입니다. 요청 ${q.pageSize} → 실제 ${clamped}.`,
       at: clamped,
       registry: cap.key,
     }],

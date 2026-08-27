@@ -68,6 +68,9 @@ export const CTGOV_CAPABILITY: Capability = {
     scope: 'results 서브커맨드를 지원한다 — 결과 유무로 검색하는 것이 아니다',
   },
   count: { supported: true, scope: '같은 필터로 건수만 받는다. 페이로드를 받지 않는다' },
+  // 실측 2026-08-28: 정렬 키가 실제로 순서를 바꾼다(`LastUpdatePostDate:asc` 로
+  // 1999년 등록분이 앞으로 온다). 접미사(`:asc`/`:desc`)와 `@relevance` 도 받는다.
+  sort: { supported: true, scope: '정렬 키를 API 에 그대로 넘긴다. 모르는 키는 업스트림이 400 으로 되돌린다' },
   limits: { maxPageSize: 200, ratePerSec: 1, maxBatchIds: 50 },
 };
 

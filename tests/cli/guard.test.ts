@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CTGOV_CAPABILITY } from '../../src/adapters/ctgov/adapter.js';
+import { ICTRP_CAPABILITY } from '../../src/adapters/ictrp/adapter.js';
+import { ISRCTN_CAPABILITY } from '../../src/adapters/isrctn/adapter.js';
 import { applyLimits, assertSupported, usedSearchAxes, zeroResultScope } from '../../src/cli/guard.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import { CAPS, type FetchOpts, type NormalizedQuery } from '../../src/core/query.js';
@@ -304,5 +306,64 @@ describe('레지스트리별 페이지 크기 상한', () => {
     const r = applyLimits(strict, original);
     expect(original.pageSize).toBe(200);
     expect(r.query).not.toBe(original);
+  });
+});
+
+/**
+ * 실측 2026-08-28: `--sort` 를 검사하는 것이 아무 데도 없었다. 어댑터 셋 중 그것을
+ * 업스트림에 실어 보내는 것은 ctgov 뿐인데(`src/adapters/ctgov/query.ts`), 나머지 둘은
+ * **조용히 무시했다** — exit 0, 경고 없음, 결과는 포털이 준 순서 그대로.
+ *
+ *   ctreg search --condition diabetes --registry ictrp --sort LastUpdatePostDate
+ *     → rc=0, status ok, 경고 없음. 사용자는 정렬된 목록을 봤다고 믿는다.
+ *
+ * 정렬이 무시된 목록의 앞 몇 건을 보고 판단하면 그 판단이 조용히 틀린다. 축 미지원과
+ * 같은 부류이므로 같은 exit 3 으로 막는다.
+ */
+describe('정렬을 받지 않는 레지스트리에 --sort 를 걸면', () => {
+  it('조용히 무시하지 않고 exit 3 으로 막는다', () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, sort: { supported: false, scope: '정렬을 받지 않는다' } };
+    try {
+      assertSupported(cap, { pageSize: 10, sort: 'LastUpdatePostDate' }, fetchOpts);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const err = e as CtregError;
+      expect(err.exit).toBe(EXIT.UNSUPPORTED);
+      expect(err.message).toContain('sort');
+    }
+  });
+
+  it('정렬을 받는 레지스트리에서는 그대로 통과한다', () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, sort: { supported: true, scope: '정렬 키를 그대로 보낸다' } };
+    expect(() => assertSupported(cap, { pageSize: 10, sort: 'LastUpdatePostDate' }, fetchOpts)).not.toThrow();
+  });
+
+  it('--sort 를 아예 안 주면 정렬 미지원이어도 통과한다', () => {
+    const cap: Capability = { ...CTGOV_CAPABILITY, sort: { supported: false, scope: '정렬을 받지 않는다' } };
+    expect(() => assertSupported(cap, { pageSize: 10 }, fetchOpts)).not.toThrow();
+  });
+});
+
+/**
+ * 이 저장소는 라틴 토큰 뒤에 한국어 조사를 붙이지 않기로 했다 — 붙이면 이름마다
+ * 맞는 조사가 달라 반드시 하나는 틀린다. 실측 2026-08-28: `${cap.name} 은 …` 이
+ * "ISRCTN 은"(맞음)과 "WHO ICTRP 은"(틀림, '는' 이어야 한다)을 동시에 냈다.
+ *
+ * 문구를 고칠 때 다시 들어오기 쉬우므로 검사로 막는다.
+ */
+describe('레지스트리 이름 뒤에 조사를 붙이지 않는다', () => {
+  it('세 어댑터 모두에서 미지원 메시지가 조사로 이어지지 않는다', () => {
+    for (const adapter of [CTGOV_CAPABILITY, ISRCTN_CAPABILITY, ICTRP_CAPABILITY]) {
+      const cap: Capability = { ...adapter, sort: { supported: false, scope: '정렬을 받지 않는다' } };
+      try {
+        assertSupported(cap, { pageSize: 10, sort: 'x' }, fetchOpts);
+        expect.unreachable('던져야 한다');
+      } catch (e) {
+        const msg = (e as CtregError).message;
+        expect(msg.startsWith(cap.name)).toBe(true);
+        // 이름 바로 뒤에 오는 글자가 조사면 안 된다.
+        expect(msg.slice(cap.name.length, cap.name.length + 2)).not.toMatch(/^ [은는이가을를로]/);
+      }
+    }
   });
 });

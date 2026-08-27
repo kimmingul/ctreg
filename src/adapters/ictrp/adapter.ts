@@ -75,6 +75,8 @@ export const ICTRP_CAPABILITY: Capability = {
       '아니라 세는 대상이 다른 것이고, ICTRP 가 둘을 합쳐 주지 않으므로 이 도구도 합치지 않는다',
   },
   results: { supported: false, scope: '구조화된 결과 데이터를 싣지 않는다' },
+  // 포털은 자기 순서로만 낸다. 정렬 키를 보낼 자리가 없으므로 미지원으로 신고한다.
+  sort: { supported: false, scope: '결과는 포털 화면이 준 순서 그대로다' },
   limits: { maxPageSize: 10, ratePerSec: 1, maxBatchIds: 10 },
 };
 

@@ -95,6 +95,20 @@ export const CapabilitySchema = z.strictObject({
   }),
   results: FeatureSchema,
   count: FeatureSchema,
+  /**
+   * `--sort` 를 **업스트림까지 실어 보내는가.**
+   *
+   * 왜 신고가 필요한가(실측 2026-08-28) — 셋 중 ctgov 만 정렬 키를 보내고 나머지 둘은
+   * 조용히 무시했다. exit 0, 경고 없음, 결과는 업스트림 기본 순서. 정렬된 줄 알고 앞
+   * 몇 건만 보고 판단하면 그 판단이 조용히 틀린다. 검색 축 미지원과 같은 부류다.
+   *
+   * `values` 를 두지 않는 것은 **받는 키 목록을 실측하지 못했기 때문이다.** ctgov 는
+   * `LastUpdatePostDate` · `EnrollmentCount:desc` · `@relevance` 처럼 접미사까지 받고,
+   * 전체 목록은 문서에도 확정적으로 나와 있지 않다. 모르는 것을 닫힌 어휘로 적으면
+   * 실제로 되는 정렬을 ctreg 가 막는다 — 그래서 값은 그대로 보내고, 틀린 키는 업스트림이
+   * 400 으로 되돌린다(exit 4, "Unknown sort field"). **소리는 나므로 조용한 실패가 아니다.**
+   */
+  sort: FeatureSchema,
   limits: z.strictObject({
     maxPageSize: z.number(),
     ratePerSec: z.number(),

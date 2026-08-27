@@ -93,6 +93,8 @@ export const ISRCTN_CAPABILITY: Capability = {
     scope: 'ISRCTN 의 결과는 논문 링크와 첨부 PDF 다 — TrialResults 가 요구하는 구조화된 평가변수·이상반응·참가자 흐름·기저 특성이 아니다',
   },
   count: { supported: true, scope: 'default 포맷의 limit=0 응답에서 총계만 읽는다' },
+  // 이 어댑터는 정렬 키를 보내지 않는다. 조용히 무시하는 대신 신고해서 exit 3 이 되게 한다.
+  sort: { supported: false, scope: '결과는 업스트림이 준 순서 그대로다' },
   limits: {
     maxPageSize: CAPS.pageSize.max,
     // API 문서가 명시적으로 요청한다 — 큰 질의는 쪼개고, 병렬화하지 말고 순차로.
