@@ -161,3 +161,84 @@ describe('출력 봉투', () => {
     ).toBe(EXIT.UPSTREAM);
   });
 });
+
+/**
+ * 실측 2026-08-28: `get <ID> --include all --format text` 가 `--include core` 와
+ * **글자 하나 다르지 않은 출력** 을 냈다. 적격 기준·결과지표·연락처를 받아 오고도
+ * 화면에는 ID·상태·제목뿐이었고, 무엇이 빠졌다는 신호도 없었다. 심지어
+ * `eligibility_truncated` 경고는 나왔다 — 사용자가 본 적 없는 것이 잘렸다는 경고다.
+ *
+ * 요청한 것이 조용히 사라지는 부류라 고친다. 텍스트는 사람이 읽는 형식이므로 JSON 을
+ * 그대로 쏟지 않고, **레코드에 실제로 있는 것만** 한 줄씩 낸다.
+ */
+describe('text 는 받아 온 것을 버리지 않는다', () => {
+  const rich: Envelope = {
+    query: { ids: ['CTGOV:NCT1'] },
+    registries: [{ registry: 'ctgov', status: 'ok', returned: 1 }],
+    warnings: [],
+    data: [
+      {
+        id: 'CTGOV:NCT1',
+        title: '어떤 시험',
+        status: 'recruiting',
+        phase: ['phase_2'],
+        studyType: 'interventional',
+        conditions: ['폐암', '고형암'],
+        interventions: [{ type: 'DRUG', name: '약물 A' }],
+        sponsor: { lead: '어떤 기관' },
+        enrollment: { count: 22, basis: 'actual' },
+        dates: { start: '2020-03-16', completion: '2027-01-01' },
+        locations: [{ facility: '어떤 병원', city: '서울', country: 'Korea, Republic of' }],
+        locationsTotal: 11,
+        eligibility: { minAge: '18 Years', sex: 'all', criteriaText: '포함기준: 만 18세 이상', criteriaTruncated: true },
+        outcomes: [{ type: 'primary', measure: '전체생존', timeFrame: '5년' }],
+        outcomesTotal: 9,
+        url: 'https://example.org/NCT1',
+      },
+    ],
+  };
+
+  const out = () => render(rich, 'text');
+
+  it('핵심 필드를 화면에 낸다', () => {
+    const t = out();
+    for (const must of ['어떤 시험', 'recruiting', 'phase_2', '폐암', '약물 A', '어떤 기관']) {
+      expect(t, `'${must}' 가 텍스트 출력에 없습니다`).toContain(must);
+    }
+  });
+
+  it('--include 로 받아 온 섹션도 낸다', () => {
+    const t = out();
+    expect(t).toContain('18 Years');
+    expect(t).toContain('전체생존');
+  });
+
+  /**
+   * 잘렸다는 경고(`eligibility_truncated`)는 나오는데 정작 그 기준문이 화면에 없으면,
+   * 사용자는 **본 적 없는 것이 잘렸다는 경고** 를 읽는다. 둘 중 하나는 고쳐야 한다.
+   */
+  it('적격 기준문을 내고, 잘렸으면 잘렸다고 표시한다', () => {
+    const t = out();
+    expect(t).toContain('포함기준: 만 18세 이상');
+    expect(t).toMatch(/잘림|…/);
+  });
+
+  it('전체 중 일부만 실었다는 사실을 숨기지 않는다', () => {
+    const t = out();
+    // 기관 11곳 중 1곳, 결과지표 9개 중 1개만 실려 있다. 목록만 보여주면 그것이 전부로 읽힌다.
+    expect(t).toContain('11');
+    expect(t).toContain('9');
+  });
+
+  it('없는 필드는 빈 줄이나 undefined 로 새지 않는다', () => {
+    const bare: Envelope = { ...rich, data: [{ id: 'CTGOV:NCT2', title: '제목만', status: 'completed' }] };
+    const t = render(bare, 'text');
+    expect(t).not.toContain('undefined');
+    expect(t).not.toContain('null');
+    expect(t).toContain('제목만');
+  });
+
+  it('JSON 을 그대로 쏟지 않는다 — 사람이 읽는 형식이다', () => {
+    expect(out()).not.toContain('"locationsTotal"');
+  });
+});
