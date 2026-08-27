@@ -258,3 +258,47 @@ describe('ICTRP 어댑터 — nextPageToken 은 갈 수 있는 곳만 가리킨�
     expect(r.warnings.some((w) => w.code === 'pagination_depth_limit')).toBe(true);
   });
 });
+
+/**
+ * **페이지가 무엇 위를 걷는가.** ICTRP 화면은 두 수를 낸다 — 실측 2026-08-28:
+ * `593 records for 383 trials`. 본 그리드는 한 쪽에 **시험** 열 개를 싣고(같은 시험의
+ * 다른 등록은 접히는 패널 안에 들어간다), 그래서 페이지는 **시험** 위를 걷는다.
+ *
+ * 페이지 경계를 `records` 로 재면 있지도 않은 페이지가 남은 것처럼 보인다. 593/10 은
+ * 60 쪽인데 실제로는 383/10 = 39 쪽뿐이다. 마지막 쪽에서 토큰이 끊길 때 나오는 경고가
+ * "593건 중 39페이지까지만" 이라고 말하면, **다 받은 사용자에게 아직 남았다고 거짓말** 한다.
+ *
+ * (이 어긋남은 파서를 고치기 전에는 드러나지 않았다. 그때는 한 쪽이 패널 속 등록까지
+ * 섞어 16행쯤을 냈고, 그 합이 우연히 `records` 에 가까웠다.)
+ */
+describe('ICTRP 페이지는 레코드가 아니라 시험 위를 걷는다', () => {
+  /** 레코드는 많고 시험은 한 쪽에 다 들어가는 결과 페이지. 페이저 링크는 있다. */
+  function recordsExceedTrialsHtml(): string {
+    const rows = Array.from(
+      { length: 10 },
+      (_, i) => `<tr><td>Recruiting</td><td></td>` +
+        `<td><span id="ctl00_ContentPlaceHolder1_GridViewSearch_ctl${String(i + 2).padStart(2, '0')}_Label1">` +
+        `<a href="Trial2.aspx?TrialID=TEST${i}">합성 시험 ${i}</a></span></td><td>2026-01-01</td></tr>`,
+    ).join('\n');
+    const link =
+      `<a href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;` +
+      `ctl00$ContentPlaceHolder1$dlPager2$ctl01$lnkPageNo&quot;, &quot;&quot;))">2</a>`;
+    // 시험 10개가 1쪽에 다 들어간다. 레코드는 100개다(같은 시험의 여러 등록).
+    return `<html><body><span>100 records for 10 trials found!</span><table>${rows}</table>${link}</body></html>`;
+  }
+
+  it('시험이 한 쪽에 다 들어가면 레코드가 남아 있어도 토큰을 내지 않는다', async () => {
+    const adapter = createIctrpAdapter(cfg(), {
+      fetchImpl: stub(recordsExceedTrialsHtml()),
+      sleep: async () => {},
+    });
+    const r = await adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts);
+
+    expect(r.total).toBe(10);
+    expect(r.data).toHaveLength(10);
+    // 2쪽 링크가 화면에 있어도, 걸어야 할 시험이 더 없으면 데려갈 곳이 없다.
+    expect(r.nextPageToken).toBeUndefined();
+    // 다 받았으므로 "아직 남았는데 못 간다" 는 경고도 나오면 안 된다.
+    expect(r.warnings.map((w) => w.code)).not.toContain('pagination_depth_limit');
+  });
+});

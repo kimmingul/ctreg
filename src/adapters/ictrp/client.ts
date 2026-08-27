@@ -68,9 +68,9 @@ export function makeClient(cfg: Config, ratePerSec: number, deps: HttpDeps = {})
       warnings: Warning[];
       raw: string;
       /**
-       * 이 화면에서 **다음 페이지로 갈 수 있는가.** 남은 레코드가 있느냐와는 다른 질문이고
-       * (그건 `page.records` 가 답한다), 어댑터가 `nextPageToken` 을 만들지 말지를 이걸로
-       * 정한다 — 아래 페이저 창 설명 참고.
+       * 이 화면에서 **다음 페이지로 갈 수 있는가.** 걸어야 할 시험이 남았느냐와는 다른
+       * 질문이고(그건 `page.trials` 가 답한다 — 페이지는 시험 위를 걷는다), 어댑터가
+       * `nextPageToken` 을 만들지 말지를 둘을 함께 보고 정한다 — 아래 페이저 창 설명 참고.
        */
       nextPageReachable: boolean;
     }> {

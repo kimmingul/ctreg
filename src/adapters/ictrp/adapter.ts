@@ -70,9 +70,10 @@ export const ICTRP_CAPABILITY: Capability = {
   count: {
     supported: true,
     scope: '같은 시험의 여러 등록을 묶은 뒤의 **시험 수** 다. 결과 화면은 두 수를 함께 내는데' +
-      '(예: 40,635 records for 36,264 trials) 이 값은 뒤쪽이고 **페이지는 앞쪽(레코드) 위를 걷는다** — ' +
-      '그래서 페이지별 건수를 끝까지 더하면 이 수보다 많아진다(실측 약 12%). 어느 쪽도 틀린 수가 ' +
-      '아니라 세는 대상이 다른 것이고, ICTRP 가 둘을 합쳐 주지 않으므로 이 도구도 합치지 않는다',
+      '(예: 593 records for 383 trials) 이 값은 뒤쪽이고 **페이지도 뒤쪽(시험) 위를 걷는다** — ' +
+      '본 그리드가 한 쪽에 시험 열 개를 싣고 같은 시험의 다른 등록은 접히는 패널 안으로 들어가기 ' +
+      '때문이다. 그래서 페이지별 건수를 끝까지 더하면 이 수와 같다. 앞쪽(레코드) 수는 이 도구가 ' +
+      '어디에도 쓰지 않는다',
   },
   results: { supported: false, scope: '구조화된 결과 데이터를 싣지 않는다' },
   // 포털은 자기 순서로만 낸다. 정렬 키를 보낼 자리가 없으므로 미지원으로 신고한다.
@@ -133,17 +134,28 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
        * 요청한 것과 다른 페이지를 받는다(client.ts 참고). 잘못된 곳으로 데려가는 토큰은
        * 없는 토큰보다 나쁘다.
        */
-      const moreRecords = page * pageSize < res.page.records;
-      const nextPageToken = moreRecords && res.nextPageReachable ? String(page + 1) : undefined;
+      /**
+       * **`trials` 로 잰다, `records` 가 아니라.** 본 그리드는 한 쪽에 시험 열 개를 싣고
+       * 같은 시험의 다른 등록은 접히는 패널 안으로 들어간다 — 그래서 페이지는 **시험**
+       * 위를 걷는다. 실측 2026-08-28: `593 records for 383 trials` 인 질의의 마지막 쪽은
+       * 39 쪽이다(593/10 = 60 이 아니라 383/10 = 39).
+       *
+       * `records` 로 재면 다 받은 사용자에게 "593건 중 39페이지까지만" 이라고 말하게 된다 —
+       * 남은 것이 없는데 남았다고 하는 거짓말이다. 파서가 패널 속 등록까지 행으로 세던
+       * 때에는 한 쪽이 16행쯤이어서 그 합이 우연히 `records` 에 가까웠고, 그래서 이
+       * 어긋남이 드러나지 않았다.
+       */
+      const morePages = page * pageSize < res.page.trials;
+      const nextPageToken = morePages && res.nextPageReachable ? String(page + 1) : undefined;
 
       const warnings: Warning[] = [...res.warnings];
-      if (moreRecords && !res.nextPageReachable) {
+      if (morePages && !res.nextPageReachable) {
         // 토큰을 그냥 빼기만 하면 "이게 전부다" 로 읽힌다 — 남은 게 있는데 여기서
         // 멈춘다는 사실 자체를 말한다. 종료 코드는 바꾸지 않는다(오류가 아니다).
         warnings.push({
           code: 'pagination_depth_limit',
           message:
-            `${res.page.records}건 중 ${page}페이지까지만 넘길 수 있습니다 — ` +
+            `시험 ${res.page.trials}건 중 ${page}페이지까지만 넘길 수 있습니다 — ` +
             'WHO ICTRP 는 커서를 주지 않고 결과 화면의 페이저 링크로만 페이지를 넘기는데, ' +
             '그 화면이 여기서 다음 페이지 링크를 내지 않았습니다. 질의를 더 좁혀 나눠 조회하세요.',
           at: page,
