@@ -24,11 +24,17 @@ function pipeThroughHead(): Promise<{ code: number | null; stderr: string }> {
   });
 }
 
-/** 빌드 산출물을 파이프 없이 직접 띄워 ctreg 자신의 종료 코드를 잡는다. */
-function runBare(args: readonly string[]): Promise<number | null> {
+/**
+ * 빌드 산출물을 파이프 없이 직접 띄워 ctreg 자신의 종료 코드를 잡는다.
+ *
+ * `stderr` 도 함께 돌려주는 이유: `dist/` 가 반쯤 쓰인 상태였다면 node 가 모듈 로드에
+ * 실패해 **ctreg 의 종료 코드가 아니라 1** 이 나온다. 그때 "expected 1 to be 3" 만 보면
+ * 원인을 알 수 없다 — 실제로 그 모양으로 세 번 놓쳤다(tests/dist-guard.ts).
+ */
+function runBare(args: readonly string[]): Promise<{ code: number | null; stderr: string }> {
   return new Promise((resolve) => {
-    const child = execFile('node', [BIN, ...args], () => {
-      resolve(child.exitCode);
+    const child = execFile('node', [BIN, ...args], (_e, _o, stderr) => {
+      resolve({ code: child.exitCode, stderr });
     });
   });
 }
@@ -37,14 +43,17 @@ function runBare(args: readonly string[]): Promise<number | null> {
  * 빌드 산출물을 `| head -c N` 뒤에서 띄워 파이프를 조기에 닫되, `head` 가 아니라
  * ctreg 자신의 종료 코드를 `PIPESTATUS`(bash 전용, `sh` 의 POSIX 모드에는 없다)로 잡는다.
  */
-function runPiped(args: readonly string[], headBytes = 10): Promise<number | null> {
+function runPiped(
+  args: readonly string[],
+  headBytes = 10,
+): Promise<{ code: number | null; stderr: string }> {
   return new Promise((resolve) => {
     const quoted = args.map((a) => `'${a.replace(/'/g, `'\\''`)}'`).join(' ');
     const child = execFile(
       'bash',
       ['-c', `node ${BIN} ${quoted} | head -c ${headBytes} >/dev/null; exit \${PIPESTATUS[0]}`],
-      () => {
-        resolve(child.exitCode);
+      (_e, _o, stderr) => {
+        resolve({ code: child.exitCode, stderr });
       },
     );
   });
@@ -69,8 +78,12 @@ describe('출력 파이프가 일찍 닫힐 때', () => {
     ] as const) {
       const direct = await runBare(args);
       const piped = await runPiped(args);
-      expect(direct).toBe(expected);
-      expect(piped).toBe(expected);
+      // 깨진 `dist/` 는 ctreg 의 코드가 아니라 node 의 1 을 낸다 — "expected 1 to be 3" 만
+      // 보면 원인을 알 수 없다. 그 경우를 먼저 이름 붙인다.
+      assertDistLoadable(direct.stderr);
+      assertDistLoadable(piped.stderr);
+      expect(direct.code).toBe(expected);
+      expect(piped.code).toBe(expected);
     }
   });
 
@@ -82,7 +95,9 @@ describe('출력 파이프가 일찍 닫힐 때', () => {
     const ids = Array.from({ length: 6000 }, (_, i) => `NOSUCHID${i}`);
     const direct = await runBare(['get', ...ids]);
     const piped = await runPiped(['get', ...ids]);
-    expect(direct).toBe(2);
-    expect(piped).toBe(2);
+    assertDistLoadable(direct.stderr);
+    assertDistLoadable(piped.stderr);
+    expect(direct.code).toBe(2);
+    expect(piped.code).toBe(2);
   }, 15000);
 });
