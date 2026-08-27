@@ -416,3 +416,40 @@ describe('--radius 는 양수여야 한다', () => {
     expect(a.query.radius).toEqual({ value: 0.5, unit: 'km' });
   });
 });
+
+/**
+ * Node `parseArgs` 의 오류 문구가 그대로 새어 나왔다 — 한국어 CLI 에서 영어 원문이고,
+ * 안내가 이 상황에 맞지도 않는다. 실측 2026-08-28:
+ *
+ *   --nosuchopt → "Unknown option '--nosuchopt'. To specify a positional argument
+ *                  starting with a '-', place it at the end ... after '--'"
+ *     오타를 낸 사람에게 위치 인자를 `--` 뒤에 두라고 한다. 시킨 대로 하면 더 헤맨다.
+ *   --condition (값 없이) → "Option '--condition <value>' argument missing"
+ *
+ * 이 CLI 는 오류도 사람이 읽고 행동할 수 있어야 한다는 규칙으로 돌아간다.
+ */
+describe('파서 오류를 영어 원문으로 흘리지 않는다', () => {
+  const messageOf = (argv: string[]): string => {
+    try {
+      parseCliArgs(argv);
+      return '';
+    } catch (e) {
+      const err = e as CtregError;
+      expect(err.exit).toBe(EXIT.USAGE);
+      return `${err.message} ${err.hint ?? ''}`;
+    }
+  };
+
+  it('모르는 옵션은 한국어로 말하고, 위치 인자 이야기를 꺼내지 않는다', () => {
+    const m = messageOf(['search', '--nosuchopt']);
+    expect(m).toContain('--nosuchopt');
+    expect(m).not.toContain('positional argument');
+    expect(m).toMatch(/모르는|없는/);
+  });
+
+  it('값이 빠진 옵션도 한국어로 말한다', () => {
+    const m = messageOf(['search', '--condition']);
+    expect(m).toContain('--condition');
+    expect(m).not.toContain('argument missing');
+  });
+});

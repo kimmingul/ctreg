@@ -241,6 +241,27 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
      * 원문을 지우지 않고 **덧붙인다** — 어떤 옵션이 문제인지는 원문이 이미 말한다.
      */
     const raw = (cause as Error).message;
+
+    const unknown = /Unknown option '(--?[^']+)'/.exec(raw);
+    if (unknown !== null) {
+      /**
+       * 원문은 "positional argument 를 `--` 뒤에 두라" 고 안내한다. 그건 이 상황이
+       * 아니다 — 거의 언제나 오타이고, 시킨 대로 하면 더 헤맨다. 쓸 수 있는 이름을 준다.
+       */
+      throw usageError(
+        `모르는 옵션입니다: '${unknown[1]!}'`,
+        `이 커맨드가 받는 옵션은 ctreg ${(COMMANDS as readonly string[]).includes(argv[0] ?? '') ? `${argv[0]} ` : ''}--help 로 확인하세요.`,
+      );
+    }
+
+    const missing = /Option '(--?[^ ']+)[^']*' argument missing/.exec(raw);
+    if (missing !== null) {
+      throw usageError(
+        `${missing[1]!} 에 값이 없습니다`,
+        `${missing[1]!} <값> 처럼 값을 함께 주세요. 값이 대시로 시작하면 등호로 붙이세요(${missing[1]!}=-1).`,
+      );
+    }
+
     const ambiguous = /Option '(--[a-z-]+)' argument is ambiguous/.exec(raw);
     if (ambiguous !== null) {
       const opt = ambiguous[1]!;
