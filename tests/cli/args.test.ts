@@ -383,3 +383,36 @@ describe('--near 는 지구에 있는 좌표만 받는다', () => {
     }
   });
 });
+
+/**
+ * 실측 2026-08-28: `--radius 0km` 이 ctgov 에서 500 을 냈고, `runtime/http.ts` 가 그것을
+ * **세 번 재시도** 한 뒤 exit 4 로 끝났다. 반경 0 은 사용자가 고쳐야 하는 입력이지
+ * 레지스트리 장애가 아니다 — 재시도는 그 시간만큼 사용자를 기다리게 하고 업스트림에
+ * 부담을 준다. 좌표·날짜와 같은 이유로 보내기 전에 막는다.
+ *
+ * 음수는 파서가 이미 막지만 문구가 "단위가 필요합니다" 였다 — 단위는 있었고 부호가
+ * 문제였다. 틀린 진단은 없는 것보다 나쁘다.
+ */
+describe('--radius 는 양수여야 한다', () => {
+  it('0 은 사용법 오류다 — 업스트림을 재시도로 두들기지 않는다', () => {
+    expectUsage(() => parseCliArgs(['search', '--near=37.5,127.0', '--radius', '0km']), '--radius');
+    expectUsage(() => parseCliArgs(['search', '--near=37.5,127.0', '--radius', '0mi']), '--radius');
+    expectUsage(() => parseCliArgs(['search', '--near=37.5,127.0', '--radius', '0.0km']), '--radius');
+  });
+
+  it('음수는 단위 탓으로 진단하지 않는다', () => {
+    try {
+      parseCliArgs(['search', '--near=37.5,127.0', '--radius=-5km']);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const err = e as CtregError;
+      expect(err.exit).toBe(EXIT.USAGE);
+      expect(`${err.message} ${err.hint ?? ''}`).not.toContain('단위가 필요');
+    }
+  });
+
+  it('양수는 그대로 통과한다', () => {
+    const a = parseCliArgs(['search', '--near=37.5,127.0', '--radius', '0.5km']);
+    expect(a.query.radius).toEqual({ value: 0.5, unit: 'km' });
+  });
+});

@@ -362,14 +362,29 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   }
   let radius: { value: number; unit: 'km' | 'mi' } | undefined;
   if (v.radius) {
-    const m = v.radius.match(/^(\d+(?:\.\d+)?)(km|mi)$/i);
+    const m = v.radius.match(/^(-?\d+(?:\.\d+)?)(km|mi)$/i);
     if (!m) {
       throw usageError(
         `--radius 는 단위가 필요합니다: '${v.radius}'`,
         '접미사가 없으면 업스트림이 미터로 읽습니다. 예: 100km, 50mi',
       );
     }
-    radius = { value: Number(m[1]), unit: m[2]!.toLowerCase() as 'km' | 'mi' };
+    /**
+     * 0 과 음수를 여기서 막는다. 실측 2026-08-28: `--radius 0km` 은 ctgov 에서 500 이
+     * 나고 `runtime/http.ts` 가 **세 번 재시도** 한 뒤 exit 4 로 끝났다 — 사용자가 고쳐야
+     * 하는 입력인데 레지스트리 장애처럼 보였고, 그 시간만큼 기다리게 했다.
+     *
+     * 음수는 위 정규식이 부호를 받게 바꾼 뒤에 여기로 온다. 이전에는 정규식이 튕겨서
+     * "단위가 필요합니다" 가 나왔는데 — 단위는 있었고 부호가 문제였다. 틀린 진단이다.
+     */
+    const value = Number(m[1]);
+    if (!(value > 0)) {
+      throw usageError(
+        `--radius 는 0 보다 커야 합니다: '${v.radius}'`,
+        '반경 0 은 어떤 시험도 담지 못하고, 음수는 뜻이 없습니다. 예: 100km, 50mi',
+      );
+    }
+    radius = { value, unit: m[2]!.toLowerCase() as 'km' | 'mi' };
   }
   if (radius && !near) throw usageError('--radius 는 --near 없이 쓸 수 없습니다', '--near <lat,lon> 으로 중심 좌표를 주세요.');
 
