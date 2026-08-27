@@ -488,10 +488,31 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         if (!declared.supported || declared.values !== null) continue;
 
         const { adapter, requests } = ok();
+        /**
+         * **던지는 것도 실패로 센다.** 처음엔 던짐을 건너뛰게 썼는데, 그것이 잡아야 할
+         * 바로 그 실패를 삼켰다 — isrctn 의 `investigator` 신고를 거짓으로 켜면 질의
+         * 조립기가 이 축으로 절을 하나도 만들지 못해 "검색 조건이 적어도 하나 필요합니다"
+         * 로 던진다. 그 던짐이 **축이 아무것도 기여하지 않았다는 증거** 다.
+         */
         try {
           await adapter.search({ [field]: PROBE, pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
-        } catch {
-          // 축이 던지는 것도 "조용히 무시" 가 아니므로 이 검사의 관심사가 아니다.
+        } catch (e) {
+          /**
+           * 던짐에도 두 종류가 있다. **값을 검사해서 거절한 것** 은 정당하다 — ictrp 의
+           * `location` 은 모르는 나라 이름을 exit 3 으로 막는데, 그건 조용한 실패가 아니라
+           * 그 반대다. **축이 아무것도 기여하지 못해서 난 것** 만이 결함이다.
+           *
+           * 축을 빼고 같은 호출을 해 본다. 그때도 같은 자리에서 터지면 그 던짐은 값 때문이
+           * 아니다 — 축이 절을 하나도 만들지 못한 것이고, 그것이 우리가 찾는 실패다.
+           */
+          const bare = ok();
+          let bareThrew = false;
+          try {
+            await bare.adapter.search({ pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
+          } catch {
+            bareThrew = true;
+          }
+          if (bareThrew) missing.push(`${axis}(축이 질의에 아무것도 더하지 못함: ${(e as Error).message.slice(0, 40)})`);
           continue;
         }
         if (!requests.some((r) => `${r.url} ${r.body}`.includes(PROBE))) missing.push(axis);
