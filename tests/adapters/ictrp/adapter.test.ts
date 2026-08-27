@@ -255,7 +255,15 @@ describe('ICTRP 어댑터 — nextPageToken 은 갈 수 있는 곳만 가리킨�
     expect(r.total).toBe(36264);
     expect(r.nextPageToken).toBeUndefined();
     // 침묵으로 끝내면 "이게 전부" 로 읽힌다 — 왜 여기서 멈췄는지는 말해야 한다.
-    expect(r.warnings.some((w) => w.code === 'pagination_depth_limit')).toBe(true);
+    const depth = r.warnings.find((w) => w.code === 'pagination_depth_limit');
+    expect(depth).toBeDefined();
+    /**
+     * **어느 수를 말하는지가 중요하다.** 페이지는 시험 위를 걷는다 — 남은 쪽을 세는
+     * 것도 시험 수(36,264)여야 하고, 레코드 수(40,635)를 말하면 사용자가 실제보다 훨씬
+     * 많이 놓친 것으로 읽는다. 이 픽스처는 두 수가 다르므로 그 차이가 드러난다.
+     */
+    expect(depth?.message).toContain('36264');
+    expect(depth?.message).not.toContain('40635');
   });
 });
 
