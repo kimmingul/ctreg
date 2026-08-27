@@ -34,7 +34,23 @@ describe('ICTRP 질의 조립', () => {
     expect(values(f, FIELD.title)).toEqual(['t']);
     expect(values(f, FIELD.sponsor)).toEqual(['s']);
     expect(values(f, FIELD.secondaryId)).toEqual(['x']);
-    expect(values(f, FIELD.country)).toEqual(['Korea']);
+    // 나라는 여기 없다 — 아래 검사가 그 이유를 말한다.
+  });
+
+  /**
+   * 나라는 **`buildForm` 이 다루지 않는다.** 필터를 실제로 거는 것은 `butAdd` 왕복이
+   * 채우는 `lstCountriesSelected` 이고, 그 왕복은 `client.ts` 가 한다(실측: 왕복 없이
+   * `txtFreeCountry` 만 채우면 무필터 기준선이 나온다).
+   *
+   * 여기서 또 싣지 않는 이유가 두 가지다. 하나는 중복이고, 다른 하나가 더 중요하다:
+   * `buildForm` 은 **사용자가 친 원문** 을 갖고 있고 클라이언트는 포털 목록에 맞춰
+   * **정규화한 표기** 를 갖고 있다. 둘을 다 실으면 `japan` 과 `Japan` 이 한 요청에
+   * 섞여 나간다 — 지금은 무해하지만 어느 쪽이 이기는지 아무도 재지 않았다.
+   */
+  it('나라는 싣지 않는다 — 필터를 거는 것은 client 의 butAdd 왕복이다', () => {
+    const names = buildForm({ condition: 'c', location: 'Japan' }, 20).map(([n]) => n);
+    expect(names).not.toContain(FIELD.country);
+    expect(names).not.toContain(FIELD.countrySelected);
   });
 
   it('쓰지 않은 축은 키를 만들지 않는다 — 빈 문자열도 서버에는 입력이다', () => {

@@ -60,17 +60,15 @@ export function buildForm(q: NormalizedQuery, pageSize: number): [string, string
   put(FIELD.sponsor, q.lead);
   put(FIELD.secondaryId, q.id);
   /**
-   * **이 줄은 아무 효과가 없다.** `txtFreeCountry` 는 입력칸일 뿐이고, 그 값이 실제 필터인
-   * `lstCountriesSelected` 로 옮겨지려면 `butAdd` postback 이 따로 필요한데 이 어댑터는
-   * 그것을 하지 않는다. 실측(2026-08-26): 나라 셋을 각각 걸어도 세 번 다 필터를 안 건
-   * 기준선(1,148,325건)과 같은 수가 나왔다. 그래서 `location` 축은 `supported: false` 다
-   * (adapter.ts) — 즉 여기까지 값이 내려올 일 자체가 없다.
+   * **나라는 여기서 다루지 않는다.** 필터를 실제로 거는 것은 `butAdd` 왕복이 채우는
+   * `lstCountriesSelected` 이고, 그 왕복은 `client.ts` 가 한다 — 텍스트 상자만 채운
+   * 검색은 무필터 결과를 낸다(실측 2026-08-26: 나라 셋이 전부 기준선과 같은 수).
    *
-   * 그래도 줄을 남기는 것은 `butAdd` 왕복을 구현할 때 필드 이름을 다시 찾지 않기 위해서다.
-   * 축을 다시 켜려면 **먼저 필터가 실제로 좁히게 만들고 실측으로 증명해야 한다** — 이 줄만
-   * 있으면 되는 것처럼 보이지만, 이 줄만으로는 조용히 전 세계를 돌려주는 축이 된다.
+   * 한때 이 자리에 `put(FIELD.country, q.location)` 이 있었다. 축을 되살린 뒤에는 그 줄이
+   * 해롭지는 않아도 **틀린 값을 실을 수 있다**: 이 함수는 사용자가 친 원문을 갖고 있고
+   * 클라이언트는 포털 목록에 맞춰 정규화한 표기를 갖고 있어, 둘을 다 실으면 `japan` 과
+   * `Japan` 이 한 요청에 섞인다. 어느 쪽이 이기는지 아무도 재지 않았으므로 한 곳만 싣는다.
    */
-  put(FIELD.country, q.location);
 
   /**
    * `ListBoxPhase` 는 다중 선택 컨트롤이다. 두 개 이상을 고르려면 **같은 키를
