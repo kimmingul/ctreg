@@ -233,7 +233,25 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   try {
     parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
   } catch (cause) {
-    throw usageError((cause as Error).message, USAGE);
+    /**
+     * Node 의 parseArgs 는 대시로 시작하는 **값** 을 옵션으로 본다. 그래서 남반구 좌표
+     * (`--near -33.8,151.2` — 시드니·상파울루·부에노스아이레스·케이프타운)가 통째로
+     * 막혔고, 안내는 영어 원문이었으며 해법(`--near=…`)은 이 CLI 사용법 어디에도 없었다.
+     *
+     * 원문을 지우지 않고 **덧붙인다** — 어떤 옵션이 문제인지는 원문이 이미 말한다.
+     */
+    const raw = (cause as Error).message;
+    const ambiguous = /Option '(--[a-z-]+)' argument is ambiguous/.exec(raw);
+    if (ambiguous !== null) {
+      const opt = ambiguous[1]!;
+      const given = argv[argv.indexOf(opt) + 1] ?? '<값>';
+      throw usageError(
+        `${opt} 의 값이 대시로 시작해서 옵션으로 읽혔습니다: '${given}'`,
+        `등호로 붙여 주세요: ${opt}=${given}` +
+          (opt === '--near' ? ' — 위도가 음수인 남반구 좌표가 여기 걸립니다.' : ''),
+      );
+    }
+    throw usageError(raw, USAGE);
   }
   const v = parsed.values;
   const [command, ...positionals] = parsed.positionals;
@@ -330,6 +348,17 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
       );
     }
     near = { lat: Number(m[1]), lon: Number(m[2]) };
+    /**
+     * 지구에 없는 좌표를 그대로 보내면 ctgov 가 400 을 낸다 — exit 4. 사용자의 오타가
+     * "레지스트리 장애" 로 보고되는 셈이고, 레지스트리마다 반응이 다를 수도 있다
+     * (조용히 무시하면 그때는 틀린 결과가 조용히 나온다). 날짜와 같은 이유로 여기서 막는다.
+     */
+    if (Math.abs(near.lat) > 90 || Math.abs(near.lon) > 180) {
+      throw usageError(
+        `--near 의 좌표가 지구 밖입니다: '${v.near}'`,
+        '위도는 -90~90, 경도는 -180~180 입니다. 위도와 경도의 순서가 바뀌지 않았는지 확인하세요.',
+      );
+    }
   }
   let radius: { value: number; unit: 'km' | 'mi' } | undefined;
   if (v.radius) {

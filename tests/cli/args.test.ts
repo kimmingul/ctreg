@@ -340,3 +340,46 @@ describe('날짜 옵션은 달력에 있는 날만 받는다', () => {
     }
   });
 });
+
+/**
+ * 실측 2026-08-28: `--near` 에 두 결함이 있었다.
+ *
+ * 1. **범위를 보지 않았다.** `--near 91,181` 은 지구에 없는 좌표인데 그대로 실려 나가
+ *    ctgov 가 400 을 냈다 — exit 4. 사용자의 오타가 "레지스트리 장애" 로 보고됐다.
+ * 2. **남반구를 쓸 수 없었다.** `--near -33.8,151.2`(시드니)가 Node parseArgs 의
+ *    "argument is ambiguous" 로 죽었다. 값이 대시로 시작하면 옵션으로 보이기 때문인데,
+ *    그 안내가 영어 원문이고 해법(`--near=-33.8,151.2`)은 이 CLI 의 사용법 어디에도
+ *    없었다. 시드니·상파울루·부에노스아이레스·케이프타운이 다 여기 걸린다.
+ */
+describe('--near 는 지구에 있는 좌표만 받는다', () => {
+  it('정상 좌표는 통과한다 — 음수 경도 포함', () => {
+    expect(parseCliArgs(['search', '--near', '37.5,127.0']).query.near).toEqual({ lat: 37.5, lon: 127.0 });
+    // 뉴욕. 경도가 음수인 것은 값이 대시로 시작하지 않으므로 원래도 됐다.
+    expect(parseCliArgs(['search', '--near', '40.7,-74.0']).query.near).toEqual({ lat: 40.7, lon: -74.0 });
+    // 남반구는 `--near=` 형태로 줘야 파서를 통과한다.
+    expect(parseCliArgs(['search', '--near=-33.8,151.2']).query.near).toEqual({ lat: -33.8, lon: 151.2 });
+  });
+
+  it('범위를 벗어난 좌표는 사용법 오류다 — 업스트림까지 가지 않는다', () => {
+    for (const bad of ['91,0', '-91,0', '0,181', '0,-181', '90.1,0']) {
+      expectUsage(() => parseCliArgs(['search', `--near=${bad}`]), '--near');
+    }
+  });
+
+  it('경계값은 받는다', () => {
+    expect(parseCliArgs(['search', '--near=90,180']).query.near).toEqual({ lat: 90, lon: 180 });
+    expect(parseCliArgs(['search', '--near=-90,-180']).query.near).toEqual({ lat: -90, lon: -180 });
+  });
+
+  it('대시로 시작하는 값이 막히면 한국어로 해법을 알려 준다', () => {
+    try {
+      parseCliArgs(['search', '--near', '-33.8,151.2']);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const err = e as CtregError;
+      expect(err.exit).toBe(EXIT.USAGE);
+      // 영어 원문만 던지고 끝나면 사용자는 무엇을 해야 할지 모른다.
+      expect(`${err.message} ${err.hint ?? ''}`).toContain('--near=-33.8,151.2');
+    }
+  });
+});
