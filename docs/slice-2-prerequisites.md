@@ -311,11 +311,33 @@ S3(NCT04280705 유해사례, 심장 관련)에서 드러남. 전개 전과 부�
 
 ### O4 — 미해결: `epipe.test.ts` 도 한 번 흔들렸다 (O3 의 형제)
 
-> **목격 추가 (2026-08-27, ICTRP 어댑터 작업 중).** 전체 스위트가 1건 실패했고 3회 연속
-> 재실행에서 전부 통과했다. **어느 테스트였는지는 못 잡았다** — 실패 요약만 보고 다음
-> 실행으로 넘어가 버렸다. 정황: 직전에 실물 네트워크를 치는 필드테스트를 돌렸고, 그것이
-> 같은 캐시 디렉터리와 온디스크 요청률 버킷을 쓴다. O3·O4 와 같은 벽시계 의존 부류로
-> 보이지만 **같은 파일이라는 증거는 없다.** 다음에 보이면 실패한 테스트 이름부터 잡을 것.
+> **원인 확정 (2026-08-27) — 벽시계 플레이크가 아니라 빌드·테스트 경쟁이다.**
+>
+> 재현했다. `npm run build` 를 돌리면서 `epipe.test.ts` 를 15회 실행해 **2회 실패**했고,
+> 동시 빌드 없이는 30회(CPU 부하 10 + 프로세스·디스크 부하 20) 전부 통과했다. 잡은 출력:
+>
+> ```
+> FAIL tests/cli/epipe.test.ts > 출력 파이프가 일찍 닫힐 때 > 스택트레이스를 내지 않는다
+> AssertionError: expected 'file:///…/dist…' not to contain 'node:internal'
+>   + dist/adapters/isrctn/adapter.js:5
+>   + import { mapTrial } from './map.js';
+>   + SyntaxError: The requested module './map.js' does not provide an export named 'mapTrial'
+>   +     at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+> ```
+>
+> **원인:** `tsc` 는 `dist/` 를 **한 파일씩** 쓴다. 그 사이 `dist` 는 내부적으로 어긋난
+> 상태이고(`adapter.js` 는 새 판, `map.js` 는 아직 옛 판), 그때 `node dist/cli/bin.js` 를
+> 띄우면 모듈 로드가 깨진다. 그 SyntaxError 스택트레이스에 `node:internal` 이 들어 있어
+> "스택트레이스를 내지 않는다" 단언이 실패한다 — **테스트가 주장하는 것과 무관한 이유로.**
+>
+> `dist/` 를 실행하는 테스트는 둘뿐이고(`epipe.test.ts`, `throttle.process.test.ts`) O4 가
+> 지목한 파일이 정확히 그중 하나다. 목격이 전부 "부하 상태" 였다는 관찰도 이것으로 설명된다 —
+> 부하의 정체는 CPU 가 아니라 **같은 워크트리에서 동시에 돌던 빌드** 였다.
+>
+> **O3 는 별개다.** `http.test.ts` 는 `dist/` 를 건드리지 않는다 — 그쪽은 실제 타이머
+> 마진이었고 커밋 `7997232` 가 이미 걷어냈다.
+>
+> 아래는 원인을 모르던 때의 진단으로 남긴다.
 
 `slice-2-prep` 마지막 검증 중 전체 스위트가 1건 실패했고, 구현자와 컨트롤러가 각각
 `tests/cli/epipe.test.ts` 에서 본 것으로 기록했다. **O3 와 다른 파일이다.**
