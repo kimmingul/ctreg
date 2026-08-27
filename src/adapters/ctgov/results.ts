@@ -166,11 +166,40 @@ export function extractResults(
       id,
     });
   } else if (expandedCount === 0 && availableCount > 0) {
-    warnings.push({
-      code: 'results_summarized',
-      message: '요약만 냈습니다. --outcome / --ae-organ / --ae-term 으로 필요한 항목만 전개하세요.',
-      id,
-    });
+    /**
+     * `expanded: 0` 은 **두 가지** 를 뜻할 수 있다 — 아직 아무것도 안 골랐거나, 골랐는데
+     * 하나도 안 걸렸거나. 수만 봐서는 갈릴 수 없으므로 **필터를 줬는지** 를 본다.
+     *
+     * 갈라야 하는 이유(실측 2026-08-28): 안 갈랐을 때 `--outcome zzz` 처럼 아무것도 못
+     * 거는 필터가 "--outcome 으로 필요한 항목만 전개하세요" 라는 안내를 받았다. **방금 쓴
+     * 옵션을 쓰라고 시키는 것** 이고, 필터를 아예 안 준 호출과 출력이 글자 하나 다르지
+     * 않았다. "아직 안 골랐다" 와 "골랐는데 없다" 가 같은 출력이 되는 것은 이 CLI 가
+     * 없애려는 혼동 그 자체다(F6 이 반쯤 갈라 놓았던 것의 나머지 절반).
+     */
+    const applied = [
+      o.outcomeFilter !== undefined && o.outcomeFilter.length > 0
+        ? `--outcome ${o.outcomeFilter.join(', ')}`
+        : undefined,
+      o.aeOrganFilter !== undefined ? `--ae-organ ${o.aeOrganFilter}` : undefined,
+      o.aeTermFilter !== undefined ? `--ae-term ${o.aeTermFilter}` : undefined,
+    ].filter((x): x is string => x !== undefined);
+
+    warnings.push(
+      applied.length === 0
+        ? {
+            code: 'results_summarized',
+            message: '요약만 냈습니다. --outcome / --ae-organ / --ae-term 으로 필요한 항목만 전개하세요.',
+            id,
+          }
+        : {
+            code: 'results_filter_no_match',
+            message:
+              `필터에 걸린 항목이 없습니다(${applied.join(' · ')}). ` +
+              `이 시험의 결과 항목 ${availableCount}개 중 어느 것도 맞지 않았습니다 — ` +
+              '결과가 없는 것이 아니라 이 필터가 고르지 못한 것입니다. 다른 낱말로 다시 걸거나 --full 로 전부 펼치세요.',
+            id,
+          },
+    );
   } else if (expandedCount < availableCount) {
     /**
      * 일부만 펼쳤다. 위 문구를 그대로 쓰면 이미 한 일을 하라고 시키는 것이 되고,

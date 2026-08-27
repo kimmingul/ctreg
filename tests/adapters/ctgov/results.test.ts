@@ -312,3 +312,51 @@ describe('F13 — --full 과 필터의 관계', () => {
     expect(warnings.map((w) => w.code)).toContain('results_full');
   });
 });
+
+/**
+ * F6 가 갈라 놓은 두 상황(**아무것도 안 펼침** / **일부만 펼침**) 밑에 **세 번째**가
+ * 숨어 있었다 — 실측 2026-08-28:
+ *
+ *   ctreg results NCT00003869 --outcome zzz없는지표
+ *     → results_summarized: "요약만 냈습니다. --outcome / --ae-organ / --ae-term 으로
+ *        필요한 항목만 전개하세요."
+ *
+ * **방금 쓴 옵션을 쓰라고 시킨다.** 그리고 더 나쁜 것은, 필터를 아예 주지 않은 호출과
+ * 글자 하나 다르지 않다는 점이다 — "아직 안 골랐다" 와 "골랐는데 하나도 안 걸렸다" 가
+ * 같은 출력이 된다. 이 CLI 가 없애려는 혼동 그 자체다.
+ *
+ * `expanded: 0` 은 두 경우 다 참이라 수만 봐서는 갈 수 없다. 필터를 줬는지를 봐야 한다.
+ */
+describe('필터가 아무것도 못 걸렀을 때', () => {
+  it('필터를 안 준 호출과 다른 코드를 낸다', () => {
+    const none = extractResults(study, ID, opts(), AT).warnings.map((w) => w.code);
+    const missed = extractResults(
+      study, ID, opts({ outcomeFilter: ['zz이런지표는없다'] }), AT,
+    ).warnings.map((w) => w.code);
+
+    expect(none).toContain('results_summarized');
+    expect(missed).not.toContain('results_summarized');
+    expect(missed).toContain('results_filter_no_match');
+  });
+
+  it('문구가 방금 쓴 옵션을 쓰라고 시키지 않는다', () => {
+    const { warnings } = extractResults(study, ID, opts({ outcomeFilter: ['zz이런지표는없다'] }), AT);
+    const w = warnings.find((x) => x.code === 'results_filter_no_match');
+    expect(w).toBeDefined();
+    expect(w?.message).not.toContain('전개하세요');
+    // 무엇이 안 걸렸는지와, 고를 것이 얼마나 있었는지를 말해야 다음 수를 정할 수 있다.
+    expect(w?.message).toContain('zz이런지표는없다');
+  });
+
+  it('AE 필터도 같다', () => {
+    const { warnings } = extractResults(
+      study, ID, opts({ sections: ['adverse'], aeOrganFilter: 'zz이런기관계는없다' }), AT,
+    );
+    expect(warnings.map((w) => w.code)).toContain('results_filter_no_match');
+  });
+
+  it('필터가 실제로 걸리면 이 경고는 나오지 않는다', () => {
+    const { warnings } = extractResults(study, ID, opts({ outcomeFilter: ['Time to Recovery'] }), AT);
+    expect(warnings.map((w) => w.code)).not.toContain('results_filter_no_match');
+  });
+});
