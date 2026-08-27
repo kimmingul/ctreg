@@ -167,6 +167,22 @@ describe('ICTRP 결과 파싱 — 중첩 표를 단 행', () => {
     expect(new Set(p.rows.map((r) => r.trialId)).size).toBe(p.rows.length);
   });
 
+  /**
+   * 패널은 그 자체가 표라서 열 이름("Recruitment status", "Main ID" …)을 글자로 갖고
+   * 있다. 칸을 읽을 때 중첩 표를 지우지 않으면 그 글자가 이 행의 칸으로 섞여 든다 —
+   * 제목 찾기가 내용의 모양으로 고르므로, 섞여 들면 언젠가 그것이 제목으로 뽑힌다.
+   */
+  it('패널의 열 이름을 이 행의 값으로 읽지 않는다', () => {
+    const p = parseResults(nestedPanel);
+    const PANEL_ONLY = ['Recruitment status', 'Main ID', 'Date of registration'];
+    for (const r of p.rows) {
+      for (const label of PANEL_ONLY) {
+        expect(r.title).not.toContain(label);
+        expect(r.statusRaw).not.toContain(label);
+      }
+    }
+  });
+
   it('모든 행이 ID·상태·등록일을 갖춘다', () => {
     for (const r of parseResults(nestedPanel).rows) {
       expect(r.trialId.length).toBeGreaterThan(0);
