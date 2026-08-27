@@ -197,3 +197,39 @@ describe('investigator 축', () => {
     expect(() => q('Min "Gul" Kim')).toThrow();
   });
 });
+
+/**
+ * `--investigator` 를 만들었다고 `--term` 의 함정이 사라지지는 않는다. 여러 낱말을 주면
+ * ctgov 는 **문서 전체에 대한 토큰 AND** 로 처리한다 — 구도 아니고 같은 필드도 아니다.
+ * 사용자는 그것을 알 방법이 없고, 결과만 보면 구로 찾은 것과 구별되지 않는다.
+ *
+ * 실측 2026-08-28: `Min-Gul Kim` 49건 vs `"Min-Gul Kim"` 48건. 그 1건이 세 사람에게서
+ * 낱말을 하나씩 모은 것이었다. 낱말이 늘수록 이런 우연은 늘어난다.
+ *
+ * 막지는 않는다 — `--term "diabetes metformin"` 처럼 **낱말 AND 가 바로 원하는 것** 인
+ * 쓰임이 흔하다. 자동으로 따옴표를 씌우면 그 쓰임이 죽는다. 사실만 말한다.
+ */
+describe('여러 낱말 --term 은 토큰 AND 라고 말한다', () => {
+  const warn = (term: string) =>
+    buildSearchParams({ term, pageSize: 10 } as NormalizedQuery, opts).warnings.map((w) => w.code);
+
+  it('낱말이 둘 이상이면 경고한다', () => {
+    expect(warn('Min-Gul Kim')).toContain('term_matches_scattered_words');
+    expect(warn('breast cancer')).toContain('term_matches_scattered_words');
+  });
+
+  it('한 낱말이면 경고하지 않는다', () => {
+    expect(warn('metformin')).not.toContain('term_matches_scattered_words');
+    expect(warn('  metformin  ')).not.toContain('term_matches_scattered_words');
+  });
+
+  it('이미 구로 묶었으면 경고하지 않는다 — 이미 그 사실을 알고 있다', () => {
+    expect(warn('"Min-Gul Kim"')).not.toContain('term_matches_scattered_words');
+  });
+
+  it('문구가 구로 묶는 법을 알려 준다', () => {
+    const w = buildSearchParams({ term: 'Min-Gul Kim', pageSize: 10 } as NormalizedQuery, opts)
+      .warnings.find((x) => x.code === 'term_matches_scattered_words');
+    expect(w?.message).toContain('"Min-Gul Kim"');
+  });
+});

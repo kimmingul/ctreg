@@ -82,6 +82,26 @@ export function buildSearchParams(
   params['query.cond'] = q.condition;
   params['query.intr'] = q.intervention;
   params['query.term'] = q.term;
+  /**
+   * **여러 낱말은 구가 아니라 토큰 AND 다.** ctgov 는 낱말들을 문서 어디에서든 각각 찾고,
+   * 같은 필드일 필요도 같은 사람일 필요도 없다. 실측 2026-08-28: `Min-Gul Kim` 49건 중
+   * NCT06072131 은 Min Kyoung Kim(대구 연락담당) · Gul Cebecioglu Hasancebi(터키
+   * 세부연구자) · Kim 이 낱말을 하나씩 댄 것이었다. `"Min-Gul Kim"` 으로 묶으면 48건이다.
+   *
+   * **막지 않고 말만 한다.** `--term "diabetes metformin"` 처럼 낱말 AND 가 바로 원하는
+   * 것인 쓰임이 흔하다 — 자동으로 따옴표를 씌우면 그 쓰임이 죽는다. 이미 구로 묶어 온
+   * 호출자는 그 사실을 아는 것이므로 조용히 둔다.
+   */
+  const term = q.term?.trim();
+  if (term !== undefined && /\s/.test(term) && !(term.startsWith('"') && term.endsWith('"'))) {
+    warnings.push({
+      code: 'term_matches_scattered_words',
+      message:
+        `--term 의 낱말들을 따로 찾습니다 — 한 시험 안에 흩어져 있기만 하면 걸리고, 같은 필드일 필요도 같은 사람일 필요도 없습니다. ` +
+        `붙어 있는 그대로 찾으려면 따옴표로 묶으세요: --term '"${term}"'`,
+      registry: 'ctgov',
+    });
+  }
   params['query.titles'] = q.title;
   params['query.locn'] = q.location;
   params['query.outc'] = q.outcomeQuery;
