@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
+import { assertDistLoadable } from '../dist-guard.js';
 
 const BIN = new URL('../../dist/cli/bin.js', import.meta.url).pathname;
 
@@ -52,6 +53,9 @@ function runPiped(args: readonly string[], headBytes = 10): Promise<number | nul
 describe('출력 파이프가 일찍 닫힐 때', () => {
   it('스택트레이스를 내지 않는다', async () => {
     const { stderr } = await pipeThroughHead();
+    // `dist/` 가 반쯤 쓰인 상태였다면 여기서 실패하는 것은 이 테스트의 주장과 무관하다.
+    // 그 경우 원인을 이름 붙여 던진다 — 세 번 놓친 실패가 그것이었다(tests/dist-guard.ts).
+    assertDistLoadable(stderr);
     expect(stderr).not.toContain('EPIPE');
     expect(stderr).not.toContain('node:internal');
   });

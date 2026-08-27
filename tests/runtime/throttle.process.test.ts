@@ -6,10 +6,15 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 const ROOT = join(__dirname, '../..');
 
+/**
+ * 빌드는 **여기서 하지 않는다.** 예전에는 이 자리에서 `bun run build` 를 돌렸는데,
+ * vitest 가 파일을 병렬로 돌리는 탓에 그 빌드가 `cli/epipe.test.ts` 의 dist 실행과 겹쳐
+ * 모듈 로드를 깨뜨렸다 — O3·O4 로 세 번 기록된 "플레이크" 의 정체가 그것이다.
+ * 지금은 `tests/global-setup.ts` 가 모든 파일보다 먼저 한 번 빌드한다.
+ */
 beforeAll(() => {
-  execSync('bun run build', { cwd: ROOT, stdio: 'inherit' });
   expect(existsSync(join(ROOT, 'dist/runtime/throttle.js'))).toBe(true);
-}, 120_000);
+});
 
 describe('교차 프로세스 요청률', () => {
   it('동시에 뜬 4개 프로세스가 1 req/s 를 함께 지킨다', async () => {
