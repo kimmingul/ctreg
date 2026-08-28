@@ -1,6 +1,6 @@
 import { unsupportedError, usageError } from '../runtime/errors.js';
 
-export const REGISTRY_KEYS = ['ctgov', 'isrctn', 'ictrp'] as const;
+export const REGISTRY_KEYS = ['ctgov', 'isrctn', 'ictrp', 'cris'] as const;
 export type RegistryKey = (typeof REGISTRY_KEYS)[number];
 
 /**
@@ -69,6 +69,12 @@ const ID_PATTERNS: Record<RegistryKey, IdSpec> = {
    * 갖는다. 「연계하지 않는다」 는 설계의 직접적 귀결이고, 의도된 것이다.
    */
   ictrp: { pattern: /^\S+$/, normalize: (s) => s.trim(), inferable: false },
+  /**
+   * CRIS 의 등록번호는 `KCT` + 숫자 일곱이다(실측 2026-08-28: KCT0000145 … KCT0012524).
+   * 형식이 뚜렷하고 다른 셋과 겹치지 않으므로 추론에 참여한다 — ctgov 는 `NCT`+8,
+   * ISRCTN 은 숫자 8 또는 `ISRCTN`+8 이라 `KCT` 로 시작하는 것과 부딪히지 않는다.
+   */
+  cris: { pattern: /^kct\d{7}$/i, normalize: (s) => s.toUpperCase(), inferable: true },
 };
 
 export function parseTrialId(input: string): {

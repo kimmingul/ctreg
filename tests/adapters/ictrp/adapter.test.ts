@@ -15,6 +15,7 @@ const cfg = () => ({
   ctgovBaseUrl: 'https://ctgov.example.test/api/v2',
   isrctnBaseUrl: 'https://isrctn.example.test',
   ictrpBaseUrl: 'https://ictrp.example.test',
+        crisBaseUrl: 'https://cris.example.test',
 });
 
 /** GET 이면 폼을, POST 면 `resultsHtml` 을 낸다 — client.test.ts 의 스텁과 같은 모양이다. */

@@ -1,0 +1,60 @@
+{
+ "pageNo": "1",
+ "resultCode": "00",
+ "totalCount": 19,
+ "numOfRows": 3,
+ "items": [
+  {
+   "trial_id": "KCT0009342",
+   "date_updated": "2025-12-23",
+   "date_registration": "2024-04-15",
+   "source_name_kr": "보건복지부",
+   "i_freetext_kr": "의약품",
+   "study_type_kr": "중재연구",
+   "date_enrolment": "2024-07-04",
+   "results_type_date_completed_kr": "실제등록",
+   "type_enrolment_kr": "실제등록",
+   "results_date_completed": "2025-03-18",
+   "primary_sponsor_kr": "재단법인아산사회복지재단 서울아산병원",
+   "scientific_title_kr": "코로나19 후유증 치료를 위한 메트포르민과 우르소데옥시콜산(UDCA) 위약 대조 무작위배정 이중맹검 탐색적 임상시험",
+   "scientific_title_en": "Exploratory double-blind randomized placebo-controlled trial of Metformin and Ursodeoxycholic acid (UDCA) to treat post-acute sequelae of SARS-CoV-2 infection (PASC)",
+   "primary_outcome_1_kr": "시험군 1과 대조군을 비교하기 위해 베이스라인 시점에서 8주째 PASC 점수가 12이상에서 12미만으로 개선되는 환자의 호전비율의 차이를 보기 위한 분석을 시행할 예정",
+   "phase_kr": ""
+  },
+  {
+   "trial_id": "KCT0008659",
+   "date_updated": "2024-01-30",
+   "date_registration": "2023-07-28",
+   "source_name_kr": "국립암센터",
+   "i_freetext_kr": "의약품",
+   "study_type_kr": "중재연구",
+   "date_enrolment": "2023-10-31",
+   "results_type_date_completed_kr": "예정",
+   "type_enrolment_kr": "실제등록",
+   "results_date_completed": "2028-05-31",
+   "primary_sponsor_kr": "국립암센터",
+   "scientific_title_kr": "포도당 대사가 활성화된 진행성 편평상피세포폐암 환자에서 면역 항암\r\n화학요법과 혈당 강하제 메트포르민의 병합요법에 관한 무작위 배정 제2상 연구",
+   "scientific_title_en": "Randomized phase II study of chemoimmunotherapy with or without\r\nmetformin as a first-line treatment in patients with squamous cell lung carcinoma\r\nhaving high 18F-fluorodeoxyglucose uptake",
+   "primary_outcome_1_kr": "6개월 무진행 생존율",
+   "phase_kr": ""
+  },
+  {
+   "trial_id": "KCT0005497",
+   "date_updated": "2026-04-22",
+   "date_registration": "2020-10-15",
+   "source_name_kr": "(주)종근당",
+   "i_freetext_kr": "의약품",
+   "study_type_kr": "중재연구",
+   "date_enrolment": "2021-04-15",
+   "results_type_date_completed_kr": "실제등록",
+   "type_enrolment_kr": "실제등록",
+   "results_date_completed": "2024-03-25",
+   "primary_sponsor_kr": "강북삼성병원",
+   "scientific_title_kr": "메트포르민과 DPP-4 억제제로 혈당조절이 충분하지 않은 제2형 당뇨병 환자를 대상으로 SGLT-2 억제제를 추가한 3제 요법과 DPP-4 억제제를 SGLT-2 억제제와 Lobeglitazone으로 교체 투여한 3제 요법의 유효성과 안전성을 비교 평가하기 위한 무작위배정, 이중눈가림, 다기관, 활성 대조, 연구자 주도 임상시험",
+   "scientific_title_en": "A randomized, double-blind, multi-center, active controlled, Investigator Initiated Trial (IIT) to evaluate the efficacy and safety of adding SGLT-2 inhibitor or switching DPP-4 inhibitor to SGLT-2 inhibitor and Lobeglitazone as triple oral combination therapy to patients with Type 2 diabetes mellitus inadequately controlled by DPP-4 inhibitor and Metformin",
+   "primary_outcome_1_kr": "HbA1c 변화량",
+   "phase_kr": ""
+  }
+ ],
+ "resultMsg": "NORMAL_SERVICE"
+}

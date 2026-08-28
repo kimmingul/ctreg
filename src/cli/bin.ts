@@ -1,5 +1,17 @@
 #!/usr/bin/env node
+import { join } from 'node:path';
+import { loadEnvFile } from '../runtime/config.js';
 import { run } from './index.js';
+
+/**
+ * 현재 디렉터리의 `.env` 를 먼저 읽는다. CRIS 인증키를 셸 환경변수로만 받으면 사용자가
+ * 매번 export 해야 하고 셸 히스토리에 키가 남는다.
+ *
+ * **여기(bin)에서 읽는 이유** — `run()` 은 env 를 인자로 받는 순수한 자리이고,
+ * 테스트가 그 자리에 자기 env 를 넣는다. 파일 읽기를 그 안에 넣으면 테스트가 실행
+ * 디렉터리에 따라 다르게 돈다. 파일에서 읽어 오는 일은 프로세스 경계인 여기서 한다.
+ */
+loadEnvFile(join(process.cwd(), '.env'));
 
 /**
  * 소비자가 파이프를 먼저 닫으면(`| head`) 쓰기가 EPIPE 로 실패한다. Node 는 이것을

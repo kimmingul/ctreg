@@ -1,6 +1,8 @@
-import { homedir } from 'node:os';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../src/runtime/config.js';
+import { loadConfig, loadEnvFile } from '../../src/runtime/config.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 
@@ -44,5 +46,51 @@ describe('설정', () => {
       expect((e as CtregError).exit).toBe(EXIT.USAGE);
       expect((e as CtregError).message).toContain('CTREG_MAX_RETRIES');
     }
+  });
+});
+
+/**
+ * 키를 `.env` 로 주는 것이 CRIS 어댑터의 전제다 — 셸 환경변수로만 받으면 사용자가
+ * 매번 `export` 해야 하고, 히스토리에 키가 남는다.
+ *
+ * **환경변수가 파일을 이긴다.** 파일은 기본값이고 그때그때의 개입이 우선이라야,
+ * 한 번 다른 키로 돌려 보는 일이 파일을 고쳤다 되돌리는 일이 되지 않는다.
+ */
+describe('.env 읽기', () => {
+  const write = (body: string): string => {
+    const dir = mkdtempSync(join(tmpdir(), 'ctreg-env-'));
+    writeFileSync(join(dir, '.env'), body, 'utf8');
+    return dir;
+  };
+
+  it('파일의 값을 읽어 온다', () => {
+    const dir = write('CTREG_CRIS_SERVICE_KEY=FROM_FILE\n');
+    const env: NodeJS.ProcessEnv = {};
+    loadEnvFile(join(dir, '.env'), env);
+    expect(env.CTREG_CRIS_SERVICE_KEY).toBe('FROM_FILE');
+  });
+
+  it('이미 있는 환경변수를 덮어쓰지 않는다', () => {
+    const dir = write('CTREG_CRIS_SERVICE_KEY=FROM_FILE\n');
+    const env: NodeJS.ProcessEnv = { CTREG_CRIS_SERVICE_KEY: 'FROM_SHELL' };
+    loadEnvFile(join(dir, '.env'), env);
+    expect(env.CTREG_CRIS_SERVICE_KEY).toBe('FROM_SHELL');
+  });
+
+  it('주석과 빈 줄과 따옴표를 다룬다', () => {
+    const dir = write('# 주석\n\nA=1\nB="따옴표 안"\nC=\'홑따옴표\'\nD=값에=등호가=있다\n');
+    const env: NodeJS.ProcessEnv = {};
+    loadEnvFile(join(dir, '.env'), env);
+    expect(env.A).toBe('1');
+    expect(env.B).toBe('따옴표 안');
+    expect(env.C).toBe('홑따옴표');
+    // 첫 등호만 구분자다 — 값 안의 등호까지 자르면 키가 조용히 잘린다.
+    expect(env.D).toBe('값에=등호가=있다');
+  });
+
+  it('파일이 없으면 아무 일도 하지 않는다 — 키가 필요 없는 사용자를 막지 않는다', () => {
+    const env: NodeJS.ProcessEnv = {};
+    expect(() => loadEnvFile(join(tmpdir(), 'ctreg-no-such-dir-zz', '.env'), env)).not.toThrow();
+    expect(Object.keys(env)).toEqual([]);
   });
 });

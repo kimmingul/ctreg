@@ -30,6 +30,7 @@ runAdapterContract('ictrp', {
         ctgovBaseUrl: 'https://ctgov.example.test/api/v2',
         isrctnBaseUrl: 'https://isrctn.example.test',
         ictrpBaseUrl: 'https://ictrp.example.test',
+        crisBaseUrl: 'https://cris.example.test',
       },
       { fetchImpl, sleep: async () => {} },
     ),

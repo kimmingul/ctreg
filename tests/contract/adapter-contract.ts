@@ -96,6 +96,22 @@ export type AdapterUnderTest = {
    * 충돌한다. `false` 로 두면 그 검사를 건너뛴다.
    */
   pageSizeConfigurable?: boolean;
+  /**
+   * 이 어댑터가 받아들이는 **가장 작은 질의.** 기본값은 `{ ...probeQ }` 다.
+   *
+   * 왜 조절 지점이 필요한가 — 어떤 어댑터는 특정 축이 없으면 아예 물을 수 없다.
+   * CRIS 공식 API 가 받는 검색 입력은 자유 텍스트 하나뿐이라 `condition` 으로는
+   * 부를 수 없고, 검색어 없이 부르면 전체의 첫 쪽이 온다(그것을 검색 결과로 내보내면
+   * 조용히 틀린 답이다). 하네스가 그 어댑터를 부를 수 있는 말로 물어야 한다.
+   */
+  probeQuery?: Record<string, unknown>;
+  /**
+   * 이 레지스트리가 **장소를 내주는가.** 기본값은 내준다.
+   *
+   * `false` 면 장소 캡 검사 둘을 건너뛰고, 대신 "정말로 장소가 없다" 를 확인한다 —
+   * `getSupported` 와 같은 규율이다. 성립하지 않는 가정을 뺐으면 무엇이 참인지 말한다.
+   */
+  locationsSupported?: boolean;
 };
 
 const json = (body: unknown, status = 200) =>
@@ -189,6 +205,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     });
   /** 재시도 대상이 아닌 상태코드를 골랐다 — 백오프 없이 즉시 실패 경로로 간다. */
   const broken = () => stub(() => json({ message: 'Unknown sort field' }, 400));
+
+  /** 이 어댑터를 부를 수 있는 가장 작은 질의. 축이 하나뿐인 레지스트리도 있다. */
+  const probeQ = (under.probeQuery ?? { condition: 'x' }) as Record<string, unknown>;
 
   const makeAdapter = () => ok().adapter;
 
@@ -438,7 +457,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
 
     it('search 는 업스트림 응답을 계약을 지키는 레코드로 낸다', async () => {
       const { adapter, calls } = ok();
-      const r = await adapter.search({ condition: 'x' } as NormalizedQuery, fetchOpts);
+      const r = await adapter.search({ ...probeQ } as NormalizedQuery, fetchOpts);
 
       expect(calls.length).toBeGreaterThan(0); // 주입한 트랜스포트 밖으로 나가지 않았다
       expect(Array.isArray(r.data)).toBe(true);
@@ -538,7 +557,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       // 다른 파라미터 값과 우연히 겹치지 않도록 이 검사에서만 쓰는 문자열을 고른다.
       const KEY = 'ZzSortProbe17';
       const { adapter, requests } = ok();
-      await adapter.search({ condition: 'x', pageSize: 10, sort: KEY } as NormalizedQuery, fetchOpts);
+      await adapter.search({ ...probeQ, pageSize: 10, sort: KEY } as NormalizedQuery, fetchOpts);
       expect(requests.length, 'search 가 업스트림 요청을 보내지 않았습니다.').toBeGreaterThan(0);
 
       const carried = requests.some((r) => `${r.url} ${r.body}`.toLowerCase().includes(KEY.toLowerCase()));
@@ -577,7 +596,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
 
       const run = async (pageSize: number) => {
         const { adapter, requests } = ok();
-        await adapter.search({ condition: 'x', pageSize } as NormalizedQuery, fetchOpts);
+        await adapter.search({ ...probeQ, pageSize } as NormalizedQuery, fetchOpts);
         return requests;
       };
       // 흔한 파라미터 값(0, 1, 10, 20, 200)과 겹치지 않는 두 수를 고른다.
@@ -608,7 +627,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       async () => {
         const cap = makeAdapter().capability();
         const { adapter } = ok();
-        const r = await adapter.search({ condition: 'x', pageSize: 1 } as NormalizedQuery, fetchOpts);
+        const r = await adapter.search({ ...probeQ, pageSize: 1 } as NormalizedQuery, fetchOpts);
         expect(
           r.data.length,
           `표본 응답이 고정 페이지 크기(${cap.limits.maxPageSize})에 못 미쳐 이 검사가 공허하게 ` +
@@ -652,7 +671,27 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * CAPS.locations.default 를 넘는 장소를 담은 레코드를 내지 않으면 이 검사는 아무것도
      * 확인하지 못하고 공허하게 통과하므로, 먼저 절단이 실제로 일어났는지부터 못박는다.
      */
-    (under.getSupported === false ? it.skip : it)(
+    /**
+     * `locationsSupported: false` — 위 두 검사는 건너뛰지만 빈 자리로 남기지 않는다.
+     * `getSupported`·`pageSizeConfigurable` 과 같은 규율이다: 성립하지 않는 가정을
+     * 뺐으면 **실제로 무엇이 참인지** 를 말한다. 여기서 참인 것은 "장소가 아예 없다" 이고,
+     * 그렇다면 장소 관련 경고도 나오지 않아야 한다 — 없는 것을 잘랐다고 말하면 안 된다.
+     */
+    (under.locationsSupported === false ? it : it.skip)(
+      '장소를 내주지 않는다고 신고했으면 정말로 비어 있고, 잘렸다는 말도 하지 않는다',
+      async () => {
+        const { adapter } = ok();
+        const r = await adapter.search({ ...probeQ, pageSize: 10 } as NormalizedQuery, fetchOpts);
+        expect(r.data.length, 'respond() 표본이 레코드를 내지 않습니다.').toBeGreaterThan(0);
+        for (const rec of r.data) {
+          expect(rec.locations ?? []).toEqual([]);
+          expect(rec.locationsTotal).toBeUndefined();
+        }
+        expect(r.warnings.map((w) => w.code)).not.toContain('locations_truncated');
+      },
+    );
+
+    (under.getSupported === false || under.locationsSupported === false ? it.skip : it)(
       '장소가 잘리면 locations_truncated 경고가 반드시 딸려온다 — 경고 배열이 있다는 것만으론 부족하다',
       async () => {
       // 캡을 1 로 낮춰서 묻는다. 예전에는 기본 캡(10)으로 물었는데, 그러면 표본이 장소를
@@ -692,7 +731,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      * 두 번 받는 것이 핵심이다 — 좁은 요청 하나만 보면 그 축을 아예 안 채우는 어댑터가
      * 공허하게 통과한다.
      */
-    (under.getSupported === false ? it.skip : it)(
+    (under.getSupported === false || under.locationsSupported === false ? it.skip : it)(
       'o.caps 를 좁히면 그만큼만 담는다 — 캡은 CLI 가 정하고 어댑터는 읽기만 한다',
       async () => {
       const NARROW = { locations: 1, eligibilityChars: 40, outcomes: 1 };
@@ -797,7 +836,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
 
     it('count 는 개수를 낸다 — 레코드가 아니라 수 하나다', async () => {
       const { adapter, calls } = ok();
-      const r = await adapter.count({ condition: 'x' } as NormalizedQuery, fetchOpts);
+      const r = await adapter.count({ ...probeQ } as NormalizedQuery, fetchOpts);
 
       expect(calls.length).toBeGreaterThan(0);
       expect(typeof r.data).toBe('number');
@@ -826,7 +865,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
      */
     it('raw 를 요청하면 레코드에 원문을 실어 낸다 — 유일한 탈출구가 비어 있거나 좁혀져 있으면 안 된다', async () => {
       const { adapter, calls } = ok();
-      const r = await adapter.search({ condition: 'x' } as NormalizedQuery, { ...fetchOpts, raw: true });
+      const r = await adapter.search({ ...probeQ } as NormalizedQuery, { ...fetchOpts, raw: true });
       expect(r.data.length).toBeGreaterThan(0);
       expect(calls.length).toBeGreaterThan(0);
       for (const rec of r.data) {
@@ -846,9 +885,9 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
     it('업스트림이 실패하면 빈 결과가 아니라 던진다', async () => {
       const cap = makeAdapter().capability();
       const probes: [string, () => Promise<unknown>][] = [
-        ['search', () => broken().adapter.search({ condition: 'x' } as NormalizedQuery, fetchOpts)],
+        ['search', () => broken().adapter.search({ ...probeQ } as NormalizedQuery, fetchOpts)],
         ['get', () => broken().adapter.get([under.sampleId], fetchOpts)],
-        ['count', () => broken().adapter.count({ condition: 'x' } as NormalizedQuery, fetchOpts)],
+        ['count', () => broken().adapter.count({ ...probeQ } as NormalizedQuery, fetchOpts)],
       ];
       if (cap.results.supported) probes.push(['results', () => broken().adapter.results(under.sampleId, resultsOpts)]);
 
@@ -877,7 +916,7 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
       if (unsupported.length === 0) {
         // 전부 지원하는 어댑터라면 반대 방향으로 검증한다: 가짜로 하나를 끄면 반드시 걸려야 한다.
         expectExit3(
-          { condition: 'x' },
+          { ...probeQ },
           { ...cap, search: { ...cap.search, condition: { ...cap.search.condition, supported: false } } },
           'condition',
         );

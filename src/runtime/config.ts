@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { usageError } from './errors.js';
@@ -20,6 +21,13 @@ export type Config = {
   ctgovBaseUrl: string;
   isrctnBaseUrl: string;
   ictrpBaseUrl: string;
+  crisBaseUrl: string;
+  /**
+   * CRIS(공공데이터포털) 인증키. **없을 수 있다** — 나머지 세 레지스트리는 키가
+   * 필요 없으므로, 키가 없다고 CLI 전체가 못 뜨면 안 된다. 없을 때 무슨 일이
+   * 일어나는지는 어댑터가 정한다(exit 4 로 "키가 없다" 를 말한다).
+   */
+  crisServiceKey?: string;
 };
 
 function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -35,6 +43,40 @@ function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
 function optNum(env: NodeJS.ProcessEnv, name: string): number | undefined {
   if (env[name] === undefined || env[name] === '') return undefined;
   return num(env, name, 0 /* 사용되지 않음 — 위에서 이미 값이 있음을 확인했다 */);
+}
+
+/**
+ * `.env` 를 읽어 환경에 채운다. **이미 있는 값은 덮지 않는다** — 파일은 기본값이고
+ * 그때그때의 개입(셸 환경변수)이 우선이라야, 다른 키로 한 번 돌려 보는 일이 파일을
+ * 고쳤다 되돌리는 일이 되지 않는다.
+ *
+ * 파일이 없으면 **아무 일도 하지 않는다.** 네 레지스트리 중 키가 필요한 것은 CRIS
+ * 하나뿐이라, 파일이 없다고 CLI 가 못 뜨면 나머지 셋을 쓰는 사람이 막힌다.
+ *
+ * `node:util` 의 파서를 쓰지 않고 직접 읽는 이유는 형식을 우리가 정할 수 있어야 하기
+ * 때문이다 — 여기서 다루는 것은 주석·빈 줄·따옴표·값 안의 등호까지다. 값 안의 등호를
+ * 자르면 키가 조용히 잘려 인증이 이유 없이 실패한다.
+ */
+export function loadEnvFile(path: string, env: NodeJS.ProcessEnv = process.env): void {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return;
+  }
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed === '' || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    const name = trimmed.slice(0, eq).trim();
+    if (env[name] !== undefined) continue;
+    let value = trimmed.slice(eq + 1).trim();
+    if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+      value = value.slice(1, -1);
+    }
+    env[name] = value;
+  }
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -54,5 +96,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // the site"). 그래서 여기 담기는 것은 호스트까지다.
     isrctnBaseUrl: env.CTREG_ISRCTN_BASE_URL ?? 'https://www.isrctn.com',
     ictrpBaseUrl: env.CTREG_ICTRP_BASE_URL ?? 'https://trialsearch.who.int',
+    // 공공데이터포털의 `질병관리청_임상연구 DB`. 경로에 오퍼레이션(`/list`)이 붙는다.
+    crisBaseUrl: env.CTREG_CRIS_BASE_URL ?? 'https://apis.data.go.kr/1352159/crisinfodataview',
+    ...(env.CTREG_CRIS_SERVICE_KEY ? { crisServiceKey: env.CTREG_CRIS_SERVICE_KEY } : {}),
   };
 }

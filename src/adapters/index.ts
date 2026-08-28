@@ -2,6 +2,7 @@ import type { RegistryAdapter } from '../core/capability.js';
 import type { RegistryKey } from '../core/registry.js';
 import type { Config } from '../runtime/config.js';
 import type { HttpDeps } from '../runtime/http.js';
+import { createCrisAdapter } from './cris/adapter.js';
 import { createCtgovAdapter } from './ctgov/adapter.js';
 import { createIctrpAdapter } from './ictrp/adapter.js';
 import { createIsrctnAdapter } from './isrctn/adapter.js';
@@ -18,5 +19,6 @@ export function createAdapters(cfg: Config, deps: HttpDeps = {}): Partial<Record
     ctgov: createCtgovAdapter(cfg, deps),
     isrctn: createIsrctnAdapter(cfg, deps),
     ictrp: createIctrpAdapter(cfg, deps),
+    cris: createCrisAdapter(cfg, deps),
   };
 }
