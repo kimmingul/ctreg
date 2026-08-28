@@ -260,6 +260,25 @@ describe('CRIS 연구자 대조', () => {
   });
 
   /**
+   * **가장 중요한 경고 문구.** 후보 집합은 `--term` 이 닿는 범위에 갇힌다. 실측
+   * 2026-08-28: `srchWord` 는 연구책임기관과 제목에 닿고 **참여기관에는 닿지 않는다** —
+   * `KCT0000145`(연구책임자 기관이 전북대학교병원)가 `전북대학교병원` 177건에도,
+   * 더 넓은 `전북대학교` 237건에도 없다. 그 시험의 연구책임기관이 동화약품이기 때문이다.
+   *
+   * 그래서 걸린 수를 그 연구자의 전부로 읽으면 틀린다. 문구가 그것을 말해야 한다.
+   */
+  it('후보가 검색어에 갇힌다는 것을 말한다 — 걸린 수가 전부가 아니다', async () => {
+    const { fetchImpl } = routed(['KCT0000001'], { KCT0000001: '김민걸' });
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '전북', investigator: '김민걸', pageSize: 10 } as NormalizedQuery,
+      fetchOpts,
+    );
+    const w = r.warnings.find((x) => x.code === 'investigator_checked_by_detail');
+    expect(w?.message).toMatch(/전부|아닙니다|갇/);
+  });
+
+  /**
    * `--term` 없이 `--investigator` 만 주면 후보가 12,501건이다. 그것을 다 열면 하루
    * 한도(1만 콜)를 한 번에 넘긴다 — 조용히 시작하지 않고 막는다.
    */
