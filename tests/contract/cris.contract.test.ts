@@ -32,5 +32,7 @@ runAdapterContract('cris', {
    */
   probeQuery: { term: 'x' },
   locationsSupported: false,
+  /** 목록 API 에 사람 이름 자리가 없어 상세로 대조한다 — 어댑터 테스트가 그것을 증명한다. */
+  locallyFilteredAxes: ['investigator'],
   sampleId: 'CRIS:KCT0009342',
 });

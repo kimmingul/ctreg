@@ -112,6 +112,19 @@ export type AdapterUnderTest = {
    * `getSupported` 와 같은 규율이다. 성립하지 않는 가정을 뺐으면 무엇이 참인지 말한다.
    */
   locationsSupported?: boolean;
+  /**
+   * **업스트림으로 가지 않고 여기서 거르는 축들.**
+   *
+   * 아래 "신고한 축은 값을 업스트림까지 보낸다" 검사는 필터가 조용히 증발하는 것을
+   * 잡는다. 그런데 어떤 축은 **일부러** 업스트림에 안 보낸다 — CRIS 의 `investigator`
+   * 는 목록 API 에 그런 자리가 없어서 후보를 상세로 하나씩 열어 대조한다. 필터가
+   * 증발한 것이 아니라 다른 자리에서 적용된다.
+   *
+   * 여기 적으면 그 축은 wire 검사에서 빠진다. **대신 그 축이 정말로 거르는지를
+   * 어댑터 테스트가 증명해야 한다** — `getSupported` 와 같은 규율이다.
+   * (cris: `tests/adapters/cris/adapter.test.ts` 의 「CRIS 연구자 대조」)
+   */
+  locallyFilteredAxes?: readonly string[];
 };
 
 const json = (body: unknown, status = 200) =>
@@ -505,6 +518,8 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
         const declared = ok().adapter.capability().search[axis];
         // 자유 텍스트로 신고한 축만 본다.
         if (!declared.supported || declared.values !== null) continue;
+        // 일부러 로컬에서 거르는 축은 선으로 나가지 않는 것이 정상이다.
+        if ((under.locallyFilteredAxes ?? []).includes(axis)) continue;
 
         const { adapter, requests } = ok();
         /**

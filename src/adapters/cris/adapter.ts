@@ -49,7 +49,10 @@ export const CRIS_CAPABILITY: Capability = {
      * 공식 API 는 이 값을 **거르지도 내주지도 않는다** — 실측: `srchWord=김민걸` 0건인데
      * 같은 조건의 기관명은 177건이고, 응답 16항목에 사람 이름이 없다.
      */
-    investigator: off('공식 API 가 연구자 이름을 거르지도 내주지도 않는다 — 사람 이름에 닿는 검색 입력이 없다'),
+    investigator: free(
+      '목록으로는 못 거른다 — --term 으로 좁힌 후보를 상세 조회로 하나씩 열어 연구책임자 이름을 대조한다. ' +
+        '후보 하나당 요청 하나이므로 --term 을 함께 줘야 하고, 몇 건을 열었는지는 경고로 말한다',
+    ),
     geo: off('좌표 검색이 없다'),
     /**
      * **거를 수는 없지만 읽을 수는 있다.** 목록 API 16항목에 모집상태가 없어 필터가 성립하지
@@ -77,11 +80,14 @@ export const CRIS_CAPABILITY: Capability = {
   count: { supported: true, scope: '검색어에 걸린 등록 수(totalCount). 같은 시험의 중복 등재를 묶지 않는다' },
   sort: { supported: false, scope: '정렬 키를 받지 않아 응답 순서 그대로다' },
   /**
-   * 실측 2026-08-28: `numOfRows=100` 을 보내도 50개가 온다. 요청률은 문서에 초당 상한이
-   * 있다고만 적혀 있고(초과 시 오류코드 23) 수치가 없어, **재지 않은 값을 지어내지 않고**
-   * 보수적으로 1/s 로 둔다. 개발계정 일일 상한은 10,000 콜이다.
+   * 실측 2026-08-28: `numOfRows=100` 을 보내도 50개가 온다.
+   *
+   * 요청률은 **활용가이드에 적힌 수** 를 쓴다 — "초당 최대 트랜젝션 [30] tps". 처음에는
+   * 그 수를 몰라 1/s 로 뒀는데, 그러면 연구자 대조(후보 하나당 요청 하나)가 50건에
+   * 50초였다. 문서의 3분의 1인 10/s 로 둔다: 남의 예산을 다 쓰지 않으면서도 쓸 만하다.
+   * 개발계정 일일 상한은 10,000 콜이고, 그것을 무엇이 먹었는지는 경고가 말한다.
    */
-  limits: { maxPageSize: CRIS_MAX_PAGE_SIZE, ratePerSec: 1, maxBatchIds: 1 },
+  limits: { maxPageSize: CRIS_MAX_PAGE_SIZE, ratePerSec: 10, maxBatchIds: 1 },
 };
 
 type CrisResponse = {
@@ -112,6 +118,19 @@ function assertOk(res: CrisResponse): void {
         ? '공공데이터포털의 요청 한도를 넘었습니다. 개발계정은 하루 10,000 콜이고 초당 상한도 있습니다.'
         : '공공데이터포털이 낸 오류입니다. 잠시 뒤 다시 시도하거나 인증키 상태를 확인하세요.';
   throw upstreamError(`CRIS 가 오류를 반환했습니다 (${code}: ${msg})`, hint);
+}
+
+/**
+ * 레코드의 연락처에서 이 이름을 찾는다. **국문·영문 표기가 다 실려 있으므로**(map.ts)
+ * 어느 표기로 물어도 걸린다 — 실측: `김민걸` 과 `Min gul Kim` 이 같은 시험에 함께 온다.
+ *
+ * 느슨하게 맞춘다: 공백을 지우고 대소문자를 무시한다. `Min gul Kim` 과 `Min-Gul Kim` 은
+ * 같은 사람인데 CRIS 와 ctgov 의 표기가 다르다.
+ */
+function matchesInvestigator(rec: TrialRecord, name: string): boolean {
+  const norm = (s: string) => s.replace(/[\s\-·]/g, '').toLowerCase();
+  const want = norm(name);
+  return (rec.contacts ?? []).some((c) => c.name !== undefined && norm(c.name) === want);
 }
 
 export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAdapter {
@@ -183,7 +202,38 @@ export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
 
       const { value, fetchedAt, warnings: w } = await call(params, o);
       const warnings: Warning[] = [...w];
-      const data = toRecords(value, fetchedAt, o.raw);
+      let data = toRecords(value, fetchedAt, o.raw);
+
+      /**
+       * **연구자 대조.** 목록에는 사람 이름이 없으므로, 후보를 하나씩 상세로 열어 본다.
+       * 비싸지만 이것 말고는 길이 없다 — `srchWord` 는 이름에 닿지 않는다(실측: 김민걸 0건).
+       *
+       * 열어 본 수를 경고로 말한다. 말없이 수백 건을 두드리면 사용자는 왜 느린지 모르고,
+       * 하루 한도(1만 콜)를 무엇이 먹었는지도 모른다.
+       */
+      if (q.investigator !== undefined) {
+        const opened = data;
+        const kept: TrialRecord[] = [];
+        for (const rec of opened) {
+          const d = await call(
+            { serviceKey: key, resultType: 'json', crisNumber: rec.registryId },
+            o,
+            '/detail',
+          );
+          if (d.value.resultCode === CRIS_NO_DATA) continue;
+          const full = mapDetail(d.value as unknown as Record<string, unknown>, d.fetchedAt);
+          if (matchesInvestigator(full, q.investigator)) kept.push(o.raw ? ({ ...full, source: d.value } as TrialRecord) : full);
+        }
+        warnings.push({
+          code: 'investigator_checked_by_detail',
+          message:
+            `연구자를 대조하려고 후보 ${opened.length}건을 하나씩 열어 봤습니다 — 이 레지스트리는 ` +
+            '목록으로 사람 이름을 거를 수 없어 상세 조회로 확인합니다. 이 쪽의 후보만 본 것이므로, ' +
+            '다음 쪽에도 같은 연구자의 시험이 있을 수 있습니다.',
+          registry: 'cris',
+        });
+        data = kept;
+      }
 
       const raw = (value.items ?? []).length;
       if (raw > data.length) {

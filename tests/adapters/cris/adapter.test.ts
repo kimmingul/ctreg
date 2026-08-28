@@ -184,3 +184,91 @@ describe('CRIS 어댑터', () => {
     expect(only.nextPageToken).toBeUndefined();
   });
 });
+
+/**
+ * **`--investigator` 를 CRIS 에서 되게 하는 유일한 길.** 목록 API 에는 사람 이름으로
+ * 거는 자리가 없고 `srchWord` 도 이름에 닿지 않는다(실측: 김민걸 0건). 그러나 상세
+ * 조회는 `scientific_name_kr/en` 을 낸다 — 그래서 **후보를 좁힌 뒤 하나씩 대조** 한다.
+ *
+ * 공짜가 아니다: 후보 하나당 요청 하나다. 그래서 `--term` 으로 후보를 좁히도록 요구하고,
+ * 몇 건을 열어 봤는지 경고로 말한다. 말없이 수백 건을 두드리면 사용자는 왜 느린지 모른다.
+ */
+describe('CRIS 연구자 대조', () => {
+  const detail = (id: string, name: string) => ({
+    resultCode: '00', trial_id: id, scientific_title_kr: `${id} 시험`,
+    study_type_kr: '중재연구', scientific_name_kr: name,
+  });
+
+  /** 목록 한 번 + 후보마다 상세 한 번을 돌려주는 스텁. */
+  function routed(ids: string[], names: Record<string, string>) {
+    const urls: string[] = [];
+    const fetchImpl = (async (url: string) => {
+      const u = String(url);
+      urls.push(u);
+      if (u.includes('/detail')) {
+        const m = /crisNumber=([^&]+)/.exec(u);
+        const id = decodeURIComponent(m?.[1] ?? '');
+        return new Response(JSON.stringify(detail(id, names[id] ?? '다른사람')), {
+          status: 200, headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify(ok(ids.map((i) => item(i)), ids.length)),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }) as unknown as typeof fetch;
+    return { fetchImpl, urls };
+  }
+
+  it('후보를 열어 이름이 맞는 것만 낸다', async () => {
+    const { fetchImpl, urls } = routed(
+      ['KCT0000001', 'KCT0000002', 'KCT0000003'],
+      { KCT0000002: '김민걸' },
+    );
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '전북대학교병원', investigator: '김민걸', pageSize: 10 } as NormalizedQuery,
+      fetchOpts,
+    );
+
+    expect(r.data.map((x) => x.registryId)).toEqual(['KCT0000002']);
+    // 후보 셋을 다 열어 봤어야 한다 — 하나만 열고 끝내면 나머지를 조용히 놓친다.
+    expect(urls.filter((u) => u.includes('/detail'))).toHaveLength(3);
+  });
+
+  it('영문 표기로 걸어도 국문 이름과 맞춘다 — 그 반대도 마찬가지다', async () => {
+    const { fetchImpl } = routed(['KCT0000001'], { KCT0000001: '김민걸' });
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '전북', investigator: '김민걸', pageSize: 10 } as NormalizedQuery,
+      fetchOpts,
+    );
+    expect(r.data).toHaveLength(1);
+  });
+
+  /** 몇 건을 열어 봤는지 말해야 사용자가 느린 이유와 좁힘의 대가를 안다. */
+  it('몇 건을 열어 봤는지 경고로 말한다', async () => {
+    const { fetchImpl } = routed(['KCT0000001', 'KCT0000002'], { KCT0000002: '김민걸' });
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '전북', investigator: '김민걸', pageSize: 10 } as NormalizedQuery,
+      fetchOpts,
+    );
+    const w = r.warnings.find((x) => x.code === 'investigator_checked_by_detail');
+    expect(w).toBeDefined();
+    expect(w?.message).toContain('2');
+  });
+
+  /**
+   * `--term` 없이 `--investigator` 만 주면 후보가 12,501건이다. 그것을 다 열면 하루
+   * 한도(1만 콜)를 한 번에 넘긴다 — 조용히 시작하지 않고 막는다.
+   */
+  it('--term 없이 --investigator 만 주면 막는다', async () => {
+    const { fetchImpl, urls } = routed(['KCT0000001'], {});
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    await expect(
+      a.search({ investigator: '김민걸', pageSize: 10 } as NormalizedQuery, fetchOpts),
+    ).rejects.toMatchObject({ code: 'unsupported' });
+    expect(urls).toEqual([]);
+  });
+});

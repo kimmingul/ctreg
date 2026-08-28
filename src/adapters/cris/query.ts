@@ -30,7 +30,9 @@ export function buildListParams(
     throw unsupportedError(
       'CRIS 검색에는 --term 이 필요합니다',
       'CRIS 공식 API 가 받는 검색 입력은 자유 텍스트 하나뿐입니다. ' +
-        '--condition 이나 --lead 같은 축은 이 레지스트리에 없으니 그 말을 --term 에 담아 주세요.',
+        '--condition 이나 --lead 같은 축은 이 레지스트리에 없으니 그 말을 --term 에 담아 주세요. ' +
+        '--investigator 도 혼자서는 쓸 수 없습니다 — 후보를 하나씩 열어 대조하므로 ' +
+        '--term 으로 먼저 좁혀야 합니다(기관명이 잘 듭니다).',
     );
   }
 
