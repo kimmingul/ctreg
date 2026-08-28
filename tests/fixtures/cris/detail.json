@@ -1,0 +1,104 @@
+{
+ "primary_purpose_en": "",
+ "date_registration": "2011/07/18",
+ "public_affiliation_kr": "전북대학교병원",
+ "hc_code_en": "",
+ "study_type_kr": "중재연구",
+ "date_enrolment": "2011-08-03",
+ "scientific_name_kr": "김민걸",
+ "irb_status": "제출 후 승인",
+ "blinding_masking_kr": "사용안함",
+ "target_gender_kr": "남성",
+ "target_age_range_kr": "19 세 ~ 50 세",
+ "recruitment_status_en": "Completed",
+ "sponsor_items": [
+  {
+   "primary_sponsor_kr": "동화약품(주)",
+   "primary_sponsor_en": "Dongwha Pharmaceutical"
+  }
+ ],
+ "affiliation_kr": "전북대학교병원",
+ "funding_items": [
+  {
+   "source_name_kr": "동화약품(주)",
+   "source_name_en": "Dongwha Pharmaceutical"
+  }
+ ],
+ "outcome_items": [
+  {
+   "primary_outcome_time_en": "Up to 72hr after adminstration",
+   "primary_outcome_kr": "혈중농도-시간곡선하 면적: AUClast, AUCinf",
+   "primary_outcome_en": "Area under the concentration-time curve",
+   "primary_outcome_time_kr": "투약 후 72시간"
+  },
+  {
+   "primary_outcome_time_en": "Up to 72hr after adminstration",
+   "primary_outcome_kr": "최고 혈중농도: Cmax",
+   "primary_outcome_en": "Peak concentration",
+   "primary_outcome_time_kr": "투약 후 72시간"
+  }
+ ],
+ "scientific_title_kr": "건강한 남성피험자에서 에트라빌정10밀리그램 및 25밀리그램 경구 투여 후, 안전성 및 약동학적 특성을 평가하기 위한 무작위배정, 단회, 교차, 공개 임상시험",
+ "study_summary_en": "Study to Compare the Pharamcokinetics profile of Amitriptyline Hydrochloride Tablet 10mg and 25mg ",
+ "research_items": [
+  {
+   "site_name_en": "Jeonbuk National University Hospital",
+   "site_name_kr": "전북대학교병원"
+  }
+ ],
+ "intervention_model_kr": "교차설계",
+ "public_title_en": "Study to Compare the Pharamcokinetics profile of Amitriptyline Hydrochloride Tablet 10mg and 25mg ",
+ "trial_id": "KCT0000145",
+ "type_enrolment_en": "Actual",
+ "irb_agency_address_kr": "",
+ "allocation_kr": "무작위배정",
+ "i_freetext_kr": "1군 : 아미트리프틸린염산염정10밀리그램, 1회, 경구투여\r\n2군 : 아미트리프틸린염산염정25밀리그램, 1회, 경구투여",
+ "public_name_en": "Su Mi Han",
+ "primary_outcome_type_en": "Pharmacokinetics",
+ "telephone": "",
+ "results_type_date_completed_kr": "",
+ "blinding_masking_target_kr": "",
+ "resultMsg": "NORMAL_SERVICE",
+ "group_number": "0",
+ "time_perspective_kr": "",
+ "i_freetext_type_kr": "의약품",
+ "irb_committee_kr": "전북대학교병원 생명의학연구윤리심의위원회 ",
+ "biospecimen_retention_en": "",
+ "phase_kr": "",
+ "primary_purpose_kr": "기타",
+ "date_updated": "2013/12/04",
+ "public_affiliation_en": "Jeonbuk National University Hospital",
+ "study_type_en": "Interventional Study",
+ "resultCode": "00",
+ "arm_items": [],
+ "scientific_name_en": "Min gul Kim",
+ "hc_code_kr": "",
+ "target_size": 12,
+ "irb_date": "2011-06-21",
+ "study_summary_kr": "본 임상시험은 아미트리프틸린염산염정제 10밀리그램과 25밀리그램의 약동학적 특성 평가를 위한 비교 연구",
+ "blinding_masking_en": "Open",
+ "recruitment_status_kr": "연구종결",
+ "affiliation_en": "Jeonbuk National University Hospital",
+ "scientific_title_en": "Randomized, Sigle dose, 2-way crossover, Open study to compare the pharmacokinetics profile of Etravil(Amitriptyline Hydrochloride)tablet 10mg and Etravil(Amitriptyline Hydrochloride)tablet 25mg after a single oral administration in healthy male volunteers",
+ "intervention_model_en": "Cross-over",
+ "target_gender_en": "Male",
+ "public_title_kr": "아미트리프틸린염산염정제 10밀리그램과 25밀리그램의 약동학적 특성 평가를 위한 비교 연구",
+ "target_age_range_en": "19 Year ~ 50 Year",
+ "irb_committee_en": "INSTITUTIONAL! REVIEW BOARD OF CHONBUK NATIONAL UNIVERSITY HOSPITAL",
+ "results_type_date_completed_en": "",
+ "i_freetext_en": "Group 1 : Amitriptyline HCl tablet 10mg, single Oral dose\r\nGroup 2 : Amitriptyline HCl tablet 10mg, single Oral dose",
+ "public_name_kr": "한수미",
+ "allocation_en": "RCT",
+ "irb_agency_address_en": "",
+ "blinding_masking_target_en": "",
+ "type_enrolment_kr": "실제등록",
+ "primary_outcome_type_kr": "약물동태성",
+ "irb_status_en": "  Submitted approval",
+ "results_date_completed": "2011-09-30",
+ "biospecimen_retention_kr": "",
+ "time_perspective_en": "",
+ "phase_en": "",
+ "irb_phone": "",
+ "i_freetext_type_en": "Drug",
+ "irb_number": "CUH 2011-06-004"
+}

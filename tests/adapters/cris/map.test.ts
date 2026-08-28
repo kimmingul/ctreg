@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mapItem } from '../../../src/adapters/cris/map.js';
+import { mapDetail, mapItem } from '../../../src/adapters/cris/map.js';
 import { TrialRecordSchema } from '../../../src/core/record.js';
 
 const AT = '2026-08-28T00:00:00.000Z';
@@ -67,5 +69,53 @@ describe('CRIS 레코드 매핑', () => {
     const r = mapItem({ ...REAL, study_type_kr: '처음보는연구종류' }, AT);
     expect(r.studyType).toBe('other');
     expect(r.studyTypeRaw).toBe('처음보는연구종류');
+  });
+});
+
+/**
+ * 상세 조회는 목록과 **다른 것을 내준다** — 연구책임자 성명, 모집현황, 목표대상자 수,
+ * 참여기관, 결과변수까지. `get` 이 이것을 쓰는 이유이고, `search`(목록)와 `get`(상세)의
+ * 레코드가 다른 이유이기도 하다.
+ */
+describe('CRIS 상세 매핑', () => {
+  const detail = JSON.parse(
+    readFileSync(join(__dirname, '../../fixtures/cris/detail.json'), 'utf8'),
+  ) as Record<string, unknown>;
+
+  it('계약을 지키는 레코드를 만든다', () => {
+    expect(() => TrialRecordSchema.parse(mapDetail(detail, AT))).not.toThrow();
+  });
+
+  /**
+   * **목록에서는 모를 수밖에 없던 것을 상세에서는 안다.** 목록 레코드의 `unknown` 은
+   * 사실이었고, 상세 레코드에서까지 `unknown` 이면 그건 우리가 안 읽은 것이다.
+   */
+  it('모집현황을 실제로 읽는다', () => {
+    const r = mapDetail(detail, AT);
+    expect(r.status).toBe('completed');
+    expect(r.statusRaw).toBe('연구종결');
+  });
+
+  /**
+   * **같은 필드인데 오퍼레이션마다 구분자가 다르다**(실측 2026-08-28):
+   * 상세 `2011/07/18`, 목록 `2011-07-18`. 목록 기준으로만 검사하면 상세의 날짜가
+   * 통째로 사라진다 — 조용히 빈 필드가 되는 부류다.
+   */
+  it('슬래시로 오는 날짜도 읽는다', () => {
+    const r = mapDetail(detail, AT);
+    expect(r.dates?.firstPosted).toBe('2011-07-18');
+    expect(r.dates?.lastUpdated).toBe('2013-12-04');
+    expect(r.dates?.start).toBe('2011-08-03');
+  });
+
+  it('연구책임자와 기관을 싣는다', () => {
+    const r = mapDetail(detail, AT);
+    expect(JSON.stringify(r)).toContain('김민걸');
+    expect(r.sponsor?.lead).toBe('동화약품(주)');
+  });
+
+  it('목표대상자 수를 싣는다', () => {
+    // 실측: target_size 12, type_enrolment_kr '실제등록'. 스키마의 어휘는 actual 이다.
+    expect(mapDetail(detail, AT).enrollment).toEqual({ count: 12, basis: 'actual' });
   });
 });

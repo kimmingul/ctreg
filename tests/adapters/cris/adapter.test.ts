@@ -109,11 +109,26 @@ describe('CRIS 어댑터', () => {
   });
 
   /**
-   * 이 API 에는 ID 로 한 건을 집는 자리가 없어 검색으로 대신한다. 검색은 번호를 부분
-   * 일치로도 물 수 있으므로, **대조 없이 첫 건을 내면 다른 시험을 그 시험이라고 내놓는다.**
+   * `get` 은 상세 조회를 쓴다 — 응답이 `items` 로 감싸이지 않고 필드가 **최상위에** 편다
+   * (실측). 없는 번호는 오류가 아니라 `03`(NODATA_ERROR)으로 온다.
    */
-  it('get 은 돌아온 등록번호를 대조한다 — 첫 건을 그냥 집지 않는다', async () => {
-    const { fetchImpl } = stub(ok([item('KCT0009999', '다른 시험')]));
+  it('없는 번호는 오류가 아니라 not_found 다', async () => {
+    const { fetchImpl } = stub({ resultCode: '03', resultMsg: 'NODATA_ERROR' });
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.get(['CRIS:KCT9999999'], fetchOpts);
+
+    expect(r.data).toEqual([]);
+    expect(r.warnings.map((w) => w.code)).toContain('not_found');
+  });
+
+  /**
+   * 상세 조회는 번호 하나를 받으므로 목록보다 안전하지만, 확인 없이 믿으면 업스트림이
+   * 다른 것을 줬을 때 그것을 그 시험이라고 내놓는다.
+   */
+  it('돌아온 번호가 다르면 그 시험이라고 내놓지 않는다', async () => {
+    const { fetchImpl } = stub({
+      resultCode: '00', trial_id: 'KCT0009999', scientific_title_kr: '다른 시험', study_type_kr: '중재연구',
+    });
     const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
     const r = await a.get(['CRIS:KCT0000145'], fetchOpts);
 
@@ -121,13 +136,27 @@ describe('CRIS 어댑터', () => {
     expect(r.warnings.map((w) => w.code)).toContain('not_found');
   });
 
-  it('get 은 맞는 번호를 찾으면 그 레코드를 낸다', async () => {
-    const { fetchImpl } = stub(ok([item('KCT0009999', '다른 시험'), item('KCT0000145', '찾던 시험')]));
+  it('맞는 번호면 상세 레코드를 낸다 — 목록보다 두껍다', async () => {
+    const { fetchImpl, urls } = stub({
+      resultCode: '00',
+      trial_id: 'KCT0000145',
+      scientific_title_kr: '찾던 시험',
+      study_type_kr: '중재연구',
+      recruitment_status_kr: '연구종결',
+      scientific_name_kr: '김민걸',
+      target_size: 12,
+      type_enrolment_kr: '실제등록',
+    });
     const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
     const r = await a.get(['CRIS:KCT0000145'], fetchOpts);
 
     expect(r.data.map((x) => x.registryId)).toEqual(['KCT0000145']);
-    expect(r.data[0]?.title).toBe('찾던 시험');
+    // 목록으로는 알 수 없던 것들 — get 이 상세를 쓰는 이유다.
+    expect(r.data[0]?.status).toBe('completed');
+    expect(r.data[0]?.enrollment).toEqual({ count: 12, basis: 'actual' });
+    expect(JSON.stringify(r.data[0])).toContain('김민걸');
+    // 목록이 아니라 상세를 부른 것이 맞는지 본다.
+    expect(urls.some((u) => u.includes('/detail') && u.includes('crisNumber'))).toBe(true);
   });
 
   /**

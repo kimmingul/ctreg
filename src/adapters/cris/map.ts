@@ -1,5 +1,6 @@
 import type { TrialRecord } from '../../core/record.js';
 import { formatTrialId } from '../../core/registry.js';
+import type { TrialStatus } from '../../core/vocab.js';
 import { toPhase, toStudyType } from './vocab.js';
 
 /**
@@ -35,9 +36,13 @@ const nonEmpty = (v: string | undefined): string | undefined => {
   return s === '' ? undefined : s;
 };
 
-/** `YYYY-MM-DD` 만 통과시킨다. CRIS 가 빈 문자열을 내는 자리가 있다(실측). */
+/**
+ * `YYYY-MM-DD` 만 통과시킨다. CRIS 가 빈 문자열을 내는 자리가 있고(실측), **오퍼레이션마다
+ * 구분자가 다르다** — 같은 `date_registration` 이 목록에서는 `2011-07-18`, 상세에서는
+ * `2011/07/18` 로 온다(실측 2026-08-28). 슬래시를 접지 않으면 상세의 날짜가 통째로 사라진다.
+ */
 const date = (v: string | undefined): string | undefined => {
-  const s = nonEmpty(v);
+  const s = nonEmpty(v)?.replace(/\//g, '-');
   return s !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined;
 };
 
@@ -99,5 +104,92 @@ export function mapItem(item: CrisItem, fetchedAt: string): TrialRecord {
     ...(sponsorLead !== undefined ? { sponsor: { lead: sponsorLead } } : {}),
     ...(Object.keys(dates).length > 0 ? { dates } : {}),
     fetchedAt,
+  };
+}
+
+/**
+ * 상세 조회(`/detail`)가 내는 레코드. 목록보다 훨씬 두껍다 — 연구책임자 성명, 모집현황,
+ * 목표대상자 수, 참여기관, 결과변수가 여기 있다.
+ *
+ * **그래서 `get` 과 `search` 의 레코드가 다르다.** 목록 레코드의 `status: 'unknown'` 은
+ * 그 오퍼레이션이 정말 모르기 때문이고, 여기서는 읽어서 신고한다.
+ */
+export type CrisDetail = Record<string, unknown>;
+
+/** 실측 값 → 공통 어휘. 표에 없는 값은 `other` 로 신고하고 원문을 함께 싣는다. */
+const STATUS: Record<string, TrialStatus> = {
+  '모집 중': 'recruiting',
+  '모집중': 'recruiting',
+  '모집전': 'not_yet_recruiting',
+  '모집중지': 'suspended',
+  '모집종료': 'active_not_recruiting',
+  '연구종결': 'completed',
+  '연구중단': 'terminated',
+  '초청등록': 'enrolling_by_invitation',
+};
+
+const str = (o: CrisDetail, k: string): string | undefined =>
+  typeof o[k] === 'string' ? nonEmpty(o[k] as string) : undefined;
+
+const firstOf = (o: CrisDetail, listKey: string, itemKey: string): string | undefined => {
+  const list = o[listKey];
+  if (!Array.isArray(list)) return undefined;
+  for (const x of list) {
+    if (typeof x === 'object' && x !== null) {
+      const v = (x as Record<string, unknown>)[itemKey];
+      if (typeof v === 'string' && nonEmpty(v) !== undefined) return nonEmpty(v);
+    }
+  }
+  return undefined;
+};
+
+export function mapDetail(d: CrisDetail, fetchedAt: string): TrialRecord {
+  const base = mapItem(
+    {
+      trial_id: str(d, 'trial_id'),
+      scientific_title_kr: str(d, 'scientific_title_kr'),
+      scientific_title_en: str(d, 'scientific_title_en'),
+      date_registration: str(d, 'date_registration'),
+      date_updated: str(d, 'date_updated'),
+      date_enrolment: str(d, 'date_enrolment'),
+      results_date_completed: str(d, 'results_date_completed'),
+      study_type_kr: str(d, 'study_type_kr'),
+      i_freetext_kr: str(d, 'i_freetext_kr'),
+      phase_kr: str(d, 'phase_kr'),
+      primary_sponsor_kr: firstOf(d, 'sponsor_items', 'primary_sponsor_kr'),
+    },
+    fetchedAt,
+  );
+
+  const statusRaw = str(d, 'recruitment_status_kr');
+  const status = statusRaw === undefined ? undefined : (STATUS[statusRaw] ?? 'other');
+
+  const size = d.target_size;
+  const count = typeof size === 'number' ? size : typeof size === 'string' && /^\d+$/.test(size) ? Number(size) : undefined;
+  // 실측: `실제등록` = 실제로 등록된 수, `예정` = 계획된 수. 스키마 어휘로는 actual / estimated 다.
+  const basis = str(d, 'type_enrolment_kr') === '실제등록' ? 'actual' : 'estimated';
+
+  /**
+   * **연구책임자를 싣는다.** 이것이 상세 조회를 쓰는 가장 큰 이유다 — 목록 API 16항목에는
+   * 사람 이름이 아예 없다. 국문·영문이 따로 오므로 둘 다 싣는다(실측: `김민걸` / `Min gul Kim`).
+   * 표기가 다르므로 어느 하나만 실으면 그 표기로 찾는 쪽이 못 찾는다.
+   */
+  const contacts: { name?: string; role?: string }[] = [];
+  const sciKr = str(d, 'scientific_name_kr');
+  const sciEn = str(d, 'scientific_name_en');
+  if (sciKr !== undefined) contacts.push({ name: sciKr, role: '연구책임자' });
+  if (sciEn !== undefined && sciEn !== sciKr) contacts.push({ name: sciEn, role: 'Principal Investigator' });
+  const pubKr = str(d, 'public_name_kr');
+  if (pubKr !== undefined) contacts.push({ name: pubKr, role: '연구실무담당자' });
+
+  const site = firstOf(d, 'research_items', 'site_name_kr');
+  const country = site === undefined ? undefined : { country: 'Korea, Republic of', facility: site };
+
+  return {
+    ...base,
+    ...(status !== undefined ? { status, statusRaw } : {}),
+    ...(count !== undefined ? { enrollment: { count, basis } } : {}),
+    ...(contacts.length > 0 ? { contacts } : {}),
+    ...(country !== undefined ? { locations: [country], locationsTotal: (d.research_items as unknown[]).length } : {}),
   };
 }

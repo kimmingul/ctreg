@@ -5,7 +5,7 @@ import { parseTrialId } from '../../core/registry.js';
 import type { Config } from '../../runtime/config.js';
 import { unsupportedError, upstreamError } from '../../runtime/errors.js';
 import { getJson, type HttpDeps } from '../../runtime/http.js';
-import { mapItem, type CrisItem } from './map.js';
+import { mapDetail, mapItem, type CrisItem } from './map.js';
 import { buildListParams, CRIS_MAX_PAGE_SIZE, parsePageToken } from './query.js';
 
 const free = (scope: string): SearchAxis => ({ supported: true, values: null, exhaustive: null, scope });
@@ -51,17 +51,27 @@ export const CRIS_CAPABILITY: Capability = {
      */
     investigator: off('공식 API 가 연구자 이름을 거르지도 내주지도 않는다 — 사람 이름에 닿는 검색 입력이 없다'),
     geo: off('좌표 검색이 없다'),
-    status: closedOff('모집상태가 응답 16항목에 없다 — 거를 수도, 읽을 수도 없다'),
+    /**
+     * **거를 수는 없지만 읽을 수는 있다.** 목록 API 16항목에 모집상태가 없어 필터가 성립하지
+     * 않는다(그래서 `supported: false`). 상세 조회에는 `recruitment_status_kr` 가 있으므로
+     * `get` 이 낸 레코드의 status 는 진짜다 — search 가 낸 것은 `unknown` 이다.
+     */
+    status: closedOff('목록으로는 거를 수도 읽을 수도 없다. get 은 상세에서 읽어 신고한다'),
     phase: closedOff('상 필터가 없다. 응답의 상 필드는 대체로 비어 있다(표본 200건 중 실린 값 0)'),
     studyType: closedOff('연구종류 필터가 없다 — 값은 읽어서 신고하지만 그것으로 거를 수는 없다'),
     updatedRange: off('최종갱신일로 거는 자리가 없다 — 값은 읽어 온다'),
     startRange: off('첫 대상자 등록일로 거는 자리가 없다 — 값은 읽어 온다'),
     completionRange: off('연구종료일로 거는 자리가 없다 — 값은 읽어 온다'),
   },
+  /**
+   * **`get`(상세 조회)과 `search`(목록 조회)가 내주는 것이 다르다.** 상세는 연구책임자
+   * 성명·모집현황·목표대상자 수·참여기관까지 낸다. 그래서 아래 신고는 `get` 기준이다 —
+   * `--include` 로 목록 결과를 두껍게 만들 수는 없다(목록 API 가 그 자리를 안 낸다).
+   */
   detail: {
-    eligibilityText: { supported: false, scope: '목록 API 에 선정·제외 기준이 없다' },
-    outcomes: { supported: false, scope: '주요결과변수 1개만 문자열로 오고 구조가 없다' },
-    contacts: { supported: false, scope: '연락처가 응답에 없다' },
+    eligibilityText: { supported: false, scope: '나이·성별 범위는 오지만 선정·제외 기준문은 없다' },
+    outcomes: { supported: false, scope: '결과변수가 상세에 오지만 ctreg 의 구조로 옮기지 않았다 — 재지 않은 것을 신고하지 않는다' },
+    contacts: { supported: true, scope: 'get 에서만. 연구책임자 성명(국문·영문)과 연구실무담당자를 낸다' },
   },
   results: { supported: false, scope: '구조화된 결과 데이터를 내주지 않는다' },
   count: { supported: true, scope: '검색어에 걸린 등록 수(totalCount). 같은 시험의 중복 등재를 묶지 않는다' },
@@ -79,15 +89,21 @@ type CrisResponse = {
   resultMsg?: string;
   totalCount?: number;
   items?: CrisItem[];
+  /** `/detail` 은 `items` 로 감싸지 않고 필드를 최상위에 편다(실측). */
+  trial_id?: string;
+  [k: string]: unknown;
 };
 
 /**
  * 공공데이터포털은 실패도 **HTTP 200 + resultCode** 로 낸다. 그대로 두면 `items` 가 없는
  * 응답이 0건으로 읽힌다 — 이 CLI 가 없애려는 실패다. 정상 코드(`00`)가 아니면 던진다.
  */
+/** `03`(NODATA_ERROR)은 실패가 아니라 **없다** 는 답이다. 호출자가 not_found 로 다룬다. */
+export const CRIS_NO_DATA = '03';
+
 function assertOk(res: CrisResponse): void {
   const code = res.resultCode;
-  if (code === undefined || code === '00') return;
+  if (code === undefined || code === '00' || code === CRIS_NO_DATA) return;
   const msg = res.resultMsg ?? '(메시지 없음)';
   const hint =
     code === '20' || code === '30'
@@ -119,13 +135,14 @@ export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
   const call = async (
     params: Record<string, string | number>,
     o: { cacheMode: FetchOpts['cacheMode'] },
+    path: '/list' | '/detail' = '/list',
   ): Promise<{ value: CrisResponse; fetchedAt: string; warnings: Warning[] }> => {
     const r = await getJson<CrisResponse>(
       cfg,
       {
         registry: 'cris',
         baseUrl: cfg.crisBaseUrl,
-        path: '/list',
+        path,
         params,
         // 인증키가 사람이 읽는 실패 메시지로 새지 않게 한다.
         redactParams: ['serviceKey'],
@@ -197,16 +214,31 @@ export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
       for (const id of ids) {
         const { registryId } = parseTrialId(id);
         const { value, fetchedAt, warnings: w } = await call(
-          { serviceKey: key, resultType: 'json', srchWord: registryId, numOfRows: CRIS_MAX_PAGE_SIZE, pageNo: 1 },
+          { serviceKey: key, resultType: 'json', crisNumber: registryId },
           o,
+          '/detail',
         );
         warnings.push(...w);
-        const hit = toRecords(value, fetchedAt, o.raw).find((r) => r.registryId.toUpperCase() === registryId.toUpperCase());
-        if (hit === undefined) {
+
+        /**
+         * 없는 번호는 `03`(NODATA_ERROR)으로 온다 — 오류가 아니라 **없다** 는 답이다.
+         * 이 둘을 섞으면 "그런 시험이 없다" 와 "레지스트리가 고장났다" 가 같은 출력이 된다.
+         */
+        if (value.resultCode === CRIS_NO_DATA || (value as { trial_id?: string }).trial_id === undefined) {
           warnings.push({ code: 'not_found', message: `${CRIS_CAPABILITY.name} 에서 찾지 못했습니다.`, id });
           continue;
         }
-        data.push(hit);
+
+        const rec = mapDetail(value as unknown as Record<string, unknown>, fetchedAt);
+        /**
+         * 돌아온 번호를 대조한다. 상세 조회는 번호 하나를 받으므로 목록보다 안전하지만,
+         * 확인 없이 믿으면 업스트림이 다른 것을 줬을 때 그것을 그 시험이라고 내놓는다.
+         */
+        if (rec.registryId.toUpperCase() !== registryId.toUpperCase()) {
+          warnings.push({ code: 'not_found', message: `${CRIS_CAPABILITY.name} 에서 찾지 못했습니다.`, id });
+          continue;
+        }
+        data.push(o.raw ? ({ ...rec, source: value } as TrialRecord) : rec);
       }
       return { data, warnings };
     },

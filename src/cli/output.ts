@@ -115,6 +115,16 @@ function recordLines(row: Record<string, unknown>): string[] {
     }
   }
 
+  // `--include contacts` 로 받아 온 사람들. 이름과 역할이 함께여야 누가 무엇인지 읽힌다.
+  add(
+    '연락처',
+    joinList(row.contacts, (x) => {
+      const name = typeof x.name === 'string' ? x.name : undefined;
+      const role = typeof x.role === 'string' ? x.role : undefined;
+      return name === undefined ? undefined : role === undefined ? name : `${name}(${role})`;
+    }),
+  );
+
   const outcomes = row.outcomes;
   if (Array.isArray(outcomes) && outcomes.length > 0) {
     const total = typeof row.outcomesTotal === 'number' ? row.outcomesTotal : outcomes.length;

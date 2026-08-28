@@ -238,6 +238,28 @@ describe('text 는 받아 온 것을 버리지 않는다', () => {
     expect(t).toContain('제목만');
   });
 
+  /**
+   * `--include contacts` 로 받아 온 것이 화면에 없으면, 앞서 고친 것과 같은 부류다 —
+   * 요청한 것이 조용히 사라진다. CRIS 는 연구책임자를 여기로 싣는다.
+   */
+  it('연락처를 받아 왔으면 낸다', () => {
+    const withContacts: Envelope = {
+      ...rich,
+      data: [
+        {
+          ...(rich.data as Record<string, unknown>[])[0],
+          contacts: [
+            { name: '김민걸', role: '연구책임자' },
+            { name: '한수미', role: '연구실무담당자' },
+          ],
+        },
+      ],
+    };
+    const t = render(withContacts, 'text');
+    expect(t).toContain('김민걸');
+    expect(t).toContain('연구책임자');
+  });
+
   it('JSON 을 그대로 쏟지 않는다 — 사람이 읽는 형식이다', () => {
     expect(out()).not.toContain('"locationsTotal"');
   });
