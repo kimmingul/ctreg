@@ -399,3 +399,46 @@ describe('postForm — 폼 POST', () => {
     expect(second.cached).toBe(true);
   });
 });
+
+/**
+ * **비밀값은 사람이 읽는 자리로 새면 안 된다.**
+ *
+ * CRIS(공공데이터포털)는 `serviceKey` 를 질의 파라미터로 받는다. 실패 메시지가
+ * 요청 URL 을 그대로 싣고 있었으므로, 그 상태로 어댑터를 붙이면 타임아웃 한 번에
+ * 키가 봉투에 실려 나간다 — 사용자가 그 JSON 을 이슈에 붙이는 순간 유출이다.
+ *
+ * 캐시 키는 해시라 원문이 남지 않는다(cache.ts). 남는 자리는 이 메시지뿐이다.
+ */
+describe('요청 URL 의 비밀값', () => {
+  const failing = (() => {
+    const f = (async () => {
+      throw new Error('network down');
+    }) as unknown as typeof fetch;
+    return f;
+  })();
+
+  it('실패 메시지에 비밀 파라미터 값을 싣지 않는다', async () => {
+    try {
+      await getJson(
+        { ...cfg, maxRetries: 0 },
+        {
+          registry: 'cris',
+          baseUrl: 'https://apis.example.test',
+          path: '/list',
+          params: { serviceKey: 'SUPERSECRET123', srchWord: '당뇨병' },
+          redactParams: ['serviceKey'],
+          cacheMode: 'off',
+          ratePerSec: 100,
+        },
+        { fetchImpl: failing, sleep: async () => {} },
+      );
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const msg = `${(e as Error).message} ${(e as { hint?: string }).hint ?? ''}`;
+      expect(msg).not.toContain('SUPERSECRET123');
+      // 어디에 대한 요청이었는지는 남아야 진단이 된다.
+      expect(msg).toContain('apis.example.test');
+      expect(msg).toContain('srchWord');
+    }
+  });
+});

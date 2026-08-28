@@ -44,6 +44,17 @@ type GetJsonOpts<T> = {
   decode?: (text: string) => T;
   /** `decode` 와 짝이다. 기본값은 `application/json`. */
   accept?: string;
+  /**
+   * **사람이 읽는 자리에서 가릴 파라미터 이름들.**
+   *
+   * 왜 필요한가 — 실패 메시지가 요청 URL 을 그대로 싣는다(진단에 필요하다). CRIS 처럼
+   * 인증키를 질의 파라미터로 받는 레지스트리에서는 그 URL 에 비밀값이 들어 있고,
+   * 타임아웃 한 번이면 키가 봉투에 실려 나간다 — 사용자가 그 JSON 을 붙이는 순간 유출이다.
+   *
+   * 캐시 키는 해시라 원문이 남지 않으므로(cache.ts) 가려야 할 자리는 이 메시지뿐이다.
+   * 값만 가리고 **이름은 남긴다**: 어느 파라미터를 보냈는지는 진단에 필요하다.
+   */
+  redactParams?: readonly string[];
 };
 
 function buildUrl(baseUrl: string, path: string, params: GetJsonOpts<unknown>['params']): string {
@@ -191,13 +202,24 @@ export async function getJson<T>(
   // cacheKey 의 endpoint 인자에 실어 보낸다 — 요청 URL 의 파라미터 앞부분 그대로다.
   const key = cacheKey(o.registry, o.baseUrl + o.path, o.params);
   const url = buildUrl(o.baseUrl, o.path, o.params);
+  // 실제 요청에는 원문 URL 을, 사람이 읽는 자리에는 가린 URL 을 쓴다.
+  const shownUrl =
+    o.redactParams === undefined || o.redactParams.length === 0
+      ? url
+      : buildUrl(
+          o.baseUrl,
+          o.path,
+          Object.fromEntries(
+            Object.entries(o.params).map(([k, v]) => [k, o.redactParams!.includes(k) ? '***' : v]),
+          ),
+        );
 
   return withReliability(
     cfg,
     {
       registry: o.registry,
       cacheKey: key,
-      url,
+      url: shownUrl,
       cacheMode: o.cacheMode,
       ratePerSec: o.ratePerSec,
       ...(o.signal ? { signal: o.signal } : {}),

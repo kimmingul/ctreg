@@ -10,3 +10,9 @@ clinicaltrialsgov-mcp-server/
 
 # 개인 세션 설정과 자동 생성 핸드오프 — 이 저장소의 일부가 아니다.
 .claude/
+
+# 비밀값. CRIS(공공데이터포털) serviceKey 등이 여기 들어간다 — 절대 커밋하지 않는다.
+# 변수 이름과 받는 법은 .env.example 에 적어 두고, 값은 각자 자기 파일에 둔다.
+.env
+.env.*
+!.env.example
