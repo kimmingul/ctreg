@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mapDetail, mapItem } from '../../../src/adapters/cris/map.js';
+import { CRIS_PI_ROLE, mapDetail, mapItem } from '../../../src/adapters/cris/map.js';
 import { TrialRecordSchema } from '../../../src/core/record.js';
 
 const AT = '2026-08-28T00:00:00.000Z';
@@ -106,6 +106,19 @@ describe('CRIS 상세 매핑', () => {
     expect(r.dates?.firstPosted).toBe('2011-07-18');
     expect(r.dates?.lastUpdated).toBe('2013-12-04');
     expect(r.dates?.start).toBe('2011-08-03');
+  });
+
+  /**
+   * 역할 문자열은 **만드는 쪽(map)과 대조하는 쪽(adapter)이 같은 상수를 봐야** 한다.
+   * 갈리면 `--investigator` 가 조용히 아무것도 못 거른다 — 사보타주로 확인했다:
+   * 문자열 하나만 바꿔도 스위트가 통과했다.
+   */
+  it('연구책임자 연락처에 약속된 역할 이름을 붙인다', () => {
+    const pi = (mapDetail(detail, AT).contacts ?? []).filter((c) => c.role === CRIS_PI_ROLE);
+    expect(pi.map((c) => c.name)).toContain('김민걸');
+    // 실무담당자는 그 역할이 아니다 — 이것이 갈리는 지점이다.
+    const others = (mapDetail(detail, AT).contacts ?? []).filter((c) => c.role !== CRIS_PI_ROLE);
+    expect(others.map((c) => c.name)).toContain('한수미');
   });
 
   it('연구책임자와 기관을 싣는다', () => {
