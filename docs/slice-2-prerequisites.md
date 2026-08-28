@@ -993,6 +993,56 @@ ctreg 를 네 번 부른 합집합이 **40건**, 스크립트의 604건 전수 �
 불러 합쳤다. 축 하나에 값을 여럿 받게 할지는 정하지 않았다 — 다른 레지스트리에서
 `--term` 의 뜻이 바뀌는 문제가 딸려 온다.
 
+## ICTRP 에는 역공학할 API 가 없다 — 그리고 우리가 쓰는 문이 잘못됐다 (2026-08-29)
+
+**물음**: ICTRP 도 프론트-백엔드 구조일 테니 그 API 를 역공학해 보라.
+
+**답: 역공학할 것이 없다.** 그 포털은 프론트-백엔드가 아니라 **서버 렌더링 ASP.NET
+WebForms** 다. XHR 로 JSON 을 받는 자리가 없고, 화면 전환이 `__VIEWSTATE`·`__EVENTTARGET`
+포스트백이다. CTIS 때는 SPA 번들에서 `/ctis-public-api/search` 가 나왔지만 여기는 그런
+층이 없다.
+
+**대신 공식 경로가 둘 있다.** 둘 다 WHO 가 문서로 공개해 둔 것이다.
+
+| 경로 | 무엇 | 조건 |
+|---|---|---|
+| **Web Service** | XML 로 실시간 질의 | 사무국과 합의 + **비용**. 파트너: Cochrane, Health Canada, Kofam, OpenTrials |
+| **Crawling Service** | HTML 레코드를 크롤·색인 | **합의된 파트너만** + **비용** |
+
+크롤 서비스의 입구는 실제로 열려 있다 — `crawl/crawl0.aspx` → 구간 70개 →
+각 `crawlN.aspx` 가 시험 링크 **11,000개** → `Trial3.aspx?trialid=<ID>`.
+그러나 **문이 열려 있다는 것과 들어가도 된다는 것은 다르다.** 이용 조건이 이렇게 적는다:
+
+> *"an **agreed partner** website can access, crawl and index HTML records from the ICTRP database"*
+> *"The **cost** charged by ICTRP for accessing the ICTRP crawling service can be provided upon request"*
+> *"The ICTRP Crawling Service is available to the public for **research purposes only**"*
+> *"Users of the Crawling Service **may not copy, reproduce, republish, frame, post, upload, distribute, transmit or modify** in any way all or any part of the material accessed via this Crawling Service"*
+
+그리고 `https://trialsearch.who.int/robots.txt` 는 **`User-agent: * / Disallow: /`** 다.
+
+### 그래서 드러난 것 — 우리 어댑터가 잘못된 문을 쓰고 있다
+
+ctreg 의 ictrp 어댑터는 **크롤 서비스도 웹 서비스도 아니고, 사람이 쓰는 검색 화면**을
+포스트백으로 조작한다. 셋 중 어느 것도 우리에게 허락된 적이 없다.
+
+CRIS 에서 배운 것을 여기에는 적용하지 않고 있었다 — **CRIS 는 `robots.txt` 를 보고
+문을 바꿨는데, 이미 붙어 있던 ICTRP 는 아무도 다시 보지 않았다.** 새 어댑터에 적용한
+기준을 옛 어댑터에 소급하지 않은 것이다.
+
+> 교훈: **규칙을 새로 세우면 이미 있는 것에도 한 번 대 본다.** 새 것에만 적용하면
+> 저장소 안에 두 개의 기준이 생기고, 오래된 쪽이 계속 틀린 채로 남는다.
+
+### 무엇을 할 수 있나
+
+| 선택 | 무엇이 되나 | 대가 |
+|---|---|---|
+| **사무국에 문의**(ictrpinfo@who.int) | Web Service 로 정식 질의 | 합의·비용. 답이 올 때까지 모름 |
+| **ICTRP 를 끈다** | 다른 셋은 그대로 | 집계 레지스트리를 잃는다 |
+| **명시적 동의 뒤에만 켠다** | 합의가 있는 사용자는 쓴다 | 기본값이 꺼짐 |
+| 그대로 둔다 | — | 약관을 알고도 어기는 것이 된다 |
+
+**측정으로 답할 수 있는 문제가 아니다.** 프로젝트 주인이 정할 일이라 여기 적어 두고 멈춘다.
+
 ## 조사에 남은 미확인 질문
 
 - ~~**ICTRP 의 "final sample size" 가 실제로 채워지는가.**~~ — **확인됨(2026-08-26): target 뿐이다.**
