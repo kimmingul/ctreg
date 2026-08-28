@@ -5,7 +5,7 @@ import { parseTrialId } from '../../core/registry.js';
 import type { Config } from '../../runtime/config.js';
 import { unsupportedError, upstreamError } from '../../runtime/errors.js';
 import { getJson, type HttpDeps } from '../../runtime/http.js';
-import { mapDetail, mapItem, type CrisItem } from './map.js';
+import { CRIS_PI_ROLE, mapDetail, mapItem, type CrisItem } from './map.js';
 import { buildListParams, CRIS_MAX_PAGE_SIZE, parsePageToken } from './query.js';
 
 const free = (scope: string): SearchAxis => ({ supported: true, values: null, exhaustive: null, scope });
@@ -127,16 +127,22 @@ function assertOk(res: CrisResponse): void {
 }
 
 /**
- * 레코드의 연락처에서 이 이름을 찾는다. **국문·영문 표기가 다 실려 있으므로**(map.ts)
- * 어느 표기로 물어도 걸린다 — 실측: `김민걸` 과 `Min gul Kim` 이 같은 시험에 함께 온다.
+ * 레코드의 **연구책임자** 연락처에서 이 이름을 찾는다.
  *
- * 느슨하게 맞춘다: 공백을 지우고 대소문자를 무시한다. `Min gul Kim` 과 `Min-Gul Kim` 은
- * 같은 사람인데 CRIS 와 ctgov 의 표기가 다르다.
+ * **역할을 봐야 한다.** 연락처를 통째로 대조하면 연구실무담당자까지 연구자로 세게 된다 —
+ * 실측 2026-08-28: `KCT0012508` 은 연구책임자가 이창섭이고 김민걸은 실무담당자다. 역할을
+ * 안 보면 그 시험이 김민걸의 연구 목록에 들어간다. 남의 연구가 섞이는 것이고,
+ * `--investigator` 가 약속한 것과 다른 답이다.
+ *
+ * 이름은 느슨하게 맞춘다: 공백·하이픈을 지우고 대소문자를 무시한다. 같은 사람인데
+ * 표기가 여럿이다(실측: `Min gul Kim` · `MIN GUL KIM` · `Min-Gul Kim` 이 다 나온다).
  */
 function matchesInvestigator(rec: TrialRecord, name: string): boolean {
   const norm = (s: string) => s.replace(/[\s\-·]/g, '').toLowerCase();
   const want = norm(name);
-  return (rec.contacts ?? []).some((c) => c.name !== undefined && norm(c.name) === want);
+  return (rec.contacts ?? []).some(
+    (c) => c.role === CRIS_PI_ROLE && c.name !== undefined && norm(c.name) === want,
+  );
 }
 
 export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAdapter {

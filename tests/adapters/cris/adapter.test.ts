@@ -236,6 +236,36 @@ describe('CRIS 연구자 대조', () => {
     expect(urls.filter((u) => u.includes('/detail'))).toHaveLength(3);
   });
 
+  /**
+   * **연구책임자와 연구실무담당자는 다른 사람이고 다른 역할이다.** 실측 2026-08-28:
+   * `KCT0012508` 은 연구책임자가 이창섭이고 김민걸은 `public_name_kr`(연구실무담당자)다.
+   * 연락처를 통째로 대조하면 그 시험이 김민걸의 연구로 잡힌다 — `--investigator` 가
+   * 약속한 것과 다른 답이고, 사람의 연구 목록에 남의 연구가 섞인다.
+   */
+  it('연구실무담당자로만 이름이 있는 시험은 걸리지 않는다', async () => {
+    const urls: string[] = [];
+    const fetchImpl = (async (url: string) => {
+      const u = String(url);
+      urls.push(u);
+      const body = u.includes('/detail')
+        ? {
+            resultCode: '00', trial_id: 'KCT0000001', scientific_title_kr: '남의 연구',
+            study_type_kr: '중재연구',
+            scientific_name_kr: '이창섭',
+            public_name_kr: '김민걸',
+          }
+        : ok([item('KCT0000001')], 1);
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '전북', investigator: '김민걸', pageSize: 10 } as NormalizedQuery,
+      fetchOpts,
+    );
+    expect(r.data).toEqual([]);
+  });
+
   it('영문 표기로 걸어도 국문 이름과 맞춘다 — 그 반대도 마찬가지다', async () => {
     const { fetchImpl } = routed(['KCT0000001'], { KCT0000001: '김민걸' });
     const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });

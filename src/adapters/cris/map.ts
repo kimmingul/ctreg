@@ -116,6 +116,13 @@ export function mapItem(item: CrisItem, fetchedAt: string): TrialRecord {
  */
 export type CrisDetail = Record<string, unknown>;
 
+/**
+ * 연구책임자 연락처에 붙이는 역할 이름. **문자열을 두 곳에 나눠 적지 않는다** — 대조하는
+ * 쪽(adapter.ts)과 만드는 쪽(여기)이 갈리면, 한쪽만 고쳤을 때 `--investigator` 가 조용히
+ * 아무것도 못 거르거나 전부를 거른다.
+ */
+export const CRIS_PI_ROLE = '연구책임자';
+
 /** 실측 값 → 공통 어휘. 표에 없는 값은 `other` 로 신고하고 원문을 함께 싣는다. */
 const STATUS: Record<string, TrialStatus> = {
   '모집 중': 'recruiting',
@@ -177,8 +184,8 @@ export function mapDetail(d: CrisDetail, fetchedAt: string): TrialRecord {
   const contacts: { name?: string; role?: string }[] = [];
   const sciKr = str(d, 'scientific_name_kr');
   const sciEn = str(d, 'scientific_name_en');
-  if (sciKr !== undefined) contacts.push({ name: sciKr, role: '연구책임자' });
-  if (sciEn !== undefined && sciEn !== sciKr) contacts.push({ name: sciEn, role: 'Principal Investigator' });
+  if (sciKr !== undefined) contacts.push({ name: sciKr, role: CRIS_PI_ROLE });
+  if (sciEn !== undefined && sciEn !== sciKr) contacts.push({ name: sciEn, role: CRIS_PI_ROLE });
   const pubKr = str(d, 'public_name_kr');
   if (pubKr !== undefined) contacts.push({ name: pubKr, role: '연구실무담당자' });
 
