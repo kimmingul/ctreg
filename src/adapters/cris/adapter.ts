@@ -117,6 +117,17 @@ type CrisResponse = {
 /** `03`(NODATA_ERROR)은 실패가 아니라 **없다** 는 답이다. 호출자가 not_found 로 다룬다. */
 export const CRIS_NO_DATA = '03';
 
+/**
+ * `--investigator` 로 후보를 열어 볼 수 있는 최대 건수.
+ *
+ * 왜 상한이 필요한가 — 후보가 아주 많으면(예: `--term 건강한` 은 439건, 더 넓은 말은 수천)
+ * 하루 한도 10,000 콜을 한 번에 먹는다. 상한에서 **멈추되 멈췄다고 말한다** — 조용히
+ * 자르면 그때 나온 수가 전부로 읽힌다.
+ *
+ * 1,000 은 하루 한도의 10분의 1이다. 재서 정한 수가 아니라 정한 정책이므로 그렇게 적는다.
+ */
+export const CRIS_INVESTIGATOR_SCAN_CAP = 1000;
+
 function assertOk(res: CrisResponse): void {
   const code = res.resultCode;
   if (code === undefined || code === '00' || code === CRIS_NO_DATA) return;
@@ -228,27 +239,73 @@ export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
        * 하루 한도(1만 콜)를 무엇이 먹었는지도 모른다.
        */
       if (q.investigator !== undefined) {
-        const opened = data;
-        const kept: TrialRecord[] = [];
-        for (const rec of opened) {
-          const d = await call(
-            { serviceKey: key, resultType: 'json', crisNumber: rec.registryId },
-            o,
-            '/detail',
+        /**
+         * **후보를 끝까지 걷는다.** 한 쪽만 보면 필터가 조용히 창문 크기로 잘린다 —
+         * 실측 2026-08-28: `--term 약동학` 의 후보는 339건인데 첫 50건만 보고 1건을 냈다.
+         * 사용자는 "이 검색어로는 1건" 으로 읽지만 실제로는 "첫 50건 안에 1건" 이다.
+         */
+        if (q.pageToken !== undefined) {
+          throw unsupportedError(
+            'CRIS 에서는 --investigator 와 --page-token 을 함께 쓸 수 없습니다',
+            '연구자 대조는 후보를 처음부터 끝까지 걷습니다 — 쪽을 지정하면 두 뜻이 갈립니다. ' +
+              '--page-token 없이 부르면 그 검색어의 후보를 모두 봅니다.',
           );
-          if (d.value.resultCode === CRIS_NO_DATA) continue;
-          const full = mapDetail(d.value as unknown as Record<string, unknown>, d.fetchedAt);
-          if (matchesInvestigator(full, q.investigator)) kept.push(o.raw ? ({ ...full, source: d.value } as TrialRecord) : full);
+        }
+
+        const kept: TrialRecord[] = [];
+        let opened = 0;
+        let candidates = data;
+        let candidatePage = page;
+        let truncated = false;
+
+        for (;;) {
+          for (const rec of candidates) {
+            if (opened >= CRIS_INVESTIGATOR_SCAN_CAP) {
+              truncated = true;
+              break;
+            }
+            opened += 1;
+            const d = await call(
+              { serviceKey: key, resultType: 'json', crisNumber: rec.registryId },
+              o,
+              '/detail',
+            );
+            if (d.value.resultCode === CRIS_NO_DATA) continue;
+            const full = mapDetail(d.value as unknown as Record<string, unknown>, d.fetchedAt);
+            if (matchesInvestigator(full, q.investigator)) {
+              kept.push(o.raw ? ({ ...full, source: d.value } as TrialRecord) : full);
+            }
+          }
+          const seenSoFar = candidatePage * Math.min(pageSize, CRIS_MAX_PAGE_SIZE);
+          if (truncated || seenSoFar >= (value.totalCount ?? 0)) break;
+          candidatePage += 1;
+          const next = await call(
+            { ...buildListParams(q, key, pageSize), pageNo: candidatePage },
+            o,
+          );
+          candidates = toRecords(next.value, next.fetchedAt, false);
+          if (candidates.length === 0) break;
+        }
+
+        if (truncated) {
+          warnings.push({
+            code: 'investigator_scan_truncated',
+            message:
+              `후보 ${value.totalCount ?? 0}건 중 ${CRIS_INVESTIGATOR_SCAN_CAP}건까지만 열어 봤습니다 — ` +
+              '한 번에 이보다 많이 열면 공공데이터포털의 하루 한도(10,000 콜)를 크게 먹습니다. ' +
+              '--term 을 좁혀 나눠 조회하세요.',
+            registry: 'cris',
+          });
         }
         warnings.push({
           code: 'investigator_checked_by_detail',
           message:
-            `연구자를 대조하려고 후보 ${opened.length}건을 하나씩 열어 봤습니다 — 이 레지스트리는 ` +
+            `연구자를 대조하려고 후보 ${opened}건(총 ${value.totalCount ?? 0}건)을 하나씩 열어 봤습니다 — 이 레지스트리는 ` +
             '목록으로 사람 이름을 거를 수 없어 상세 조회로 확인합니다. ' +
             '**걸린 수는 이 연구자의 전부가 아닙니다**: 후보는 --term 이 닿는 범위에 갇힙니다. ' +
             '검색어 하나로는 크게 놓칠 수 있습니다 — 실측으로 기관명 하나(후보 177건)는 40건 중 12건만 ' +
             '찾았고, 검색어를 여덟 개로 늘려 후보를 604건으로 넓히자 40건이 나왔습니다. ' +
-            '의뢰기관·약물명·연구 종류 등 여러 말로 나눠 조회하고 합치세요. 이 쪽의 후보만 본 것이기도 합니다.',
+            '의뢰기관·약물명·연구 종류 등 여러 말로 나눠 조회하고 합치세요.',
           registry: 'cris',
         });
         data = kept;
@@ -264,8 +321,13 @@ export function createCrisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
       }
 
       const total = value.totalCount ?? 0;
+      /**
+       * 연구자 대조를 했으면 후보를 이미 끝까지 걸었으므로 **이어서 걸 쪽이 없다.**
+       * 여기서 토큰을 내면 호출자가 같은 후보를 처음부터 다시 걷는다.
+       */
       const seen = (page - 1) * Math.min(pageSize, CRIS_MAX_PAGE_SIZE) + raw;
-      const nextPageToken = seen < total ? String(page + 1) : undefined;
+      const nextPageToken =
+        q.investigator !== undefined ? undefined : seen < total ? String(page + 1) : undefined;
 
       return { data, warnings, total, ...(nextPageToken ? { nextPageToken } : {}) };
     },

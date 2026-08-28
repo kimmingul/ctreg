@@ -321,3 +321,97 @@ describe('CRIS 연구자 대조', () => {
     expect(urls).toEqual([]);
   });
 });
+
+/**
+ * **`--investigator` 는 후보를 끝까지 걸어야 한다.**
+ *
+ * 실측 2026-08-28: 고치기 전에는 첫 쪽(50건)만 열어 봤다. `--term 약동학` 의 후보는
+ * 339건인데 50건만 보고 1건을 냈다 — 사용자는 "이 검색어로는 1건" 으로 읽지만
+ * 실제로는 "첫 50건 안에 1건" 이다. 필터가 조용히 창문 크기로 잘린 것이고,
+ * `--investigator` 가 약속한 것과 다르다.
+ */
+describe('CRIS 연구자 대조는 후보를 끝까지 본다', () => {
+  /** 쪽마다 다른 후보를 주고, 뒤쪽에만 맞는 사람을 둔다. */
+  function paged(total: number, hitOn: string) {
+    const urls: string[] = [];
+    const fetchImpl = (async (url: string) => {
+      const u = String(url);
+      urls.push(u);
+      if (u.includes('/detail')) {
+        const id = decodeURIComponent(/crisNumber=([^&]+)/.exec(u)?.[1] ?? '');
+        return new Response(
+          JSON.stringify({
+            resultCode: '00', trial_id: id, scientific_title_kr: `${id} 시험`,
+            study_type_kr: '중재연구',
+            scientific_name_kr: id === hitOn ? '김민걸' : '다른사람',
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      const page = Number(/pageNo=(\d+)/.exec(u)?.[1] ?? '1');
+      const start = (page - 1) * 50;
+      const items = Array.from({ length: Math.max(0, Math.min(50, total - start)) }, (_, i) =>
+        item(`KCT${String(start + i).padStart(7, '0')}`),
+      );
+      return new Response(JSON.stringify(ok(items, total)), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+    return { fetchImpl, urls };
+  }
+
+  it('첫 쪽 밖에 있는 후보도 찾아낸다', async () => {
+    // 120건 후보 = 3쪽. 맞는 사람은 마지막 쪽(index 100)에 있다.
+    const { fetchImpl, urls } = paged(120, 'KCT0000100');
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '약동학', investigator: '김민걸', pageSize: 50 } as NormalizedQuery,
+      fetchOpts,
+    );
+
+    expect(r.data.map((x) => x.registryId)).toEqual(['KCT0000100']);
+    // 후보 120건을 다 열어 봤어야 한다.
+    expect(urls.filter((u) => u.includes('/detail'))).toHaveLength(120);
+    // 다 걸었으므로 이어서 걸 쪽이 없다.
+    expect(r.nextPageToken).toBeUndefined();
+  });
+
+  it('몇 건을 열었는지와 후보가 몇이었는지를 말한다', async () => {
+    const { fetchImpl } = paged(120, 'KCT0000100');
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '약동학', investigator: '김민걸', pageSize: 50 } as NormalizedQuery,
+      fetchOpts,
+    );
+    const w = r.warnings.find((x) => x.code === 'investigator_checked_by_detail');
+    expect(w?.message).toContain('120');
+  });
+
+  /**
+   * 후보가 아주 많으면 하루 한도(1만 콜)를 한 번에 먹는다. 상한에서 멈추되,
+   * **멈췄다는 사실을 말한다** — 조용히 자르면 그 수가 전부로 읽힌다.
+   */
+  it('상한에서 멈추고 멈췄다고 말한다', async () => {
+    const { fetchImpl, urls } = paged(3000, 'KCT0002999');
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    const r = await a.search(
+      { term: '건강한', investigator: '김민걸', pageSize: 50 } as NormalizedQuery,
+      fetchOpts,
+    );
+    const opened = urls.filter((u) => u.includes('/detail')).length;
+    expect(opened).toBeLessThan(3000);
+    expect(r.warnings.map((w) => w.code)).toContain('investigator_scan_truncated');
+  });
+
+  /** 끝까지 걷는 마당에 쪽 토큰을 함께 주면 뜻이 갈린다 — 조용히 무시하지 않는다. */
+  it('--page-token 과 함께 주면 막는다', async () => {
+    const { fetchImpl } = paged(120, 'KCT0000100');
+    const a = createCrisAdapter(cfg('K'), { fetchImpl, sleep: async () => {} });
+    await expect(
+      a.search(
+        { term: '약동학', investigator: '김민걸', pageSize: 50, pageToken: '2' } as NormalizedQuery,
+        fetchOpts,
+      ),
+    ).rejects.toMatchObject({ code: 'unsupported' });
+  });
+});
