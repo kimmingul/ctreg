@@ -28,6 +28,18 @@ export type Config = {
    * 일어나는지는 어댑터가 정한다(exit 4 로 "키가 없다" 를 말한다).
    */
   crisServiceKey?: string;
+  /**
+   * **ICTRP 를 자동 조회해도 된다고 사용자가 표시했는가.**
+   *
+   * 왜 필요한가(2026-08-29 확인) — 이 어댑터는 사람이 쓰는 검색 화면을 포스트백으로
+   * 조작한다. WHO 가 자동 접근용으로 내놓은 것은 Web Service 와 Crawling Service 둘인데
+   * **둘 다 사무국과의 합의와 비용을 요구하고**(크롤 조건: "an agreed partner website"),
+   * `trialsearch.who.int/robots.txt` 는 `Disallow: /` 다.
+   *
+   * 그래서 기본값이 꺼짐이다. 기능을 지우지는 않는다 — 합의가 있는 사용자에게서 뺏을
+   * 이유가 없다. 나머지 세 레지스트리는 이 값과 무관하게 그대로 동작한다.
+   */
+  ictrpAcknowledged: boolean;
 };
 
 function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -96,6 +108,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // the site"). 그래서 여기 담기는 것은 호스트까지다.
     isrctnBaseUrl: env.CTREG_ISRCTN_BASE_URL ?? 'https://www.isrctn.com',
     ictrpBaseUrl: env.CTREG_ICTRP_BASE_URL ?? 'https://trialsearch.who.int',
+    // 값이 있으면 켠다. 없거나 빈 문자열이면 꺼짐 — 기본값을 실수로 켜지 못하게.
+    ictrpAcknowledged: (env.CTREG_ICTRP_ACKNOWLEDGED ?? '') !== '',
     // 공공데이터포털의 `질병관리청_임상연구 DB`. 경로에 오퍼레이션(`/list`)이 붙는다.
     crisBaseUrl: env.CTREG_CRIS_BASE_URL ?? 'https://apis.data.go.kr/1352159/crisinfodataview',
     ...(env.CTREG_CRIS_SERVICE_KEY ? { crisServiceKey: env.CTREG_CRIS_SERVICE_KEY } : {}),

@@ -124,6 +124,27 @@ function parsePageToken(token: string | undefined): number {
   return n;
 }
 
+/**
+ * 자동 조회가 허락됐는지 확인한다. **요청을 보내기 직전에** 부른다 — 어댑터를 만들 때
+ * 던지면 ICTRP 를 쓰지도 않는 사용자의 `--registry ctgov` 조회까지 같이 죽고,
+ * `ctreg registries` 로 선언을 읽는 것조차 막힌다(CRIS 의 인증키와 같은 규율).
+ *
+ * **0건이 아니라 exit 3 이다.** 0건으로 끄면 "그런 시험이 없다" 와 구별되지 않는다 —
+ * 이 CLI 가 없애려는 혼동 그 자체다.
+ */
+function assertAcknowledged(cfg: Config): void {
+  if (cfg.ictrpAcknowledged) return;
+  throw unsupportedError(
+    'WHO ICTRP 자동 조회는 기본으로 꺼져 있습니다',
+    'ICTRP 검색 화면은 robots.txt 가 자동 접근을 막고 있고(Disallow: /), WHO 가 자동 조회용으로 ' +
+      '내놓은 Web Service 와 Crawling Service 는 둘 다 사무국과의 합의와 비용을 요구합니다 ' +
+      '("an agreed partner website"). 문의: ictrpinfo@who.int — ' +
+      'https://www.who.int/tools/clinical-trials-registry-platform/the-ictrp-search-portal 참고. ' +
+      '합의가 있어 쓰실 수 있다면 CTREG_ICTRP_ACKNOWLEDGED 에 아무 값이나 넣어 켜세요. ' +
+      '나머지 세 레지스트리는 이 설정과 무관하게 그대로 동작합니다.',
+  );
+}
+
 export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAdapter {
   const client = makeClient(cfg, ICTRP_CAPABILITY.limits.ratePerSec, deps);
 
@@ -132,6 +153,7 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
     capability: () => ICTRP_CAPABILITY,
 
     async search(q: NormalizedQuery, o: FetchOpts) {
+      assertAcknowledged(cfg);
       const pageSize = ICTRP_CAPABILITY.limits.maxPageSize;
       const page = parsePageToken(q.pageToken);
       const res = await client.search(q, pageSize, page, o.cacheMode);
@@ -218,6 +240,7 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
      * ctgov 가 배치에서 빠진 ID 를 다루는 것과 같은 자리다.
      */
     async get(ids: string[], o: FetchOpts): Promise<AdapterResult<TrialRecord[]>> {
+      assertAcknowledged(cfg);
       const data: TrialRecord[] = [];
       const warnings: Warning[] = [];
       for (const id of ids) {
@@ -249,6 +272,7 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
     },
 
     async results(_id: string, _o: ResultsOpts): Promise<AdapterResult<TrialResults>> {
+      assertAcknowledged(cfg);
       throw unsupportedError(
         'ICTRP 는 구조화된 결과 데이터를 제공하지 않습니다',
         'ICTRP 결과 화면에는 평가변수·이상반응 같은 구조화된 결과가 없습니다.',
@@ -256,6 +280,7 @@ export function createIctrpAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAd
     },
 
     async count(q: NormalizedQuery, o: FetchOpts): Promise<AdapterResult<number>> {
+      assertAcknowledged(cfg);
       const res = await client.search(q, 1, 1, o.cacheMode);
       return { data: res.page.trials, warnings: res.warnings };
     },

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { assertSupported } from '../../../src/cli/guard.js';
 import { createIctrpAdapter, ICTRP_CAPABILITY } from '../../../src/adapters/ictrp/adapter.js';
 import { CAPS, type FetchOpts, type NormalizedQuery } from '../../../src/core/query.js';
+import type { CtregError } from '../../../src/runtime/errors.js';
 
 const form = readFileSync(join(__dirname, '../../fixtures/ictrp/advsearch-form.html'), 'utf8');
 const results = readFileSync(join(__dirname, '../../fixtures/ictrp/results-page1.html'), 'utf8');
@@ -16,6 +17,7 @@ const cfg = () => ({
   isrctnBaseUrl: 'https://isrctn.example.test',
   ictrpBaseUrl: 'https://ictrp.example.test',
         crisBaseUrl: 'https://cris.example.test',
+        ictrpAcknowledged: true,
 });
 
 /** GET 이면 폼을, POST 면 `resultsHtml` 을 낸다 — client.test.ts 의 스텁과 같은 모양이다. */
@@ -309,5 +311,62 @@ describe('ICTRP 페이지는 레코드가 아니라 시험 위를 걷는다', ()
     expect(r.nextPageToken).toBeUndefined();
     // 다 받았으므로 "아직 남았는데 못 간다" 는 경고도 나오면 안 된다.
     expect(r.warnings.map((w) => w.code)).not.toContain('pagination_depth_limit');
+  });
+});
+
+/**
+ * **ICTRP 는 기본으로 꺼져 있다.**
+ *
+ * 이 어댑터는 사람이 쓰는 검색 화면을 포스트백으로 조작한다. WHO 가 자동 접근을 위해
+ * 제공하는 것은 둘인데(Web Service, Crawling Service) **둘 다 사무국과의 합의와 비용을
+ * 요구하고**, `trialsearch.who.int/robots.txt` 는 `Disallow: /` 다. 크롤 서비스 이용
+ * 조건도 "an **agreed partner** website" 라고 못박는다(2026-08-29 확인).
+ *
+ * 그래서 기본값을 끈다. 지우지는 않는다 — 합의가 있는 사용자에게서 기능을 뺏을 이유가 없다.
+ * **끄는 방식이 중요하다**: 0건이 아니라 exit 3 이어야 한다. 0건으로 끄면 "그런 시험이
+ * 없다" 와 구별되지 않는다.
+ */
+describe('ICTRP 는 합의를 확인하기 전에는 조회하지 않는다', () => {
+  const noAck = () => ({ ...cfg(), ictrpAcknowledged: false });
+
+  it('합의 표시가 없으면 exit 3 으로 막는다 — 0건이 아니다', async () => {
+    const adapter = createIctrpAdapter(noAck(), { fetchImpl: stub(), sleep: async () => {} });
+    await expect(
+      adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts),
+    ).rejects.toMatchObject({ code: 'unsupported' });
+  });
+
+  it('요청을 아예 보내지 않는다', async () => {
+    const { fetchImpl, bodies } = recordingStub();
+    const adapter = createIctrpAdapter(noAck(), { fetchImpl, sleep: async () => {} });
+    await adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts).catch(() => {});
+    expect(bodies).toEqual([]);
+  });
+
+  it('메시지가 무엇을 해야 하는지 말한다 — 연락처와 켜는 법', async () => {
+    const adapter = createIctrpAdapter(noAck(), { fetchImpl: stub(), sleep: async () => {} });
+    try {
+      await adapter.count({ condition: 'diabetes' } as NormalizedQuery, fetchOpts);
+      expect.unreachable('던져야 한다');
+    } catch (e) {
+      const err = e as CtregError;
+      const all = `${err.message} ${err.hint ?? ''}`;
+      expect(all).toContain('ictrpinfo@who.int');
+      expect(all).toContain('CTREG_ICTRP_ACKNOWLEDGED');
+    }
+  });
+
+  it('capability 는 키 없이도 읽을 수 있다 — registries 가 막히면 안 된다', () => {
+    const adapter = createIctrpAdapter(noAck(), { fetchImpl: stub(), sleep: async () => {} });
+    expect(adapter.capability().key).toBe('ictrp');
+  });
+
+  it('합의를 표시하면 그대로 동작한다', async () => {
+    const adapter = createIctrpAdapter(
+      { ...cfg(), ictrpAcknowledged: true },
+      { fetchImpl: stub(), sleep: async () => {} },
+    );
+    const r = await adapter.search({ condition: 'diabetes' } as NormalizedQuery, fetchOpts);
+    expect(r.data.length).toBeGreaterThan(0);
   });
 });

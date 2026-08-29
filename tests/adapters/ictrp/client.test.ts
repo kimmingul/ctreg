@@ -16,6 +16,7 @@ const cfg = () => ({
   isrctnBaseUrl: 'https://isrctn.example.test',
   ictrpBaseUrl: 'https://ictrp.example.test',
         crisBaseUrl: 'https://cris.example.test',
+        ictrpAcknowledged: true,
 });
 
 /** GET 이면 폼을, POST 면 결과를 낸다. 실제 흐름과 같은 순서다. */

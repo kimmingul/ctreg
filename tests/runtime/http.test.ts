@@ -21,6 +21,7 @@ beforeEach(() => {
         isrctnBaseUrl: 'https://isrctn.example.test',
         ictrpBaseUrl: 'https://ictrp.example.test',
         crisBaseUrl: 'https://cris.example.test',
+        ictrpAcknowledged: true,
   };
 });
 

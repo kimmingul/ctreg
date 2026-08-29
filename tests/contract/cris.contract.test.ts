@@ -20,6 +20,7 @@ runAdapterContract('cris', {
         isrctnBaseUrl: 'https://isrctn.example.test',
         ictrpBaseUrl: 'https://ictrp.example.test',
         crisBaseUrl: 'https://cris.example.test',
+        ictrpAcknowledged: true,
         // 계약 스위트는 키가 있는 상태를 본다. 키가 없을 때의 동작은 adapter.test.ts 가 본다.
         crisServiceKey: 'CONTRACT_TEST_KEY',
       },
