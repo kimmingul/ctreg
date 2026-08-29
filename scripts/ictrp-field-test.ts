@@ -108,6 +108,20 @@ const AXIS_PROBE: Partial<Record<keyof Capability['search'], NormalizedQuery>> =
 };
 
 async function main() {
+  /**
+   * **게이트를 먼저 본다.** 켜지지 않았으면 모든 측정이 "요청 실패" 로 흘러 ⚠️ 가 줄줄이
+   * 찍히는데, 그건 무엇도 확인하지 못했다는 뜻이면서 실행이 정상으로 끝난 것처럼 보인다.
+   * 이유를 한 번 말하고 멈추는 편이 정직하다(cris-field-test 와 같은 규율).
+   */
+  if (!cfg.ictrpAcknowledged) {
+    console.error(
+      'CTREG_ICTRP_ACKNOWLEDGED 가 없어 ICTRP 자동 조회가 꺼져 있습니다. 이 스크립트는 실물에 ' +
+        '대조하는 것이 전부이므로 측정하지 않고 끝냅니다 — 켜지 않은 채 낸 결과는 전부 ⚠️ 이고, ' +
+        '그것은 아무것도 확인하지 않았다는 뜻입니다. 합의가 있어 쓰실 수 있다면 그 변수를 켜세요.',
+    );
+    process.exit(2);
+  }
+
   const tally: Record<Verdict, number> = { pass: 0, fail: 0, inconclusive: 0 };
   const record = (v: Verdict) => { tally[v]++; };
 
