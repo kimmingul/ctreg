@@ -94,3 +94,36 @@ describe('.env 읽기', () => {
     expect(Object.keys(env)).toEqual([]);
   });
 });
+
+/**
+ * **기본값이 꺼짐인 것이 이 설정의 전부다.**
+ *
+ * ICTRP 어댑터는 사람이 쓰는 검색 화면을 조작하고, WHO 는 자동 조회를 합의된 파트너에게만
+ * 연다(2026-08-29 확인). 그래서 아무 설정도 없는 사용자에게는 꺼져 있어야 한다.
+ *
+ * 어댑터 쪽 검사(`tests/adapters/ictrp/adapter.test.ts`)는 **꺼진 값이 주어졌을 때** 무슨
+ * 일이 일어나는지를 본다 — 그 값이 어디서 오는지는 안 본다. 사보타주로 확인했다:
+ * 기본값을 `true` 로 바꿔도 스위트가 통과했다. 그 구멍을 여기서 막는다.
+ */
+describe('ICTRP 자동 조회는 기본이 꺼짐이다', () => {
+  it('아무 설정도 없으면 꺼져 있다', () => {
+    expect(loadConfig({}).ictrpAcknowledged).toBe(false);
+  });
+
+  it('빈 문자열도 꺼짐이다 — 실수로 켜지지 않게', () => {
+    expect(loadConfig({ CTREG_ICTRP_ACKNOWLEDGED: '' }).ictrpAcknowledged).toBe(false);
+  });
+
+  it('값이 있으면 켜진다', () => {
+    expect(loadConfig({ CTREG_ICTRP_ACKNOWLEDGED: '1' }).ictrpAcknowledged).toBe(true);
+    expect(loadConfig({ CTREG_ICTRP_ACKNOWLEDGED: 'yes' }).ictrpAcknowledged).toBe(true);
+  });
+
+  /** 나머지 셋은 이 설정과 무관해야 한다 — 하나를 끄려다 전부를 끄면 안 된다. */
+  it('다른 레지스트리 설정을 건드리지 않는다', () => {
+    const c = loadConfig({});
+    expect(c.ctgovBaseUrl.length).toBeGreaterThan(0);
+    expect(c.isrctnBaseUrl.length).toBeGreaterThan(0);
+    expect(c.crisBaseUrl.length).toBeGreaterThan(0);
+  });
+});
