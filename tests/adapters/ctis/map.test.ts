@@ -60,7 +60,25 @@ describe('CTIS 레코드 매핑', () => {
     expect(r.dates?.start).toBe('2024-05-07');
   });
 
-  it('상태를 지어내지 않는다 — 코드표를 재지 못했다', () => {
-    expect(mapItem({ ctNumber: 'X', ctTitle: 'T', ctStatus: 11 }, AT).status).toBe('unknown');
+  /**
+   * 코드표를 **절반만** 확정했다(실측): 8→Ended, 11→Not authorised. 2·3·4·5 는 상세의
+   * 최상위 상태가 넷을 모두 `Authorised` 로 뭉쳐서 갈리지 않았다. 재지 못한 것을 짐작해
+   * 접으면 사용자가 모집 중이 아닌 시험을 모집 중으로 읽는다.
+   */
+  it('확정된 상태 코드만 접고 나머지는 unknown 이다', () => {
+    const ended = mapItem({ ctNumber: 'X', ctTitle: 'T', ctStatus: 8 }, AT);
+    expect(ended.status).toBe('completed');
+    expect(ended.statusRaw).toBe('Ended');
+
+    const refused = mapItem({ ctNumber: 'X', ctTitle: 'T', ctStatus: 11 }, AT);
+    expect(refused.status).toBe('other');
+    expect(refused.statusRaw).toBe('Not authorised');
+
+    for (const c of [2, 3, 4, 5]) {
+      const r = mapItem({ ctNumber: 'X', ctTitle: 'T', ctStatus: c }, AT);
+      expect(r.status, `코드 ${c}`).toBe('unknown');
+      // 숫자는 원문이 아니다 — 사람이 읽을 수 없는 값을 statusRaw 에 넣지 않는다.
+      expect(r.statusRaw).toBeUndefined();
+    }
   });
 });

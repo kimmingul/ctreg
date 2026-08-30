@@ -523,13 +523,19 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
 
         const { adapter, requests } = ok();
         /**
+         * **최소 질의에 축을 얹어서 부른다.** 축 하나만 넣고 부르면, 조건이 하나도 없을 때
+         * 아예 던지는 어댑터에서 그 던짐이 "축이 아무것도 못 했다" 로 보인다 — 실제로
+         * 그렇게 오진했다(2026-08-30). 최소 질의를 깔아 두면 그 잡음이 사라지고, 남는
+         * 물음은 하나다: **이 축을 더했더니 그 값이 선으로 나가는가.**
+         */
+        /**
          * **던지는 것도 실패로 센다.** 처음엔 던짐을 건너뛰게 썼는데, 그것이 잡아야 할
          * 바로 그 실패를 삼켰다 — isrctn 의 `investigator` 신고를 거짓으로 켜면 질의
          * 조립기가 이 축으로 절을 하나도 만들지 못해 "검색 조건이 적어도 하나 필요합니다"
          * 로 던진다. 그 던짐이 **축이 아무것도 기여하지 않았다는 증거** 다.
          */
         try {
-          await adapter.search({ [field]: PROBE, pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
+          await adapter.search({ ...probeQ, [field]: PROBE, pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
         } catch (e) {
           /**
            * 던짐에도 두 종류가 있다. **값을 검사해서 거절한 것** 은 정당하다 — ictrp 의
@@ -538,11 +544,16 @@ export function runAdapterContract(name: string, under: AdapterUnderTest): void 
            *
            * 축을 빼고 같은 호출을 해 본다. 그때도 같은 자리에서 터지면 그 던짐은 값 때문이
            * 아니다 — 축이 절을 하나도 만들지 못한 것이고, 그것이 우리가 찾는 실패다.
+           *
+           * **빈 질의가 아니라 `probeQuery` 로 비교한다.** 어떤 어댑터는 조건이 하나도
+           * 없으면 아예 던진다(CTIS: 조건 없이 부르면 전체 첫 쪽이 오므로 막는다).
+           * 빈 질의로 비교하면 그 던짐을 "축이 아무것도 못 했다" 로 오진해서, 값을 제대로
+           * 검사해 거절하는 축까지 결함으로 잡는다 — 실제로 그랬다(2026-08-30).
            */
           const bare = ok();
           let bareThrew = false;
           try {
-            await bare.adapter.search({ pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
+            await bare.adapter.search({ ...probeQ, pageSize: 10 } as unknown as NormalizedQuery, fetchOpts);
           } catch {
             bareThrew = true;
           }

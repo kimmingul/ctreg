@@ -5,6 +5,7 @@ import { parseTrialId } from '../../core/registry.js';
 import type { Config } from '../../runtime/config.js';
 import { unsupportedError } from '../../runtime/errors.js';
 import { postJson, type HttpDeps } from '../../runtime/http.js';
+import { CTIS_COUNTRY_NAMES, toMscCode } from './countries.js';
 import { mapItem, type CtisItem } from './map.js';
 
 const free = (scope: string): SearchAxis => ({ supported: true, values: null, exhaustive: null, scope });
@@ -36,11 +37,12 @@ export const CTIS_CAPABILITY: Capability = {
     condition: free('의학적 상태(medicalCondition)로 거른다'),
     sponsor: free('의뢰기관 이름으로 거른다'),
     /**
-     * `msc`(Member State Concerned)는 **ISO 3166-1 숫자 코드** 를 받는다(실측: `724` →
-     * 5,004건). 나라 이름이나 알파벳 코드는 0건이다. 그 코드표를 아직 만들지 않았으므로
-     * 지원한다고 신고하지 않는다 — 표를 지어내면 잘못된 나라로 조용히 좁혀진다.
+     * `msc`(Member State Concerned)는 **ISO 3166-1 숫자 코드** 를 받는다. 이름이나 알파벳
+     * 코드는 **0건** 이므로(실측), 코드가 틀리면 "그런 시험이 없다" 로 보인다. 그래서 표를
+     * 기억으로 적지 않고 코드마다 보내 본 뒤 돌아온 나라로 확정했다(`countries.ts`).
+     * 표에 없는 이름은 조용히 넘기지 않고 **거절하고 아는 이름을 제안한다.**
      */
-    location: off('회원국 필터는 ISO 숫자 코드를 받는데 그 표를 아직 만들지 않았다'),
+    location: free('EU·EEA 회원국 이름으로 거른다(28개국, 실측 확정). 도시나 기관 이름은 받지 않는다'),
     lead: off('주 스폰서를 따로 거는 자리가 없다 — sponsor 가 하나뿐이다'),
     intervention: off('제품명으로 거는 자리가 응답에는 있으나 검색에서는 조용히 무시된다(실측)'),
     id: off('ctNumber 로 거는 자리가 조용히 무시된다 — get 은 자유 텍스트로 찾고 번호를 대조한다'),
@@ -75,22 +77,38 @@ type CtisResponse = {
  * 질의를 만든다. **실제로 거르는 키만 싣는다** — 나머지는 가드가 exit 3 으로 막으므로
  * 여기까지 오지 않지만, 만약 오더라도 조용히 버려지는 키를 보내지는 않는다.
  */
-export function buildCriteria(q: NormalizedQuery): Record<string, string> {
-  const crit: Record<string, string> = {};
+export function buildCriteria(q: NormalizedQuery): Record<string, string | string[]> {
+  const crit: Record<string, string | string[]> = {};
   const put = (k: string, v: string | undefined): void => {
     const s = v?.trim();
     if (s !== undefined && s !== '') crit[k] = s;
   };
   put('containAll', q.term);
+  if (q.location !== undefined && q.location.trim() !== '') crit.msc = [mscFor(q.location)];
   put('title', q.title);
   put('medicalCondition', q.condition);
   put('sponsor', q.sponsor);
   return crit;
 }
 
+/**
+ * 나라 이름 → `msc` 코드. **모르는 이름은 조용히 넘기지 않는다** — 그대로 보내면 0건이
+ * 오고, 사용자는 "그 나라에 시험이 없다" 로 읽는다. ICTRP 의 나라 축에서 배운 것과 같다.
+ */
+export function mscFor(name: string): string {
+  const code = toMscCode(name);
+  if (code !== undefined) return code;
+  throw unsupportedError(
+    `EU CTIS 는 '${name}' 를 회원국 이름으로 알지 못합니다`,
+    `이 레지스트리가 받는 이름: ${CTIS_COUNTRY_NAMES.join(', ')}. ` +
+      '다른 표기를 보내면 오류가 아니라 0건이 나오므로(실측) 여기서 막습니다. ' +
+      '도시나 기관 이름은 이 레지스트리가 아예 받지 않습니다.',
+  );
+}
+
 export function createCtisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAdapter {
   const call = async (
-    criteria: Record<string, string>,
+    criteria: Record<string, string | string[]>,
     page: number,
     size: number,
     o: { cacheMode: FetchOpts['cacheMode'] },
