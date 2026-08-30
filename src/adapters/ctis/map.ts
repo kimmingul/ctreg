@@ -107,6 +107,24 @@ const country = (v: string): string | undefined => nonEmpty(v.split(':')[0]);
  * 상한을 쓰면 `--include locations` 로 캡을 올려도 조용히 그만큼만 나온다.
  * 잘렸는지는 `locationsTotal` 과 `locations.length` 의 차이로 호출자가 알 수 있다.
  */
+/**
+ * **`resultsFirstReceived` 는 이름과 달리 날짜가 아니라 `Yes`/`No` 문자열이다**
+ * (실측 2026-08-30, 500건 표본: Yes 54 · No 446 — Yes 는 전부 `ctStatus` 8/Ended).
+ * 이름만 보고 날짜로 다루면 `undefined` 가 되어 **값이 오는데 조용히 버려진다.**
+ *
+ * 덕분에 `hasResults` 를 **상세 조회 없이 검색 한 번으로** 알 수 있다. 다만 담는 것은
+ * **유무뿐이다** — 실제 결과는 PDF 첨부라 `results` 축은 여전히 미지원으로 신고한다
+ * (`adapter.ts` 의 `results.scope` 참고).
+ *
+ * 모르는 값은 **모른다** 로 둔다. `No` 가 아닌 것을 `false` 로 접으면 결과가 있는 시험이
+ * 없는 것으로 나가고, 그것은 이 CLI 가 없애려는 조용한 오답이다.
+ */
+function hasResultsOf(v: string | undefined): boolean | undefined {
+  if (v === 'Yes') return true;
+  if (v === 'No') return false;
+  return undefined;
+}
+
 /** 확정된 코드만 접는다. 나머지는 `unknown` 이고 원문도 싣지 않는다 — 숫자는 원문이 아니다. */
 function statusOf(code: number | string | undefined): { status: TrialStatus; statusRaw?: string } {
   const hit = code === undefined ? undefined : STATUS_BY_CODE[String(code)];
@@ -132,6 +150,7 @@ export function mapItem(item: CtisItem, fetchedAt: string, locationCap = Number.
   const conditions = nonEmpty(item.conditions);
   const sponsor = nonEmpty(item.sponsor);
   const product = nonEmpty(item.product);
+  const hasResults = hasResultsOf(item.resultsFirstReceived);
 
   return {
     id: formatTrialId('ctis', registryId),
@@ -160,6 +179,7 @@ export function mapItem(item: CtisItem, fetchedAt: string, locationCap = Number.
         }
       : {}),
     ...(Object.keys(dates).length > 0 ? { dates } : {}),
+    ...(hasResults !== undefined ? { hasResults } : {}),
     attribution: CTIS_ATTRIBUTION,
     fetchedAt,
   };
@@ -239,6 +259,24 @@ export function mapDetail(d: CtisDetail, fetchedAt: string): TrialRecord {
     .map((m) => nonEmpty(at(m, ['mscName'])))
     .filter((c): c is string => c !== undefined);
 
+  /**
+   * **`results` 키는 언제나 있고, 결과가 없으면 `{}` 다**(실측 2026-08-30 — 결과 있는
+   * `2023-503282-27-00` 과 없는 `2022-501417-31-00` 을 대조했다). 그래서 상세에서는
+   * 참·거짓이 확정적으로 갈린다.
+   *
+   * 키 자체가 사라지면 **모른다** 이지 없다가 아니다 — `false` 로 접으면 있는 결과를
+   * 없다고 신고하게 된다.
+   *
+   * **여기 든 것은 결과값이 아니라 제출 이력이다**(제목·상태·제출일). 실제 결과는
+   * `documents[]` 의 PDF 이고, 그것은 `TrialResults` 가 요구하는 평가변수 값·이상반응·
+   * 참가자 흐름·기저 특성이 아니다. 그래서 유무만 싣고 `results` 축은 미지원으로 둔다.
+   */
+  const results = at(d, ['results']);
+  const hasResults =
+    results === undefined || results === null || typeof results !== 'object'
+      ? undefined
+      : list(results, ['summaryResults']).length + list(results, ['laypersonResults']).length > 0;
+
   const count = at(d, [...P1, 'rowSubjectCount']);
   const dates: Record<string, string> = {};
   const decided = date(d.decisionDate);
@@ -266,6 +304,7 @@ export function mapDetail(d: CtisDetail, fetchedAt: string): TrialRecord {
       ? { locations: countries.map((c) => ({ country: c })), locationsTotal: countries.length }
       : {}),
     ...(Object.keys(dates).length > 0 ? { dates } : {}),
+    ...(hasResults !== undefined ? { hasResults } : {}),
     attribution: CTIS_ATTRIBUTION,
     fetchedAt,
   };

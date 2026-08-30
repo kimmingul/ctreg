@@ -22,6 +22,29 @@ describe('CTIS 레코드 매핑', () => {
    * 봉투 한 곳에만 적으면 레코드를 하나씩 꺼내 쓰는 소비자에게 표시가 따라가지 않는다.
    * 사보타주로 확인했다: 이 줄을 지워도 스위트가 통과했다 — 약관 위반이 무방비였다.
    */
+  /**
+   * **`resultsFirstReceived` 는 이름과 달리 날짜가 아니라 `Yes`/`No` 문자열이다**
+   * (실측 2026-08-30, 500건: Yes 54 · No 446). 이름만 보고 날짜 헬퍼에 넣으면
+   * `undefined` 가 되어 **조용히 사라진다** — 값이 오는데 버리게 된다.
+   *
+   * 이 덕분에 `hasResults` 를 **상세 조회 없이 검색 한 번으로** 알 수 있다.
+   */
+  it('결과 유무를 검색 응답에서 읽는다 — Yes/No 문자열이다', () => {
+    expect(mapItem({ ctNumber: 'X', ctTitle: 'T', resultsFirstReceived: 'Yes' }, AT).hasResults).toBe(true);
+    expect(mapItem({ ctNumber: 'X', ctTitle: 'T', resultsFirstReceived: 'No' }, AT).hasResults).toBe(false);
+  });
+
+  /**
+   * 모르는 값은 **모른다** 로 둔다. `No` 가 아닌 것을 `false` 로 접으면 결과가 있는
+   * 시험이 없는 것으로 나가고, 그것은 0건과 구별되지 않는 조용한 오답이다.
+   */
+  it('Yes 도 No 도 아니면 모른다 — false 로 접지 않는다', () => {
+    for (const v of ['', 'Unknown', '2024-09-04']) {
+      expect(mapItem({ ctNumber: 'X', ctTitle: 'T', resultsFirstReceived: v }, AT).hasResults).toBeUndefined();
+    }
+    expect(mapItem({ ctNumber: 'X', ctTitle: 'T' }, AT).hasResults).toBeUndefined();
+  });
+
   it('레코드마다 EMA 출처 표시를 싣는다', () => {
     for (const it of items) {
       const r = mapItem(it, AT);
@@ -145,5 +168,33 @@ describe('CTIS 상세 매핑', () => {
 
   it('출처 표시는 상세에서도 붙는다 — 약관이 each copy 를 요구한다', () => {
     expect(mapDetail(detail, AT).attribution).toBe(CTIS_ATTRIBUTION);
+  });
+
+  /**
+   * **상세의 `results` 키는 언제나 있고, 결과가 없으면 `{}` 다**(실측 2026-08-30 —
+   * 결과 있는 `2023-503282-27-00` 과 없는 `2022-501417-31-00` 을 대조했다). 그래서
+   * 상세에서는 참·거짓이 확정적으로 갈린다 — 검색과 달리 `undefined` 가 나올 자리가 없다.
+   *
+   * **담는 것은 유무뿐이다.** 그 안에 든 것은 제출 이력 메타데이터(제목·상태·제출일)이고
+   * 실제 결과는 `documents[]` 의 PDF 다 — `TrialResults` 가 요구하는 평가변수 값·이상반응·
+   * 참가자 흐름·기저 특성이 아니다. 그래서 `results` 축은 여전히 미지원으로 신고한다.
+   */
+  it('결과 유무를 상세에서 읽는다 — 빈 객체는 없음이다', () => {
+    expect(mapDetail({ ctNumber: 'X', results: {} }, AT).hasResults).toBe(false);
+    expect(
+      mapDetail({ ctNumber: 'X', results: { summaryResults: [{ id: 1 }] } }, AT).hasResults,
+    ).toBe(true);
+    // 평이한 언어 요약만 있어도 결과는 결과다.
+    expect(
+      mapDetail({ ctNumber: 'X', results: { laypersonResults: [{ id: 2 }] } }, AT).hasResults,
+    ).toBe(true);
+  });
+
+  /**
+   * `results` 키 자체가 사라지면 **모른다** 이지 없다가 아니다. `false` 로 접으면
+   * "결과가 없는 시험" 으로 읽혀, 있는 결과를 없다고 신고하게 된다.
+   */
+  it('results 키가 없으면 모른다 — false 로 접지 않는다', () => {
+    expect(mapDetail({ ctNumber: 'X' }, AT).hasResults).toBeUndefined();
   });
 });

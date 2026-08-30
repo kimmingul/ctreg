@@ -62,7 +62,22 @@ export const CTIS_CAPABILITY: Capability = {
     outcomes: { supported: false, scope: '주요 결과변수가 문자열로 오지만 구조가 없다' },
     contacts: { supported: false, scope: '검색 응답에 연락처가 없다' },
   },
-  results: { supported: false, scope: '결과 데이터는 상세 조회에만 있고 이 어댑터는 아직 그쪽을 쓰지 않는다' },
+  /**
+   * **재 보고 내린 판정이지 미룬 것이 아니다**(실측 2026-08-30). 상세의 `results` 는
+   * `summaryResults`·`laypersonResults` 인데, 그 안에 든 13개 필드가 전부 **제출 이력
+   * 메타데이터**(제목·상태·버전·제출일)다. 실제 결과는 `documents[]` 의 **PDF** 이고,
+   * PDF 파싱은 설계 스펙 §1.2 의 비목표다.
+   *
+   * 그래서 `results` 축은 닫아 두되 **유무는 신고한다** — 검색 응답의
+   * `resultsFirstReceived`(`Yes`/`No`)가 `hasResults` 로 실린다. ISRCTN 과 같은 자리다:
+   * 결과가 문서로만 있는 레지스트리.
+   */
+  results: {
+    supported: false,
+    scope:
+      'CTIS 의 결과는 제출된 요약 PDF 다 — TrialResults 가 요구하는 구조화된 평가변수 값·이상반응·참가자 흐름·기저 특성이 아니다. ' +
+      '결과가 있는지 여부는 레코드의 hasResults 로 알 수 있다',
+  },
   count: { supported: true, scope: '검색 조건에 걸린 시험 수(totalRecords)' },
   sort: { supported: false, scope: '정렬 키를 재지 않았다 — 응답 순서 그대로다' },
   limits: { maxPageSize: CTIS_MAX_PAGE_SIZE, ratePerSec: 2, maxBatchIds: 1 },

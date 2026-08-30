@@ -19,7 +19,7 @@
  *
  * 넷 다 "조용히 틀린 답" 이고, 이 CLI 가 없애려는 실패가 바로 그것이다.
  *
- * 여덟을 본다.
+ * 아홉을 본다.
  *
  * 1. **거른다고 신고한 다섯이 여전히 거른다.** `containAll`·`title`·`medicalCondition`·
  *    `sponsor`·`msc`. 각 축마다 **`0 < 건수 < 전체`** 를 함께 본다 — `> 0` 만 보면 키가
@@ -38,6 +38,10 @@
  *    2·3·4·5 가 아직도 갈리지 않는지도 함께 본다 — 갈리면 실패가 아니라 **열린 기회** 다.
  * 8. **번호를 자유 텍스트로 찾는 우회가 아직 된다.** `get` 이 이것 하나에 얹혀 있다.
  *    덤으로 **출처 표시** 가 살아 있는지 본다 — 빠지면 결함이 아니라 EMA 약관 위반이다.
+ * 9. **`resultsFirstReceived` 가 아직 `Yes`/`No` 문자열이다.** 이름은 날짜처럼 생겼는데
+ *    값은 불리언이다. 날짜로 바뀌면 `hasResults` 가 오류 없이 **전부 `undefined`** 가 된다 —
+ *    "결과가 없다" 가 아니라 "모른다" 로 조용히 후퇴한다. 상세 쪽 `results` 키가 결과
+ *    없는 시험에서 아직 `{}` 인지도 함께 본다.
  *
  * 결과는 docs/ctis-field-test-<날짜>.md 로 남는다. 우리 HTTP 층을 그대로 쓰므로
  * 재시도·타임아웃·요청률이 어댑터와 같다. **기준 건수를 못 받으면 측정하지 않고 멈춘다** —
@@ -389,6 +393,60 @@ async function main(): Promise<void> {
     );
   } catch (e) {
     fails('자유 텍스트에 번호를 넣으면 그 한 건이 나온다', e);
+  }
+
+  // 9. resultsFirstReceived 가 아직 Yes/No 문자열이다 — hasResults 의 유일한 근거.
+  try {
+    const page = await search({}, CTIS_MAX_PAGE_SIZE);
+    const items = page.data ?? [];
+    const vals = new Set(items.map((it) => String(it.resultsFirstReceived ?? '')));
+    const known = [...vals].filter((v) => v === 'Yes' || v === 'No');
+    const strays = [...vals].filter((v) => v !== 'Yes' && v !== 'No');
+    /**
+     * **날짜로 바뀌면 오류가 아니라 침묵이다.** 매퍼는 `Yes`/`No` 가 아닌 값을 모두
+     * `undefined` 로 두므로(모르는 것을 `false` 로 접지 않기 위해서다), 형식이 바뀌면
+     * `hasResults` 가 통째로 사라지고 아무도 그것을 알아채지 못한다.
+     */
+    record(
+      'resultsFirstReceived 가 아직 Yes/No 문자열이다',
+      known.length > 0 && strays.length === 0 ? 'pass' : 'fail',
+      `${items.length}건에서 본 값: ${[...vals].map((v) => `'${v}'`).join(', ')}`,
+      '이름은 날짜처럼 생겼는데 값은 불리언이다. 형식이 바뀌면 hasResults 가 오류 없이 전부 사라진다 — 없다가 아니라 모른다로 조용히 후퇴한다',
+    );
+
+    const yes = items.find((it) => it.resultsFirstReceived === 'Yes');
+    const no = items.find((it) => it.resultsFirstReceived === 'No');
+    /** 검색이 낸 유무와 상세의 `results` 가 **같은 말을 하는가.** 갈리면 어느 쪽도 못 믿는다. */
+    for (const [label, item, want] of [
+      ['결과 있음', yes, true],
+      ['결과 없음', no, false],
+    ] as const) {
+      if (item === undefined) {
+        record(
+          `상세의 results 가 검색과 일치한다 (${label})`,
+          'inconclusive',
+          '이 표본 쪽에 없었다',
+          '검사가 돌지 않았다는 뜻이지 통과했다는 뜻이 아니다',
+        );
+        continue;
+      }
+      const d = await retrieve((item.ctNumber ?? '').trim());
+      const r = d.results;
+      const present = r !== undefined && r !== null && typeof r === 'object';
+      const len = (k: string): number => {
+        const v = present ? (r as Record<string, unknown>)[k] : undefined;
+        return Array.isArray(v) ? v.length : 0;
+      };
+      const n = len('summaryResults') + len('laypersonResults');
+      record(
+        `상세의 results 가 검색과 일치한다 (${label})`,
+        present && (n > 0) === want ? 'pass' : 'fail',
+        `${item.ctNumber ?? ''} → results ${present ? `문서 ${n}건` : '키 없음'}`,
+        '검색의 Yes/No 와 상세의 results 가 갈리면 어느 쪽도 못 믿는다. 상세의 키는 결과가 없어도 {} 로 있어야 한다 — 사라지면 모른다가 된다',
+      );
+    }
+  } catch (e) {
+    fails('resultsFirstReceived 가 아직 Yes/No 문자열이다', e);
   }
 
   const md = [
