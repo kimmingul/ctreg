@@ -23,7 +23,8 @@
     "field-test": "bun run scripts/field-test.ts",
     "isrctn-field-test": "bun run scripts/isrctn-field-test.ts",
     "ictrp-field-test": "bun run scripts/ictrp-field-test.ts",
-    "cris-field-test": "bun run scripts/cris-field-test.ts"
+    "cris-field-test": "bun run scripts/cris-field-test.ts",
+    "ctis-field-test": "bun run scripts/ctis-field-test.ts"
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.0",
