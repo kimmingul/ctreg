@@ -52,6 +52,7 @@ import { writeFileSync } from 'node:fs';
 import { CTIS_CAPABILITY, CTIS_MAX_PAGE_SIZE, createCtisAdapter } from '../src/adapters/ctis/adapter.js';
 import { CTIS_MSC_CODES } from '../src/adapters/ctis/countries.js';
 import { CTIS_ATTRIBUTION, type CtisItem } from '../src/adapters/ctis/map.js';
+import type { NormalizedQuery } from '../src/core/query.js';
 import { loadConfig, loadEnvFile } from '../src/runtime/config.js';
 import { CtregError } from '../src/runtime/errors.js';
 import { getJson, postJson } from '../src/runtime/http.js';
@@ -397,7 +398,7 @@ async function main(): Promise<void> {
 
   // 9. resultsFirstReceived 가 아직 Yes/No 문자열이다 — hasResults 의 유일한 근거.
   try {
-    const page = await search({}, CTIS_MAX_PAGE_SIZE);
+    const page = await search({ containAll: 'melanoma' }, CTIS_MAX_PAGE_SIZE);
     const items = page.data ?? [];
     const vals = new Set(items.map((it) => String(it.resultsFirstReceived ?? '')));
     const known = [...vals].filter((v) => v === 'Yes' || v === 'No');
@@ -445,6 +446,31 @@ async function main(): Promise<void> {
         '검색의 Yes/No 와 상세의 results 가 갈리면 어느 쪽도 못 믿는다. 상세의 키는 결과가 없어도 {} 로 있어야 한다 — 사라지면 모른다가 된다',
       );
     }
+
+    /**
+     * **여기까지는 날것만 봤다 — 그러면 매퍼가 죽어도 초록이다.**
+     * 사보타주로 확인했다: `hasResultsOf` 의 `'Yes'` 를 `'YES'` 로 바꿔 축을 통째로
+     * 죽였는데 위 세 줄이 모두 통과했다(단위 테스트만 잡았다). 필드테스트가 "이 축이
+     * 건강하다" 고 거짓 보고한 것이다.
+     *
+     * 그래서 **어댑터를 거친 값과 날것을 한 건씩 대조한다.** 이 검사는 업스트림 형식
+     * 변화와 우리 매핑 결함을 **둘 다** 잡는다 — 사용자가 실제로 받는 것이 어댑터의
+     * 출력이기 때문이다.
+     */
+    const raw = new Map(
+      items
+        .map((it) => [(it.ctNumber ?? '').trim(), it.resultsFirstReceived] as const)
+        .filter(([id, v]) => id !== '' && (v === 'Yes' || v === 'No')),
+    );
+    const got = await adapter.search({ term: 'melanoma', pageSize: CTIS_MAX_PAGE_SIZE } as NormalizedQuery, fetchOpts);
+    const checked = got.data.filter((r) => raw.has(r.registryId));
+    const wrong = checked.filter((r) => r.hasResults !== (raw.get(r.registryId) === 'Yes'));
+    record(
+      '어댑터가 낸 hasResults 가 날것과 일치한다',
+      checked.length > 0 && wrong.length === 0 ? 'pass' : 'fail',
+      `${checked.length}건 대조, 어긋남 ${wrong.length}${wrong.length > 0 ? ` (${wrong.map((r) => r.registryId).join(', ')})` : ''}`,
+      '날것만 보는 검사는 매퍼가 죽어도 통과한다 — 사보타주로 확인했다. 사용자가 받는 것은 어댑터의 출력이므로 그쪽을 대조해야 한다',
+    );
   } catch (e) {
     fails('resultsFirstReceived 가 아직 Yes/No 문자열이다', e);
   }
