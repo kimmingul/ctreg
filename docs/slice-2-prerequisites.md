@@ -681,7 +681,7 @@ F2 는 **절반만** 닫혔다. 선언에는 근거가 실렸지만 응답에는
 
 > **완료 — 커밋 `6a80c1d`.** 아래는 착수 시점의 판단으로 남긴다.\n\n**ISRCTN** 이 1순위였다. 인증 없는 공개 REST API 이고, 조사에서 `studyType`·`hasResults`·`crossIds`
 를 포함한 core 필드 대부분이 확인됐다(`docs/registry-field-survey-2026-08-22.md`).
-EU CTIS 와 jRCT 는 공개 API 를 찾지 못했다(화면만).
+EU CTIS 와 jRCT 는 공개 API 를 찾지 못했다(화면만). **둘 다 뒤에 뒤집혔다** — CTIS 는 인증 없는 공개 API 가 있어 어댑터 #5 가 됐고(2026-08-30), jRCT 는 CSV 내려받기가 있으나 이용 규약이 자동 순회 수집을 자제하라 하고 포괄적 수집에 허가 신청을 요구한다.
 
 **어댑터 #3 도 landed — WHO ICTRP(`ictrp`).** 설계와 실측 근거는
 `docs/superpowers/specs/2026-08-26-ictrp-as-its-own-registry-design.md`(구현 커밋
