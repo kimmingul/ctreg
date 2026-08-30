@@ -149,7 +149,7 @@ TRDS 항목 3(Secondary Identifying Numbers)이 `crossIds` 그 자체라는 위 
 | enrollment.count | CTIS | EMA 공식 필드 사전 두 건(Full trial information 7쪽, summary 6쪽) 어디에도 표본크기 필드가 없음 | 실제 trial 페이지의 Locations/Results 탭(두 공식 PDF에는 없다는 게 이번에 확인된 사실이라, 남은 후보는 화면 자체뿐) |
 | ~~dates.lastUpdated~~ | ICTRP | **확인됨 (2026-08-26) — 필드는 있으나 뜻이 다르다.** 레코드에 `Last refreshed on` 이 있는데 이것은 **ICTRP 가 사본을 갱신한 날**이지 시험이 갱신된 날이 아니다(두 표본에서 원본보다 7일 뒤). 위 매트릭스 행 참고. 당시의 진단: TRDS 24항목에도, 검색 포털 고급검색 필드 목록에도 없음 | (해소됨) |
 | ~~dates.lastUpdated(회원국별 여부)~~ | CTIS | **확인됨(2026-08-27) — 레코드별이다.** 공개 API 레코드에서 회원국별 필드는 국가 코드 접두사와 `…Overall` 형제를 갖는데 `lastUpdated` 는 둘 다 없다(회원국 9곳 시험에서 확인). | (해소됨) |
-| ~~hasResults~~ | CRIS | **확인됨(2026-08-29) — 공개 API 에는 없다.** 상세 조회 74항목을 전부 열어 봤으나 결과공개 플래그가 없다. `results_date_completed` 는 종료일이고 `results_type_date_completed_*` 는 예정/실제 구분이며, `outcome_items` 는 프로토콜의 결과변수이지 결과값이 아니다. **CRIS 자체에는 있다** — 사람이 쓰는 상세검색 화면에 `results_yn`(연구결과 선택) 칸이 있다. 즉 자리는 있는데 공개 API 가 안 내준다. | (해소됨) |
+| ~~hasResults~~ | CRIS | **확인됨(2026-08-29) — 공개 API 에는 없다.** 상세 조회 74항목을 전부 열어 봤으나 결과공개 플래그가 없다. `results_date_completed` 는 종료일이고 `results_type_date_completed_*` 는 예정/실제 구분이며, `outcome_items` 는 프로토콜의 결과변수이지 결과값이 아니다. **CRIS 자체에는 있다** — 사람이 쓰는 상세검색 화면에 `results_yn`(연구결과 선택) 칸이 있다. 즉 자리는 있는데 공개 API 가 안 내준다. **오퍼레이션 수준에서도 재확인(2026-08-30): 이 오픈API 는 목록조회·상세조회 둘뿐이고 결과를 내주는 다른 오퍼레이션이 없다.** 파일데이터셋(`15083215`)은 안 봤다. | (해소됨) |
 | hasResults | jRCT | "치험결과 조회" 기능은 진행상태 필터일 뿐, 별도 필드인지 미확인 | 종료된 시험의 실제 상세 페이지에 결과 섹션 유무 확인 |
 | crossIds | jRCT | 가이드 1~22쪽에서 확인 못함(33쪽 이후 "기본용어" 및 상세 페이지 "その他の事項" 섹션 미확인) | 가이드 33쪽 이후, 또는 실제 상세 페이지의 "その他の事項" |
 | outcomes(detail) | jRCT | 가이드에서 "研究・治験の目的"(objectives)까지만 확인, outcome measure 구조 필드 미확인 | 실제 상세 페이지의 관리적 사항 세부 항목 |
