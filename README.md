@@ -8,7 +8,16 @@
 
 ## 이 슬라이스의 범위
 
-- **지원 레지스트리는 셋이다 — ClinicalTrials.gov(`ctgov`), ISRCTN(`isrctn`), WHO ICTRP(`ictrp`).** `ctreg registries` 를 실행하면 각 어댑터가 스스로 신고하는 capability — 어떤 검색 축·상세 섹션·결과 데이터를 지원하는지, 페이지 크기/요청률/배치 상한이 얼마인지 — 를 그대로 볼 수 있다. **셋의 능력은 같지 않다**(바로 아래 참고). `--registry` 를 주지 않으면 `ctgov` 하나만 조회한다 — 어댑터가 늘어도 기존 호출의 동작이 조용히 바뀌지 않도록 기본값은 이름 붙인 하나로 고정돼 있다.
+- **지원 레지스트리는 다섯이다 — ClinicalTrials.gov(`ctgov`), ISRCTN(`isrctn`), WHO ICTRP(`ictrp`), CRIS(`cris`, 한국), EU CTIS(`ctis`).** 다만 **셋만 아무 설정 없이 바로 된다** — 아래 표를 먼저 보라. `ctreg registries` 를 실행하면 각 어댑터가 스스로 신고하는 capability — 어떤 검색 축·상세 섹션·결과 데이터를 지원하는지, 페이지 크기/요청률/배치 상한이 얼마인지 — 를 그대로 볼 수 있다. **다섯의 능력은 같지 않다**(아래 절들 참고). `--registry` 를 주지 않으면 `ctgov` 하나만 조회한다 — 어댑터가 늘어도 기존 호출의 동작이 조용히 바뀌지 않도록 기본값은 이름 붙인 하나로 고정돼 있다.
+
+| 레지스트리 | 바로 되나 | 조건 |
+| :-- | :-- | :-- |
+| `ctgov` · `isrctn` · `ctis` | ✅ | 없음 |
+| `cris` | 키 필요 | 공공데이터포털 인증키를 `CTREG_CRIS_SERVICE_KEY` 에 넣는다(자동승인, 무료) |
+| `ictrp` | ❌ **기본 꺼짐** | WHO 가 자동 조회를 **합의된 파트너에게만** 열고 비용을 청구한다. 합의가 있으면 `CTREG_ICTRP_ACKNOWLEDGED` 로 켠다 |
+
+**꺼진 레지스트리를 물으면 빈 결과가 아니라 exit 3 이다** — 이 도구의 규칙이 여기에도 그대로 적용된다.
+
 - **`--near` 는 좌표(`위도,경도`)만 받는다. 지명은 받지 않는다.** 이 슬라이스에는 지오코더가 없다. "서울 근처"를 찾고 싶으면 위도/경도를 직접 구해서 넣어야 한다(예: `--near 37.5665,126.978`). 좌표를 제공하는 레지스트리는 ctgov 뿐이라 `--near` 는 ctgov 전용이다.
 
 ### ISRCTN 으로는 할 수 없는 것
@@ -30,6 +39,12 @@ ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 
 또 하나, **ISRCTN API 에는 페이지 넘김이 없다.** 매칭이 받은 것보다 많으면 `no_pagination` 경고가 붙는다 — `--page-size` 를 올리거나(최대 200) 기간을 쪼개 여러 번 조회하는 것 말고 이어받을 방법이 없다.
 
 이 표는 추측이 아니라 실측이다. `bun run isrctn-field-test` 를 돌리면 신고한 축 전부를 실물 레지스트리에 대조해 `docs/isrctn-field-test-<날짜>.md` 로 남긴다.
+
+### WHO ICTRP 는 기본으로 꺼져 있다
+
+**먼저 알아야 할 것은 능력이 아니라 접근 조건이다.** ICTRP 검색 화면은 `robots.txt` 가 자동 접근을 막고 있고(`Disallow: /`), WHO 가 자동 조회용으로 내놓은 두 서비스(Web Service, Crawling Service)는 **둘 다 사무국과의 합의와 비용을 요구한다** — 크롤링 서비스 이용 조건이 "an **agreed partner** website" 라고 못박는다. 그래서 이 어댑터는 **기본값이 꺼짐** 이고, 부르면 exit 3 과 함께 무엇을 해야 하는지(사무국 연락처 `ictrpinfo@who.int`, 켜는 법)를 말한다.
+
+기능을 지우지는 않았다 — 합의가 있는 사용자에게서 뺏을 이유가 없다. `CTREG_ICTRP_ACKNOWLEDGED` 에 아무 값이나 넣으면 아래 능력 그대로 동작한다.
 
 ### WHO ICTRP 로는 할 수 없는 것
 
@@ -60,6 +75,65 @@ ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 
 **같은 시험이 두 ctreg id 를 가질 수 있다.** `CTGOV:NCT07749586` 과 `ICTRP:NCT07749586` 은 같은 시험을 각자의 어댑터로 가져온 서로 다른 사본이고, 이 도구는 둘을 묶거나 중복 제거하지 않는다 — ICTRP 로 찾은 시험의 ID 는 그 시험이 원본으로 등록된 레지스트리와 무관하게 언제나 `ICTRP:` 접두사를 붙여야 한다(접두사 없이는 추론되지 않는다).
 
 이 절도 실측이다. `bun run ictrp-field-test` 를 돌리면 `docs/ictrp-field-test-<날짜>.md` 로 대조 결과를 남긴다.
+
+### CRIS(한국)는 인증키가 필요하다
+
+`cris` 는 질병관리청의 임상연구정보서비스다. 국내 등재 **12,500여 건**을 담는다. 자동
+조회로 허락된 문은 **공공데이터포털의 공식 OpenAPI 하나** 이므로 인증키가 필요하다 —
+[질병관리청_임상연구 DB](https://www.data.go.kr/data/3033869/openapi.do) 에서 활용신청
+(자동승인·무료)하고 받은 일반 인증키를 `CTREG_CRIS_SERVICE_KEY` 에 넣는다. `.env` 로 줘도
+된다(`.env.example` 참고). 키가 없으면 이 레지스트리만 exit 4 로 말하고 나머지는 그대로 동작한다.
+
+**이 어댑터의 신고는 거의 전부 `false` 다. 그것이 정직한 모습이다.** 공식 API 가 받는
+검색 입력은 자유 텍스트 하나(`--term`)뿐이고 목록이 내주는 항목은 16개다. CRIS 자체
+화면에는 질환·중재·연구책임자 칸이 다 있지만 **그 화면 뒤의 엔드포인트는 `robots.txt` 가
+막는다** — 여기 적힌 `false` 는 "CRIS 가 못 한다" 가 아니라 **"허락된 문으로는 못 묻는다"** 다.
+
+| 못 하는 것 | 왜 |
+| :-- | :-- |
+| `--condition` · `--intervention` · `--sponsor` 등 | 공식 API 에 그 필터가 없다. 그 말을 `--term` 에 담으면 제목·기관에 걸리는 만큼만 걸린다 |
+| `--status` · `--phase` | 목록 16항목에 없다. `search` 가 낸 레코드의 status 는 `unknown` 이고 그것은 사실이다 |
+| `ctreg results` | 구조화된 결과 데이터를 내주지 않는다 |
+
+**`--investigator` 는 된다. 다만 비싸고 전수가 아니다.** 목록으로는 사람 이름을 거를 수
+없어서, `--term` 으로 좁힌 후보를 **하나씩 상세 조회로 열어** 연구책임자를 대조한다.
+그래서 `--term` 이 반드시 함께 있어야 하고, 몇 건을 열었는지는 경고로 말한다.
+**후보는 검색어가 닿는 범위에 갇힌다** — 검색어 하나로는 크게 놓칠 수 있다(실측: 기관명
+하나로 40건 중 12건, 검색어 여덟 개로 넓혀 40건). 여러 말로 나눠 조회하고 합쳐야 한다.
+
+`ctreg get` 은 상세 조회를 쓰므로 `search` 보다 두껍다 — 진짜 모집현황, 목표대상자 수,
+연구책임자(국문·영문)까지 온다.
+
+이 절도 실측이다. `bun run cris-field-test` 를 돌리면 `docs/cris-field-test-<날짜>.md` 로 남는다.
+
+### EU CTIS 는 조건이 하나 이상 필요하다
+
+`ctis` 는 EU 임상시험정보시스템이다. 유럽 등재 **12,300여 건**을 담고 **인증도 비용도 없다** —
+지금까지 붙인 다섯 중 가장 열려 있다. EMA 법적 고지가 재생산·배포를 상업·비상업 모두
+허용하고, 조건은 **출처 표시 하나**다. 그래서 이 레지스트리의 레코드에는 `attribution`
+필드가 붙는다 — 약관이 *"included in **each copy**"* 를 요구하기 때문에 봉투가 아니라
+**레코드마다** 싣는다.
+
+**이 API 는 모르는 검색 키를 조용히 버린다.** 있지도 않은 키를 보내도 전체 건수가 그대로
+온다 — 즉 지원하지 않는 축을 보내면 **좁혀지지 않은 결과가 좁혀진 것처럼** 나간다. 그래서
+실제로 거르는 것만 신고했고, 나머지는 exit 3 으로 막는다.
+
+| 되는 것 | 못 하는 것 |
+| :-- | :-- |
+| `--term` · `--title` · `--condition` · `--sponsor` · `--location` | `--phase` · `--status` · `--intervention` · `--id` · 날짜 축 · `ctreg results` |
+
+**`--location` 은 EU·EEA 회원국 이름만 받는다**(28개국). 이 API 는 나라를 ISO 숫자 코드로
+받고 **이름이나 알파벳 코드에는 0건** 을 내주므로, 코드표를 기억으로 적지 않고 코드마다
+보내 본 뒤 돌아온 나라로 확정했다. 표에 없는 이름은 조용히 넘기지 않고 exit 3 으로 막고
+아는 이름을 제안한다.
+
+**조건 없이 검색하면 exit 3 이다.** 조건 없이 부르면 전체 12,300여 건의 첫 쪽이 오는데,
+그것을 검색 결과로 내보내면 사용자는 자기 질의가 통한 줄 안다.
+
+**상태는 대부분 `unknown` 이다.** 검색이 주는 상태는 숫자 코드인데 그중 둘만 뜻을 확정했다
+(`Ended` → 완료, `Not authorised` → 기타). 나머지 넷은 이 API 의 어느 자리에서도 전부
+`Authorised` 로 나와 갈리지 않는다 — 짐작해서 접으면 모집 전인 시험이 모집 중으로 읽힌다.
+`ctreg get` 은 상세 조회를 쓰므로 그 원문 문자열을 `statusRaw` 로 함께 낸다.
 
 ## 설치
 
@@ -130,7 +204,7 @@ ctreg search --condition "non-small cell lung cancer" --status recruiting --page
 }
 ```
 
-다음 페이지는 `--page-token`(`nextPageToken` 값)으로 이어 받는다. 검색 축(`--condition`, `--intervention`, `--term`, `--title`, `--location`, `--outcome-query`, `--sponsor`, `--lead`, `--id`, `--patient`)은 하나 이상 조합해서 쓸 수 있고, 필터(`--status`, `--phase`, `--study-type`, 날짜 범위, `--near`/`--radius`)는 그 위에 덧씌운다.
+다음 페이지는 `--page-token`(`nextPageToken` 값)으로 이어 받는다. 검색 축(`--condition`, `--intervention`, `--term`, `--title`, `--location`, `--outcome-query`, `--sponsor`, `--lead`, `--id`, `--patient`, `--investigator`)은 하나 이상 조합해서 쓸 수 있고, 필터(`--status`, `--phase`, `--study-type`, 날짜 범위, `--near`/`--radius`)는 그 위에 덧씌운다.
 
 **`--near` 는 시험을 거르지, 사이트를 거르지 않는다.** `--near`(+ 기본/지정 `--radius`)는 "반경 안에 사이트가 하나라도 있는 시험"을 매칭 조건으로 쓴다. 매칭에 성공한 시험이라도 레코드에 실리는 `locations` 배열은 그 시험의 전체 사이트 목록(상한까지 자르고 `locationsTotal` 로 진짜 개수를 남긴다)이지, 반경 안의 사이트만 남긴 목록이 아니다 — 예를 들어 서울 근처로 검색해도 그 시험이 해외에서도 모집 중이면 대만·미국·스페인 사이트가 함께 나온다. 각 사이트는 `distanceKm` 을 갖고 가까운 순으로 정렬되므로, 목록 맨 위가 검색 반경에 실제로 걸린 사이트다 — "이 근처에서 모집하는 시험이 있다"와 "이 시험은 이 근처에서만 모집한다"는 다른 사실이니 혼동하지 마라.
 
@@ -321,6 +395,13 @@ ctreg registries
 | `CTREG_RATE_PER_SEC` | (미설정) | 전역 오버라이드. **미설정이면 각 레지스트리가 스스로 신고한 요청률**(`ctreg registries` 의 `limits.ratePerSec`, ctgov 는 1 req/s)**을 쓴다** — 레지스트리마다 예산이 다를 수 있어서다. 이 값을 주면 모든 레지스트리에 그 값 하나를 강제한다(공유 네트워크에서 다같이 늦추거나, 특별 허가로 다같이 올리거나). 올리기 전에 업스트림의 실제 정책을 확인하라. |
 | `CTREG_CTGOV_BASE_URL` | `https://clinicaltrials.gov/api/v2` | ctgov 어댑터가 호출할 API 베이스 URL. 테스트나 미러 대상 전환에 쓴다. |
 | `CTREG_ISRCTN_BASE_URL` | `https://www.isrctn.com` | isrctn 어댑터가 호출할 베이스 URL. ctgov 와 달리 경로에 버전이 없어 호스트까지만 담는다. |
+| `CTREG_ICTRP_BASE_URL` | `https://trialsearch.who.int` | ictrp 어댑터가 호출할 베이스 URL. |
+| `CTREG_ICTRP_ACKNOWLEDGED` | (미설정 = **꺼짐**) | **ICTRP 자동 조회를 켠다.** WHO 는 자동 접근을 합의된 파트너에게만 열고 비용을 청구한다(`ictrpinfo@who.int`). 합의가 있을 때만 값을 넣어라 — 아무 값이나 비어 있지 않으면 켜진다. 나머지 네 레지스트리는 이 설정과 무관하다. |
+| `CTREG_CRIS_SERVICE_KEY` | (미설정) | **CRIS 인증키.** 공공데이터포털의 「질병관리청_임상연구 DB」 활용신청(자동승인·무료)으로 받는다. **Decoding 키**를 넣어라 — 이 CLI 가 스스로 인코딩하므로 Encoding 키를 넣으면 두 번 인코딩돼 인증이 실패한다. 없으면 cris 만 exit 4 로 말한다. |
+| `CTREG_CRIS_BASE_URL` | `https://apis.data.go.kr/1352159/crisinfodataview` | cris 어댑터가 호출할 베이스 URL. |
+| `CTREG_CTIS_BASE_URL` | `https://euclinicaltrials.eu/ctis-public-api` | ctis 어댑터가 호출할 베이스 URL. |
+
+비밀값은 셸 환경변수 대신 **작업 디렉터리의 `.env`** 로 줄 수 있다 — `.env.example` 을 복사해 채우면 된다. `.env` 는 `.gitignore` 에 있고, **이미 있는 환경변수를 덮지 않는다**(파일은 기본값이고 그때그때의 개입이 우선이다).
 
 캐시/요청률 제한을 끄거나 우회하고 싶을 때는 환경변수 대신 커맨드 플래그를 쓴다: `--no-cache` (이번 호출은 캐시를 아예 쓰지 않는다), `--refresh` (캐시를 갱신하며 조회한다). 둘은 함께 쓸 수 없다.
 
