@@ -1,0 +1,5260 @@
+{
+ "ctNumber": "2022-501417-31-00",
+ "ctStatus": "Not authorised",
+ "decisionDate": "2023-03-02T12:37:16.823",
+ "publishDate": "2024-06-17T18:55:58.504634679",
+ "ctPublicStatusCode": 11,
+ "authorizedApplication": {
+  "authorizedPartI": {
+   "id": 6402,
+   "rowSubjectCount": 1296,
+   "rowCountriesInfo": [
+    {
+     "eutctId": 100000000549,
+     "name": "Turkey",
+     "isoNumber": 792,
+     "isoAlpha2Code": "TR",
+     "isoAlpha3Code": "TUR",
+     "current": true
+    },
+    {
+     "eutctId": 100000000423,
+     "name": "India",
+     "isoNumber": 356,
+     "isoAlpha2Code": "IN",
+     "isoAlpha3Code": "IND",
+     "current": true
+    },
+    {
+     "eutctId": 100000000527,
+     "name": "South Africa",
+     "isoNumber": 710,
+     "isoAlpha2Code": "ZA",
+     "isoAlpha3Code": "ZAF",
+     "current": true
+    },
+    {
+     "eutctId": 100000000439,
+     "name": "Korea, Republic of",
+     "isoNumber": 410,
+     "isoAlpha2Code": "KR",
+     "isoAlpha3Code": "KOR",
+     "current": true
+    },
+    {
+     "eutctId": 100000000429,
+     "name": "Israel",
+     "isoNumber": 376,
+     "isoAlpha2Code": "IL",
+     "isoAlpha3Code": "ISR",
+     "current": true
+    },
+    {
+     "eutctId": 100000000361,
+     "name": "Chile",
+     "isoNumber": 152,
+     "isoAlpha2Code": "CL",
+     "isoAlpha3Code": "CHL",
+     "current": true
+    },
+    {
+     "eutctId": 100000000366,
+     "name": "Colombia",
+     "isoNumber": 170,
+     "isoAlpha2Code": "CO",
+     "isoAlpha3Code": "COL",
+     "current": true
+    },
+    {
+     "eutctId": 100000000482,
+     "name": "New Zealand",
+     "isoNumber": 554,
+     "isoAlpha2Code": "NZ",
+     "isoAlpha3Code": "NZL",
+     "current": true
+    },
+    {
+     "eutctId": 100000000354,
+     "name": "Canada",
+     "isoNumber": 124,
+     "isoAlpha2Code": "CA",
+     "isoAlpha3Code": "CAN",
+     "current": true
+    },
+    {
+     "eutctId": 100000000346,
+     "name": "Brazil",
+     "isoNumber": 76,
+     "isoAlpha2Code": "BR",
+     "isoAlpha3Code": "BRA",
+     "current": true
+    },
+    {
+     "eutctId": 100000000556,
+     "name": "United Kingdom",
+     "isoNumber": 826,
+     "isoAlpha2Code": "GB",
+     "isoAlpha3Code": "GBR",
+     "current": true
+    },
+    {
+     "eutctId": 100000000325,
+     "name": "Argentina",
+     "isoNumber": 32,
+     "isoAlpha2Code": "AR",
+     "isoAlpha3Code": "ARG",
+     "current": true
+    },
+    {
+     "eutctId": 100000000362,
+     "name": "China",
+     "isoNumber": 156,
+     "isoAlpha2Code": "CN",
+     "isoAlpha3Code": "CHN",
+     "current": true
+    },
+    {
+     "eutctId": 100000000329,
+     "name": "Australia",
+     "isoNumber": 36,
+     "isoAlpha2Code": "AU",
+     "isoAlpha3Code": "AUS",
+     "current": true
+    },
+    {
+     "eutctId": 100000000432,
+     "name": "Japan",
+     "isoNumber": 392,
+     "isoAlpha2Code": "JP",
+     "isoAlpha3Code": "JPN",
+     "current": true
+    },
+    {
+     "eutctId": 100000000536,
+     "name": "Switzerland",
+     "isoNumber": 756,
+     "isoAlpha2Code": "CH",
+     "isoAlpha3Code": "CHE",
+     "current": true
+    },
+    {
+     "eutctId": 100000000557,
+     "name": "United States",
+     "isoNumber": 840,
+     "isoAlpha2Code": "US",
+     "isoAlpha3Code": "USA",
+     "current": true
+    }
+   ],
+   "products": [
+    {
+     "id": 17296,
+     "part1MpRoleTypeCode": "1",
+     "productDictionaryInfo": {
+      "productPk": "9817878",
+      "productPharmForm": "CONCENTRATE FOR SOLUTION FOR INFUSION",
+      "euMpNumber": "PRD4323105",
+      "marketingAuthNumber": "EU/1/15/1024/002",
+      "prodAuthStatus": 2,
+      "prodName": "KEYTRUDA 25 mg/mL concentrate for solution for infusion",
+      "pharmForm": "SOLUTION FOR INFUSION",
+      "activeSubstanceName": "PEMBROLIZUMAB",
+      "euSubstNumber": "SUB167136",
+      "authorisationCountryCode": "EU",
+      "mrpNumber": "EMEA/H/C/003820",
+      "nameOrg": "MERCK SHARP & DOHME BV",
+      "productSubstances": [
+       {
+        "productPk": "9817878",
+        "substancePk": "288763",
+        "nameOrg": "MERCK SHARP & DOHME BV",
+        "substanceOrigin": "Protein - Other",
+        "actSubstOrigin": "Protein - Other",
+        "actSubstName": "PEMBROLIZUMAB",
+        "substanceEvCode": "SUB167136",
+        "synonyms": [
+         "Lambrolizumab",
+         "MK-3475",
+         "SCH-900475",
+         "ABP 234"
+        ]
+       }
+      ],
+      "atcCode": "L01FF02",
+      "atcName": "-",
+      "atcTermLevel": "5",
+      "activeSubstanceOtherDescriptiveName": ""
+     },
+     "isPaediatricFormulation": false,
+     "mpRoleInTrial": "2",
+     "orphanDrugEdit": false,
+     "doseUom": "mg milligram(s)",
+     "maxDailyDoseAmount": "200",
+     "doseUomTotal": "mg milligram(s)",
+     "maxTotalDoseAmount": "3400",
+     "productChangedRelationMA": false,
+     "maxTreatmentPeriod": 12,
+     "timeUnitCode": "3",
+     "evCode": "PRD4323105",
+     "sponsorProductCodeEdit": "MK-3475",
+     "miaNumber": "IMP11011/00003",
+     "devices": [],
+     "characteristics": [
+      "4",
+      "7"
+     ],
+     "routes": [
+      "INTRAVENOUS INFUSION"
+     ],
+     "allSubstancesChemicals": false,
+     "productName": "KEYTRUDA 25 mg/mL concentrate for solution for infusion",
+     "jsonActiveSubstanceNames": "pembrolizumab",
+     "pharmaceuticalFormDisplay": "SOLUTION FOR INFUSION"
+    },
+    {
+     "id": 17295,
+     "part1MpRoleTypeCode": "1",
+     "productDictionaryInfo": {
+      "productPk": "9386962",
+      "productPharmForm": "SOLUTION FOR INFUSION",
+      "euMpNumber": "PRD9386962",
+      "prodAuthStatus": 1,
+      "pharmForm": "SOLUTION FOR INFUSION",
+      "sponsorProductCode": "MK-7684A",
+      "activeSubstanceName": "PEMBROLIZUMAB, VIBOSTOLIMAB",
+      "euSubstNumber": "SUB167136, SUB203865",
+      "nameOrg": "MERCK & CO. INC.",
+      "productSubstances": [
+       {
+        "productPk": "9386962",
+        "substancePk": "235655",
+        "nameOrg": "MERCK & CO. INC.",
+        "substanceOrigin": "Protein - Other",
+        "actSubstOrigin": "Protein - Other",
+        "actSubstName": "PEMBROLIZUMAB",
+        "substanceEvCode": "SUB167136"
+       },
+       {
+        "productPk": "9386962",
+        "substancePk": "208628",
+        "nameOrg": "MERCK & CO. INC.",
+        "substanceOrigin": "Protein - Other",
+        "actSubstOrigin": "Protein - Other",
+        "actSubstName": "VIBOSTOLIMAB",
+        "substanceEvCode": "SUB203865",
+        "synonyms": [
+         "Anti-(T cell immunoreceptor with Ig and ITIM domains) IgG1 humanised monoclonal antibody",
+         "Anti-(human T-cell immunoglobulin and immunoreceptor tyrosine-based inhibitory motif) IgG1 humanised monoclonal antibody",
+         "MK-7684",
+         "Anti-TIGIT IgG1 humanised monoclonal antibody",
+         "Tigit inhibitor MK-7684",
+         "IMMUNOGLOBULIN G1, ANTI-(HUMAN RECEPTOR TIGIT (T-CELL IMMUNORECEPTOR WITH IG AND ITIM DOMAINS)) (HUMAN-MUS MUSCULUS MONOCLONAL C011 .GAMMA.1-CHAIN), DISULFIDE WITH HUMAN-MUS MUSCULUS MONOCLONAL C011 .KAPPA.-CHAIN, DIMER",
+         "T-cell immunoglobulin and immunoreceptor tyrosine-based inhibitory motif inhibitor MK-7684",
+         "Tigit-targeting agent MK-7684"
+        ]
+       }
+      ],
+      "activeSubstanceOtherDescriptiveName": ""
+     },
+     "isPaediatricFormulation": false,
+     "mpRoleInTrial": "1",
+     "orphanDrugEdit": false,
+     "doseUom": "mg milligram(s)",
+     "maxDailyDoseAmount": "400",
+     "doseUomTotal": "mg milligram(s)",
+     "maxTotalDoseAmount": "6800",
+     "maxTreatmentPeriod": 12,
+     "timeUnitCode": "3",
+     "evCode": "PRD9386962",
+     "sponsorProductCodeEdit": "MK-7684A",
+     "miaNumber": "IMP11011/00003",
+     "devices": [],
+     "characteristics": [
+      "7",
+      "4"
+     ],
+     "routes": [
+      "INTRAVENOUS INFUSION"
+     ],
+     "allSubstancesChemicals": false,
+     "jsonActiveSubstanceNames": "pembrolizumab, vibostolimab",
+     "pharmaceuticalFormDisplay": "SOLUTION FOR INFUSION"
+    }
+   ],
+   "trialDetails": {
+    "clinicalTrialIdentifiers": {
+     "fullTitle": "A Phase 3, Randomized, Double-blind, Active-Comparator-Controlled Clinical Study of Adjuvant MK-7684A (Vibostolimab with Pembrolizumab) Versus Adjuvant Pembrolizumab in Participants with High-risk Stage II-IV Melanoma (KEYVIBE-010)",
+     "fullTitleTranslations": [
+      {
+       "id": 186853,
+       "uuid": "5a8cc7fe-58d9-4490-8010-ec229549bf32",
+       "attributeTranslation": "Étude clinique de phase 3, randomisée, en double aveugle, contrôlée par comparateur actif, portant sur le MK-7684A (vibostolimab associé au pembrolizumab) en traitement adjuvant par rapport au pembrolizumab en traitement adjuvant chez des participants atteints d’un mélanome de stade II à IV à haut risque (KEYVIBE-010)",
+       "language": 10,
+       "languageDescription": "French"
+      },
+      {
+       "id": 186854,
+       "uuid": "5a8cc7fe-58d9-4490-8010-ec229549bf32",
+       "attributeTranslation": "Estudio clínico de fase 3, aleatorizado, doble ciego, controlado con comparador activo de MK-7684A adyuvante (vibostolimab con pembrolizumab) frente a pembrolizumab adyuvante en participantes con melanoma de alto riesgo en estadio II-IV (KEYVIBE-010)",
+       "language": 7,
+       "languageDescription": "Spanish"
+      }
+     ],
+     "publicTitle": "Clinical trial of MK-7648A in adults and children with skin cancer",
+     "publicTitleTranslations": [
+      {
+       "id": 186865,
+       "uuid": "1e8fcbaa-b5a9-4114-b3bd-1b86248fe65a",
+       "attributeTranslation": "Essai clinique du MK-7648A chez les adultes et les enfants atteints de cancer de la peau",
+       "language": 10,
+       "languageDescription": "French"
+      },
+      {
+       "id": 186866,
+       "uuid": "1e8fcbaa-b5a9-4114-b3bd-1b86248fe65a",
+       "attributeTranslation": "Estudio clínico del MK-7648A en adultos y niños con cáncer de piel",
+       "language": 7,
+       "languageDescription": "Spanish"
+      }
+     ],
+     "shortTitle": "MK-7684A-010",
+     "secondaryIdentifyingNumbers": {
+      "whoUniversalTrialNumber": {
+       "id": 20338,
+       "number": "U1111-1280-3661"
+      },
+      "additionalRegistries": [
+       {
+        "id": 20339,
+        "number": "161.909",
+        "otherRegistryName": "IND",
+        "ctRegistryCode": "6"
+       }
+      ]
+     }
+    },
+    "trialInformation": {
+     "trialCategory": {
+      "isLowIntervention": false,
+      "trialPhase": "5",
+      "trialCategory": "2",
+      "justificationForTrialCategory": "Phase III, confirm safety and efficacy trial in patients, or target populations for prophylaxis.",
+      "trialCategoryId": 3917
+     },
+     "medicalCondition": {
+      "partIMedicalConditions": [
+       {
+        "id": 4579,
+        "medicalCondition": "High-risk Resected Melanoma",
+        "medicalConditionTranslations": [
+         {
+          "id": 186810,
+          "uuid": "0f60afea-b67d-4de7-bdc5-34243885ee08",
+          "attributeTranslation": "Melanoma de alto riesgo resecado",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186809,
+          "uuid": "0f60afea-b67d-4de7-bdc5-34243885ee08",
+          "attributeTranslation": "Mélanome réséqué à haut risque",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ],
+        "isConditionRareDisease": false
+       }
+      ],
+      "meddraConditionTerms": [
+       {
+        "termId": 100000033533,
+        "version": "20.0",
+        "level": "LLT",
+        "termName": "Skin melanoma",
+        "classificationCode": "10040891",
+        "organClass": 10029104,
+        "active": false
+       }
+      ]
+     },
+     "trialObjective": {
+      "trialScopes": [
+       {
+        "code": "11",
+        "trialScopeId": 12193
+       },
+       {
+        "code": "5",
+        "trialScopeId": 12197
+       },
+       {
+        "code": "10",
+        "trialScopeId": 12196
+       },
+       {
+        "code": "6",
+        "trialScopeId": 12192
+       },
+       {
+        "code": "3",
+        "trialScopeId": 12195
+       },
+       {
+        "code": "4",
+        "trialScopeId": 12191
+       },
+       {
+        "code": "7",
+        "trialScopeId": 12194
+       }
+      ],
+      "mainObjective": "To compare MK-7684A to pembrolizumab with respect to RFS",
+      "mainObjectiveTranslations": [
+       {
+        "id": 186863,
+        "uuid": "6ab8addd-88fd-4c36-b879-d01305bf2ec6",
+        "attributeTranslation": "Comparar el MK-7684A con el pembrolizumab con respecto a la SSR",
+        "language": 7,
+        "languageDescription": "Spanish"
+       },
+       {
+        "id": 186864,
+        "uuid": "6ab8addd-88fd-4c36-b879-d01305bf2ec6",
+        "attributeTranslation": "Comparer le MK-7684A au pembrolizumab en ce qui concerne la SSR.",
+        "language": 10,
+        "languageDescription": "French"
+       }
+      ],
+      "secondaryObjectives": [
+       {
+        "id": 15000,
+        "number": 1,
+        "secondaryObjective": "To compare MK-7684A to pembrolizumab with respect to DMFS.",
+        "secondaryObjectiveTranslations": [
+         {
+          "id": 186867,
+          "uuid": "24707c6f-b553-401b-8dbe-158439017d34",
+          "attributeTranslation": "Comparer le MK-7684A au pembrolizumab en ce qui concerne la SSMD.",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186868,
+          "uuid": "24707c6f-b553-401b-8dbe-158439017d34",
+          "attributeTranslation": "Comparar el MK-7684A con el pembrolizumab con respecto a la SSMD",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 15001,
+        "number": 2,
+        "secondaryObjective": "To compare MK-7684A to pembrolizumab with respect to OS.",
+        "secondaryObjectiveTranslations": [
+         {
+          "id": 186869,
+          "uuid": "97ff49f6-6e2c-43ab-bf46-22f44bbf303c",
+          "attributeTranslation": "Comparer le MK-7684A au pembrolizumab en ce qui concerne la SG.",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186870,
+          "uuid": "97ff49f6-6e2c-43ab-bf46-22f44bbf303c",
+          "attributeTranslation": "Comparar el MK-7684A con el pembrolizumab con respecto a la SG",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 15002,
+        "number": 3,
+        "secondaryObjective": "To evaluate the safety and tolerability of MK-7684A and pembrolizumab.",
+        "secondaryObjectiveTranslations": [
+         {
+          "id": 186872,
+          "uuid": "19d4a612-a739-4879-b9a4-b0a12bcdc172",
+          "attributeTranslation": "Évaluer l’innocuité et la tolérabilité du MK-7684A et du pembrolizumab.",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186871,
+          "uuid": "19d4a612-a739-4879-b9a4-b0a12bcdc172",
+          "attributeTranslation": "Evaluar la seguridad y la tolerabilidad del MK-7684A y el pembrolizumab",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 15003,
+        "number": 4,
+        "secondaryObjective": "To compare MK-7684A to pembrolizumab with respect to mean change from baseline in global health status/QoL, physical functioning, and role functioning using the EORTC QLQ-C30.",
+        "secondaryObjectiveTranslations": [
+         {
+          "id": 186873,
+          "uuid": "e964f711-2071-41df-968a-1b604630f6d9",
+          "attributeTranslation": "Comparer le MK-7684A au pembrolizumab en ce qui concerne le changement moyen par rapport à la ligne de base de l’état de santé global/de la QdV, du fonctionnement physique et du fonctionnement des rôles en utilisant le EORTC QLQ-C30.",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186874,
+          "uuid": "e964f711-2071-41df-968a-1b604630f6d9",
+          "attributeTranslation": "Comparar el MK-7684A con el pembrolizumab con respecto al cambio medio desde el inicio en el estado global de salud/la CV, el funcionamiento físico y el funcionamiento de los roles mediante el QLQ-C30 de la EORTC",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       }
+      ]
+     },
+     "eligibilityCriteria": {
+      "principalInclusionCriteria": [
+       {
+        "id": 27809,
+        "number": 1,
+        "principalInclusionCriteria": "Has surgically resected and histologically or pathologically confirmed diagnosis of Stage IIB and IIC (pathological or clinical), III, or IV cutaneous melanoma per the American Joint Committee on Cancer (AJCC) eighth edition guidelines",
+        "principalInclusionCriteriaTranslations": [
+         {
+          "id": 186856,
+          "uuid": "e3bffdc4-c948-4e4d-b362-54bbae68bdd6",
+          "attributeTranslation": "Tiene diagnóstico confirmado por histología o anatomía patológica de melanoma cutáneo en estadio IIB y IIC (anatomopatológico o clínico), III o IV según las pautas de la octava edición del Comité Conjunto Estadounidense del Cáncer (AJCC) y se ha sometido a resección quirúrgica relacionada con el melanoma cutáneo.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186855,
+          "uuid": "e3bffdc4-c948-4e4d-b362-54bbae68bdd6",
+          "attributeTranslation": "A subi une résection chirurgicale et a présenté un diagnostic confirmé par un examen histologique ou pathologique d’un mélanome cutané de stade IIB et IIC (pathologique ou clinique), III ou IV selon les directives de la huitième édition de l’American Joint Committee on Cancer (AJCC)",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 27810,
+        "number": 2,
+        "principalInclusionCriteria": "Has not received any prior systemic therapy for melanoma beyond surgical resection",
+        "principalInclusionCriteriaTranslations": [
+         {
+          "id": 186858,
+          "uuid": "36384435-e6b2-45d7-bbed-a3347a1c02cc",
+          "attributeTranslation": "N’a pas reçu de traitement systémique préalable pour le mélanome au-delà de la résection chirurgicale",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186857,
+          "uuid": "36384435-e6b2-45d7-bbed-a3347a1c02cc",
+          "attributeTranslation": "No ha recibido ningún tratamiento sistémico previo para el melanoma más allá de la resección quirúrgica.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 27811,
+        "number": 3,
+        "principalInclusionCriteria": "Has had no more than 12 weeks between final surgical resection and randomization",
+        "principalInclusionCriteriaTranslations": [
+         {
+          "id": 186859,
+          "uuid": "d54cba03-9893-4c43-bcad-baecd143dd96",
+          "attributeTranslation": "Han transcurrido no más de 12 semanas entre la última resección quirúrgica y la aleatorización.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186860,
+          "uuid": "d54cba03-9893-4c43-bcad-baecd143dd96",
+          "attributeTranslation": "Il ne s’est pas écoulé plus de 12 semaines entre la résection chirurgicale finale et la randomisation",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 27812,
+        "number": 4,
+        "principalInclusionCriteria": "Human immunodeficiency virus (HIV)-infected participants must have well controlled HIV on anti-retroviral therapy (ART)",
+        "principalInclusionCriteriaTranslations": [
+         {
+          "id": 186862,
+          "uuid": "f55c234b-2f8d-48e5-9108-9e5908bc8708",
+          "attributeTranslation": "Les participants infectés par le virus de l’immunodéficience humaine (VIH) doivent avoir un VIH bien contrôlé sous traitement antirétroviral (TAR)",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186861,
+          "uuid": "f55c234b-2f8d-48e5-9108-9e5908bc8708",
+          "attributeTranslation": "Los participantes con infección por el virus de la inmunodeficiencia humana (VIH) deben tener VIH controlado adecuadamente y recibir terapia antirretroviral (TAR)",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       }
+      ],
+      "principalExclusionCriteria": [
+       {
+        "id": 49418,
+        "number": 1,
+        "principalExclusionCriteria": "Has ocular, mucosal, or conjunctival melanoma",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186827,
+          "uuid": "8a921442-599f-4b32-a5a2-d4080881d989",
+          "attributeTranslation": "Tiene melanoma ocular, de las mucosas o de la conjuntiva.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186828,
+          "uuid": "8a921442-599f-4b32-a5a2-d4080881d989",
+          "attributeTranslation": "Présente un mélanome oculaire, muqueux ou conjonctif",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 49419,
+        "number": 10,
+        "principalExclusionCriteria": "Has an active autoimmune disease that has required systemic treatment in past 2 years",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186830,
+          "uuid": "2cedc367-3b90-4809-a0fb-98763488b434",
+          "attributeTranslation": "Présente une maladie auto-immune active qui a nécessité un traitement systémique au cours des 2 dernières années",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186829,
+          "uuid": "2cedc367-3b90-4809-a0fb-98763488b434",
+          "attributeTranslation": "Tiene una enfermedad autoinmunitaria activa que ha requerido tratamiento sistémico en los últimos 2 años.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49420,
+        "number": 11,
+        "principalExclusionCriteria": "Has an active infection requiring systemic therapy",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186832,
+          "uuid": "037b029a-de92-47b1-aa4c-d2c8b51ff5eb",
+          "attributeTranslation": "A une infection active nécessitant une immunothérapie systémique",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186831,
+          "uuid": "037b029a-de92-47b1-aa4c-d2c8b51ff5eb",
+          "attributeTranslation": "Tiene una infección activa que requiere tratamiento sistémico.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49421,
+        "number": 12,
+        "principalExclusionCriteria": "Has known concurrent active Hepatitis B (defined as hepatitis B surface antigen [HBsAg] reactive) and Hepatitis C virus (defined as HCV ribonucleic acid [RNA] qualitative is detected) infection",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186833,
+          "uuid": "38f18c3e-6fc1-4f4d-a850-ba741a34eac2",
+          "attributeTranslation": "A des antécédents connus d’hépatite B (définie par une réaction à l’antigène de surface de l’hépatite B [HBsAg]) ou d’infection par le virus \nde l’hépatite C (VHC ; définie par la détection de l’ARN du VHC [qualitatif])",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186834,
+          "uuid": "38f18c3e-6fc1-4f4d-a850-ba741a34eac2",
+          "attributeTranslation": "Tiene infección concurrente y activa conocida por el virus de la hepatitis B (definida como el antígeno de superficie del virus de la hepatitis B [AgHBs] reactivo) y el virus de la hepatitis C (definida como la detección de ácido ribonucleico [ARN] del VHC cualitativo).",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49422,
+        "number": 13,
+        "principalExclusionCriteria": "Has had an allogenic tissue/solid organ transplant",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186836,
+          "uuid": "ec166c1c-c2d7-425d-a57f-080b452edee6",
+          "attributeTranslation": "A subi une greffe de tissu ou d’organe solide allogène",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186835,
+          "uuid": "ec166c1c-c2d7-425d-a57f-080b452edee6",
+          "attributeTranslation": "Ha tenido un trasplante alogénico de tejido/órgano sólido.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49423,
+        "number": 2,
+        "principalExclusionCriteria": "Has a diagnosis of immunodeficiency or is receiving chronic systemic steroid therapy (in dosing exceeding 10 mg daily of prednisone equivalent) or any other form of immunosuppressive therapy within 7 days prior the first dose of study medication",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186838,
+          "uuid": "bf9b0e9b-436d-42a9-8ef4-b7e517bac31e",
+          "attributeTranslation": "Tiene un diagnóstico de inmunodeficiencia o está recibiendo tratamiento crónico con esteroides sistémicos (en una dosis que excede el equivalente a 10 mg diarios de prednisona) o cualquier otra forma de tratamiento inmunodepresor dentro de los 7 días previos a la primera dosis del medicamento del estudio.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186837,
+          "uuid": "bf9b0e9b-436d-42a9-8ef4-b7e517bac31e",
+          "attributeTranslation": "Présente un diagnostic d’immunodéficience ou reçoit une stéroïdothérapie systémique chronique (à une dose supérieure à 10 mg par jour d’équivalent prednisone) ou toute autre forme de thérapie immunosuppressive dans les 7 jours précédant la première dose du médicament de l’étude",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 49424,
+        "number": 3,
+        "principalExclusionCriteria": "Has not adequately recovered from major surgical procedure or has ongoing surgical complications",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186839,
+          "uuid": "1b98b189-8029-4e91-be03-d60906637abc",
+          "attributeTranslation": "Ne s’est pas suffisamment remis d’une intervention chirurgicale majeure ou présente des complications chirurgicales en cours",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186840,
+          "uuid": "1b98b189-8029-4e91-be03-d60906637abc",
+          "attributeTranslation": "No se ha recuperado de manera apropiada de una cirugía mayor o tiene complicaciones quirúrgicas en curso.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49425,
+        "number": 4,
+        "principalExclusionCriteria": "Has received prior radiotherapy within 2 weeks of start of study intervention or has had a history of radiation pneumonitis",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186842,
+          "uuid": "2d864e80-c4c4-4439-adec-1428bb03dd77",
+          "attributeTranslation": "A subi une radiothérapie antérieure dans les 2 semaines précédant le début de l’intervention de l’étude ou a eu des antécédents de pneumonie radique",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186841,
+          "uuid": "2d864e80-c4c4-4439-adec-1428bb03dd77",
+          "attributeTranslation": "Ha recibido radioterapia previa dentro de las 2 semanas del comienzo de la intervención del estudio o ha tenido antecedentes de neumonitis por radiación.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49426,
+        "number": 5,
+        "principalExclusionCriteria": "Received a live or live attenuated vaccine within 30 days before the first dose of study intervention. Administration of killed vaccines is allowed",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186844,
+          "uuid": "374e96a3-b38b-4809-a826-7f1b9ee65e76",
+          "attributeTranslation": "A reçu un vaccin vivant ou vivant atténué dans les 30 jours précédant la première dose de l’intervention de l’étude. L’administration de vaccins tués est autorisée",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186843,
+          "uuid": "374e96a3-b38b-4809-a826-7f1b9ee65e76",
+          "attributeTranslation": "Recibió una vacuna elaborada con microbios vivos o atenuada dentro de los 30 días previos a la primera dosis de la intervención del estudio. Se permite la administración de vacunas inactivadas.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49427,
+        "number": 6,
+        "principalExclusionCriteria": "Has received an investigational agent or has used an investigational device within 4 weeks before study intervention administration",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186846,
+          "uuid": "ca1935ae-bfcf-42e7-a386-56b90612a1d1",
+          "attributeTranslation": "Ha recibido un fármaco en investigación o ha usado un dispositivo en investigación dentro de las 4 semanas previas a la administración de la intervención del estudio.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186845,
+          "uuid": "ca1935ae-bfcf-42e7-a386-56b90612a1d1",
+          "attributeTranslation": "A reçu un agent expérimental ou a utilisé un dispositif expérimental dans les 4 semaines précédant l’administration de l’intervention \nde l’étude",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 49428,
+        "number": 7,
+        "principalExclusionCriteria": "Has a history of (noninfectious) pneumonitis/interstitial lung disease that required steroids or has current pneumonitis/interstitial lung disease",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186848,
+          "uuid": "9541cd75-9ab7-473c-be59-c94ebefa8fc4",
+          "attributeTranslation": "Tiene antecedentes de enfermedad pulmonar intersticial/neumonitis (no infecciosa) que requirió esteroides o tiene actualmente enfermedad pulmonar intersticial/neumonitis.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186847,
+          "uuid": "9541cd75-9ab7-473c-be59-c94ebefa8fc4",
+          "attributeTranslation": "A des antécédents de pneumonie (non infectieuse)/maladie pulmonaire interstitielle qui a nécessité des stéroïdes ou a actuellement une pneumonie/maladie pulmonaire interstitielle",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 49429,
+        "number": 8,
+        "principalExclusionCriteria": "Has a known additional malignancy that is progressing or has required active treatment within the past 3 years",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186849,
+          "uuid": "8ea68c3f-dcb5-45ca-bf70-60febaabc04a",
+          "attributeTranslation": "Présente une tumeur maligne connue supplémentaire qui progresse ou a exigé un traitement actif au cours des 3 dernières années",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186850,
+          "uuid": "8ea68c3f-dcb5-45ca-bf70-60febaabc04a",
+          "attributeTranslation": "Tiene una neoplasia maligna adicional conocida que presenta progresión o ha requerido tratamiento activo en los últimos 3 años.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 49430,
+        "number": 9,
+        "principalExclusionCriteria": "Has a history of central nervous system (CNS) metastases and/or carcinomatous meningitis",
+        "principalExclusionCriteriaTranslations": [
+         {
+          "id": 186851,
+          "uuid": "4cb2c381-b328-4d7a-9386-d6bd34dbbf3b",
+          "attributeTranslation": "Tiene antecedentes de metástasis en el sistema nervioso central (SNC) y/o meningitis carcinomatosa.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186852,
+          "uuid": "4cb2c381-b328-4d7a-9386-d6bd34dbbf3b",
+          "attributeTranslation": "Présente des antécédents de métastases dans le système nerveux central (SNC) et/ou de méningite carcinomateuse connues",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       }
+      ]
+     },
+     "endPoint": {
+      "primaryEndPoints": [
+       {
+        "id": 32100,
+        "number": 1,
+        "endPoint": "Recurrence-Free Survival (RFS)",
+        "isPrimary": true,
+        "endPointTranslations": [
+         {
+          "id": 186811,
+          "uuid": "4b448370-323f-48ce-96c7-5e9f049c6793",
+          "attributeTranslation": "Survie sans récidive (SSR)",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186812,
+          "uuid": "4b448370-323f-48ce-96c7-5e9f049c6793",
+          "attributeTranslation": "Supervivencia sin recidiva (SSR)",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       }
+      ],
+      "secondaryEndPoints": [
+       {
+        "id": 32101,
+        "number": 1,
+        "endPoint": "Distant Metastasis-Free Survival (DMFS)",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186814,
+          "uuid": "7eba221e-fc4b-4715-8f16-79115cb97ad7",
+          "attributeTranslation": "Survie sans métastase à distance (SSMD)",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186813,
+          "uuid": "7eba221e-fc4b-4715-8f16-79115cb97ad7",
+          "attributeTranslation": "Supervivencia sin metástasis a distancia (SSMD)",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 32102,
+        "number": 2,
+        "endPoint": "Overall Survival (OS)",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186815,
+          "uuid": "8f66b873-e80c-4402-b3be-7b16446baf77",
+          "attributeTranslation": "Supervivencia general (SG)",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186816,
+          "uuid": "8f66b873-e80c-4402-b3be-7b16446baf77",
+          "attributeTranslation": "Survie globale (SG)",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 32103,
+        "number": 3,
+        "endPoint": "Number of Participants Who Experienced at Least One Adverse Event (AE)",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186818,
+          "uuid": "27ba36c1-f5b2-473b-859f-b2e8fdc89466",
+          "attributeTranslation": "Cantidad de participantes que experimentaron al menos un acontecimiento adverso (AA).",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186817,
+          "uuid": "27ba36c1-f5b2-473b-859f-b2e8fdc89466",
+          "attributeTranslation": "Nombre de participants qui ont subi au moins un événement indésirable (EI)",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 32104,
+        "number": 4,
+        "endPoint": "Number of Participants Who Discontinued Study Treatment Due to an AE",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186820,
+          "uuid": "11860743-5a56-4fcf-bb82-e9c07a52ed4a",
+          "attributeTranslation": "Nombre de participants qui ont interrompu le traitement de l’étude en raison d’un EI",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186819,
+          "uuid": "11860743-5a56-4fcf-bb82-e9c07a52ed4a",
+          "attributeTranslation": "Cantidad de participantes que interrumpieron el tratamiento del estudio debido a un AA.",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 32105,
+        "number": 5,
+        "endPoint": "Change from Baseline in the European Organization for Research and Treatment of Cancer (EORTC)-Quality of Life Questionnaire-Core 30 (QLQ-C30) Global Health Status/Quality of Life (Items 29 and 30) Combined Score",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186821,
+          "uuid": "ec06aeec-2b16-4862-8d96-e6b9c6036983",
+          "attributeTranslation": "Cambio con respecto al inicio en el puntaje combinado del estado global de salud/la calidad de vida (puntos 29 y 30) del cuestionario Core 30 sobre la calidad de vida (QLQ-C30) de la Organización Europea para la Investigación y el Tratamiento del Cáncer (EORTC)",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186822,
+          "uuid": "ec06aeec-2b16-4862-8d96-e6b9c6036983",
+          "attributeTranslation": "Changement par rapport à la ligne de base dans le score combiné Core 30 du questionnaire sur la qualité de vie (QLQ-C30) et sur l’état de santé global et la qualité de vie (articles 29 et 30) de l’Organisation européenne pour la recherche et le traitement du cancer (EORTC)",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       },
+       {
+        "id": 32106,
+        "number": 6,
+        "endPoint": "Change from Baseline in the EORTC QLQ-C30 Physical Functioning (Items 1-5) Combined Score",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186824,
+          "uuid": "2895d252-aeff-4260-a25f-6cef5b6fedf6",
+          "attributeTranslation": "Changement par rapport à la ligne de base dans le score combiné du QLQ-C30 de l’EORTC sur le fonctionnement physique (articles 1 à 5)",
+          "language": 10,
+          "languageDescription": "French"
+         },
+         {
+          "id": 186823,
+          "uuid": "2895d252-aeff-4260-a25f-6cef5b6fedf6",
+          "attributeTranslation": "Cambio con respecto al inicio en el puntaje combinado del funcionamiento físico (puntos 1-5) del QLQ-C30 de la EORTC",
+          "language": 7,
+          "languageDescription": "Spanish"
+         }
+        ]
+       },
+       {
+        "id": 32107,
+        "number": 7,
+        "endPoint": "Change from Baseline in the EORTC QLQ-C30 Role Functioning (Items 6 and 7) Combined Score",
+        "isPrimary": false,
+        "endPointTranslations": [
+         {
+          "id": 186825,
+          "uuid": "302efa17-42ed-453f-a1c0-4159b559c376",
+          "attributeTranslation": "Cambio con respecto al inicio en el puntaje combinado del funcionamiento de los roles (puntos 6 y 7) del QLQ-C30 de la EORTC",
+          "language": 7,
+          "languageDescription": "Spanish"
+         },
+         {
+          "id": 186826,
+          "uuid": "302efa17-42ed-453f-a1c0-4159b559c376",
+          "attributeTranslation": "Changement par rapport à la ligne de base dans le score combiné du QLQ-C30 de l’EORTC sur le fonctionnement des rôles (articles 6 à 7)",
+          "language": 10,
+          "languageDescription": "French"
+         }
+        ]
+       }
+      ]
+     },
+     "trialDuration": {
+      "estimatedGlobalEndDate": "2031-03-31",
+      "estimatedEndDate": "2031-03-31",
+      "estimatedRecruitmentStartDate": "2023-02-22"
+     },
+     "sourceOfMonetarySupport": [
+      {
+       "id": 3753,
+       "organisationName": "Merck Sharp & Dohme LLC"
+      }
+     ],
+     "populationOfTrialSubjects": {
+      "ageRanges": [
+       {
+        "id": 13714,
+        "ageRangeCategoryCode": "3",
+        "ageRangeCategory": "3"
+       },
+       {
+        "id": 13715,
+        "ageRangeCategoryCode": "4",
+        "ageRangeCategory": "4"
+       },
+       {
+        "id": 13716,
+        "ageRangeCategoryCode": "2",
+        "ageRangeCategory": "2"
+       }
+      ],
+      "ageRangeSecondaryIds": [
+       {
+        "id": 13718,
+        "ageRangeCategoryCode": "4",
+        "ctAgeRangeCode": "8",
+        "ageRangeCategory": "4",
+        "ctAgeRange": "8"
+       },
+       {
+        "id": 13719,
+        "ageRangeCategoryCode": "4",
+        "ctAgeRangeCode": "7",
+        "ageRangeCategory": "4",
+        "ctAgeRange": "7"
+       },
+       {
+        "id": 13720,
+        "ageRangeCategoryCode": "3",
+        "ctAgeRangeCode": "9",
+        "ageRangeCategory": "3",
+        "ctAgeRange": "9"
+       },
+       {
+        "id": 13717,
+        "ageRangeCategoryCode": "2",
+        "ctAgeRangeCode": "6",
+        "ageRangeCategory": "2",
+        "ctAgeRange": "6"
+       }
+      ],
+      "clinicalTrialGroups": [
+       {
+        "code": "2",
+        "name": "Patients"
+       }
+      ],
+      "isFemaleSubjects": true,
+      "isMaleSubjects": true,
+      "isVulnerablePopulationSelected": true
+     },
+     "individualParticipantData": {}
+    },
+    "protocolInformation": {
+     "studyDesign": {
+      "periodDetails": [
+       {
+        "id": 6715,
+        "businessKey": "1",
+        "title": "Adjuvant MK‑7684A vs Pembrolizumab for Resected High-Risk Melanoma",
+        "description": "A Phase 3, Randomized, Double-blind, Active-Comparator-Controlled Clinical Study of Adjuvant MK‑7684A (Vibostolimab with Pembrolizumab) Versus Adjuvant Pembrolizumab in Participants with High-risk Stage II-IV Melanoma (KEYVIBE-010)",
+        "blindingMethodCode": "2",
+        "blindedRoles": [
+         {
+          "id": 6717,
+          "code": 2,
+          "name": "Investigator"
+         },
+         {
+          "id": 6716,
+          "code": 1,
+          "name": "Subject"
+         }
+        ],
+        "armDetails": [
+         {
+          "description": "MK-7684A",
+          "title": "Arm A",
+          "id": 3931
+         },
+         {
+          "description": "Pembrolizumab",
+          "title": "Arm B",
+          "id": 3932
+         }
+        ],
+        "allocationMethod": "1"
+       }
+      ]
+     }
+    },
+    "scientificAdviceAndPip": {
+     "scientificAdvices": [
+      {
+       "id": 1791,
+       "competentAuthority": {
+        "id": 51188,
+        "organisation": {
+         "id": 53377,
+         "type": "EU Institution/Body/Agency",
+         "typeCode": "14",
+         "name": "European Medicines Agency",
+         "commercial": false,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100013412",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 53207,
+         "oneLine": "Domenico Scarlattilaan 6",
+         "addressLine1": "Domenico Scarlattilaan 6",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Amsterdam",
+         "postcode": "1083 HS",
+         "country": 2029,
+         "countryName": "Netherlands"
+        },
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100020264"
+       }
+      }
+     ],
+     "paediatricInvestigationPlan": []
+    },
+    "associatedClinicalTrials": [],
+    "references": [],
+    "pubmedCode": [],
+    "pubmedUrl": []
+   },
+   "assessmentOutcome": "not_acceptable",
+   "assessmentOutcomeDate": "2023-02-27",
+   "conclusionDate": "2023-02-27",
+   "therapeuticAreas": [
+    {
+     "code": "4",
+     "name": "Diseases [C] - Neoplasms [C04]"
+    }
+   ],
+   "medicalConditions": [
+    {
+     "id": 4579,
+     "medicalCondition": "High-risk Resected Melanoma",
+     "isConditionRareDisease": false
+    }
+   ],
+   "sponsors": [
+    {
+     "id": 6758,
+     "primary": true,
+     "publicContacts": [
+      {
+       "id": 13843,
+       "type": "Public",
+       "functionalName": "Dmitri Grebennik",
+       "functionalEmailAddress": "Dmitri.grebennik@merck.com",
+       "telephone": "+12673051677",
+       "organisation": {
+        "id": 29829,
+        "type": "Pharmaceutical company",
+        "typeCode": "10",
+        "name": "Merck Sharp & Dohme LLC",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006323",
+        "organisationLocationStatus": "Active"
+       }
+      }
+     ],
+     "scientificContacts": [
+      {
+       "id": 13844,
+       "type": "Scientific",
+       "functionalName": "Dmitri Grebennik",
+       "functionalEmailAddress": "Dmitri.grebennik@merck.com",
+       "telephone": "+12673051677",
+       "organisation": {
+        "id": 29829,
+        "type": "Pharmaceutical company",
+        "typeCode": "10",
+        "name": "Merck Sharp & Dohme LLC",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006323",
+        "organisationLocationStatus": "Active"
+       }
+      }
+     ],
+     "thirdParties": [
+      {
+       "id": 13826,
+       "organisationAddress": {
+        "id": 47631,
+        "organisation": {
+         "id": 49779,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Eresearchtechnology Inc.",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100013039",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 49494,
+         "oneLine": "1818 Market Street Ste 2600",
+         "addressLine1": "1818 Market Street Ste 2600",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Philadelphia",
+         "postcode": "19103-3600",
+         "country": 840,
+         "countryName": "United States"
+        },
+        "phone": "+16104577582",
+        "email": "Emily.Serbeniuk@Clario.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100058657"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23409,
+         "code": "7"
+        }
+       ],
+       "phoneNumber": "+16104577582",
+       "email": "Emily.Serbeniuk@Clario.com"
+      },
+      {
+       "id": 13829,
+       "organisationAddress": {
+        "id": 46801,
+        "organisation": {
+         "id": 48946,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Signant Health Inc.",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100040732",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 48654,
+         "oneLine": "785 Arbor Way",
+         "addressLine1": "785 Arbor Way",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Blue Bell",
+         "postcode": "19422-1986",
+         "country": 840,
+         "countryName": "United States"
+        },
+        "phone": "+14157660928",
+        "email": "Kelly.kaufman@signanthealth.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100066980"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23412,
+         "code": "3"
+        }
+       ],
+       "phoneNumber": "+14157660928",
+       "email": "Kelly.kaufman@signanthealth.com"
+      },
+      {
+       "id": 13824,
+       "organisationAddress": {
+        "id": 47646,
+        "organisation": {
+         "id": 49794,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Perceptive Eclinical Limited",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100041144",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 49509,
+         "oneLine": "4 Canal Street",
+         "addressLine1": "4 Canal Street",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Nottingham",
+         "postcode": "NG1 7EH",
+         "country": 826,
+         "countryName": "United Kingdom"
+        },
+        "phone": "+441159370000",
+        "email": "+MSDEMU@parexel.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100067748"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23407,
+         "code": "15",
+         "value": "EUB Call center and medical escalation service"
+        }
+       ],
+       "phoneNumber": "+441159370000",
+       "email": "+MSDEMU@parexel.com"
+      },
+      {
+       "id": 13823,
+       "organisationAddress": {
+        "id": 46796,
+        "organisation": {
+         "id": 48941,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Labcorp Central Laboratory Services LP",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100044131",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 48649,
+         "oneLine": "8211 Scicor Drive",
+         "addressLine1": "8211 Scicor Drive",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Indianapolis",
+         "postcode": "46214-2942",
+         "country": 840,
+         "countryName": "United States"
+        },
+        "phone": "+13098963017",
+        "email": "Karen.lisota@labcorp.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100072941"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23406,
+         "code": "4"
+        }
+       ],
+       "phoneNumber": "+13098963017",
+       "email": "Karen.lisota@labcorp.com"
+      },
+      {
+       "id": 13827,
+       "organisationAddress": {
+        "id": 47648,
+        "organisation": {
+         "id": 49796,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Labcorp Drug Development Inc.",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100041590",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 49511,
+         "oneLine": "206 Carnegie Center",
+         "addressLine1": "206 Carnegie Center",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Princeton",
+         "postcode": "08540-6212",
+         "country": 840,
+         "countryName": "United States"
+        },
+        "phone": "+32473743636",
+        "email": "jessy.willems@labcorp.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100068559"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23410,
+         "code": "15",
+         "value": "monitoring"
+        }
+       ],
+       "phoneNumber": "+32473743636",
+       "email": "jessy.willems@labcorp.com"
+      },
+      {
+       "id": 13825,
+       "organisationAddress": {
+        "id": 46797,
+        "organisation": {
+         "id": 48942,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Icon PLC",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100042517",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 48650,
+         "oneLine": "South County Business Park",
+         "addressLine1": "South County Business Park",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Dublin 18",
+         "postcode": "D18 X5R3",
+         "country": 2017,
+         "countryName": "Ireland"
+        },
+        "phone": "+12156168891",
+        "email": "Samantha.Paolini@iconplc.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100070256"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23408,
+         "code": "15",
+         "value": "Collect and hold images"
+        }
+       ],
+       "phoneNumber": "+12156168891",
+       "email": "Samantha.Paolini@iconplc.com"
+      },
+      {
+       "id": 13828,
+       "organisationAddress": {
+        "id": 47634,
+        "organisation": {
+         "id": 49782,
+         "type": "Pharmaceutical company",
+         "typeCode": "10",
+         "name": "Parexel International Corporation",
+         "commercial": true,
+         "isBusinessKeyValidated": true,
+         "businessKey": "ORG-100007310",
+         "organisationLocationStatus": "Active"
+        },
+        "address": {
+         "addressId": 49497,
+         "oneLine": "275 Grove Street",
+         "addressLine1": "275 Grove Street",
+         "addressLine2": "",
+         "addressLine3": "",
+         "addressLine4": "",
+         "city": "Auburndale",
+         "postcode": "02466-2272",
+         "country": 840,
+         "countryName": "United States"
+        },
+        "phone": "+16174549300",
+        "email": "+MSDEMU@parexel.com",
+        "isBusinessKeyValidated": true,
+        "businessKey": "LOC-100061271"
+       },
+       "sponsorDuties": [
+        {
+         "id": 23411,
+         "code": "15",
+         "value": "Medical information (Physician Consulting)"
+        }
+       ],
+       "phoneNumber": "+16174549300",
+       "email": "+MSDEMU@parexel.com"
+      }
+     ],
+     "organisation": {
+      "id": 29829,
+      "type": "Pharmaceutical company",
+      "typeCode": "10",
+      "name": "Merck Sharp & Dohme LLC",
+      "commercial": true,
+      "isBusinessKeyValidated": true,
+      "businessKey": "ORG-100006323",
+      "organisationLocationStatus": "Active"
+     },
+     "addresses": [
+      {
+       "id": 28292,
+       "organisation": {
+        "id": 29829,
+        "type": "Pharmaceutical company",
+        "typeCode": "10",
+        "name": "Merck Sharp & Dohme LLC",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006323",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 28977,
+        "oneLine": "126 East Lincoln Avenue",
+        "addressLine1": "126 East Lincoln Avenue",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Rahway",
+        "postcode": "07065-4607",
+        "country": 840,
+        "countryName": "United States"
+       },
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100021431"
+      }
+     ],
+     "isCommercial": false,
+     "commercial": "Non-Commercial"
+    }
+   ],
+   "trialCategoryCode": "2",
+   "trialCategoryJustificationComment": "Phase III, confirm safety and efficacy trial in patients, or target populations for prophylaxis.",
+   "partOneTherapeuticAreas": [
+    {
+     "id": 58994,
+     "therapeuticArea": {
+      "code": "4",
+      "name": "Diseases [C] - Neoplasms [C04]"
+     }
+    }
+   ],
+   "productRoleGroupInfos": [
+    {
+     "id": 15375,
+     "comments": "KEYTRUDA 25 mg/mL concentrate for solution for infusion",
+     "miaNumber": "IMP11011/00003",
+     "productRoleCode": "2",
+     "productRoleName": "Comparator",
+     "products": [
+      {
+       "id": 17296,
+       "part1MpRoleTypeCode": "1",
+       "productDictionaryInfo": {
+        "productPk": "9817878",
+        "productPharmForm": "CONCENTRATE FOR SOLUTION FOR INFUSION",
+        "euMpNumber": "PRD4323105",
+        "marketingAuthNumber": "EU/1/15/1024/002",
+        "prodAuthStatus": 2,
+        "prodName": "KEYTRUDA 25 mg/mL concentrate for solution for infusion",
+        "pharmForm": "SOLUTION FOR INFUSION",
+        "activeSubstanceName": "PEMBROLIZUMAB",
+        "euSubstNumber": "SUB167136",
+        "authorisationCountryCode": "EU",
+        "mrpNumber": "EMEA/H/C/003820",
+        "nameOrg": "MERCK SHARP & DOHME BV",
+        "productSubstances": [
+         {
+          "productPk": "9817878",
+          "substancePk": "288763",
+          "nameOrg": "MERCK SHARP & DOHME BV",
+          "substanceOrigin": "Protein - Other",
+          "actSubstOrigin": "Protein - Other",
+          "actSubstName": "PEMBROLIZUMAB",
+          "substanceEvCode": "SUB167136",
+          "synonyms": [
+           "Lambrolizumab",
+           "MK-3475",
+           "SCH-900475",
+           "ABP 234"
+          ]
+         }
+        ],
+        "atcCode": "L01FF02",
+        "atcName": "-",
+        "atcTermLevel": "5",
+        "activeSubstanceOtherDescriptiveName": ""
+       },
+       "isPaediatricFormulation": false,
+       "mpRoleInTrial": "2",
+       "orphanDrugEdit": false,
+       "doseUom": "mg milligram(s)",
+       "maxDailyDoseAmount": "200",
+       "doseUomTotal": "mg milligram(s)",
+       "maxTotalDoseAmount": "3400",
+       "productChangedRelationMA": false,
+       "maxTreatmentPeriod": 12,
+       "timeUnitCode": "3",
+       "evCode": "PRD4323105",
+       "sponsorProductCodeEdit": "MK-3475",
+       "miaNumber": "IMP11011/00003",
+       "devices": [],
+       "characteristics": [
+        "4",
+        "7"
+       ],
+       "routes": [
+        "INTRAVENOUS INFUSION"
+       ],
+       "allSubstancesChemicals": false,
+       "productName": "KEYTRUDA 25 mg/mL concentrate for solution for infusion",
+       "jsonActiveSubstanceNames": "pembrolizumab",
+       "pharmaceuticalFormDisplay": "SOLUTION FOR INFUSION"
+      }
+     ]
+    },
+    {
+     "id": 15374,
+     "comments": "null",
+     "miaNumber": "IMP11011/00003",
+     "productRoleCode": "1",
+     "productRoleName": "Test",
+     "products": [
+      {
+       "id": 17295,
+       "part1MpRoleTypeCode": "1",
+       "productDictionaryInfo": {
+        "productPk": "9386962",
+        "productPharmForm": "SOLUTION FOR INFUSION",
+        "euMpNumber": "PRD9386962",
+        "prodAuthStatus": 1,
+        "pharmForm": "SOLUTION FOR INFUSION",
+        "sponsorProductCode": "MK-7684A",
+        "activeSubstanceName": "PEMBROLIZUMAB, VIBOSTOLIMAB",
+        "euSubstNumber": "SUB167136, SUB203865",
+        "nameOrg": "MERCK & CO. INC.",
+        "productSubstances": [
+         {
+          "productPk": "9386962",
+          "substancePk": "235655",
+          "nameOrg": "MERCK & CO. INC.",
+          "substanceOrigin": "Protein - Other",
+          "actSubstOrigin": "Protein - Other",
+          "actSubstName": "PEMBROLIZUMAB",
+          "substanceEvCode": "SUB167136"
+         },
+         {
+          "productPk": "9386962",
+          "substancePk": "208628",
+          "nameOrg": "MERCK & CO. INC.",
+          "substanceOrigin": "Protein - Other",
+          "actSubstOrigin": "Protein - Other",
+          "actSubstName": "VIBOSTOLIMAB",
+          "substanceEvCode": "SUB203865",
+          "synonyms": [
+           "Anti-(T cell immunoreceptor with Ig and ITIM domains) IgG1 humanised monoclonal antibody",
+           "Anti-(human T-cell immunoglobulin and immunoreceptor tyrosine-based inhibitory motif) IgG1 humanised monoclonal antibody",
+           "MK-7684",
+           "Anti-TIGIT IgG1 humanised monoclonal antibody",
+           "Tigit inhibitor MK-7684",
+           "IMMUNOGLOBULIN G1, ANTI-(HUMAN RECEPTOR TIGIT (T-CELL IMMUNORECEPTOR WITH IG AND ITIM DOMAINS)) (HUMAN-MUS MUSCULUS MONOCLONAL C011 .GAMMA.1-CHAIN), DISULFIDE WITH HUMAN-MUS MUSCULUS MONOCLONAL C011 .KAPPA.-CHAIN, DIMER",
+           "T-cell immunoglobulin and immunoreceptor tyrosine-based inhibitory motif inhibitor MK-7684",
+           "Tigit-targeting agent MK-7684"
+          ]
+         }
+        ],
+        "activeSubstanceOtherDescriptiveName": ""
+       },
+       "isPaediatricFormulation": false,
+       "mpRoleInTrial": "1",
+       "orphanDrugEdit": false,
+       "doseUom": "mg milligram(s)",
+       "maxDailyDoseAmount": "400",
+       "doseUomTotal": "mg milligram(s)",
+       "maxTotalDoseAmount": "6800",
+       "maxTreatmentPeriod": 12,
+       "timeUnitCode": "3",
+       "evCode": "PRD9386962",
+       "sponsorProductCodeEdit": "MK-7684A",
+       "miaNumber": "IMP11011/00003",
+       "devices": [],
+       "characteristics": [
+        "7",
+        "4"
+       ],
+       "routes": [
+        "INTRAVENOUS INFUSION"
+       ],
+       "allSubstancesChemicals": false,
+       "jsonActiveSubstanceNames": "pembrolizumab, vibostolimab",
+       "pharmaceuticalFormDisplay": "SOLUTION FOR INFUSION"
+      }
+     ]
+    }
+   ],
+   "isLowIntervention": false
+  },
+  "authorizedPartsII": [
+   {
+    "id": 11909,
+    "mscId": 2976,
+    "mscInfo": {
+     "id": 2976,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2000,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-30",
+     "toDate": "2023-01-30",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Austria",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-06",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1622,
+       "mscId": 2976,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.037"
+      },
+      {
+       "id": 3792,
+       "mscId": 2976,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-06T10:07:21.636"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Austria",
+     "assessmentOutcome": "no_conclusion",
+     "assessmentOutcomeDate": "2023-02-27",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-06"
+    },
+    "decisionDate": "2023-03-06",
+    "recruitmentSubjectCount": 54,
+    "trialSites": [
+     {
+      "id": 53653,
+      "organisationAddressInfo": {
+       "id": 44967,
+       "organisation": {
+        "id": 47100,
+        "type": "Educational Institution",
+        "typeCode": "1",
+        "name": "Medical University Of Graz",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100022109",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46773,
+        "oneLine": "Neue Stiftingtalstrasse 6",
+        "addressLine1": "Neue Stiftingtalstrasse 6",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Graz",
+        "postcode": "8010",
+        "country": 2000,
+        "countryName": "Austria"
+       },
+       "phone": "+4331638530058",
+       "email": "teresa.kraenke@medunigraz.at",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073834"
+      },
+      "personInfo": {
+       "id": 72425,
+       "firstName": "Martin",
+       "lastName": "Pichler",
+       "telephone": "+4331638581320",
+       "email": "martin.pichler@medunigraz.at"
+      },
+      "departmentName": "Internal Medicine, Clinical Department of Oncology"
+     },
+     {
+      "id": 53656,
+      "organisationAddressInfo": {
+       "id": 44964,
+       "organisation": {
+        "id": 47097,
+        "type": "Educational Institution",
+        "typeCode": "1",
+        "name": "Medical University Of Vienna",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006190",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46770,
+        "oneLine": "Waehringer Guertel 18-20, Alsergrund",
+        "addressLine1": "Waehringer Guertel 18-20",
+        "addressLine2": "Alsergrund",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Vienna",
+        "postcode": "1090",
+        "country": 2000,
+        "countryName": "Austria"
+       },
+       "phone": "+4314040077310",
+       "email": "christoph.hoeller@meduniwien.ac.at",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100011706"
+      },
+      "personInfo": {
+       "id": 72428,
+       "firstName": "Christoph",
+       "lastName": "Höller",
+       "telephone": "+4314040077310",
+       "email": "christoph.hoeller@meduniwien.ac.at"
+      },
+      "departmentName": "University Clinic for Dermatology"
+     },
+     {
+      "id": 53654,
+      "organisationAddressInfo": {
+       "id": 44972,
+       "organisation": {
+        "id": 47105,
+        "type": "Educational Institution",
+        "typeCode": "1",
+        "name": "Medizinische Universitaet Innsbruck",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100007200",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46778,
+        "oneLine": "Anichstraße 35",
+        "addressLine1": "Anichstraße 35",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Innsbruck",
+        "postcode": "6020",
+        "country": 2000,
+        "countryName": "Austria"
+       },
+       "phone": "+4351250481473",
+       "email": "georg.weinlich@imed.ac.at",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100014210"
+      },
+      "personInfo": {
+       "id": 72426,
+       "firstName": "Georg",
+       "lastName": "Weinlich",
+       "telephone": "+4351250481473",
+       "email": "georg.weinlich@imed.ac.at"
+      },
+      "departmentName": "Medical University Clinic for Dermatology, Venereology and Allergology, Innsbruck"
+     },
+     {
+      "id": 53652,
+      "organisationAddressInfo": {
+       "id": 44970,
+       "organisation": {
+        "id": 47103,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Ordensklinikum Linz GmbH",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100011398",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46776,
+        "oneLine": "Fadingerstraße 1",
+        "addressLine1": "Fadingerstraße 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Linz",
+        "postcode": "4020",
+        "country": 2000,
+        "countryName": "Austria"
+       },
+       "phone": "+4373276764508",
+       "email": "helmut.kehrer@ordensklinikum.at",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100014611"
+      },
+      "personInfo": {
+       "id": 72424,
+       "firstName": "Helmut",
+       "lastName": "Kehrer",
+       "telephone": "+4373276764508",
+       "email": "helmut.kehrer@ordensklinikum.at"
+      },
+      "departmentName": "Skin Cancer Center"
+     },
+     {
+      "id": 53655,
+      "organisationAddressInfo": {
+       "id": 44974,
+       "organisation": {
+        "id": 47107,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Universitatsklinikum St. Polten",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100034117",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46780,
+        "oneLine": "Dunant-Platz 1",
+        "addressLine1": "Dunant-Platz 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "St. Poelten",
+        "postcode": "3100",
+        "country": 2000,
+        "countryName": "Austria"
+       },
+       "phone": "+43274290041109",
+       "email": "christine.hafner@kl.ac.at",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100053961"
+      },
+      "personInfo": {
+       "id": 72427,
+       "firstName": "Christine",
+       "lastName": "Hafner",
+       "telephone": "+43274290041109",
+       "email": "christine.hafner@kl.ac.at"
+      },
+      "departmentName": "Clinical Department of Skin and Venereal Diseases"
+     },
+     {
+      "id": 53651,
+      "organisationAddressInfo": {
+       "id": 44971,
+       "organisation": {
+        "id": 47104,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Gemeinnutzige Salzburger Landeskliniken Betriebsgesellschaft mbH",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100042468",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46777,
+        "oneLine": "Müllner Hauptstraße 48",
+        "addressLine1": "Müllner Hauptstraße 48",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Salzburg",
+        "postcode": "5020",
+        "country": 2000,
+        "countryName": "Austria"
+       },
+       "phone": "+435725557842",
+       "email": "p.koelblinger@salk.at",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100070162"
+      },
+      "personInfo": {
+       "id": 72423,
+       "firstName": "Peter",
+       "lastName": "Kölblinger",
+       "telephone": "+435725557842",
+       "email": "p.koelblinger@salk.at"
+      },
+      "departmentName": "University Clinic for Dermatology and Allergology"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 12014,
+    "mscId": 2977,
+    "mscInfo": {
+     "id": 2977,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2002,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-31",
+     "toDate": "2023-01-31",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Belgium",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-02",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1623,
+       "mscId": 2977,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.143"
+      },
+      {
+       "id": 3685,
+       "mscId": 2977,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-02T14:21:28.595"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Belgium",
+     "assessmentOutcome": "acceptable",
+     "assessmentOutcomeDate": "2023-02-17",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-02"
+    },
+    "decisionDate": "2023-03-02",
+    "recruitmentSubjectCount": 60,
+    "trialSites": [
+     {
+      "id": 54109,
+      "organisationAddressInfo": {
+       "id": 44993,
+       "organisation": {
+        "id": 47126,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Verenigde Ziekenhuizen van Waas en Durme",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100041146",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46800,
+        "oneLine": "Moerlandstraat 1",
+        "addressLine1": "Moerlandstraat 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Sint-Niklaas",
+        "postcode": "9100",
+        "country": 2002,
+        "countryName": "Belgium"
+       },
+       "phone": "+3293326056",
+       "email": "vibeke.kruse@vitaz.be",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100067750"
+      },
+      "personInfo": {
+       "id": 72992,
+       "firstName": "Vibeke",
+       "lastName": "Kruse",
+       "telephone": "+3293326056",
+       "email": "vibek.kruse@aznikolaas.be"
+      },
+      "departmentName": "Medical Oncology"
+     },
+     {
+      "id": 54106,
+      "organisationAddressInfo": {
+       "id": 44987,
+       "organisation": {
+        "id": 47120,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "UZ Leuven",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006001",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46794,
+        "oneLine": "Herestraat 49",
+        "addressLine1": "Herestraat 49",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Leuven",
+        "postcode": "3000",
+        "country": 2002,
+        "countryName": "Belgium"
+       },
+       "phone": "+3216346900",
+       "email": "oliver.bechter@uzleuven.be",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100005390"
+      },
+      "personInfo": {
+       "id": 72989,
+       "firstName": "Olivier",
+       "lastName": "Bechter",
+       "telephone": "+3216346900",
+       "email": "oliver.bechter@uzleuven.be"
+      },
+      "departmentName": "General Medical Oncology"
+     },
+     {
+      "id": 54107,
+      "organisationAddressInfo": {
+       "id": 44991,
+       "organisation": {
+        "id": 47124,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Cliniques Universitaires Saint-Luc",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100008950",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46798,
+        "oneLine": "Hippokrateslaan 10, Batiment 54",
+        "addressLine1": "Hippokrateslaan 10",
+        "addressLine2": "Batiment 54",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Sint-Lambrechts-Woluwe",
+        "postcode": "1200",
+        "country": 2002,
+        "countryName": "Belgium"
+       },
+       "phone": "+3227645471",
+       "email": "jeanfrancois.baurain@uclouvain.be",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100014498"
+      },
+      "personInfo": {
+       "id": 72990,
+       "firstName": "Jean-François",
+       "lastName": "Baurain",
+       "telephone": "+3227645471",
+       "email": "jeanfrancois.baurain@uclouvain.be"
+      },
+      "departmentName": "Medical Oncology Department"
+     },
+     {
+      "id": 54111,
+      "organisationAddressInfo": {
+       "id": 44992,
+       "organisation": {
+        "id": 47125,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "CHU UCL Namur",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100040731",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46799,
+        "oneLine": "Avenue Dr-Gaston-Therasse 1",
+        "addressLine1": "Avenue Dr-Gaston-Therasse 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Yvoir",
+        "postcode": "5530",
+        "country": 2002,
+        "countryName": "Belgium"
+       },
+       "phone": "+3281423832",
+       "email": "lionel.dhondt@uclouvain.be",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073668"
+      },
+      "personInfo": {
+       "id": 72994,
+       "firstName": "Laurence",
+       "lastName": "Faugeras",
+       "telephone": "+3281423849",
+       "email": "laurence.faugeras@uclouvain.be"
+      },
+      "departmentName": "Oncology"
+     },
+     {
+      "id": 54108,
+      "organisationAddressInfo": {
+       "id": 44997,
+       "organisation": {
+        "id": 47130,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Jessa Ziekenhuis",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100040398",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46804,
+        "oneLine": "Stadsomvaart 11",
+        "addressLine1": "Stadsomvaart 11",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Hasselt",
+        "postcode": "3500",
+        "country": 2002,
+        "countryName": "Belgium"
+       },
+       "phone": "+32473497669",
+       "email": "tim.wessels@jessazh.be",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100068237"
+      },
+      "personInfo": {
+       "id": 72991,
+       "firstName": "Tim",
+       "lastName": "Wessels",
+       "telephone": "+32473497669",
+       "email": "tim.wessels@jessazh.be"
+      },
+      "departmentName": "Medical Oncology Department"
+     },
+     {
+      "id": 54110,
+      "organisationAddressInfo": {
+       "id": 44996,
+       "organisation": {
+        "id": 47129,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Gasthuiszusters Antwerpen",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100028893",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46803,
+        "oneLine": "Oosterveldlaan 24",
+        "addressLine1": "Oosterveldlaan 24",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Antwerp",
+        "postcode": "2610",
+        "country": 2002,
+        "countryName": "Belgium"
+       },
+       "phone": "+3234433737",
+       "email": "annemie.rutten@gza.be",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100046089"
+      },
+      "personInfo": {
+       "id": 72993,
+       "firstName": "Annemie",
+       "lastName": "Rutten",
+       "telephone": "+3234433737",
+       "email": "annemie.rutten@gza.be"
+      },
+      "departmentName": "Medical Oncology"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 11121,
+    "mscId": 2978,
+    "mscInfo": {
+     "id": 2978,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2012,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-20",
+     "toDate": "2023-01-20",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "France",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-06",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1624,
+       "mscId": 2978,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.248"
+      },
+      {
+       "id": 3848,
+       "mscId": 2978,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-06T18:04:53.438"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "France",
+     "assessmentOutcome": "acceptable",
+     "assessmentOutcomeDate": "2023-02-09",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-06"
+    },
+    "decisionDate": "2023-03-06",
+    "recruitmentSubjectCount": 60,
+    "trialSites": [
+     {
+      "id": 47818,
+      "organisationAddressInfo": {
+       "id": 45013,
+       "organisation": {
+        "id": 47146,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Assistance Publique Hopitaux De Paris",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100004082",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46820,
+        "oneLine": "27 Rue Du Faubourg Saint Jacques",
+        "addressLine1": "27 Rue Du Faubourg Saint Jacques",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Paris",
+        "postcode": "75014",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33158411806",
+       "email": "sarah.guegan.bart@gmail.com",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100069362"
+      },
+      "personInfo": {
+       "id": 65863,
+       "firstName": "Sara",
+       "lastName": "Guegan",
+       "telephone": "+33158411806",
+       "email": "sarah.guegan.bart@gmail.com"
+      },
+      "departmentName": "Service dermatologie"
+     },
+     {
+      "id": 47822,
+      "organisationAddressInfo": {
+       "id": 45008,
+       "organisation": {
+        "id": 47141,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Assistance Publique Hopitaux De Marseille",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100008698",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46815,
+        "oneLine": "264 Rue Saint Pierre",
+        "addressLine1": "264 Rue Saint Pierre",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Marseille",
+        "postcode": "13005",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33491387991",
+       "email": "Caroline.gaudy@aphm.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073107"
+      },
+      "personInfo": {
+       "id": 65867,
+       "firstName": "Caroline",
+       "lastName": "Gaudy",
+       "telephone": "+33491387991",
+       "email": "Caroline.gaudy@aphm.fr"
+      },
+      "departmentName": "Service dermatologie"
+     },
+     {
+      "id": 47823,
+      "organisationAddressInfo": {
+       "id": 45011,
+       "organisation": {
+        "id": 47144,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Centre Hospitalier De Pau",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100031945",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46818,
+        "oneLine": "4 Boulevard Hauterive, Cs 17595",
+        "addressLine1": "4 Boulevard Hauterive",
+        "addressLine2": "Cs 17595",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Pau Cedex",
+        "postcode": "64046",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33559726796",
+       "email": "Thomas.jouary@chpau.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100049986"
+      },
+      "personInfo": {
+       "id": 65868,
+       "firstName": "Thomas",
+       "lastName": "Jouary",
+       "telephone": "+33559726796",
+       "email": "Thomas.jouary@chpau.fr"
+      },
+      "departmentName": "Dermatology unit"
+     },
+     {
+      "id": 47817,
+      "organisationAddressInfo": {
+       "id": 45012,
+       "organisation": {
+        "id": 47145,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Centre Hospitalier Universitaire De Poitiers",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100010436",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46819,
+        "oneLine": "2 Rue De La Miletrie",
+        "addressLine1": "2 Rue De La Miletrie",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Poitiers",
+        "postcode": "86000",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33549443964",
+       "email": "ewa.hainaut@chupoitiers.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100014747"
+      },
+      "personInfo": {
+       "id": 65862,
+       "firstName": "Ewa",
+       "lastName": "Hainaut",
+       "telephone": "+33549443964",
+       "email": "ewa.hainaut@chupoitiers.fr"
+      },
+      "departmentName": "Service dermatologie"
+     },
+     {
+      "id": 47816,
+      "organisationAddressInfo": {
+       "id": 45004,
+       "organisation": {
+        "id": 47137,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Centre Hospitalier Regional Universitaire De Lille",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006742",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46811,
+        "oneLine": "Rue Michel Polonowski",
+        "addressLine1": "Rue Michel Polonowski",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Lille",
+        "postcode": "59000",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33320445916",
+       "email": "Laurent.mortier@chru-lille.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073372"
+      },
+      "personInfo": {
+       "id": 65861,
+       "firstName": "Laurent",
+       "lastName": "Mortier",
+       "telephone": "+33320445916",
+       "email": "Laurent.mortier@chru-lille.fr"
+      },
+      "departmentName": "Clinique de Dermatologie"
+     },
+     {
+      "id": 47819,
+      "organisationAddressInfo": {
+       "id": 45009,
+       "organisation": {
+        "id": 47142,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Institut De Cancerologie De L Ouest",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100010298",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46816,
+        "oneLine": "Boulevard Jacques Monod",
+        "addressLine1": "Boulevard Jacques Monod",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Saint Herblain",
+        "postcode": "44805",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33240679900",
+       "email": "melanie.saintjean@ico.unicancer.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100071374"
+      },
+      "personInfo": {
+       "id": 65864,
+       "firstName": "Melanie",
+       "lastName": "St Jean",
+       "telephone": "+33240679900",
+       "email": "melanie.saintjean@ico.unicancer.fr"
+      },
+      "departmentName": "Oncologie médicale"
+     },
+     {
+      "id": 47821,
+      "organisationAddressInfo": {
+       "id": 45005,
+       "organisation": {
+        "id": 47138,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Centre Hospitalier Valence",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100042394",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46812,
+        "oneLine": "179 Boulevard Marechal Juin",
+        "addressLine1": "179 Boulevard Marechal Juin",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Valence",
+        "postcode": "26000",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33475757549",
+       "email": "Fgrange@valence.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100070039"
+      },
+      "personInfo": {
+       "id": 65866,
+       "firstName": "Florent",
+       "lastName": "Grange",
+       "telephone": "+33475757549",
+       "email": "Fgrange@valence.fr"
+      },
+      "departmentName": "Service de dermatologie"
+     },
+     {
+      "id": 47824,
+      "organisationAddressInfo": {
+       "id": 45006,
+       "organisation": {
+        "id": 47139,
+        "type": "Health care",
+        "typeCode": "2",
+        "name": "Institut Universitaire Du Cancer Toulouse-Oncopole",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100023339",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46813,
+        "oneLine": "1 Avenue Irene Joliot Curie",
+        "addressLine1": "1 Avenue Irene Joliot Curie",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Toulouse Cedex 9",
+        "postcode": "31059",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33531155675",
+       "email": "Pageslaurent.cecile@iuct-oncopole.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100032471"
+      },
+      "personInfo": {
+       "id": 65869,
+       "firstName": "Nicolas",
+       "lastName": "Meyer",
+       "telephone": "+33531155232",
+       "email": "Meyer.n@chutoulouse.fr"
+      },
+      "departmentName": "Onco-dermatologie"
+     },
+     {
+      "id": 47820,
+      "organisationAddressInfo": {
+       "id": 45010,
+       "organisation": {
+        "id": 47143,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Centre Hospitalier Universitaire De Nantes",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100007295",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46817,
+        "oneLine": "1 Place Alexis Ricordeau",
+        "addressLine1": "1 Place Alexis Ricordeau",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Nantes",
+        "postcode": "44000",
+        "country": 2012,
+        "countryName": "France"
+       },
+       "phone": "+33240083144",
+       "email": "Gaelle.quereux@chunantes.fr",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100051296"
+      },
+      "personInfo": {
+       "id": 65865,
+       "firstName": "Gaelle",
+       "lastName": "Quereux",
+       "telephone": "+33240083144",
+       "email": "Gaelle.quereux@chunantes.fr"
+      },
+      "departmentName": "Unité fonctionnelle de cancéro-dermatologie"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 11836,
+    "mscId": 2979,
+    "mscInfo": {
+     "id": 2979,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2013,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-30",
+     "toDate": "2023-01-30",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Germany",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-02",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1625,
+       "mscId": 2979,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.394"
+      },
+      {
+       "id": 3683,
+       "mscId": 2979,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-02T12:37:14.996"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Germany",
+     "assessmentOutcome": "acceptable_conditions",
+     "assessmentOutcomeDate": "2023-02-16",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-02"
+    },
+    "decisionDate": "2023-03-02",
+    "recruitmentSubjectCount": 84,
+    "trialSites": [
+     {
+      "id": 53240,
+      "organisationAddressInfo": {
+       "id": 45028,
+       "organisation": {
+        "id": 47161,
+        "type": "Educational Institution",
+        "typeCode": "1",
+        "name": "Medizinische Hochschule Hannover",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100024473",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46835,
+        "oneLine": "Carl-Neuberg-Strasse 1, Gross Buchholz",
+        "addressLine1": "Carl-Neuberg-Strasse 1",
+        "addressLine2": "Gross Buchholz",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Hanover",
+        "postcode": "30625",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+495115327671",
+       "email": "vonWasielewski.Imke@mh-hannover.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100033647"
+      },
+      "personInfo": {
+       "id": 71944,
+       "firstName": "Imke",
+       "lastName": "Grimmelmann",
+       "telephone": "+495115327671",
+       "email": "grimmelmann.imke@mh-hannover.de"
+      },
+      "departmentName": "Klinik für Dermatologie, Allergologie und Venerologie"
+     },
+     {
+      "id": 53244,
+      "organisationAddressInfo": {
+       "id": 45029,
+       "organisation": {
+        "id": 47162,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Muhlenkreiskliniken AoR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100039347",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46836,
+        "oneLine": "Hans-Nolte-Strasse 1, Haeverstaedt",
+        "addressLine1": "Hans-Nolte-Strasse 1",
+        "addressLine2": "Haeverstaedt",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Minden",
+        "postcode": "32429",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+495717094500",
+       "email": "Ralf.Gutzmer@Muehlenkreiskliniken.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100061939"
+      },
+      "personInfo": {
+       "id": 71948,
+       "firstName": "Ralf",
+       "lastName": "Gutzmer",
+       "telephone": "+495717094500",
+       "email": "Ralf.Gutzmer@Muehlenkreiskliniken.de"
+      },
+      "departmentName": "Universitätsklinik für Dermatologie, Venerologie, Allergologie und Phlebologie"
+     },
+     {
+      "id": 53235,
+      "organisationAddressInfo": {
+       "id": 45018,
+       "organisation": {
+        "id": 47151,
+        "type": "Educational Institution",
+        "typeCode": "1",
+        "name": "Universitat Heidelberg",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100030880",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46825,
+        "oneLine": "Theodor-Kutzer-Ufer 1-3, Wohlgelegen",
+        "addressLine1": "Theodor-Kutzer-Ufer 1-3",
+        "addressLine2": "Wohlgelegen",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Mannheim",
+        "postcode": "68167",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+496213834461",
+       "email": "Jochen.Utikal@umm.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100070734"
+      },
+      "personInfo": {
+       "id": 71939,
+       "firstName": "Jochen",
+       "lastName": "Utikal",
+       "telephone": "+496213834461",
+       "email": "Jochen.Utikal@umm.de"
+      },
+      "departmentName": "Klinik für Dermatologie, Venerologie und Allergologie"
+     },
+     {
+      "id": 53239,
+      "organisationAddressInfo": {
+       "id": 45034,
+       "organisation": {
+        "id": 47167,
+        "type": "Educational Institution",
+        "typeCode": "1",
+        "name": "University of Leipzig",
+        "commercial": true,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100000273",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46841,
+        "oneLine": "Philipp-Rosenthal-Strasse 55, Zentrum-Suedost",
+        "addressLine1": "Philipp-Rosenthal-Strasse 55",
+        "addressLine2": "Zentrum-Suedost",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Leipzig",
+        "postcode": "04103",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+1493419718600",
+       "email": "jan.simon@medizin.uni-leipzig.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100066245"
+      },
+      "personInfo": {
+       "id": 71943,
+       "firstName": "Jan",
+       "lastName": "Simon",
+       "telephone": "+1493419718600",
+       "email": "jan.simon@medizin.uni-leipzig.de"
+      },
+      "departmentName": "Klinik und Poliklinik für Dermatologie, Venerologie und Allergologie"
+     },
+     {
+      "id": 53234,
+      "organisationAddressInfo": {
+       "id": 45040,
+       "organisation": {
+        "id": 47173,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Universitaetsklinikum Carl Gustav Carus Dresden an der Technischen Universitaet Dresden AöR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100022312",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46847,
+        "oneLine": "Fetscherstrasse 74, Johannstadt-Nord",
+        "addressLine1": "Fetscherstrasse 74",
+        "addressLine2": "Johannstadt-Nord",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Dresden",
+        "postcode": "01307",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+4935145819782",
+       "email": "friedegund.meier@uniklinikum-dresden.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100031012"
+      },
+      "personInfo": {
+       "id": 71938,
+       "firstName": "Friedegund",
+       "lastName": "Meier",
+       "telephone": "+4935145819782",
+       "email": "friedegund.meier@uniklinikum-dresden.de"
+      },
+      "departmentName": "Hauttumorzentrum"
+     },
+     {
+      "id": 53233,
+      "organisationAddressInfo": {
+       "id": 45023,
+       "organisation": {
+        "id": 47156,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Charite Universitatsmedizin Berlin KöR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100008480",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46830,
+        "oneLine": "Charitéplatz 1, Mitte",
+        "addressLine1": "Charitéplatz 1",
+        "addressLine2": "Mitte",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Berlin",
+        "postcode": "10117",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+4930450518002",
+       "email": "thomas.eigentler@charite.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100016893"
+      },
+      "personInfo": {
+       "id": 71937,
+       "firstName": "Thomas",
+       "lastName": "Eigentler",
+       "telephone": "+4930450518002",
+       "email": "thomas.eigentler@charite.de"
+      },
+      "departmentName": "Klinik für Dermatologie, Venerologie und Allergologie, Hauttumorcentrum an der Charité"
+     },
+     {
+      "id": 53238,
+      "organisationAddressInfo": {
+       "id": 45030,
+       "organisation": {
+        "id": 47163,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Universitaetsklinikum Essen AöR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100009964",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46837,
+        "oneLine": "Hufelandstrasse 55, Holsterhausen",
+        "addressLine1": "Hufelandstrasse 55",
+        "addressLine2": "Holsterhausen",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Essen",
+        "postcode": "45147",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+492017232431",
+       "email": "Dirk.Schadendorf@uk-ssen.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100017058"
+      },
+      "personInfo": {
+       "id": 71942,
+       "firstName": "Dirk",
+       "lastName": "Schadendorf",
+       "telephone": "+492017232431",
+       "email": "Dirk.Schadendorf@uk-ssen.de"
+      },
+      "departmentName": "Klinik für Dermatologie"
+     },
+     {
+      "id": 53237,
+      "organisationAddressInfo": {
+       "id": 45027,
+       "organisation": {
+        "id": 47160,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Klinikum Der Universitat Munchen AöR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100008479",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46834,
+        "oneLine": "Frauenlobstraße 9-11, Ludwigsvorstadt-Isarvorstadt",
+        "addressLine1": "Frauenlobstraße 9-11",
+        "addressLine2": "Ludwigsvorstadt-Isarvorstadt",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Munich",
+        "postcode": "80337",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+4989440056065",
+       "email": "lucie.heinzerling@med.uni-muenchen.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100071319"
+      },
+      "personInfo": {
+       "id": 71941,
+       "firstName": "Lucie",
+       "lastName": "Heinzerling",
+       "telephone": "+4989440056065",
+       "email": "lucie.heinzerling@med.uni-muenchen.de"
+      },
+      "departmentName": "Klinik und Poliklinik für Dermatologie und Allergologie"
+     },
+     {
+      "id": 53243,
+      "organisationAddressInfo": {
+       "id": 45021,
+       "organisation": {
+        "id": 47154,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Elbe Kliniken Stade Buxtehude Elbe Klinikum Buxtehude gGmbH",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100025859",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46828,
+        "oneLine": "Am Krankenhaus 1",
+        "addressLine1": "Am Krankenhaus 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Buxtehude",
+        "postcode": "21614",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+4941617036250",
+       "email": "peter.mohr@elbekliniken.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100035108"
+      },
+      "personInfo": {
+       "id": 71947,
+       "firstName": "Peter",
+       "lastName": "Mohr",
+       "telephone": "+4941617036250",
+       "email": "peter.mohr@elbekliniken.de"
+      },
+      "departmentName": "Klinik für Dermatologie"
+     },
+     {
+      "id": 53242,
+      "organisationAddressInfo": {
+       "id": 45020,
+       "organisation": {
+        "id": 47153,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "University Medical Center Hamburg-Eppendorf",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100008810",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46827,
+        "oneLine": "Martinistraße 52, Eppendorf",
+        "addressLine1": "Martinistraße 52",
+        "addressLine2": "Eppendorf",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Hamburg",
+        "postcode": "20251",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+4940741053263",
+       "email": "ch.gebhardt@uke.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100014580"
+      },
+      "personInfo": {
+       "id": 71946,
+       "firstName": "Christoffer",
+       "lastName": "Gebhardt",
+       "telephone": "+4940741053263",
+       "email": "ch.gebhardt@uke.de"
+      },
+      "departmentName": "Klinik und Poliklinik für Dermatologie und Venerologie"
+     },
+     {
+      "id": 53236,
+      "organisationAddressInfo": {
+       "id": 45037,
+       "organisation": {
+        "id": 47170,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Heidelberg University Hospital AöR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100013733",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46844,
+        "oneLine": "Im Neuenheimer Feld 460, Neuenheim",
+        "addressLine1": "Im Neuenheimer Feld 460",
+        "addressLine2": "Neuenheim",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Heidelberg",
+        "postcode": "69120",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+496221568562",
+       "email": "jessica.hassel@med.uni-heidelberg.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100069559"
+      },
+      "personInfo": {
+       "id": 71940,
+       "firstName": "Jessica",
+       "lastName": "Hassel",
+       "telephone": "+496221568562",
+       "email": "jessica.hassel@med.uni-heidelberg.de"
+      },
+      "departmentName": "Hautklinik"
+     },
+     {
+      "id": 53241,
+      "organisationAddressInfo": {
+       "id": 45014,
+       "organisation": {
+        "id": 47147,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Universitatsklinikum Erlangen AöR",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100006207",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46821,
+        "oneLine": "Ulmenweg 18, Innenstadt",
+        "addressLine1": "Ulmenweg 18",
+        "addressLine2": "Innenstadt",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Erlangen",
+        "postcode": "91054",
+        "country": 2013,
+        "countryName": "Germany"
+       },
+       "phone": "+4991318535000",
+       "email": "markus.heppt@uk-erlangen.de",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100010935"
+      },
+      "personInfo": {
+       "id": 71945,
+       "firstName": "Markus",
+       "lastName": "Heppt",
+       "telephone": "+4991318535000",
+       "email": "markus.heppt@uk-erlangen.de"
+      },
+      "departmentName": "Hautklinik"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 11943,
+    "mscId": 2982,
+    "mscInfo": {
+     "id": 2982,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2017,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-30",
+     "toDate": "2023-01-30",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Ireland",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-03",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1626,
+       "mscId": 2982,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.546"
+      },
+      {
+       "id": 3765,
+       "mscId": 2982,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-03T15:52:55.895"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Ireland",
+     "assessmentOutcome": "acceptable_conditions",
+     "assessmentOutcomeDate": "2023-02-27",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-03"
+    },
+    "decisionDate": "2023-03-03",
+    "recruitmentSubjectCount": 8,
+    "trialSites": [
+     {
+      "id": 53836,
+      "organisationAddressInfo": {
+       "id": 45108,
+       "organisation": {
+        "id": 47241,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Beaumont Hospital",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100041548",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46916,
+        "oneLine": "Beaumont Road, Beaumont",
+        "addressLine1": "Beaumont Road",
+        "addressLine2": "Beaumont",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Dublin 9",
+        "postcode": "D09 V2N0",
+        "country": 2017,
+        "countryName": "Ireland"
+       },
+       "phone": "+35308092010",
+       "email": "jarushkanaidoo@beaumont.ie",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100068444"
+      },
+      "personInfo": {
+       "id": 72630,
+       "firstName": "Jarushka",
+       "lastName": "Naidoo",
+       "telephone": "+35308092010",
+       "email": "jarushkanaidoo@beaumont.ie"
+      },
+      "departmentName": "Cancer Clinical Trials & Research Unit"
+     },
+     {
+      "id": 53837,
+      "organisationAddressInfo": {
+       "id": 45109,
+       "organisation": {
+        "id": 47242,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "St James's Hospital",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100009794",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46917,
+        "oneLine": "James's Street",
+        "addressLine1": "James's Street",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Dublin 8",
+        "country": 2017,
+        "countryName": "Ireland"
+       },
+       "phone": "+35314103000",
+       "email": "FeKelleher@stjames.ie",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100014366"
+      },
+      "personInfo": {
+       "id": 72631,
+       "firstName": "Fergal",
+       "lastName": "Fergal",
+       "telephone": "+35314103000",
+       "email": "FeKelleher@stjames.ie"
+      },
+      "departmentName": "Cancer Clinical Trials Office"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 5048,
+    "mscId": 2983,
+    "mscInfo": {
+     "id": 2983,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2018,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2022-10-18",
+     "toDate": "2022-10-18",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Italy",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-06",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1627,
+       "mscId": 2983,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.746"
+      },
+      {
+       "id": 3778,
+       "mscId": 2983,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-06T08:32:45.347"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Italy",
+     "assessmentOutcome": "acceptable",
+     "assessmentOutcomeDate": "2023-01-23",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-06"
+    },
+    "decisionDate": "2023-03-06",
+    "recruitmentSubjectCount": 90,
+    "trialSites": [
+     {
+      "id": 20245,
+      "organisationAddressInfo": {
+       "id": 49521,
+       "organisation": {
+        "id": 51684,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Istituto Tumori Bari Giovanni Paolo II",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100032479",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 51461,
+        "oneLine": "Viale Orazio Flacco 65",
+        "addressLine1": "Viale Orazio Flacco 65",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Bari",
+        "postcode": "70124",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390805555136",
+       "email": "m.guida@oncologico.bari.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100050914"
+      },
+      "personInfo": {
+       "id": 33417,
+       "firstName": "Michelle",
+       "lastName": "Guida",
+       "telephone": "+390805555136",
+       "email": "m.guida@oncologico.bari.it"
+      },
+      "departmentName": "S.S.D. Tumori Rari e Melanoma"
+     },
+     {
+      "id": 18680,
+      "organisationAddressInfo": {
+       "id": 45094,
+       "organisation": {
+        "id": 47227,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Istituto Scientifico Romagnolo Per Lo Studio E La Cura Dei Tumori S.r.l.",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100010212",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46901,
+        "oneLine": "Via Piero Maroncelli 40",
+        "addressLine1": "Via Piero Maroncelli 40",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Meldola",
+        "postcode": "47014",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390545739100",
+       "email": "laura.ridolfi@irst.emr.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100015900"
+      },
+      "personInfo": {
+       "id": 31360,
+       "firstName": "Massimo",
+       "lastName": "Guidoboni",
+       "telephone": "+390543739100",
+       "email": "massimo.guidoboni@irst.emr.it"
+      },
+      "departmentName": "SSD di Immunoterapia"
+     },
+     {
+      "id": 18681,
+      "organisationAddressInfo": {
+       "id": 45097,
+       "organisation": {
+        "id": 47230,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Policlinico Le Scotte",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100010449",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46904,
+        "oneLine": "Viale Mario Bracci 16",
+        "addressLine1": "Viale Mario Bracci 16",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Siena",
+        "postcode": "53100",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390577586335",
+       "email": "maio@unisi.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100015923"
+      },
+      "personInfo": {
+       "id": 31361,
+       "firstName": "Michele",
+       "lastName": "Maio",
+       "telephone": "+390577586335",
+       "email": "maio@unisi.it"
+      },
+      "departmentName": "U.O.C. Immunoterapia Oncologica"
+     },
+     {
+      "id": 18683,
+      "organisationAddressInfo": {
+       "id": 45104,
+       "organisation": {
+        "id": 47237,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "European Institute Of Oncology S.r.l.",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100009530",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46911,
+        "oneLine": "Via Giuseppe Ripamonti 435",
+        "addressLine1": "Via Giuseppe Ripamonti 435",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Milan",
+        "postcode": "20141",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390294372754",
+       "email": "paola.queirolo@ieo.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100016016"
+      },
+      "personInfo": {
+       "id": 31363,
+       "firstName": "Paola",
+       "lastName": "Queirolo",
+       "telephone": "+390294372754",
+       "email": "paola.queirolo@ieo.it"
+      },
+      "departmentName": "Divisione di oncologia medica del melanoma, sarcoma e tumori rari"
+     },
+     {
+      "id": 18684,
+      "organisationAddressInfo": {
+       "id": 45106,
+       "organisation": {
+        "id": 47239,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Veneto Institute Of Oncology",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100007494",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46913,
+        "oneLine": "Via Gattamelata 64",
+        "addressLine1": "Via Gattamelata 64",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Padova",
+        "postcode": "35128",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390498215609",
+       "email": "jacopo.pigozzo@iov.veneto.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100011618"
+      },
+      "personInfo": {
+       "id": 31364,
+       "firstName": "Jacopo",
+       "lastName": "Pigozzo",
+       "telephone": "+390498215609",
+       "email": "jacopo.pigozzo@iov.veneto.it"
+      },
+      "departmentName": "Oncologia"
+     },
+     {
+      "id": 18677,
+      "organisationAddressInfo": {
+       "id": 45069,
+       "organisation": {
+        "id": 47202,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Fondazione IRCCS Istituto Nazionale Dei Tumori",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100008982",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46876,
+        "oneLine": "Via Giacomo Venezian 1",
+        "addressLine1": "Via Giacomo Venezian 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Milan",
+        "postcode": "20133",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390223902557",
+       "email": "michele.delvecchio@istitutotumori.mi.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100015951"
+      },
+      "personInfo": {
+       "id": 31357,
+       "firstName": "Michele",
+       "lastName": "Del Vecchio",
+       "telephone": "+390223902557",
+       "email": "michele.delvecchio@istitutotumori.mi.it"
+      },
+      "departmentName": "Dipartimento di Oncologia Medica ed Ematologia - SC Oncologia Medica 1"
+     },
+     {
+      "id": 18682,
+      "organisationAddressInfo": {
+       "id": 45098,
+       "organisation": {
+        "id": 47231,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Hospital Santa Maria Della Misericordia",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100028917",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46905,
+        "oneLine": "Piazzale Giorgio Menghini 1",
+        "addressLine1": "Piazzale Giorgio Menghini 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Perugia",
+        "postcode": "06129",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390755784188",
+       "email": "Mario.mandala@unipg.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100046127"
+      },
+      "personInfo": {
+       "id": 31362,
+       "firstName": "Mario",
+       "lastName": "Mandalà",
+       "telephone": "+390755784188",
+       "email": "Mario.mandala@unipg.it"
+      },
+      "departmentName": "S.C. di Oncologia Medica"
+     },
+     {
+      "id": 18678,
+      "organisationAddressInfo": {
+       "id": 45070,
+       "organisation": {
+        "id": 47203,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "IRCCS Istituto Nazionale Tumori - Fondazione Pascale",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100010025",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46877,
+        "oneLine": "Via Mariano Semmola 53",
+        "addressLine1": "Via Mariano Semmola 53",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Naples",
+        "postcode": "80131",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+3908159031886",
+       "email": "p.ascierto@istitutotumori.na.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100016007"
+      },
+      "personInfo": {
+       "id": 31358,
+       "firstName": "Paolo",
+       "lastName": "Ascierto",
+       "telephone": "+3908159031886",
+       "email": "p.ascierto@istitutotumori.na.it"
+      },
+      "departmentName": "Melanoma. Unità di immunoterapia e sviluppo del cancro"
+     },
+     {
+      "id": 18679,
+      "organisationAddressInfo": {
+       "id": 45074,
+       "organisation": {
+        "id": 47207,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Azienda Ospedaliero Universitaria Di Modena",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100011130",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 46881,
+        "oneLine": "Largo Del Pozzo 71",
+        "addressLine1": "Largo Del Pozzo 71",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Modena",
+        "postcode": "41124",
+        "country": 2018,
+        "countryName": "Italy"
+       },
+       "phone": "+390594223283",
+       "email": "depenni.roberta@aou.mo.it",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100016020"
+      },
+      "personInfo": {
+       "id": 31359,
+       "firstName": "Roberta",
+       "lastName": "Depenni",
+       "telephone": "+390594223283",
+       "email": "depenni.roberta@aou.mo.it"
+      },
+      "departmentName": "SS Dh Oncologia"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 8355,
+    "mscId": 2985,
+    "mscInfo": {
+     "id": 2985,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2027,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2022-12-09",
+     "toDate": "2022-12-09",
+     "isProposedRms": true,
+     "expressDecision": "unwilling",
+     "countryName": "Spain",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-02",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1628,
+       "mscId": 2985,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:44.912"
+      },
+      {
+       "id": 3687,
+       "mscId": 2985,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-02T14:49:58.933"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Spain",
+     "assessmentOutcome": "acceptable",
+     "assessmentOutcomeDate": "2023-01-26",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-02"
+    },
+    "decisionDate": "2023-03-02",
+    "recruitmentSubjectCount": 42,
+    "trialSites": [
+     {
+      "id": 32023,
+      "organisationAddressInfo": {
+       "id": 48643,
+       "organisation": {
+        "id": 50798,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Fundacion Onkologikoa Fundazioa",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100044928",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 50552,
+        "oneLine": "Pasealeku Doct. Begiristain 121",
+        "addressLine1": "Pasealeku Doct. Begiristain 121",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Donostia",
+        "postcode": "20014",
+        "country": 2027,
+        "countryName": "Spain"
+       },
+       "phone": "+34943328315",
+       "email": "kmujika@onkologikoa.org",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100074219"
+      },
+      "personInfo": {
+       "id": 47505,
+       "firstName": "Miren Karmele",
+       "lastName": "Mujika Eizmendi",
+       "telephone": "+34943328315",
+       "email": "kmujika@onkologikoa.org"
+      },
+      "departmentName": "Oncología Médica"
+     },
+     {
+      "id": 32024,
+      "organisationAddressInfo": {
+       "id": 48015,
+       "organisation": {
+        "id": 50165,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Hospital General Universitario De Valencia",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100023081",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 49895,
+        "oneLine": "Avenida Del Tres Cruces 2",
+        "addressLine1": "Avenida Del Tres Cruces 2",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Valencia",
+        "postcode": "46014",
+        "country": 2027,
+        "countryName": "Spain"
+       },
+       "phone": "+34963131800",
+       "email": "berrocal.alf@gmail.com",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100031830"
+      },
+      "personInfo": {
+       "id": 47506,
+       "firstName": "Alfonso",
+       "lastName": "Berrocal Jaime",
+       "telephone": "+34963131800",
+       "email": "berrocal.alf@gmail.com"
+      },
+      "departmentName": "Oncology"
+     },
+     {
+      "id": 32028,
+      "organisationAddressInfo": {
+       "id": 48036,
+       "organisation": {
+        "id": 50186,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Hospital Universitario Virgen De La Macarena",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100041183",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 49916,
+        "oneLine": "Avenida Del Doctor Fedriani 3",
+        "addressLine1": "Avenida Del Doctor Fedriani 3",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Sevilla",
+        "postcode": "41009",
+        "country": 2027,
+        "countryName": "Spain"
+       },
+       "phone": "+34955008000",
+       "email": "luis.cruz.sspa@juntadeandalucia.es",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100067814"
+      },
+      "personInfo": {
+       "id": 47510,
+       "firstName": "Luis",
+       "lastName": "De la Cruz Merino",
+       "telephone": "+34955008000",
+       "email": "luis.cruz.sspa@juntadeandalucia.es"
+      },
+      "departmentName": "Oncología"
+     },
+     {
+      "id": 32027,
+      "organisationAddressInfo": {
+       "id": 48032,
+       "organisation": {
+        "id": 50182,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Hospital Universitario Ramon Y Cajal",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100028538",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 49912,
+        "oneLine": "Carretera Del Colmenar Viejo Km 9 100, Por El Pardo",
+        "addressLine1": "Carretera Del Colmenar Viejo Km 9 100",
+        "addressLine2": "Por El Pardo",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Madrid",
+        "postcode": "28049",
+        "country": 2027,
+        "countryName": "Spain"
+       },
+       "phone": "+34913368263",
+       "email": "ainara.soria@salud.madrid.org",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100045663"
+      },
+      "personInfo": {
+       "id": 47509,
+       "firstName": "Ainara",
+       "lastName": "Soria Rivas",
+       "telephone": "+34913368263",
+       "email": "ainara.soria@salud.madrid.org"
+      },
+      "departmentName": "Oncología"
+     },
+     {
+      "id": 32025,
+      "organisationAddressInfo": {
+       "id": 48021,
+       "organisation": {
+        "id": 50171,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Catalan Institute Of Oncology",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100030394",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 49901,
+        "oneLine": "Avinguda Gran Via De L'hospitalet 199-203",
+        "addressLine1": "Avinguda Gran Via De L'hospitalet 199-203",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "L'hospitalet De Llobregat",
+        "postcode": "08908",
+        "country": 2027,
+        "countryName": "Spain"
+       },
+       "phone": "+34932607744",
+       "email": "contactfortrialsicolh@iconcologia.net",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100047880"
+      },
+      "personInfo": {
+       "id": 47507,
+       "firstName": "Juan Jesús",
+       "lastName": "Martín Liberal",
+       "telephone": "+34932607744",
+       "email": "contactfortrialsicolh@iconcologia.cat"
+      },
+      "departmentName": "Oncología"
+     },
+     {
+      "id": 32026,
+      "organisationAddressInfo": {
+       "id": 48018,
+       "organisation": {
+        "id": 50168,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Hospital Universitario Regional De Malaga",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100041248",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 49898,
+        "oneLine": "Avenida De Carlos De Haya S/n",
+        "addressLine1": "Avenida De Carlos De Haya S/n",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Malaga",
+        "postcode": "29010",
+        "country": 2027,
+        "countryName": "Spain"
+       },
+       "phone": "+34951308129",
+       "email": "migueberci@gmail.com",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100067905"
+      },
+      "personInfo": {
+       "id": 47508,
+       "firstName": "Miguel Ángel",
+       "lastName": "Berciano Guerrero",
+       "telephone": "+34951308129",
+       "email": "migueberci@gmail.com"
+      },
+      "departmentName": "Oncología Médica"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 11754,
+    "mscId": 2986,
+    "mscInfo": {
+     "id": 2986,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2028,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-27",
+     "toDate": "2023-01-27",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Sweden",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-06",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1629,
+       "mscId": 2986,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:45.064"
+      },
+      {
+       "id": 3787,
+       "mscId": 2986,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-06T09:44:52.761"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Sweden",
+     "assessmentOutcome": "acceptable",
+     "assessmentOutcomeDate": "2023-02-08",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-06"
+    },
+    "decisionDate": "2023-03-06",
+    "recruitmentSubjectCount": 12,
+    "trialSites": [
+     {
+      "id": 52672,
+      "organisationAddressInfo": {
+       "id": 45204,
+       "organisation": {
+        "id": 47337,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Region Jonkopings Lan",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100042546",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47017,
+        "oneLine": "Lanssjukhuset Ryhov, Sjukhusgatan",
+        "addressLine1": "Lanssjukhuset Ryhov",
+        "addressLine2": "Sjukhusgatan",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Jonkoping",
+        "postcode": "553 05",
+        "country": 2028,
+        "countryName": "Sweden"
+       },
+       "phone": "+46102410000",
+       "email": "mikael.wallander@rjl.se",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073590"
+      },
+      "personInfo": {
+       "id": 71309,
+       "firstName": "Mikael",
+       "lastName": "Wallander",
+       "telephone": "+46102410000",
+       "email": "mikael.wallander@rjl.se"
+      },
+      "departmentName": "Onkologkliniken"
+     },
+     {
+      "id": 52673,
+      "organisationAddressInfo": {
+       "id": 45202,
+       "organisation": {
+        "id": 47335,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Karolinska University Hospital",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100000573",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47015,
+        "oneLine": "Eugeniavagen 3",
+        "addressLine1": "Eugeniavagen 3",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Solna",
+        "postcode": "171 64",
+        "country": 2028,
+        "countryName": "Sweden"
+       },
+       "phone": "+46812370000",
+       "email": "hildur.helgadottir@regionstockholm.se",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100031783"
+      },
+      "personInfo": {
+       "id": 71310,
+       "firstName": "Hildur",
+       "lastName": "Helgadottir",
+       "telephone": "+46812370000",
+       "email": "hildur.helgadottir@regionstockholm.se"
+      },
+      "departmentName": "Tema Cancer, ME Huvud-, Hals-, Lung- och Hudcancer"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   },
+   {
+    "id": 11772,
+    "mscId": 2987,
+    "mscInfo": {
+     "id": 2987,
+     "clinicalTrialId": 1456,
+     "countryOrganisationId": 2031,
+     "reportingStatusCode": "Not authorised",
+     "fromDate": "2023-01-27",
+     "toDate": "2023-01-27",
+     "isProposedRms": false,
+     "expressDecision": "unwilling",
+     "countryName": "Poland",
+     "organisationInfo": {},
+     "firstDecisionDate": "2023-03-06",
+     "trialStatus": "Not authorised",
+     "trialPeriod": [],
+     "trialRecruitmentPeriod": [],
+     "hasRecruitmentStarted": false,
+     "activeTrialPeriod": {},
+     "activeTrialRecruitmentPeriod": {},
+     "isWillingAtDayThreeView": false,
+     "clinicalTrialStatusHistory": [
+      {
+       "id": 1630,
+       "mscId": 2987,
+       "trialStatus": "Under evaluation",
+       "trialStatusDate": "2022-11-07T15:29:45.207"
+      },
+      {
+       "id": 3856,
+       "mscId": 2987,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-07T00:28:41.869"
+      },
+      {
+       "id": 3855,
+       "mscId": 2987,
+       "trialStatus": "Not authorised",
+       "trialStatusDate": "2023-03-06T23:59:59"
+      }
+     ],
+     "applicationTypeMsc": "1",
+     "mscName": "Poland",
+     "assessmentOutcome": "acceptable",
+     "assessmentOutcomeDate": "2023-02-24",
+     "decision": "not_authorized",
+     "decisionDate": "2023-03-06"
+    },
+    "decisionDate": "2023-03-06",
+    "recruitmentSubjectCount": 100,
+    "trialSites": [
+     {
+      "id": 52840,
+      "organisationAddressInfo": {
+       "id": 45219,
+       "organisation": {
+        "id": 47352,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Pratia MCM Krakow",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100041687",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47032,
+        "oneLine": "Ul. Tadeusza Rejtana 2",
+        "addressLine1": "Ul. Tadeusza Rejtana 2",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Cracow",
+        "postcode": "30-510",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48122954141",
+       "email": "biuro.mcm@pratia.com",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100068764"
+      },
+      "personInfo": {
+       "id": 71500,
+       "firstName": "Bożena",
+       "lastName": "Cybulska-Stopa",
+       "telephone": "+48122954141",
+       "email": "biuro.mcm@pratia.com"
+      },
+      "departmentName": "Pratia MCM Krakow"
+     },
+     {
+      "id": 52845,
+      "organisationAddressInfo": {
+       "id": 45213,
+       "organisation": {
+        "id": 47346,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Narodowy Instytut Onkologii Im. Marii Sklodowskiej-Curie-Panstwowy Instytut Badawczy",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100009191",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47026,
+        "oneLine": "Ul. Wilhelma Konrada Roentgena 5",
+        "addressLine1": "Ul. Wilhelma Konrada Roentgena 5",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Warsaw",
+        "postcode": "02-781",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "0048225462103",
+       "email": "badaniakliniczne@pibnio.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100017986"
+      },
+      "personInfo": {
+       "id": 71505,
+       "firstName": "Piotr",
+       "lastName": "Rutkowski",
+       "telephone": "0048225462103",
+       "email": "badaniakliniczne@pibnio.pl"
+      },
+      "departmentName": "Klinika Nowotworów Tkanek Miękkich, Kości i Czerniaków"
+     },
+     {
+      "id": 52851,
+      "organisationAddressInfo": {
+       "id": 48460,
+       "organisation": {
+        "id": 50612,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Szpital Kliniczny Im. Heliodora Swiecickiego Uniwersytetu Medycznego Im. Karola Marcinkowskiego W Poznaniu",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100041123",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 50363,
+        "oneLine": "Ul. Stanislawa Przybyszewskiego 49",
+        "addressLine1": "Ul. Stanislawa Przybyszewskiego 49",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Poznan",
+        "postcode": "60-355",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48618547987",
+       "email": "akominek@ump.edu.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100067716"
+      },
+      "personInfo": {
+       "id": 71511,
+       "firstName": "Jacek",
+       "lastName": "Mackiewicz",
+       "telephone": "+48618547987",
+       "email": "akominek@ump.edu.pl"
+      },
+      "departmentName": "Oddział Onkologii Klinicznej i Doświadczalnej. Ul. Grunwaldzka 16/18, 60-780 Poznań"
+     },
+     {
+      "id": 52850,
+      "organisationAddressInfo": {
+       "id": 45228,
+       "organisation": {
+        "id": 47361,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Bialostockie Centrum Onkologii Im M Sklodowskiej-Curie W Bialymstoku",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100044047",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47041,
+        "oneLine": "Ul. Ogrodowa 12",
+        "addressLine1": "Ul. Ogrodowa 12",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Bialystok",
+        "postcode": "15-027",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48856784134",
+       "email": "mkarbowska@onkologia.bialystok.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100072767"
+      },
+      "personInfo": {
+       "id": 71510,
+       "firstName": "Iwona",
+       "lastName": "Zakrzewska",
+       "telephone": "+48856784134",
+       "email": "mkarbowska@onkologia.bialystok.pl"
+      },
+      "departmentName": "Oddział Onkologii Klinicznej im. dr E. Pileckiej z pododdziałem Chemioterapii Dziennej"
+     },
+     {
+      "id": 52847,
+      "organisationAddressInfo": {
+       "id": 45227,
+       "organisation": {
+        "id": 47360,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Wojewodzki Szpital Specjalistyczny Im. Janusza Korczaka W Slupsku Sp. z o.o.",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100044730",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47040,
+        "oneLine": "Ul. Hubalczykow 1",
+        "addressLine1": "Ul. Hubalczykow 1",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Slupsk",
+        "postcode": "76-200",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48598460614",
+       "email": "badania.kliniczne@szpital.slupsk.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073933"
+      },
+      "personInfo": {
+       "id": 71507,
+       "firstName": "Wojciech",
+       "lastName": "Rogowski",
+       "telephone": "+48598460614",
+       "email": "badania.kliniczne@szpital.slupsk.pl"
+      },
+      "departmentName": "Oddział Onkologii, Chemioterapii i Badań Klinicznych"
+     },
+     {
+      "id": 52843,
+      "organisationAddressInfo": {
+       "id": 45224,
+       "organisation": {
+        "id": 47357,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Uniwersyteckie Centrum Kliniczne",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100042500",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47037,
+        "oneLine": "Ul. Mariana Smoluchowskiego 17",
+        "addressLine1": "Ul. Mariana Smoluchowskiego 17",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Gdansk",
+        "postcode": "80-214",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48585846280",
+       "email": "info@uck.gda.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100072758"
+      },
+      "personInfo": {
+       "id": 71503,
+       "firstName": "Kamail",
+       "lastName": "Drucis",
+       "telephone": "+48585846280",
+       "email": "info@uck.gda.pl"
+      },
+      "departmentName": "Klinika Chirurgii Onkologicznej"
+     },
+     {
+      "id": 52849,
+      "organisationAddressInfo": {
+       "id": 45226,
+       "organisation": {
+        "id": 47359,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Zachodniopomorskie Centrum Onkologii",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100044552",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47039,
+        "oneLine": "Ul. Strzalowska 22",
+        "addressLine1": "Ul. Strzalowska 22",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Szczecin",
+        "postcode": "71-730",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48914251410",
+       "email": "szpital@onkologia.szczecin.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100073613"
+      },
+      "personInfo": {
+       "id": 71509,
+       "firstName": "Katarzyna",
+       "lastName": "Hetman",
+       "telephone": "+48914251410",
+       "email": "szpital@onkologia.szczecin.pl"
+      },
+      "departmentName": "Oddział Onkologii Klinicznej"
+     },
+     {
+      "id": 52846,
+      "organisationAddressInfo": {
+       "id": 45222,
+       "organisation": {
+        "id": 47355,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Narodowy Instytut Onkologii Im. Marii Sklodowskiej-Curie-Panstwowy Instytut Badawczy",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100009191",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47035,
+        "oneLine": "Ul. Wybrzeze Armii Krajowej 15",
+        "addressLine1": "Ul. Wybrzeze Armii Krajowej 15",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Gliwice",
+        "postcode": "44-102",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48322788142",
+       "email": "oddzial.chemdziennej@io.gliwice.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100016102"
+      },
+      "personInfo": {
+       "id": 71506,
+       "firstName": "Wiesław",
+       "lastName": "Bal",
+       "telephone": "+48322788142",
+       "email": "oddzial.chemdziennej@io.gliwice.pl"
+      },
+      "departmentName": "Oddział Chemioterapii Dziennej"
+     },
+     {
+      "id": 52848,
+      "organisationAddressInfo": {
+       "id": 45220,
+       "organisation": {
+        "id": 47353,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Swietokrzyskie Centrum Onkologii Samodzielny Publiczny Zaklad Opieki Zdrowotnej W Kielcach",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100044080",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47033,
+        "oneLine": "Ul. Prezydenta Stefana Artwinskiego 3",
+        "addressLine1": "Ul. Prezydenta Stefana Artwinskiego 3",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Kielce",
+        "postcode": "25-734",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48885997850",
+       "email": "badania.kliniczne@onkol.kielce.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100072842"
+      },
+      "personInfo": {
+       "id": 71508,
+       "firstName": "Robert",
+       "lastName": "Dziura",
+       "telephone": "+48885997850",
+       "email": "badania.kliniczne@onkol.kielce.pl"
+      },
+      "departmentName": "Klinika Onkologii Klinicznej"
+     },
+     {
+      "id": 52841,
+      "organisationAddressInfo": {
+       "id": 45221,
+       "organisation": {
+        "id": 47354,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Dolnoslaskie Centrum Onkologii Pulmonologii I Hematologii",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100040903",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47034,
+        "oneLine": "Pl. Ludwika Hirszfelda 12",
+        "addressLine1": "Pl. Ludwika Hirszfelda 12",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Wroclaw",
+        "postcode": "53-413",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48713689497",
+       "email": "badaniakliniczne@dco.com.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100067345"
+      },
+      "personInfo": {
+       "id": 71501,
+       "firstName": "Marcin",
+       "lastName": "Ziętek",
+       "telephone": "+48713689497",
+       "email": "badaniakliniczne@dco.com.pl"
+      },
+      "departmentName": "Oddział Nowotworów Tkanek Miękkich, Skóry i Czerniaków"
+     },
+     {
+      "id": 52844,
+      "organisationAddressInfo": {
+       "id": 45225,
+       "organisation": {
+        "id": 47358,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Centrum Onkologii Im. Prof. Franciszka Lukaszczyka W Bydgoszczy",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100007270",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47038,
+        "oneLine": "Ul. Izabeli Romanowskiej 2",
+        "addressLine1": "Ul. Izabeli Romanowskiej 2",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Bydgoszcz",
+        "postcode": "85-796",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48523743029",
+       "email": "badania.kliniczne@co.bydgoszcz.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100012981"
+      },
+      "personInfo": {
+       "id": 71504,
+       "firstName": "Bogdan",
+       "lastName": "Żurawski",
+       "telephone": "+48523743029",
+       "email": "badania.kliniczne@co.bydgoszcz.pl"
+      },
+      "departmentName": "Ambulatorium Chemioterapii"
+     },
+     {
+      "id": 52842,
+      "organisationAddressInfo": {
+       "id": 45223,
+       "organisation": {
+        "id": 47356,
+        "type": "Hospital/Clinic/Other health care facility",
+        "typeCode": "8",
+        "name": "Mazowiecki Szpital Wojewódzki Im. Sw. Jana Pawła II W Siedlcach Sp. z o.o.",
+        "commercial": false,
+        "isBusinessKeyValidated": true,
+        "businessKey": "ORG-100043855",
+        "organisationLocationStatus": "Active"
+       },
+       "address": {
+        "addressId": 47036,
+        "oneLine": "Ul. Ksiecia Jozefa Poniatowskiego 26",
+        "addressLine1": "Ul. Ksiecia Jozefa Poniatowskiego 26",
+        "addressLine2": "",
+        "addressLine3": "",
+        "addressLine4": "",
+        "city": "Siedlce",
+        "postcode": "08-110",
+        "country": 2031,
+        "countryName": "Poland"
+       },
+       "phone": "+48256403485",
+       "email": "sekretariatsco@szpital.siedlce.pl",
+       "isBusinessKeyValidated": true,
+       "businessKey": "LOC-100072436"
+      },
+      "personInfo": {
+       "id": 71502,
+       "firstName": "Lubomir",
+       "lastName": "Bodnar",
+       "telephone": "+48256403485",
+       "email": "sekretariatsco@szpital.siedlce.pl"
+      },
+      "departmentName": "Siedleckie Centrum Onkologii"
+     }
+    ],
+    "applicationStatusCode": "Not authorised"
+   }
+  ],
+  "applicationInfo": [
+   {
+    "id": 1473,
+    "type": "INITIAL",
+    "status": "Not authorised",
+    "ctNumber": "2022-501417-31-00",
+    "trialStatus": "Not authorised",
+    "submissionDate": "2022-11-07",
+    "partI": {
+     "assessmentOutcome": "not_acceptable",
+     "assessmentOutcomeDate": "2023-02-27"
+    },
+    "partIIInfo": [
+     {
+      "id": 11909,
+      "mscId": 2976,
+      "mscInfo": {
+       "id": 2976,
+       "mscName": "Austria",
+       "countryOrganisationId": 2000,
+       "assessmentOutcome": "no_conclusion",
+       "assessmentOutcomeDate": "2023-02-27",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-06",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Austria",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-06"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 12014,
+      "mscId": 2977,
+      "mscInfo": {
+       "id": 2977,
+       "mscName": "Belgium",
+       "countryOrganisationId": 2002,
+       "assessmentOutcome": "acceptable",
+       "assessmentOutcomeDate": "2023-02-17",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-02",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Belgium",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-02"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 11121,
+      "mscId": 2978,
+      "mscInfo": {
+       "id": 2978,
+       "mscName": "France",
+       "countryOrganisationId": 2012,
+       "assessmentOutcome": "acceptable",
+       "assessmentOutcomeDate": "2023-02-09",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-06",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "France",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-06"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 11836,
+      "mscId": 2979,
+      "mscInfo": {
+       "id": 2979,
+       "mscName": "Germany",
+       "countryOrganisationId": 2013,
+       "assessmentOutcome": "acceptable_conditions",
+       "assessmentOutcomeDate": "2023-02-16",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-02",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Germany",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-02"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 11943,
+      "mscId": 2982,
+      "mscInfo": {
+       "id": 2982,
+       "mscName": "Ireland",
+       "countryOrganisationId": 2017,
+       "assessmentOutcome": "acceptable_conditions",
+       "assessmentOutcomeDate": "2023-02-27",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-03",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Ireland",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-03"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 5048,
+      "mscId": 2983,
+      "mscInfo": {
+       "id": 2983,
+       "mscName": "Italy",
+       "countryOrganisationId": 2018,
+       "assessmentOutcome": "acceptable",
+       "assessmentOutcomeDate": "2023-01-23",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-06",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Italy",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-06"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 8355,
+      "mscId": 2985,
+      "mscInfo": {
+       "id": 2985,
+       "mscName": "Spain",
+       "countryOrganisationId": 2027,
+       "assessmentOutcome": "acceptable",
+       "assessmentOutcomeDate": "2023-01-26",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-02",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Spain",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-02"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 11754,
+      "mscId": 2986,
+      "mscInfo": {
+       "id": 2986,
+       "mscName": "Sweden",
+       "countryOrganisationId": 2028,
+       "assessmentOutcome": "acceptable",
+       "assessmentOutcomeDate": "2023-02-08",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-06",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Sweden",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-06"
+      },
+      "applicationStatusCode": "Not authorised"
+     },
+     {
+      "id": 11772,
+      "mscId": 2987,
+      "mscInfo": {
+       "id": 2987,
+       "mscName": "Poland",
+       "countryOrganisationId": 2031,
+       "assessmentOutcome": "acceptable",
+       "assessmentOutcomeDate": "2023-02-24",
+       "decision": "not_authorized",
+       "decisionDate": "2023-03-06",
+       "reportingStatusCode": "Not authorised",
+       "countryName": "Poland",
+       "trialStatus": "Not authorised",
+       "firstDecisionDate": "2023-03-06"
+      },
+      "applicationStatusCode": "Not authorised"
+     }
+    ],
+    "decisionDate": "2023-03-02",
+    "ctMSCsByApplication": [
+     {
+      "id": 2976,
+      "mscName": "Austria",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2977,
+      "mscName": "Belgium",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2978,
+      "mscName": "France",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2979,
+      "mscName": "Germany",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2982,
+      "mscName": "Ireland",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2983,
+      "mscName": "Italy",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2985,
+      "mscName": "Spain",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2986,
+      "mscName": "Sweden",
+      "reportingStatusCode": "Not authorised"
+     },
+     {
+      "id": 2987,
+      "mscName": "Poland",
+      "reportingStatusCode": "Not authorised"
+     }
+    ],
+    "businessKey": "IN",
+    "allPartTwosOutOfScope": false,
+    "applicationTrialDecisionByMsc": {},
+    "decisions": [
+     {
+      "id": 1293,
+      "applicationId": 1473,
+      "mscId": 2987,
+      "mscName": "Poland",
+      "decisionDate": "2023-03-06T00:00:00",
+      "decision": "not_authorized",
+      "assessmentOutcome": "acceptable",
+      "eventType": "decision",
+      "part2Id": 11772,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1266,
+      "applicationId": 1473,
+      "mscId": 2983,
+      "mscName": "Italy",
+      "decisionDate": "2023-03-06T08:32:47.777",
+      "decision": "not_authorized",
+      "justification": "The sponsor did not provide an updated protocol including the requested changes. Thus, the trial is rejected.;;The sponsor did not provide an updated protocol including the requested changes. Thus, the trial is rejected.",
+      "assessmentOutcome": "acceptable",
+      "eventType": "decision",
+      "part2Id": 5048,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1232,
+      "applicationId": 1473,
+      "mscId": 2979,
+      "mscName": "Germany",
+      "decisionDate": "2023-03-02T12:37:16.823",
+      "decision": "not_authorized",
+      "justification": "The sponsor did not provide an updated protocol including the requested changes. Thus, the trial is rejected.",
+      "assessmentOutcome": "acceptable_conditions",
+      "eventType": "decision",
+      "part2Id": 11836,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": true
+     },
+     {
+      "id": 1268,
+      "applicationId": 1473,
+      "mscId": 2986,
+      "mscName": "Sweden",
+      "decisionDate": "2023-03-06T09:44:54.65",
+      "decision": "not_authorized",
+      "assessmentOutcome": "acceptable",
+      "eventType": "decision",
+      "part2Id": 11754,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1272,
+      "applicationId": 1473,
+      "mscId": 2976,
+      "mscName": "Austria",
+      "decisionDate": "2023-03-06T10:07:23.948",
+      "decision": "not_authorized",
+      "assessmentOutcome": "no_conclusion",
+      "eventType": "decision",
+      "part2Id": 11909,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1285,
+      "applicationId": 1473,
+      "mscId": 2978,
+      "mscName": "France",
+      "decisionDate": "2023-03-06T18:04:55.156",
+      "decision": "not_authorized",
+      "assessmentOutcome": "acceptable",
+      "eventType": "decision",
+      "part2Id": 11121,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1237,
+      "applicationId": 1473,
+      "mscId": 2985,
+      "mscName": "Spain",
+      "decisionDate": "2023-03-02T14:50:01.949",
+      "decision": "not_authorized",
+      "justification": "The sponsor did not provide an updated protocol including the requested changes. Thus, the trial is rejected.",
+      "assessmentOutcome": "acceptable",
+      "eventType": "decision",
+      "part2Id": 8355,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1260,
+      "applicationId": 1473,
+      "mscId": 2982,
+      "mscName": "Ireland",
+      "decisionDate": "2023-03-03T15:52:57.745",
+      "decision": "not_authorized",
+      "justification": "The sponsor did not provide an updated protocol including the requested changes. Thus, the trial is rejected.",
+      "assessmentOutcome": "acceptable_conditions",
+      "eventType": "decision",
+      "part2Id": 11943,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     },
+     {
+      "id": 1235,
+      "applicationId": 1473,
+      "mscId": 2977,
+      "mscName": "Belgium",
+      "decisionDate": "2023-03-02T14:21:30.385",
+      "decision": "not_authorized",
+      "justification": "The sponsor did not provide an updated protocol including the requested changes. Thus, the trial is rejected.",
+      "assessmentOutcome": "acceptable",
+      "eventType": "decision",
+      "part2Id": 12014,
+      "part1Id": 6402,
+      "applicationType": "INITIAL",
+      "isRMS": false
+     }
+    ]
+   }
+  ],
+  "trialGlobalEnd": [],
+  "memberStatesConcerned": [
+   {
+    "mscName": "Poland",
+    "mscId": 2987,
+    "firstDecisionDate": "2023-03-06T00:00:00",
+    "lastDecisionDate": "2023-03-06T00:00:00",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Italy",
+    "mscId": 2983,
+    "firstDecisionDate": "2023-03-06T08:32:47.777",
+    "lastDecisionDate": "2023-03-06T08:32:47.777",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Germany",
+    "mscId": 2979,
+    "firstDecisionDate": "2023-03-02T12:37:16.823",
+    "lastDecisionDate": "2023-03-02T12:37:16.823",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Sweden",
+    "mscId": 2986,
+    "firstDecisionDate": "2023-03-06T09:44:54.65",
+    "lastDecisionDate": "2023-03-06T09:44:54.65",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Austria",
+    "mscId": 2976,
+    "firstDecisionDate": "2023-03-06T10:07:23.948",
+    "lastDecisionDate": "2023-03-06T10:07:23.948",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "France",
+    "mscId": 2978,
+    "firstDecisionDate": "2023-03-06T18:04:55.156",
+    "lastDecisionDate": "2023-03-06T18:04:55.156",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Spain",
+    "mscId": 2985,
+    "firstDecisionDate": "2023-03-02T14:50:01.949",
+    "lastDecisionDate": "2023-03-02T14:50:01.949",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Ireland",
+    "mscId": 2982,
+    "firstDecisionDate": "2023-03-03T15:52:57.745",
+    "lastDecisionDate": "2023-03-03T15:52:57.745",
+    "mscPublicStatusCode": 11
+   },
+   {
+    "mscName": "Belgium",
+    "mscId": 2977,
+    "firstDecisionDate": "2023-03-02T14:21:30.385",
+    "lastDecisionDate": "2023-03-02T14:21:30.385",
+    "mscPublicStatusCode": 11
+   }
+  ],
+  "eudraCt": {
+   "isTransitioned": false
+  }
+ },
+ "events": {
+  "temporaryHaltList": [],
+  "trialEvents": [
+   {
+    "mscId": 2976,
+    "mscName": "Austria",
+    "events": []
+   },
+   {
+    "mscId": 2977,
+    "mscName": "Belgium",
+    "events": []
+   },
+   {
+    "mscId": 2978,
+    "mscName": "France",
+    "events": []
+   },
+   {
+    "mscId": 2979,
+    "mscName": "Germany",
+    "events": []
+   },
+   {
+    "mscId": 2982,
+    "mscName": "Ireland",
+    "events": []
+   },
+   {
+    "mscId": 2983,
+    "mscName": "Italy",
+    "events": []
+   },
+   {
+    "mscId": 2985,
+    "mscName": "Spain",
+    "events": []
+   },
+   {
+    "mscId": 2986,
+    "mscName": "Sweden",
+    "events": []
+   },
+   {
+    "mscId": 2987,
+    "mscName": "Poland",
+    "events": []
+   }
+  ],
+  "unexpectedEvents": [],
+  "seriousBreaches": [],
+  "urgentSafetyMeasures": []
+ },
+ "results": {},
+ "documents": [],
+ "trialRegion": "Both",
+ "trialRegionCode": 3,
+ "correctiveMeasures": []
+}

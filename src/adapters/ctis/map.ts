@@ -164,3 +164,109 @@ export function mapItem(item: CtisItem, fetchedAt: string, locationCap = Number.
     fetchedAt,
   };
 }
+
+/**
+ * 상세 조회(`retrieve/{id}`)의 응답. **검색 응답과 구조가 완전히 다르다** — 필드가
+ * `authorizedApplication.authorizedPartI…` 밑에 깊이 들어 있어 재활용할 수 없다.
+ *
+ * 여기서만 오는 것: 정식/공개 제목, 구조화된 질환, 의뢰기관 조직명, 참여국(ISO 코드까지),
+ * 대상자 수, 그리고 **문자열 상태**. 마지막이 특히 값지다 — 검색은 숫자 코드만 주므로,
+ * 우리가 접지 못하는 코드(2·3·4·5)도 상세에서는 원문으로 보여 줄 수 있다.
+ */
+export type CtisDetail = Record<string, unknown>;
+
+const at = (o: unknown, path: readonly (string | number)[]): unknown => {
+  let cur: unknown = o;
+  for (const k of path) {
+    if (cur === null || typeof cur !== 'object') return undefined;
+    cur = (cur as Record<string | number, unknown>)[k];
+  }
+  return cur;
+};
+
+const list = (o: unknown, path: readonly (string | number)[]): unknown[] => {
+  const v = at(o, path);
+  return Array.isArray(v) ? v : [];
+};
+
+const P1 = ['authorizedApplication', 'authorizedPartI'] as const;
+
+/**
+ * 상세 응답에는 **문자열 상태** 가 있다(`Not authorised`). 숫자 코드만 오는 검색과 달리
+ * 원문을 실을 수 있으므로, 접지 못하는 값도 사용자가 읽을 수 있다.
+ *
+ * 접는 것은 확정된 둘뿐이다 — 실측 2026-08-30: 코드 2·3·4·5 는 `ctStatus`·`trialStatus`·
+ * `applicationStatusCode` 어느 자리에서도 전부 `Authorised` 로 나와 **갈리지 않는다.**
+ * 그 넷이 각각 무엇인지 짐작할 수는 있어도 공개 API 로는 확인할 수 없다.
+ */
+const STATUS_BY_TEXT: Readonly<Record<string, TrialStatus>> = {
+  Ended: 'completed',
+  'Not authorised': 'other',
+  Revoked: 'terminated',
+  Expired: 'other',
+};
+
+export function mapDetail(d: CtisDetail, fetchedAt: string): TrialRecord {
+  const ids = at(d, [...P1, 'trialDetails', 'clinicalTrialIdentifiers']);
+  const registryId = nonEmpty(d.ctNumber) ?? '';
+  const full = nonEmpty(at(ids, ['fullTitle']));
+  const pub = nonEmpty(at(ids, ['publicTitle']));
+  const short = nonEmpty(at(ids, ['shortTitle']));
+  const title = pub ?? full ?? short ?? '';
+
+  const statusRaw = nonEmpty(d.ctStatus);
+  const status = statusRaw === undefined ? 'unknown' : (STATUS_BY_TEXT[statusRaw] ?? 'unknown');
+
+  const conditions = list(d, [...P1, 'medicalConditions'])
+    .map((c) => nonEmpty(at(c, ['medicalCondition'])))
+    .filter((c): c is string => c !== undefined);
+
+  const sponsorName = list(d, [...P1, 'sponsors'])
+    .flatMap((sp) => list(sp, ['publicContacts']))
+    .map((c) => nonEmpty(at(c, ['organisation', 'name'])))
+    .find((n) => n !== undefined);
+
+  const products = list(d, [...P1, 'products'])
+    .map((p) => nonEmpty(at(p, ['productDictionaryInfo', 'prodName'])))
+    .filter((p): p is string => p !== undefined);
+
+  /**
+   * 참여국은 두 자리에 있다. `memberStatesConcerned` 는 **결정을 내린 회원국** 이고
+   * `rowCountriesInfo` 는 **시험이 도는 나라 전체**(EU 밖 포함, 실측 17곳)다. 둘은 다른
+   * 사실이라 합치지 않고, 회원국 쪽을 싣는다 — 이 등록부가 말하는 것이 그쪽이다.
+   */
+  const countries = list(d, ['authorizedApplication', 'memberStatesConcerned'])
+    .map((m) => nonEmpty(at(m, ['mscName'])))
+    .filter((c): c is string => c !== undefined);
+
+  const count = at(d, [...P1, 'rowSubjectCount']);
+  const dates: Record<string, string> = {};
+  const decided = date(d.decisionDate);
+  const published = date(d.publishDate);
+  if (decided !== undefined) dates.start = decided;
+  if (published !== undefined) dates.firstPosted = published;
+
+  return {
+    id: formatTrialId('ctis', registryId),
+    registry: 'ctis',
+    registryId,
+    url: `https://euclinicaltrials.eu/ctis-public/view/${encodeURIComponent(registryId)}`,
+    title,
+    ...(full !== undefined && full !== title ? { officialTitle: full } : {}),
+    status,
+    ...(statusRaw !== undefined ? { statusRaw } : {}),
+    studyType: STUDY_TYPE,
+    conditions,
+    ...(products.length > 0 ? { interventions: products.map((name) => ({ name })) } : {}),
+    ...(sponsorName !== undefined ? { sponsor: { lead: sponsorName } } : {}),
+    ...(typeof count === 'number' && count > 0
+      ? { enrollment: { count, basis: 'estimated' as const } }
+      : {}),
+    ...(countries.length > 0
+      ? { locations: countries.map((c) => ({ country: c })), locationsTotal: countries.length }
+      : {}),
+    ...(Object.keys(dates).length > 0 ? { dates } : {}),
+    attribution: CTIS_ATTRIBUTION,
+    fetchedAt,
+  };
+}

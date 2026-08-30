@@ -9,6 +9,11 @@ import { runAdapterContract } from './adapter-contract.js';
  * 인증이 없는 API 라 비밀값이 섞일 자리가 없다.
  */
 const search = JSON.parse(readFileSync(join(__dirname, '../fixtures/ctis/search.json'), 'utf8')) as unknown;
+/**
+ * `get` 은 검색이 아니라 `retrieve/{id}` 를 부르고, 그 응답은 **구조가 완전히 다르다.**
+ * 한 픽스처로 둘 다 답하면 `get` 검사가 공허해진다 — URL 로 갈라 준다.
+ */
+const retrieve = JSON.parse(readFileSync(join(__dirname, '../fixtures/ctis/retrieve.json'), 'utf8')) as unknown;
 
 runAdapterContract('ctis', {
   make: (fetchImpl) =>
@@ -25,13 +30,13 @@ runAdapterContract('ctis', {
       },
       { fetchImpl, sleep: async () => {} },
     ),
-  respond: () => search,
+  respond: (url) => (url.includes('/retrieve/') ? retrieve : search),
   /**
    * 이 어댑터는 조건 없이는 검색하지 않는다 — 조건 없이 부르면 전체 12,317건의 첫 쪽이
    * 오고, 그것을 검색 결과로 내보내면 조용히 틀린 답이 된다. `condition` 은 실제로 거르는
    * 축이므로(medicalCondition, 실측 201건) 하네스의 기본 질의를 그대로 쓸 수 있다.
    */
   probeQuery: { condition: 'x' },
-  // 참여국이 여섯인 시험을 고른다 — 하나짜리를 고르면 장소 캡 검사가 공허하게 통과한다.
-  sampleId: 'CTIS:2025-523260-20-00',
+  // 회원국이 아홉인 시험이다(retrieve 픽스처) — 하나짜리를 고르면 장소 캡 검사가 공허하게 통과한다.
+  sampleId: 'CTIS:2022-501417-31-00',
 });

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CTIS_ATTRIBUTION, mapItem, toPhase } from '../../../src/adapters/ctis/map.js';
+import { CTIS_ATTRIBUTION, mapDetail, mapItem, toPhase } from '../../../src/adapters/ctis/map.js';
 import { TrialRecordSchema } from '../../../src/core/record.js';
 
 const AT = '2026-08-30T00:00:00.000Z';
@@ -80,5 +80,56 @@ describe('CTIS 레코드 매핑', () => {
       // 숫자는 원문이 아니다 — 사람이 읽을 수 없는 값을 statusRaw 에 넣지 않는다.
       expect(r.statusRaw).toBeUndefined();
     }
+  });
+});
+
+/**
+ * 상세 조회(`retrieve/{id}`)는 검색 응답보다 훨씬 두껍고 **구조가 완전히 다르다** —
+ * 필드가 `authorizedApplication.authorizedPartI...` 밑에 깊이 들어 있다. 그래서 검색용
+ * 매핑을 재활용할 수 없고 따로 읽는다.
+ *
+ * 무엇이 더 오나(실측 2026-08-30, KCT 아닌 `2022-501417-31-00`):
+ * 정식 제목·공개 제목, 구조화된 질환, 의뢰기관 조직명, 참여국(ISO 코드까지),
+ * 대상자 수, 그리고 **문자열 상태**(`Not authorised`).
+ */
+describe('CTIS 상세 매핑', () => {
+  const detail = JSON.parse(
+    readFileSync(join(__dirname, '../../fixtures/ctis/retrieve.json'), 'utf8'),
+  ) as Record<string, unknown>;
+
+  it('계약을 지키는 레코드를 만든다', () => {
+    expect(() => TrialRecordSchema.parse(mapDetail(detail, AT))).not.toThrow();
+  });
+
+  it('깊이 든 제목을 찾아낸다 — 검색 응답과 자리가 다르다', () => {
+    const r = mapDetail(detail, AT);
+    expect(r.title).toContain('MK-7648A');
+    expect(r.officialTitle).toBeDefined();
+  });
+
+  /**
+   * **상세에는 문자열 상태가 있다.** 숫자 코드만 오는 검색과 달리, 여기서는 원문을 실을 수
+   * 있다 — 코드 2·3·4·5 처럼 우리가 접지 못하는 값도 사용자는 원문으로 읽을 수 있다.
+   */
+  it('문자열 상태를 원문으로 싣는다', () => {
+    const r = mapDetail(detail, AT);
+    expect(r.statusRaw).toBe('Not authorised');
+    expect(r.status).toBe('other');
+  });
+
+  it('구조화된 질환과 의뢰기관을 읽는다', () => {
+    const r = mapDetail(detail, AT);
+    expect(r.conditions).toContain('High-risk Resected Melanoma');
+    expect(r.sponsor?.lead).toContain('Merck');
+  });
+
+  it('참여국과 대상자 수를 읽는다', () => {
+    const r = mapDetail(detail, AT);
+    expect((r.locations ?? []).length).toBeGreaterThan(0);
+    expect(r.enrollment?.count).toBe(1296);
+  });
+
+  it('출처 표시는 상세에서도 붙는다 — 약관이 each copy 를 요구한다', () => {
+    expect(mapDetail(detail, AT).attribution).toBe(CTIS_ATTRIBUTION);
   });
 });

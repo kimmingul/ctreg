@@ -4,9 +4,9 @@ import type { TrialRecord, TrialResults } from '../../core/record.js';
 import { parseTrialId } from '../../core/registry.js';
 import type { Config } from '../../runtime/config.js';
 import { unsupportedError } from '../../runtime/errors.js';
-import { postJson, type HttpDeps } from '../../runtime/http.js';
+import { getJson, postJson, type HttpDeps } from '../../runtime/http.js';
 import { CTIS_COUNTRY_NAMES, toMscCode } from './countries.js';
-import { mapItem, type CtisItem } from './map.js';
+import { mapDetail, mapItem, type CtisItem } from './map.js';
 
 const free = (scope: string): SearchAxis => ({ supported: true, values: null, exhaustive: null, scope });
 const off = (scope: string): SearchAxis => ({ supported: false, values: null, exhaustive: null, scope });
@@ -190,15 +190,42 @@ export function createCtisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
       const data: TrialRecord[] = [];
       for (const id of ids) {
         const { registryId } = parseTrialId(id);
-        const { value, fetchedAt, warnings: w } = await call({ containAll: registryId }, 1, CTIS_MAX_PAGE_SIZE, o);
-        warnings.push(...w);
-        const hit = toRecords(value, fetchedAt, o).find((r) => r.registryId === registryId);
-        if (hit === undefined) {
+        const r = await getJson<Record<string, unknown>>(
+          cfg,
+          {
+            registry: 'ctis',
+            baseUrl: cfg.ctisBaseUrl,
+            path: `/retrieve/${encodeURIComponent(registryId)}`,
+            params: {},
+            cacheMode: o.cacheMode,
+            ratePerSec: CTIS_CAPABILITY.limits.ratePerSec,
+          },
+          deps,
+        );
+        warnings.push(...r.warnings);
+
+        /**
+         * 없는 번호는 오류가 아니라 **빈 응답** 이다(실측: HTTP 200, 본문 `{}`).
+         * 오류로 다루면 "그런 시험이 없다" 와 "레지스트리가 고장났다" 가 같은 출력이 된다.
+         */
+        const got = typeof r.value.ctNumber === 'string' ? r.value.ctNumber : undefined;
+        if (got === undefined) {
           warnings.push({ code: 'not_found', message: `${CTIS_CAPABILITY.name} 에서 찾지 못했습니다.`, id });
           continue;
         }
-        warnings.push(...truncationWarnings([hit]));
-        data.push(hit);
+        const rec = mapDetail(r.value, r.fetchedAt);
+        // 업스트림이 다른 것을 줬을 때 그것을 그 시험이라고 내놓지 않는다.
+        if (rec.registryId !== registryId) {
+          warnings.push({ code: 'not_found', message: `${CTIS_CAPABILITY.name} 에서 찾지 못했습니다.`, id });
+          continue;
+        }
+        const capped = o.caps.locations;
+        const trimmed =
+          (rec.locations?.length ?? 0) > capped
+            ? { ...rec, locations: rec.locations!.slice(0, capped) }
+            : rec;
+        warnings.push(...truncationWarnings([trimmed]));
+        data.push(o.raw ? ({ ...trimmed, source: r.value } as TrialRecord) : trimmed);
       }
       return { data, warnings };
     },

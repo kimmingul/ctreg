@@ -87,3 +87,64 @@ describe('CTIS 어댑터', () => {
     expect(Object.keys(crit).sort()).toEqual(['containAll', 'medicalCondition', 'sponsor', 'title']);
   });
 });
+
+/**
+ * **`get` 은 상세 조회를 쓴다.** 검색으로도 한 건을 집을 수 있지만(자유 텍스트에 번호),
+ * 상세가 훨씬 두껍다 — 문자열 상태, 구조화된 질환, 의뢰기관 조직명, 참여국.
+ * `ctreg` 에서 `get` 이 `search` 보다 충실해야 한다는 규율이 여기에도 적용된다.
+ */
+describe('CTIS get 은 상세를 쓴다', () => {
+  const detail = {
+    ctNumber: 'CT1',
+    ctStatus: 'Ended',
+    authorizedApplication: {
+      authorizedPartI: {
+        trialDetails: { clinicalTrialIdentifiers: { publicTitle: '공개 제목', fullTitle: '정식 제목' } },
+        medicalConditions: [{ medicalCondition: '어떤 질환' }],
+        rowSubjectCount: 42,
+      },
+      memberStatesConcerned: [{ mscName: 'Spain' }],
+    },
+  };
+
+  function routed(body: unknown, urls: string[] = []) {
+    const fetchImpl = (async (url: string) => {
+      urls.push(String(url));
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    return { fetchImpl, urls };
+  }
+
+  it('retrieve 를 부르고 상세 레코드를 낸다', async () => {
+    const { fetchImpl, urls } = routed(detail);
+    const a = createCtisAdapter(cfg(), { fetchImpl, sleep: async () => {} });
+    const r = await a.get(['CTIS:CT1'], fetchOpts);
+
+    expect(r.data.map((x) => x.registryId)).toEqual(['CT1']);
+    // 검색만으로는 알 수 없던 것들 — get 이 상세를 쓰는 이유다.
+    expect(r.data[0]?.statusRaw).toBe('Ended');
+    expect(r.data[0]?.conditions).toEqual(['어떤 질환']);
+    expect(r.data[0]?.enrollment?.count).toBe(42);
+    expect(urls.some((u) => u.includes('/retrieve/CT1'))).toBe(true);
+  });
+
+  /** 없는 번호는 오류가 아니라 빈 응답이 온다(실측: HTTP 200, 본문 `{}`). */
+  it('빈 응답은 not_found 다 — 오류로 다루지 않는다', async () => {
+    const { fetchImpl } = routed({});
+    const a = createCtisAdapter(cfg(), { fetchImpl, sleep: async () => {} });
+    const r = await a.get(['CTIS:CT404'], fetchOpts);
+
+    expect(r.data).toEqual([]);
+    expect(r.warnings.map((w) => w.code)).toContain('not_found');
+  });
+
+  /** 업스트림이 다른 것을 줬을 때 그것을 그 시험이라고 내놓지 않는다. */
+  it('돌아온 번호가 다르면 내놓지 않는다', async () => {
+    const { fetchImpl } = routed({ ...detail, ctNumber: 'OTHER' });
+    const a = createCtisAdapter(cfg(), { fetchImpl, sleep: async () => {} });
+    const r = await a.get(['CTIS:CT1'], fetchOpts);
+
+    expect(r.data).toEqual([]);
+    expect(r.warnings.map((w) => w.code)).toContain('not_found');
+  });
+});
