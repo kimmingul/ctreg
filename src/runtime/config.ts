@@ -22,6 +22,7 @@ export type Config = {
   isrctnBaseUrl: string;
   ictrpBaseUrl: string;
   crisBaseUrl: string;
+  ctisBaseUrl: string;
   /**
    * CRIS(공공데이터포털) 인증키. **없을 수 있다** — 나머지 세 레지스트리는 키가
    * 필요 없으므로, 키가 없다고 CLI 전체가 못 뜨면 안 된다. 없을 때 무슨 일이
@@ -112,6 +113,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ictrpAcknowledged: (env.CTREG_ICTRP_ACKNOWLEDGED ?? '') !== '',
     // 공공데이터포털의 `질병관리청_임상연구 DB`. 경로에 오퍼레이션(`/list`)이 붙는다.
     crisBaseUrl: env.CTREG_CRIS_BASE_URL ?? 'https://apis.data.go.kr/1352159/crisinfodataview',
+    // EMA 의 CTIS 공개 포털. 인증이 없고, 재사용은 출처 표시만 요구한다(법적 고지).
+    ctisBaseUrl: env.CTREG_CTIS_BASE_URL ?? 'https://euclinicaltrials.eu/ctis-public-api',
     ...(env.CTREG_CRIS_SERVICE_KEY ? { crisServiceKey: env.CTREG_CRIS_SERVICE_KEY } : {}),
   };
 }

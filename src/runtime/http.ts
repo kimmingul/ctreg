@@ -314,3 +314,52 @@ export async function postForm<T>(
     deps,
   );
 }
+
+export type PostJsonOpts<T> = {
+  registry: string;
+  baseUrl: string;
+  path: string;
+  /** JSON 본문. **캐시 키도 이것으로 만든다** — 폼과 달리 ViewState 같은 휘발성이 없다. */
+  body: unknown;
+  cacheMode: CacheMode;
+  ratePerSec: number;
+  signal?: AbortSignal;
+};
+
+/**
+ * JSON 본문을 POST 하고 JSON 을 받는다.
+ *
+ * **왜 `postForm` 을 못 쓰나** — 그쪽은 폼 인코딩이 전제이고, 캐시 키를 본문이 아니라
+ * 별도의 `cacheKeyParams` 로 받는다(ICTRP 의 ViewState 가 요청마다 달라서 그렇다).
+ * CTIS 는 질의가 곧 본문이고 휘발성이 없으므로 본문을 그대로 키로 쓰는 것이 맞다 —
+ * 별도 키를 손으로 유지하면 질의가 늘 때 그 두 벌이 갈린다.
+ */
+export async function postJson<T>(
+  cfg: Config,
+  o: PostJsonOpts<T>,
+  deps: HttpDeps = {},
+): Promise<{ value: T; fetchedAt: string; cached: boolean; warnings: Warning[] }> {
+  const doFetch = deps.fetchImpl ?? fetch;
+  const url = o.baseUrl + o.path;
+  const payload = JSON.stringify(o.body);
+  return withReliability(
+    cfg,
+    {
+      registry: o.registry,
+      cacheKey: cacheKey(o.registry, url, { body: payload }),
+      url,
+      cacheMode: o.cacheMode,
+      ratePerSec: o.ratePerSec,
+      ...(o.signal ? { signal: o.signal } : {}),
+    },
+    (signal) =>
+      doFetch(url, {
+        signal,
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: payload,
+      }),
+    (text) => JSON.parse(text) as T,
+    deps,
+  );
+}

@@ -1,0 +1,114 @@
+{
+ "showWarning": false,
+ "pagination": {
+  "totalRecords": 201,
+  "currentPage": 1,
+  "totalPages": 67,
+  "nextPage": true,
+  "prevPage": false
+ },
+ "data": [
+  {
+   "ctNumber": "2024-512310-18-00",
+   "ctStatus": 8,
+   "ctTitle": "Randomised, crossover bioequivalence clinical trial of linagliptin/metformin 2.5 mg/1000 mg film-coated tablets, after a single oral dose administration to healthy volunteers under fed conditions.",
+   "shortTitle": "UECHUP-LIN-MET/24-1",
+   "startDateEU": "08/07/2024",
+   "endDateEU": "16/09/2024",
+   "conditions": "diabetes",
+   "trialCountries": [
+    "Spain:8"
+   ],
+   "decisionDateOverall": "05/06/2024",
+   "decisionDate": "ES: 05/06/2024",
+   "therapeuticAreas": [
+    "Diseases [C] - Nutritional and Metabolic Diseases [C18]"
+   ],
+   "sponsor": "Laboratorios Alter S.A.",
+   "sponsorType": "Pharmaceutical company",
+   "trialPhase": "Human Pharmacology (Phase I)- Bioequivalence Study",
+   "endPoint": "",
+   "product": "",
+   "ageRangeSecondary": [
+    ""
+   ],
+   "ageGroup": "18-64 years",
+   "gender": "Female, Male",
+   "trialRegion": 1,
+   "totalNumberEnrolled": "36",
+   "primaryEndPoint": "",
+   "resultsFirstReceived": "No",
+   "lastUpdated": "05/06/2024",
+   "lastPublicationUpdate": "31/10/2025"
+  },
+  {
+   "ctNumber": "2026-525909-13-00",
+   "ctStatus": 2,
+   "ctTitle": "Do GLP-1 based therapies improve the immunological response to vaccination in diabetes?",
+   "shortTitle": "R0132901",
+   "conditions": "Diabetes",
+   "trialCountries": [
+    "Netherlands:2"
+   ],
+   "decisionDateOverall": "22/07/2026",
+   "decisionDate": "NL: 22/07/2026",
+   "therapeuticAreas": [
+    "Diseases [C] - Immune System Diseases [C20]",
+    "Diseases [C] - Hormonal diseases [C19]"
+   ],
+   "sponsor": "Radboud universitair medisch centrum Stichting",
+   "sponsorType": "Hospital/Clinic/Other health care facility",
+   "trialPhase": "Therapeutic use (Phase IV)",
+   "endPoint": "The fold-increase in total IgG antibody levels one month after pneumococcal vaccination, The fold-increase in serotype specific antibody levels after pneumococcal vaccination, Effects of GLP-1 on (1) plasma inflammation markers, (2) immune cell numbers and (3) leukocyte ex vivo function, Questionnaire regarding vaccine-related solicited adverse events, Hospitalisation, ICU admission or death due to infectious disease",
+   "product": "Pneumovax 23, oplossing voor injectie in een voorgevulde spuit Pneumokokkenpolysacharidevaccin, Victoza 6 mg/ml solution for injection in pre-filled pen",
+   "ageRangeSecondary": [
+    ""
+   ],
+   "ageGroup": "18-64 years, 65+ years",
+   "gender": "Female, Male",
+   "trialRegion": 1,
+   "totalNumberEnrolled": "100",
+   "primaryEndPoint": "The fold-increase in total pneumococcal IgG antibody levels four months after vaccination.",
+   "resultsFirstReceived": "No",
+   "lastUpdated": "22/07/2026",
+   "lastPublicationUpdate": "23/07/2026"
+  },
+  {
+   "ctNumber": "2025-523260-20-00",
+   "ctStatus": 3,
+   "ctTitle": "Protocol Title: Efficacy and safety of once-weekly subcutaneous NNC0662-0419 in participants with type 2 diabetes – a dose-finding study",
+   "shortTitle": "NN9662-8160",
+   "startDateEU": "28/04/2026",
+   "conditions": "type 2 diabetes",
+   "trialCountries": [
+    "Spain:4",
+    "Hungary:11",
+    "Portugal:4",
+    "Poland:4",
+    "Slovakia:4",
+    "Croatia:4"
+   ],
+   "decisionDateOverall": "21/04/2026",
+   "decisionDate": "HU: 21/04/2026, HR: 24/04/2026, PT: 22/04/2026, ES: 27/04/2026, PL: 23/04/2026, SK: 21/04/2026",
+   "therapeuticAreas": [
+    "Diseases [C] - Hormonal diseases [C19]"
+   ],
+   "sponsor": "Novo Nordisk A/S",
+   "sponsorType": "Pharmaceutical company",
+   "trialPhase": "Therapeutic exploratory (Phase II)",
+   "endPoint": "Relative change in body weight, Change in body weight",
+   "product": "Ozempic 0.5 mg solution for injection in pre-filled pen, Placebo A, Semaglutide B Placebo",
+   "ageRangeSecondary": [
+    ""
+   ],
+   "ageGroup": "18-64 years",
+   "gender": "Female, Male",
+   "trialRegion": 3,
+   "totalNumberEnrolled": "165",
+   "primaryEndPoint": "Change in HbA1c",
+   "resultsFirstReceived": "No",
+   "lastUpdated": "21/08/2026",
+   "lastPublicationUpdate": "22/08/2026"
+  }
+ ]
+}

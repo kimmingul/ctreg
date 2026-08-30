@@ -1,6 +1,6 @@
 import { unsupportedError, usageError } from '../runtime/errors.js';
 
-export const REGISTRY_KEYS = ['ctgov', 'isrctn', 'ictrp', 'cris'] as const;
+export const REGISTRY_KEYS = ['ctgov', 'isrctn', 'ictrp', 'cris', 'ctis'] as const;
 export type RegistryKey = (typeof REGISTRY_KEYS)[number];
 
 /**
@@ -75,6 +75,12 @@ const ID_PATTERNS: Record<RegistryKey, IdSpec> = {
    * ISRCTN 은 숫자 8 또는 `ISRCTN`+8 이라 `KCT` 로 시작하는 것과 부딪히지 않는다.
    */
   cris: { pattern: /^kct\d{7}$/i, normalize: (s) => s.toUpperCase(), inferable: true },
+  /**
+   * CTIS 번호는 `2022-501417-31-00` 꼴이다(실측: 연도 4 - 일련 6 - 검사 2 - 판 2).
+   * 판 접미사가 없는 형태도 문서에 보이므로 선택으로 둔다. 다른 넷과 겹치지 않아
+   * 추론에 참여한다 — ctgov 는 `NCT`+8, ISRCTN 은 숫자 8, CRIS 는 `KCT`+7 이다.
+   */
+  ctis: { pattern: /^\d{4}-\d{6}-\d{2}(-\d{2})?$/, normalize: (s) => s.trim(), inferable: true },
 };
 
 export function parseTrialId(input: string): {

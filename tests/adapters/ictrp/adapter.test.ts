@@ -17,6 +17,7 @@ const cfg = () => ({
   isrctnBaseUrl: 'https://isrctn.example.test',
   ictrpBaseUrl: 'https://ictrp.example.test',
         crisBaseUrl: 'https://cris.example.test',
+        ctisBaseUrl: 'https://ctis.example.test',
         ictrpAcknowledged: true,
 });
 

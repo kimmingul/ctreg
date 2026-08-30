@@ -4,8 +4,8 @@ import { CtregError } from '../../src/runtime/errors.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 
 describe('ID 정규화', () => {
-  it('등록된 레지스트리는 ctgov, isrctn, ictrp, cris 다', () => {
-    expect(REGISTRY_KEYS).toEqual(['ctgov', 'isrctn', 'ictrp', 'cris']);
+  it('등록된 레지스트리는 ctgov, isrctn, ictrp, cris, ctis 다', () => {
+    expect(REGISTRY_KEYS).toEqual(['ctgov', 'isrctn', 'ictrp', 'cris', 'ctis']);
     for (const k of REGISTRY_KEYS) expect(isRegistryKey(k)).toBe(true);
     expect(isRegistryKey('nosuchreg')).toBe(false);
   });
@@ -15,6 +15,18 @@ describe('ID 정규화', () => {
    * 다른 셋과 겹치지 않으므로 접두사 없이도 추론된다 — 겹치면 기존 호출자의 동작이
    * 조용히 바뀌므로 그 사실을 여기서 못 박는다.
    */
+  /**
+   * CTIS 번호는 `2022-501417-31-00` 꼴이다(실측). 판 접미사가 없는 형태도 받는다.
+   * 다른 넷과 겹치지 않아 접두사 없이 추론된다 — 겹치면 기존 호출자의 동작이 조용히 바뀐다.
+   */
+  it('CTIS 번호는 접두사 없이도 ctis 로 간다', () => {
+    expect(parseTrialId('2022-501417-31-00')).toMatchObject({ registry: 'ctis', registryId: '2022-501417-31-00' });
+    expect(parseTrialId('2019-000123-45').registry).toBe('ctis');
+    expect(parseTrialId('CTIS:2022-501417-31-00').id).toBe('CTIS:2022-501417-31-00');
+    // 자릿수가 다르면 CTIS 형식이 아니다 — 조용히 받아 0건을 내면 안 된다.
+    expect(() => parseTrialId('2022-50141-31-00')).toThrow();
+  });
+
   it('KCT 번호는 접두사 없이도 cris 로 간다', () => {
     expect(parseTrialId('KCT0000145')).toEqual({ registry: 'cris', registryId: 'KCT0000145', id: 'CRIS:KCT0000145' });
     expect(parseTrialId('kct0000145').registryId).toBe('KCT0000145');

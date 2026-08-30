@@ -95,6 +95,17 @@ export const TrialRecordSchema = z.strictObject({
     .optional(),
 
   // 출처
+  /**
+   * **이 레코드를 낸 곳을 밝히라고 약관이 요구할 때** 채운다.
+   *
+   * EMA 는 CTIS 자료의 재생산·배포를 상업·비상업 모두 허용하되 조건을 하나 단다 —
+   * *"EMA is always acknowledged as the source of the material. Such acknowledgement
+   * must be included in **each copy** of the material."* 봉투 한 곳에만 적으면 레코드를
+   * 하나씩 꺼내 쓰는 소비자에게는 그 표시가 따라가지 않는다. 그래서 레코드마다 싣는다.
+   *
+   * `sourceRefreshedAt` 가 ICTRP 약관 때문에 있는 것과 같은 부류의 자리다.
+   */
+  attribution: z.string().min(1).optional(),
   fetchedAt: z.string().min(1),
   /**
    * 이 레코드를 **이 레지스트리가 마지막으로 수확한 시각.** 집계 레지스트리에만
