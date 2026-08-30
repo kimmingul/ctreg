@@ -204,17 +204,18 @@ export function createCtisAdapter(cfg: Config, deps: HttpDeps = {}): RegistryAda
         );
         warnings.push(...r.warnings);
 
-        /**
-         * 없는 번호는 오류가 아니라 **빈 응답** 이다(실측: HTTP 200, 본문 `{}`).
-         * 오류로 다루면 "그런 시험이 없다" 와 "레지스트리가 고장났다" 가 같은 출력이 된다.
-         */
-        const got = typeof r.value.ctNumber === 'string' ? r.value.ctNumber : undefined;
-        if (got === undefined) {
-          warnings.push({ code: 'not_found', message: `${CTIS_CAPABILITY.name} 에서 찾지 못했습니다.`, id });
-          continue;
-        }
         const rec = mapDetail(r.value, r.fetchedAt);
-        // 업스트림이 다른 것을 줬을 때 그것을 그 시험이라고 내놓지 않는다.
+        /**
+         * **한 검사가 둘을 덮는다.** 없는 번호는 오류가 아니라 빈 응답이고(실측: HTTP 200,
+         * 본문 `{}`), 그러면 `registryId` 가 빈 문자열이라 여기서 걸린다. 업스트림이 다른
+         * 시험을 준 경우도 같은 자리에서 걸린다.
+         *
+         * 빈 응답을 따로 검사하는 분기를 두었다가 지웠다 — 사보타주로 확인하니 그 분기를
+         * 없애도 결과가 같았다. 검사로 갈릴 수 없는 분기는 있는 척하지 않는다.
+         *
+         * 어느 쪽이든 **오류가 아니라 not_found** 다: "그런 시험이 없다" 와 "레지스트리가
+         * 고장났다" 가 같은 출력이 되면 안 된다.
+         */
         if (rec.registryId !== registryId) {
           warnings.push({ code: 'not_found', message: `${CTIS_CAPABILITY.name} 에서 찾지 못했습니다.`, id });
           continue;

@@ -129,6 +129,20 @@ describe('CTIS 상세 매핑', () => {
     expect(r.enrollment?.count).toBe(1296);
   });
 
+  /**
+   * **`Authorised` 를 모집 상태로 접으면 안 된다.** 그것은 규제 결정이지 모집 현황이
+   * 아니고, 코드 2·3·4·5 가 모두 이 값으로 뭉친다(실측: 네 자리를 다 봤다). 접는 순간
+   * 사용자는 모집 전인 시험도, 모집이 끝난 시험도 "모집 중" 으로 읽는다.
+   *
+   * 사보타주로 확인했다: 이 매핑을 더해도 스위트가 통과했다.
+   */
+  it('Authorised 는 접지 않는다 — 규제 결정이지 모집 현황이 아니다', () => {
+    const r = mapDetail({ ctNumber: 'X', ctStatus: 'Authorised' }, AT);
+    expect(r.status).toBe('unknown');
+    // 원문은 싣는다 — 사용자가 읽을 수는 있어야 한다.
+    expect(r.statusRaw).toBe('Authorised');
+  });
+
   it('출처 표시는 상세에서도 붙는다 — 약관이 each copy 를 요구한다', () => {
     expect(mapDetail(detail, AT).attribution).toBe(CTIS_ATTRIBUTION);
   });
