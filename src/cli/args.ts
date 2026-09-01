@@ -36,6 +36,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
           --page-size <N> --page-token <t>
           --sort <field> --eligibility-chars <N> --raw
           --format json|ndjson|text --no-cache --refresh
+그 밖에   --help (커맨드와 함께 주면 그 커맨드의 표면만 낸다) --version
 
 레지스트리마다 받는 값이 다르다. 어느 축을 어떤 값으로 쓸 수 있는지는 \`ctreg registries\` 가 말한다.
 
@@ -61,6 +62,8 @@ export type ParsedArgs = {
   results: ResultsOpts;
   format: 'json' | 'ndjson' | 'text';
   help: boolean;
+  /** `--version`. `--help` 보다 먼저 처리된다 — 커맨드가 무엇이든 답이 같다. */
+  version: boolean;
 };
 
 const str = { type: 'string' } as const;
@@ -81,13 +84,13 @@ const OPTIONS = {
   'eligibility-chars': str, raw: flag,
   format: str, 'no-cache': flag, refresh: flag,
   section: multi, outcome: multi, 'ae-organ': str, 'ae-term': str, full: flag,
-  help: flag,
+  help: flag, version: flag,
 } as const;
 
 export const OPTION_NAMES = Object.keys(OPTIONS) as (keyof typeof OPTIONS)[];
 
 /** 어느 커맨드에서나 뜻이 같은 것들. 표를 다섯 번 반복하지 않으려고 따로 뺀다. */
-const COMMON_OPTIONS = ['registry', 'format', 'help'] as const;
+const COMMON_OPTIONS = ['registry', 'format', 'help', 'version'] as const;
 /** 네트워크를 치는 커맨드만 캐시를 말할 수 있다. `registries` 는 정적 선언 덤프다. */
 const NETWORK_OPTIONS = ['no-cache', 'refresh', 'raw'] as const;
 /** search 와 count 가 공유하는 질의 표면. 둘의 차이는 레코드를 받느냐뿐이다. */
@@ -278,13 +281,24 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   const v = parsed.values;
   const [command, ...positionals] = parsed.positionals;
 
+  /**
+   * **버전이 `--help` 보다 먼저다.** "지금 도는 게 어느 사본인가" 는 커맨드와 무관한
+   * 물음이고, 커맨드 없이도(`ctreg --version`) 답해야 한다.
+   */
+  if (v.version) {
+    return {
+      command: undefined, positionals: [], registries: [...REGISTRY_KEYS],
+      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: false, version: true,
+    };
+  }
+
   if (v.help) {
     // 커맨드 단어를 **살린다.** 이것이 F3 의 전부다 — 버리면 `ctreg get --help` 와
     // `ctreg --help` 가 같은 입력이 되어 서브커맨드별 사용법이 원리상 불가능해진다.
     const asked = (COMMANDS as readonly string[]).includes(command ?? '') ? (command as (typeof COMMANDS)[number]) : undefined;
     return {
       command: asked, positionals: [], registries: [...REGISTRY_KEYS],
-      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true,
+      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true, version: false,
     };
   }
   if (!command || !(COMMANDS as readonly string[]).includes(command)) {
@@ -469,6 +483,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     },
     format,
     help: false,
+    version: false,
   };
 }
 

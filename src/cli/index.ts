@@ -5,6 +5,7 @@ import { loadConfig } from '../runtime/config.js';
 import { CtregError, usageError } from '../runtime/errors.js';
 import type { HttpDeps } from '../runtime/http.js';
 import { USAGE, helpFor, parseCliArgs } from './args.js';
+import { readVersion } from './version.js';
 import { runCount } from './commands/count.js';
 import { IdRoutingError, runGet } from './commands/get.js';
 import { runRegistries } from './commands/registries.js';
@@ -26,6 +27,15 @@ export async function run(
   try {
     const args = parseCliArgs(argv);
     format = args.format;
+    /**
+     * **버전이 먼저다.** 전역 설치본과 `npx` 본이 섞이면 "지금 무엇이 도는가" 가
+     * 실제 물음이 된다 — 이 자리가 그때 유일한 답이다.
+     */
+    if (args.version) {
+      io.stdout(`${readVersion()}\n`);
+      return EXIT.OK;
+    }
+
     if (args.help) {
       // 커맨드와 함께 물었으면 그 커맨드의 표면만 낸다(F3). 예전에는 커맨드 단어가
       // 파싱에서 버려져 `ctreg get --help` 가 최상위 사용법과 바이트 단위로 같았다.

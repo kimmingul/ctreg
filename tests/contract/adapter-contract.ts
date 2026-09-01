@@ -186,6 +186,7 @@ const argsFor = (key: RegistryKey, over: Partial<ParsedArgs> = {}): ParsedArgs =
   results: resultsOpts,
   format: 'json',
   help: false,
+  version: false,
   ...over,
 });
 

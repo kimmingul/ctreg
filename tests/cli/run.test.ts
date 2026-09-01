@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -46,6 +46,7 @@ const baseArgs = (overrides: Partial<ParsedArgs> = {}): ParsedArgs => ({
   results: { sections: ['outcomes', 'adverse', 'flow', 'baseline'], full: false, cacheMode: 'use' },
   format: 'json',
   help: false,
+  version: false,
   ...overrides,
 });
 
@@ -153,6 +154,31 @@ describe('run()', () => {
     expect(c.out()).toContain('ctreg get <ID...>');
     // 최상위 사용법이 아니다. 예전에는 바이트 단위로 같았다.
     expect(c.out()).not.toContain('--condition');
+  });
+
+  /**
+   * **버전을 소스에 박지 않는다.** 이 저장소에는 버전이 이미 세 곳에 있다
+   * (`package.json`·`plugin.json`·`marketplace.json`). 네 번째를 만들면 갈리고,
+   * **갈렸을 때 조용한 것이 문제다** — `--version` 이 거짓말을 하면 "낡은 사본인가" 를
+   * 가리려고 쓰는 바로 그 자리에서 틀린 답을 준다.
+   *
+   * 그래서 `package.json` 에서 읽고, 여기서 그 둘이 같은지 못 박는다.
+   */
+  it('--version 이 package.json 과 같은 버전을 낸다', async () => {
+    const pkg = JSON.parse(
+      readFileSync(join(__dirname, '../../package.json'), 'utf8'),
+    ) as { version: string };
+    const c = capture();
+    const code = await run(['--version'], c.io, env());
+    expect(code).toBe(EXIT.OK);
+    expect(c.out().trim()).toBe(pkg.version);
+  });
+
+  /** 커맨드와 함께 줘도 버전이 이긴다 — 무엇이 도는지 묻는 물음에 커맨드는 상관없다. */
+  it('커맨드와 함께 준 --version 도 버전을 낸다', async () => {
+    const c = capture();
+    expect(await run(['search', '--version'], c.io, env())).toBe(EXIT.OK);
+    expect(c.out().trim()).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it('커맨드 없는 --help 는 전체 사용법을 낸다', async () => {
