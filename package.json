@@ -1,5 +1,5 @@
 {
-  "name": "ctreg",
+  "name": "@kimmingul/ctreg",
   "version": "0.1.0",
   "description": "Query clinical trial registries through one normalized schema.",
   "type": "module",
@@ -41,6 +41,9 @@
     "LICENSE",
     "NOTICE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build && npm run typecheck && npm run test",

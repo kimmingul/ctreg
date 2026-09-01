@@ -152,9 +152,12 @@ ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 
 **Node.js ≥ 22** 가 필요하다.
 
 ```bash
-npm i -g ctreg
+npm i -g @kimmingul/ctreg
 ctreg registries   # 동작 확인 — 네트워크를 타지 않는다
 ```
+
+**패키지 이름은 스코프가 붙지만 명령어는 `ctreg` 다.** npm 이 `ctreg` 라는 이름을 기존
+패키지와 너무 비슷하다고 거절해서 스코프로 옮겼다 — 설치 줄만 길어지고 사용법은 그대로다.
 
 <details>
 <summary>소스에서 빌드해 쓰려면</summary>
@@ -184,7 +187,7 @@ bun 이 필요하고, 만든 컴퓨터의 플랫폼 전용이다.
 /plugin install ctreg@ctreg
 ```
 
-**플러그인은 CLI 를 싣지 않는다.** 스킬 한 장뿐이라 `npm i -g ctreg` 를 먼저 해야 한다 —
+**플러그인은 CLI 를 싣지 않는다.** 스킬 한 장뿐이라 `npm i -g @kimmingul/ctreg` 를 먼저 해야 한다 —
 안 하면 스킬이 "설치되지 않았다" 고 말하고 멈춘다(추측으로 진행하지 않는다).
 
 스킬이 얇은 것은 의도다. **CLI 가 스스로 말할 수 있는 것은 스킬에 적지 않는다** — 플래그도,

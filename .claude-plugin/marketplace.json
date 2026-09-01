@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "ctreg",
-      "description": "Search five clinical trial registries (ClinicalTrials.gov, ISRCTN, WHO ICTRP, CRIS, EU CTIS) through one normalized schema. Requires the ctreg CLI: npm i -g ctreg",
+      "description": "Search five clinical trial registries (ClinicalTrials.gov, ISRCTN, WHO ICTRP, CRIS, EU CTIS) through one normalized schema. Requires the ctreg CLI: npm i -g @kimmingul/ctreg",
       "version": "0.1.0",
       "author": {
         "name": "Min-Gul Kim",

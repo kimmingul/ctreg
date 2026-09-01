@@ -52,7 +52,18 @@ describe('플러그인 배포 매니페스트', () => {
    * SKILL.md 는 그때 "설치되지 않았다" 고만 말할 수 있다.
    */
   it('설치 목록이 CLI 가 따로 필요하다는 것을 말한다', () => {
-    expect(MARKET.plugins[0].description).toContain('npm i -g ctreg');
+    /**
+     * **패키지 이름을 여기 박아 넣지 않는다.** `package.json` 에서 읽어 온다 —
+     * 실제로 갈렸다: npm 이 `ctreg` 를 기존 패키지와 너무 비슷하다고 거절해서
+     * `@kimmingul/ctreg` 로 옮겼는데, 그때 설치 목록이 없는 패키지를 광고하고 있었다.
+     * 이름을 두 곳에 적으면 한쪽만 바뀌고, **틀린 쪽이 설치 안내라는 것이 가장 나쁘다.**
+     */
+    expect(MARKET.plugins[0].description).toContain(`npm i -g ${PKG.name}`);
+  });
+
+  /** 패키지 이름이 바뀌어도 **명령어는 `ctreg`** 다. 문서의 모든 예시가 이것에 달려 있다. */
+  it('명령어 이름은 패키지 이름과 무관하게 ctreg 다', () => {
+    expect(Object.keys(PKG.bin)).toEqual(['ctreg']);
   });
 });
 
