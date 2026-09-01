@@ -178,6 +178,40 @@ CRIS:KCT0012487  completed  interventional
   연락처: 김민걸(연구책임자), Min-Gul Kim(연구책임자), 김민걸(연구실무담당자)
 ```
 
+#### 한국어 이름을 영문 표기로 — CRIS 를 대조표로 쓴다
+
+**로마자 표기는 하나가 아니고, 레지스트리는 등록된 표기 하나로만 걸린다.** 같은 사람인데
+철자를 달리하면 결과가 이만큼 갈린다(실측):
+
+| ctgov `--investigator` | 결과 |
+| :-- | --: |
+| `Sung-Bae Kim` | 9건 |
+| `Sung Bae Kim` | 9건 |
+| `Sungbae Kim` | **1건** |
+
+추측한 철자로 나온 0건은 "그런 연구가 없다" 로 읽히지만 실제로는 **철자가 틀린 것**이다.
+
+**CRIS 가 그 대조표다.** 국문과 영문을 나란히 싣기 때문에, 한국어로 한 번 물어서 **본인이
+등록한 영문 표기**를 읽어 올 수 있다 — 사람 이름만이 아니라 기관·제목·중재까지:
+
+```bash
+ctreg get CRIS:KCT0012487 --raw --format json | jq '.data[0].source
+  | {scientific_name_kr, scientific_name_en, scientific_title_en, i_freetext_en}'
+```
+
+```json
+{
+  "scientific_name_kr": "김민걸",
+  "scientific_name_en": "Min-Gul Kim",
+  "scientific_title_en": "A Randomized, Open-label, Single-dose, Parallel Clinical Trial…",
+  "i_freetext_en": "Participants will be randomized 1:1:1 to three dose groups…"
+}
+```
+
+정규화된 레코드에도 이미 담겨 있다 — `officialTitle` 이 영문 제목이고, `contacts` 에는
+국문·영문 이름이 **둘 다** 실린다. 플러그인의 스킬과 커맨드가 이 순서를 규율로 갖고 있어서,
+한국어로 물으면 알아서 이 경로를 탄다.
+
 > **전수가 아니다.** 후보가 **검색어가 닿는 범위에 갇힌다** — 검색어 하나로는 크게 놓칠 수
 > 있다(실측: 기관명 하나로 40건 중 12건, 검색어 여덟 개로 넓혀서야 40건). 여러 말로 나눠
 > 조회하고 합쳐야 한다. 몇 건을 열어 봤는지는 경고로 말한다.
@@ -399,8 +433,23 @@ ctreg search --condition melanoma --page-size 5 --format json 2>/dev/null | jq '
 | `CTREG_RATE_PER_SEC` | (없음) | 전역 오버라이드. 미설정이면 **레지스트리가 스스로 신고한 요청률**을 쓴다 |
 | `CTREG_*_BASE_URL` | 각 공식 주소 | 엔드포인트 교체(테스트·미러용) |
 
-비밀값은 셸 환경변수 대신 **작업 디렉터리의 `.env`** 로 줄 수 있다 — `.env.example` 을 복사해
-채운다. `.env` 는 `.gitignore` 에 있고 **이미 있는 환경변수를 덮지 않는다.**
+비밀값은 셸 환경변수 대신 **`.env` 파일**로 줄 수 있다. 두 자리를 보고, **가까운 것이 이긴다:**
+
+| 순서 | 자리 | 쓰임 |
+| --: | :-- | :-- |
+| 1 | 셸 환경변수 | 그때그때의 개입 |
+| 2 | `./.env` | 이 프로젝트에서만 |
+| 3 | `~/.config/ctreg/.env` (또는 `$XDG_CONFIG_HOME/ctreg/.env`) | **한 번 넣으면 어디서든** |
+
+전역으로 설치해 아무 폴더에서나 쓰는 도구라면 **3번에 넣어라.** 작업 디렉터리마다 `.env` 를
+만들 필요가 없다. `.env.example` 을 복사해 채우면 된다.
+
+```bash
+mkdir -p ~/.config/ctreg && cp .env.example ~/.config/ctreg/.env
+```
+
+**이미 있는 환경변수는 덮지 않는다** — 다른 키로 한 번 돌려 보는 일이 설정 파일을 고쳤다
+되돌리는 일이 되지 않게 하려는 것이다.
 
 캐시를 끄거나 갱신할 때는 플래그를 쓴다: `--no-cache`, `--refresh`(둘은 함께 못 쓴다).
 

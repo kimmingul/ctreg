@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig, loadEnvFile } from '../../src/runtime/config.js';
+import { envFilePaths, loadConfig, loadEnvFile } from '../../src/runtime/config.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 
@@ -125,5 +125,46 @@ describe('ICTRP 자동 조회는 기본이 꺼짐이다', () => {
     expect(c.ctgovBaseUrl.length).toBeGreaterThan(0);
     expect(c.isrctnBaseUrl.length).toBeGreaterThan(0);
     expect(c.crisBaseUrl.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * **키는 전역 도구인데 설정은 전역이 아니었다.** `.env` 를 실행 디렉터리에서만 읽어서,
+ * 전역 설치한 `ctreg` 를 다른 폴더에서 쓰면 CRIS 가 매번 인증 실패였다 — 프로젝트마다
+ * `.env` 를 만들거나 셸 환경변수를 박아야 했고, 그 사실이 문서에도 없었다.
+ */
+describe('설정 파일을 찾는 자리', () => {
+  it('실행 디렉터리가 먼저고 사용자 설정이 그다음이다', () => {
+    const paths = envFilePaths({ HOME: '/home/u' } as NodeJS.ProcessEnv, '/work/proj');
+    expect(paths[0]).toBe(join('/work/proj', '.env'));
+    expect(paths).toHaveLength(2);
+  });
+
+  /** 캐시 디렉터리와 같은 관례를 쓴다 — 한 도구가 두 규칙을 갖지 않는다. */
+  it('XDG_CONFIG_HOME 을 존중한다', () => {
+    const paths = envFilePaths({ XDG_CONFIG_HOME: '/xdg' } as NodeJS.ProcessEnv, '/work');
+    expect(paths[1]).toBe(join('/xdg', 'ctreg', '.env'));
+  });
+
+  /**
+   * **가까운 것이 이긴다.** 프로젝트 `.env` 가 사용자 기본값을 덮어야, 다른 키로 한 번
+   * 돌려 보는 일이 전역 설정을 고쳤다 되돌리는 일이 되지 않는다.
+   */
+  it('실행 디렉터리의 값이 사용자 설정을 이긴다', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ctreg-cwd-'));
+    const user = mkdtempSync(join(tmpdir(), 'ctreg-user-'));
+    writeFileSync(join(dir, '.env'), 'CTREG_CRIS_SERVICE_KEY=project\n');
+    writeFileSync(join(user, '.env'), 'CTREG_CRIS_SERVICE_KEY=user\n');
+    const env = {} as NodeJS.ProcessEnv;
+    for (const p of [join(dir, '.env'), join(user, '.env')]) loadEnvFile(p, env);
+    expect(env.CTREG_CRIS_SERVICE_KEY).toBe('project');
+  });
+
+  it('사용자 설정만 있어도 읽힌다 — 전역 도구의 기본 경로다', () => {
+    const user = mkdtempSync(join(tmpdir(), 'ctreg-user-'));
+    writeFileSync(join(user, '.env'), 'CTREG_CRIS_SERVICE_KEY=user\n');
+    const env = {} as NodeJS.ProcessEnv;
+    for (const p of [join('/nope', '.env'), join(user, '.env')]) loadEnvFile(p, env);
+    expect(env.CTREG_CRIS_SERVICE_KEY).toBe('user');
   });
 });

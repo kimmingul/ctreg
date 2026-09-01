@@ -70,6 +70,30 @@ function optNum(env: NodeJS.ProcessEnv, name: string): number | undefined {
  * 때문이다 — 여기서 다루는 것은 주석·빈 줄·따옴표·값 안의 등호까지다. 값 안의 등호를
  * 자르면 키가 조용히 잘려 인증이 이유 없이 실패한다.
  */
+/**
+ * `.env` 를 찾는 자리와 **그 순서.**
+ *
+ * 전에는 실행 디렉터리 하나뿐이었다. 그런데 이 CLI 는 **전역으로 설치해서 아무 폴더에서나
+ * 쓰는 물건** 이라, 그 규칙은 "설정이 프로젝트마다 따로" 를 뜻했다 — CRIS 키를 넣어 둔
+ * 폴더를 벗어나면 인증이 실패했고, 사용자 눈에는 도구가 고장난 것으로 보였다.
+ *
+ * 그래서 **사용자 수준 자리를 하나 더 본다.** 캐시 디렉터리와 같은 관례를 쓴다
+ * (`XDG_CONFIG_HOME` → 없으면 `~/.config/ctreg`) — 한 도구가 두 규칙을 갖지 않는다.
+ *
+ * **순서가 곧 우선순위다.** `loadEnvFile` 이 이미 있는 값을 덮지 않으므로, 앞에 오는 것이
+ * 이긴다: 셸 환경변수 → 실행 디렉터리 → 사용자 설정. 가까운 것이 이겨야 다른 키로 한 번
+ * 돌려 보는 일이 전역 설정을 고쳤다 되돌리는 일이 되지 않는다.
+ */
+export function envFilePaths(
+  env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
+): string[] {
+  const userDir = env.XDG_CONFIG_HOME
+    ? join(env.XDG_CONFIG_HOME, 'ctreg')
+    : join(homedir(), '.config', 'ctreg');
+  return [join(cwd, '.env'), join(userDir, '.env')];
+}
+
 export function loadEnvFile(path: string, env: NodeJS.ProcessEnv = process.env): void {
   let text: string;
   try {
