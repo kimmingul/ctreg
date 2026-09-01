@@ -10,7 +10,7 @@
     {
       "name": "ctreg",
       "description": "Search five clinical trial registries (ClinicalTrials.gov, ISRCTN, WHO ICTRP, CRIS, EU CTIS) through one normalized schema. Works out of the box via npx; install the CLI for faster runs and terminal use: npm i -g @kimmingul/ctreg",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "Min-Gul Kim",
         "url": "https://github.com/kimmingul"
@@ -27,5 +27,5 @@
       ]
     }
   ],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
