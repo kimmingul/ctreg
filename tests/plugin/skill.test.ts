@@ -106,7 +106,19 @@ describe('SKILL.md 는 얇다', () => {
   });
 
   it('본문의 라틴 토큰은 허용 목록뿐이다 — 커맨드명·플래그명은 접두사 유무와 무관하게 걸린다', () => {
-    const allowed = new Set(['ctreg', 'help', 'registries']);
+    /**
+     * **두 묶음을 가른다.** 앞은 규율(`ctreg registries`·`ctreg --help`)이고, 뒤는
+     * **부트스트랩** 이다 — 도구를 어떻게 얻는지는 CLI 자신이 말해 줄 수 없다. 아직
+     * 없을 때 필요한 지식이라서다. 그것 말고는 여전히 아무것도 적을 수 없다:
+     * 플래그도, 커맨드 이름도, 종료 코드의 뜻도 `--help` 가 말한다.
+     *
+     * `-y` 를 쓴 것은 `--yes` 가 위의 플래그 검사(정확히 `--help` 하나)를 깨기 때문이다.
+     * 가드를 둘 푸는 대신 하나만 푼다.
+     */
+    const allowed = new Set([
+      'ctreg', 'help', 'registries',
+      'npx', 'y', 'kimmingul',
+    ]);
     const found = [...BODY.matchAll(/[A-Za-z][A-Za-z0-9_-]*/g)].map((m) => m[0].toLowerCase());
     expect([...new Set(found)].filter((w) => !allowed.has(w))).toEqual([]);
   });
