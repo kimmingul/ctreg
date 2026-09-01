@@ -1,8 +1,8 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { envFilePaths, loadConfig, loadEnvFile } from '../../src/runtime/config.js';
+import { envFilePaths, loadConfig, loadEnvFile, loadEnvFiles } from '../../src/runtime/config.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 
@@ -158,6 +158,23 @@ describe('설정 파일을 찾는 자리', () => {
     const env = {} as NodeJS.ProcessEnv;
     for (const p of [join(dir, '.env'), join(user, '.env')]) loadEnvFile(p, env);
     expect(env.CTREG_CRIS_SERVICE_KEY).toBe('project');
+  });
+
+  /**
+   * **자리를 아는 것과 전부 읽는 것은 다르다.** `envFilePaths` 만 검사하면 부르는 쪽이
+   * 첫 자리만 읽어도 초록이다 — 사보타주로 실제로 그랬다(스위트 통과, 실물은 키를 못 읽음).
+   * 그래서 반복 자체를 여기서 검사한다.
+   */
+  it('loadEnvFiles 가 자리를 하나도 빠뜨리지 않는다', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'ctreg-cwd-'));
+    const xdg = mkdtempSync(join(tmpdir(), 'ctreg-xdg-'));
+    mkdirSync(join(xdg, 'ctreg'), { recursive: true });
+    writeFileSync(join(cwd, '.env'), 'FROM_PROJECT=yes\n');
+    writeFileSync(join(xdg, 'ctreg', '.env'), 'FROM_USER=yes\n');
+    const env = { XDG_CONFIG_HOME: xdg } as NodeJS.ProcessEnv;
+    loadEnvFiles(env, cwd);
+    expect(env.FROM_PROJECT).toBe('yes');
+    expect(env.FROM_USER).toBe('yes');
   });
 
   it('사용자 설정만 있어도 읽힌다 — 전역 도구의 기본 경로다', () => {

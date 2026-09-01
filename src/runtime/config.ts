@@ -94,6 +94,17 @@ export function envFilePaths(
   return [join(cwd, '.env'), join(userDir, '.env')];
 }
 
+/**
+ * `envFilePaths()` 의 자리를 **순서대로 전부** 읽는다.
+ *
+ * **이 반복이 `bin.ts` 에 있으면 테스트가 닿지 않는다.** 사보타주로 확인했다: `bin.ts` 가
+ * 첫 자리만 읽게 바꿨더니 스위트가 그대로 초록이었고(817 통과) 실물에서만 키를 못 읽었다.
+ * 프로세스 경계에는 **부르는 한 줄만** 남기고 규칙은 여기 둔다.
+ */
+export function loadEnvFiles(env: NodeJS.ProcessEnv = process.env, cwd: string = process.cwd()): void {
+  for (const path of envFilePaths(env, cwd)) loadEnvFile(path, env);
+}
+
 export function loadEnvFile(path: string, env: NodeJS.ProcessEnv = process.env): void {
   let text: string;
   try {
