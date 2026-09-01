@@ -32,7 +32,8 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
           --near <lat,lon> --radius <N>km|mi
           --updated-since --updated-before --start-after --start-before
           --completion-after --completion-before   (YYYY-MM-DD)
-출력      --registry <key> (반복 가능, 기본 ctgov) --include <section>
+출력      --registry <key>|all (반복 가능, 기본 ctgov · all 은 선언된 전부)
+          --include <section>
           --page-size <N> --page-token <t>
           --sort <field> --eligibility-chars <N> --raw
           --format json|ndjson|text --no-cache --refresh
@@ -329,7 +330,17 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   // 는 같은 레코드를 두 번 내며, "레지스트리마다 registries[] 항목 하나" 라는 봉투의
   // 형태 규칙이 깨진다. 순서는 호출자가 준 순서를 그대로 유지한다.
   const fallback: readonly string[] = command === 'registries' ? REGISTRY_KEYS : [DEFAULT_REGISTRY];
-  const registries = [...new Set((v.registry ?? fallback) as string[])];
+  /**
+   * **`all` 은 선언된 전부로 풀린다.** 사용자가 다섯을 손으로 나열하게 두면 여섯 번째
+   * 어댑터가 붙는 날 그 호출은 **조용히 다섯만** 본다 — 오류도 경고도 없이 새 레지스트리가
+   * 빠진 답이 나간다. 목록은 `REGISTRY_KEYS` 한 곳에만 있어야 한다.
+   *
+   * **꺼져 있거나 키가 없는 것도 빼지 않는다.** 빼면 사용자는 자기가 유럽이나 국내를
+   * 못 봤다는 것을 모른다 — 검색되지 않은 것이 없는 것으로 읽힌다. 부르고 나서
+   * 레지스트리별 상태와 exit 5 가 무엇이 안 됐는지 말한다. 그것이 이 CLI 의 규칙이다.
+   */
+  const requested = (v.registry ?? fallback) as string[];
+  const registries = [...new Set(requested.flatMap((r) => (r === 'all' ? [...REGISTRY_KEYS] : [r])))];
   for (const r of registries) {
     if (!isRegistryKey(r)) {
       throw usageError(`모르는 레지스트리: '${r}'`, 'ctreg registries 로 사용 가능한 키를 확인하세요.');

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COMMAND_OPTIONS, COMMANDS, helpFor, OPTION_NAMES, parseCliArgs, USAGE } from '../../src/cli/args.js';
 import { CAPS } from '../../src/core/query.js';
+import { REGISTRY_KEYS } from '../../src/core/registry.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
 import type { CtregError } from '../../src/runtime/errors.js';
 import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../../src/core/vocab.js';
@@ -451,5 +452,33 @@ describe('파서 오류를 영어 원문으로 흘리지 않는다', () => {
     const m = messageOf(['search', '--condition']);
     expect(m).toContain('--condition');
     expect(m).not.toContain('argument missing');
+  });
+});
+
+describe('--registry all', () => {
+  /**
+   * **목록을 두 곳에 적지 않으려고 있는 것이다.** 사용자가 다섯을 손으로 나열하면
+   * 여섯 번째 어댑터가 붙는 날 그 호출은 **조용히 다섯만** 본다 — 오류도 경고도 없이
+   * 새 레지스트리가 빠진 답이 나간다. `REGISTRY_KEYS` 에서 풀어 쓰면 그 일이 없다.
+   */
+  it('선언된 레지스트리 전부로 풀린다', () => {
+    const a = parseCliArgs(['search', '--registry', 'all', '--condition', 'x']);
+    expect(a.registries).toEqual([...REGISTRY_KEYS]);
+  });
+
+  /**
+   * **꺼져 있거나 키가 없는 것도 뺴지 않는다.** 빼면 사용자는 자기가 유럽이나 국내를
+   * 못 봤다는 것을 모른다 — 검색되지 않은 것이 없는 것으로 읽힌다. 부르고 나서
+   * 레지스트리별 상태와 exit 5 가 무엇이 안 됐는지 말한다.
+   */
+  it('설정이 필요한 것도 포함한다 — 조용히 좁히지 않는다', () => {
+    const a = parseCliArgs(['search', '--registry', 'all', '--condition', 'x']);
+    expect(a.registries).toContain('ictrp');
+    expect(a.registries).toContain('cris');
+  });
+
+  it('다른 키와 섞어 줘도 중복 없이 전부다', () => {
+    const a = parseCliArgs(['search', '--registry', 'ctgov', '--registry', 'all', '--condition', 'x']);
+    expect(a.registries).toEqual([...REGISTRY_KEYS]);
   });
 });

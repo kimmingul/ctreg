@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { REGISTRY_KEYS } from '../../src/core/registry.js';
 import { describe, expect, it } from 'vitest';
 
 const SKILL = readFileSync(join(__dirname, '../../skills/ctreg/SKILL.md'), 'utf8');
@@ -64,6 +65,59 @@ describe('플러그인 배포 매니페스트', () => {
   /** 패키지 이름이 바뀌어도 **명령어는 `ctreg`** 다. 문서의 모든 예시가 이것에 달려 있다. */
   it('명령어 이름은 패키지 이름과 무관하게 ctreg 다', () => {
     expect(Object.keys(PKG.bin)).toEqual(['ctreg']);
+  });
+});
+
+/**
+ * 슬래시 커맨드는 스킬과 **다른 물건**이다. 스킬은 Claude 가 임상시험 질문을 만났을 때
+ * 스스로 붙이는 것이고, 커맨드는 사용자가 이름을 대고 부르는 것이다. 그래서 커맨드는
+ * 레지스트리를 하나로 못 박아도 된다 — 사용자가 그것을 골라 부른 것이기 때문이다.
+ *
+ * 그러나 **얇아야 하는 이유는 같다.** 축과 값과 종료 코드는 여전히 CLI 가 말한다.
+ */
+describe('슬래시 커맨드', () => {
+  const dir = join(__dirname, '../../commands');
+  const files = readdirSync(dir).filter((f) => f.endsWith('.md'));
+  const read = (f: string): string => readFileSync(join(dir, f), 'utf8');
+
+  /**
+   * **레지스트리마다 커맨드가 하나씩 있어야 한다.** 어댑터를 더하고 커맨드를 잊으면
+   * 그 레지스트리는 슬래시로 부를 수 없는 채 조용히 남는다 — 목록이 두 곳에 있을 때
+   * 벌어지는 그 일이다. 여기서 묶어 두면 어댑터를 더하는 사람이 반드시 마주친다.
+   */
+  it('레지스트리마다 커맨드가 있고, 전부 부르는 all 이 있다', () => {
+    expect(new Set(files)).toEqual(new Set([...REGISTRY_KEYS.map((k) => `${k}.md`), 'all.md']));
+  });
+
+  it('커맨드마다 프론트매터가 있다', () => {
+    for (const f of files) {
+      const fm = /^---\n([\s\S]*?)\n---\n/.exec(read(f));
+      expect(fm, f).not.toBeNull();
+      expect(fm![1], f).toMatch(/^description:\s*\S/m);
+      expect(fm![1], f).toMatch(/^argument-hint:\s*\S/m);
+    }
+  });
+
+  it('사용자 입력을 실제로 넘긴다', () => {
+    for (const f of files) expect(read(f), f).toContain('$ARGUMENTS');
+  });
+
+  /**
+   * **CLI 표면을 복제하지 않는다.** 커맨드가 골라야 하는 것은 레지스트리 하나뿐이고,
+   * 나머지 축·값·형식은 `ctreg registries` 와 `ctreg --help` 가 말한다. 여기에 플래그를
+   * 적기 시작하면 CLI 가 바뀔 때 여섯 파일이 함께 낡는다.
+   */
+  it('--registry 와 --help 말고는 플래그를 적지 않는다', () => {
+    for (const f of files) {
+      const flags = [...new Set([...read(f).matchAll(/--[a-z][a-z-]+/g)].map((m) => m[0]))];
+      expect(flags.filter((x) => !['--registry', '--help'].includes(x)), f).toEqual([]);
+    }
+  });
+
+  /** 각 커맨드는 자기 레지스트리만 건다 — `all` 만 예외다. */
+  it('레지스트리 커맨드는 자기 키를 건다', () => {
+    for (const k of REGISTRY_KEYS) expect(read(`${k}.md`), k).toContain(`--registry ${k}`);
+    expect(read('all.md')).toContain('--registry all');
   });
 });
 
