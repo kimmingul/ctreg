@@ -23,7 +23,13 @@
 | `cris` | CRIS (한국) | 2 | 키 필요(무료·자동승인) | 「어댑터 #4」 절 · `cris-field-test-*.md` |
 | `ctis` | EU CTIS | 5 | 공개 API, 조건 없음 | 「어댑터 #5」 절 · `ctis-field-test-*.md` |
 
-테스트 **799 통과 / 11 skipped**. 타입체크·빌드 클린.
+테스트 **813 통과 / 11 skipped**. 타입체크·빌드 클린.
+
+**배포됐다(2026-09-01).** `npm i -g @kimmingul/ctreg` · `/plugin marketplace add kimmingul/ctreg`.
+이름은 스코프가 붙지만 **명령어는 `ctreg`** 다 — npm 이 `ctreg` 를 기존 패키지(`stres`)와
+너무 비슷하다고 자동 거절했다. 그 이름은 여전히 비어 있고 이의 제기 여지가 있으나
+**바꾸지 않기로 했다**(2026-09-01) — 명령어가 이미 `ctreg` 라 실제로 달라지는 것이 설치 줄
+하나뿐이다.
 
 **필드테스트가 다섯 어댑터를 모두 덮는다** — `npm run {,isrctn-,ictrp-,cris-,ctis-}field-test`.
 계약 스위트는 스텁으로 돌기 때문에 업스트림이 바뀐 것을 원리상 잡지 못한다. 무엇을 왜 보는지는

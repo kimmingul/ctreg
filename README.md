@@ -412,7 +412,11 @@ ctreg search --condition melanoma --page-size 5 --format json 2>/dev/null | jq '
 ctreg --help
 ctreg search --help      # 커맨드마다 따로 있다
 ctreg registries         # 무엇을 물어볼 수 있는지
+ctreg --version          # 지금 도는 것이 어느 사본인지
 ```
+
+**`--version` 은 문제가 생겼을 때 먼저 본다.** 전역 설치본과 `npx` 본, 소스 빌드본이
+섞일 수 있어서 "무엇이 도는가" 가 실제 물음이 된다 — 셋 다 같은 값을 낸다.
 
 ---
 
