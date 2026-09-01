@@ -4,6 +4,32 @@
   "description": "Query clinical trial registries through one normalized schema.",
   "type": "module",
   "license": "Apache-2.0",
+  "author": {
+    "name": "Min-Gul Kim",
+    "url": "https://github.com/kimmingul"
+  },
+  "homepage": "https://github.com/kimmingul/ctreg#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kimmingul/ctreg.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kimmingul/ctreg/issues"
+  },
+  "keywords": [
+    "clinical-trials",
+    "clinicaltrials-gov",
+    "isrctn",
+    "ictrp",
+    "cris",
+    "ctis",
+    "registry",
+    "cli",
+    "claude-code",
+    "claude-code-plugin",
+    "research",
+    "ctreg"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -17,6 +43,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run test",
+    "compile": "bun build src/cli/bin.ts --compile --outfile ctreg",
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",

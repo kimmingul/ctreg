@@ -11,6 +11,13 @@ clinicaltrialsgov-mcp-server/
 # 개인 세션 설정과 자동 생성 핸드오프 — 이 저장소의 일부가 아니다.
 .claude/
 
+# `npm run compile` 이 만드는 단독 실행파일(58MB). 플랫폼 전용이고 릴리스 산출물이지
+# 소스가 아니다 — 커밋하면 저장소가 클론할 때마다 그만큼 무거워진다.
+/ctreg
+/ctreg-*
+# bun --compile 이 남기는 임시 산출물(각 60MB).
+.*.bun-build
+
 # 비밀값. CRIS(공공데이터포털) serviceKey 등이 여기 들어간다 — 절대 커밋하지 않는다.
 # 변수 이름과 받는 법은 .env.example 에 적어 두고, 값은 각자 자기 파일에 둔다.
 .env

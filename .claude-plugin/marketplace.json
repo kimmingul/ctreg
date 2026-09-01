@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ctreg",
+  "description": "ctreg — query clinical trial registries through one normalized schema",
+  "owner": {
+    "name": "Min-Gul Kim",
+    "url": "https://github.com/kimmingul"
+  },
+  "plugins": [
+    {
+      "name": "ctreg",
+      "description": "Search five clinical trial registries (ClinicalTrials.gov, ISRCTN, WHO ICTRP, CRIS, EU CTIS) through one normalized schema. Requires the ctreg CLI: npm i -g ctreg",
+      "version": "0.1.0",
+      "author": {
+        "name": "Min-Gul Kim",
+        "url": "https://github.com/kimmingul"
+      },
+      "source": "./",
+      "category": "research",
+      "homepage": "https://github.com/kimmingul/ctreg",
+      "license": "Apache-2.0",
+      "tags": [
+        "clinical-trials",
+        "research",
+        "registry",
+        "medicine"
+      ]
+    }
+  ],
+  "version": "0.1.0"
+}

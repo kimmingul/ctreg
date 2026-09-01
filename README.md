@@ -149,24 +149,49 @@ ISRCTN 은 ctgov 가 하는 것을 전부 하지 못한다. **못 하는 것을 
 
 ## 설치
 
-npm 배포판은 아직 없다. 소스에서 빌드해서 쓴다 (Node.js ≥ 22 필요):
+**Node.js ≥ 22** 가 필요하다.
 
 ```bash
-git clone <repo-url> ctreg
+npm i -g ctreg
+ctreg registries   # 동작 확인 — 네트워크를 타지 않는다
+```
+
+<details>
+<summary>소스에서 빌드해 쓰려면</summary>
+
+```bash
+git clone https://github.com/kimmingul/ctreg.git
 cd ctreg
-bun install   # 또는 npm install
-bun run build # dist/ 를 만든다
-node dist/cli/bin.js registries   # 동작 확인
+npm install
+npm run build     # dist/ 를 만든다 — 이걸 안 하면 실행되지 않는다
+npm link          # 전역에서 ctreg 로 쓴다
 ```
 
-전역에서 `ctreg` 로 쓰고 싶으면:
+Node 없이 쓰고 싶으면 `npm run compile` 이 단독 실행파일 하나(`./ctreg`)를 만든다.
+bun 이 필요하고, 만든 컴퓨터의 플랫폼 전용이다.
 
-```bash
-npm link   # package.json 의 bin.ctreg 가 dist/cli/bin.js 를 가리킨다
-ctreg registries
-```
+</details>
 
 이 문서의 예시는 전역 설치를 가정해 `ctreg ...` 로 적는다. 소스에서 바로 실행할 때는 `node dist/cli/bin.js ...` 로 바꿔 읽으면 된다.
+
+## Claude Code 플러그인으로 쓰기
+
+이 저장소는 **Claude Code 플러그인**이기도 하다. 설치하면 Claude 가 임상시험 질문을 받았을 때
+이 CLI 를 스스로 몰아 쓴다.
+
+```
+/plugin marketplace add kimmingul/ctreg
+/plugin install ctreg@ctreg
+```
+
+**플러그인은 CLI 를 싣지 않는다.** 스킬 한 장뿐이라 `npm i -g ctreg` 를 먼저 해야 한다 —
+안 하면 스킬이 "설치되지 않았다" 고 말하고 멈춘다(추측으로 진행하지 않는다).
+
+스킬이 얇은 것은 의도다. **CLI 가 스스로 말할 수 있는 것은 스킬에 적지 않는다** — 플래그도,
+커맨드 이름도, 종료 코드의 뜻도 적지 않고 `--help` 와 `ctreg registries` 에게 미룬다.
+두 곳에 적으면 한쪽만 갱신되기 때문이고, 그 얇음은 `tests/plugin/skill.test.ts` 가 강제한다.
+스킬에 담은 것은 **CLI 가 말하지 못하는 것**뿐이다: 종료 코드로 분기하라, 경고를 반드시
+읽어라, 시험 상태와 병원 상태는 다르다, 범주별 건수를 더하지 마라.
 
 ## 빠른 시작
 

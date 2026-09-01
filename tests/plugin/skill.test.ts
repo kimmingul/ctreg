@@ -6,6 +6,10 @@ const SKILL = readFileSync(join(__dirname, '../../skills/ctreg/SKILL.md'), 'utf8
 const MANIFEST = JSON.parse(
   readFileSync(join(__dirname, '../../.claude-plugin/plugin.json'), 'utf8'),
 );
+const MARKET = JSON.parse(
+  readFileSync(join(__dirname, '../../.claude-plugin/marketplace.json'), 'utf8'),
+);
+const PKG = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'));
 
 const BODY = (() => {
   const m = /^---\n[\s\S]*?\n---\n([\s\S]*)$/.exec(SKILL);
@@ -18,6 +22,37 @@ describe('플러그인 매니페스트', () => {
     expect(MANIFEST.name).toBe('ctreg');
     expect(MANIFEST.license).toBe('Apache-2.0');
     expect(MANIFEST).not.toHaveProperty('mcpServers');
+  });
+});
+
+/**
+ * **버전이 세 파일에 있다** — `package.json`(npm), `plugin.json`(플러그인),
+ * `marketplace.json`(설치 목록). 이 저장소가 문서에 대해 되풀이해 배운 것이 여기에도
+ * 그대로 적용된다: **한 사실을 여러 곳에 적으면 한쪽만 갱신된다.**
+ *
+ * 갈렸을 때 조용하다는 것이 문제다. 마켓플레이스가 낡은 버전을 광고해도 설치는 되고,
+ * 받는 사람은 자기가 무엇을 받았는지 모른다. 지울 수 없는 중복이라면 **묶어 둔다.**
+ */
+describe('플러그인 배포 매니페스트', () => {
+  it('마켓플레이스가 이 저장소 자신을 가리킨다', () => {
+    expect(MARKET.plugins).toHaveLength(1);
+    expect(MARKET.plugins[0].name).toBe('ctreg');
+    // 저장소 루트가 곧 플러그인이다 — 하위 디렉터리로 옮기면 여기도 함께 바뀌어야 한다.
+    expect(MARKET.plugins[0].source).toBe('./');
+  });
+
+  it('세 파일의 버전이 갈리지 않는다', () => {
+    expect(MARKET.plugins[0].version).toBe(MANIFEST.version);
+    expect(MANIFEST.version).toBe(PKG.version);
+  });
+
+  /**
+   * 이 플러그인은 **스킬 한 장이고 CLI 를 싣지 않는다.** 받는 사람이 CLI 를 따로
+   * 설치해야 하는데, 그 사실이 설치 목록에 안 적혀 있으면 설치한 뒤에야 알게 된다 —
+   * SKILL.md 는 그때 "설치되지 않았다" 고만 말할 수 있다.
+   */
+  it('설치 목록이 CLI 가 따로 필요하다는 것을 말한다', () => {
+    expect(MARKET.plugins[0].description).toContain('npm i -g ctreg');
   });
 });
 
