@@ -1,4 +1,5 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -122,4 +123,60 @@ describe('OPTIONS 가 스키마 파생에 필요한 것을 준다', () => {
       if (d.multiple) expect(d.type, name).toBe('string');
     }
   });
+});
+
+/**
+ * **진입점은 프로세스 경계라 단위 테스트가 못 본다.** CLI 쪽에서 실제로 겪었고, MCP 에서도
+ * 사보타주로 다시 겪었다 — `bin.ts` 의 `loadEnvFiles()` 를 지워도 스위트가 830 초록이었고
+ * 실물만 "인증키가 없습니다" 였다. 그래서 진입점을 **자식 프로세스로 띄워 실제 프로토콜로**
+ * 검사한다. `dist/` 가 필요하므로 빌드가 선행돼야 한다(다른 dist 테스트와 같은 조건).
+ */
+describe('ctreg-mcp 진입점 (실제 프로세스)', () => {
+  const rpc = (messages: object[], env: NodeJS.ProcessEnv): Promise<Map<number, unknown>> =>
+    new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [join(__dirname, '../../dist/mcp/bin.js')], {
+        env: { ...process.env, ...env, CTREG_CRIS_SERVICE_KEY: undefined as unknown as string },
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
+      let out = '';
+      child.stdout.on('data', (d: Buffer) => { out += d.toString(); });
+      child.on('error', reject);
+      child.on('close', () => {
+        const byId = new Map<number, unknown>();
+        for (const line of out.split('\n')) {
+          if (!line.trim()) continue;
+          const m = JSON.parse(line) as { id?: number; result?: unknown };
+          if (typeof m.id === 'number') byId.set(m.id, m.result);
+        }
+        resolve(byId);
+      });
+      child.stdin.write(messages.map((m) => JSON.stringify(m)).join('\n') + '\n');
+      child.stdin.end();
+    });
+
+  const handshake = [
+    { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 't', version: '0' } } },
+    { jsonrpc: '2.0', method: 'notifications/initialized' },
+  ];
+
+  it('사용자 설정 파일의 키를 읽는다 — 진입점이 loadEnvFiles 를 부른다', async () => {
+    const xdg = mkdtempSync(join(tmpdir(), 'ctreg-mcp-xdg-'));
+    mkdirSync(join(xdg, 'ctreg'), { recursive: true });
+    writeFileSync(join(xdg, 'ctreg', '.env'), 'CTREG_CRIS_SERVICE_KEY=dummy-from-user-config\n');
+    const res = await rpc(
+      [...handshake, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'count', arguments: { registry: ['cris'], term: 'x', 'no-cache': true } } }],
+      { XDG_CONFIG_HOME: xdg, CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-mcp-')), CTREG_RATE_PER_SEC: '1000' },
+    );
+    const r = res.get(3) as { content: { text: string }[] };
+    const body = JSON.parse(r.content[0]!.text) as { envelope: { registries: { error?: { message: string } }[] } };
+    const msg = body.envelope.registries[0]!.error?.message ?? '';
+    // 키를 읽었으면 "없습니다" 가 아니라 업스트림이 가짜 키를 거절한 흔적(403)이 온다.
+    expect(msg).not.toContain('인증키가 없습니다');
+  }, 30_000);
+
+  it('도구 다섯을 광고한다', async () => {
+    const res = await rpc([...handshake, { jsonrpc: '2.0', id: 2, method: 'tools/list' }], {});
+    const tools = (res.get(2) as { tools: { name: string }[] }).tools.map((t) => t.name).sort();
+    expect(tools).toEqual([...COMMANDS].sort());
+  }, 30_000);
 });
