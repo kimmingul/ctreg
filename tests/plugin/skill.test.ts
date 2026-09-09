@@ -19,7 +19,14 @@ const BODY = (() => {
 })();
 
 describe('플러그인 매니페스트', () => {
-  it('스킬만 싣는다 — MCP 서버는 CLI 로 대체했다', () => {
+  /**
+   * **플러그인은 MCP 서버를 싣지 않는다 — MCP 서버가 없어서가 아니다.** `ctreg-mcp` 는
+   * 같은 패키지의 별도 진입점으로 있고(`src/mcp/`), Claude Desktop·Cursor 같은 다른
+   * 호스트가 그것을 쓴다. Claude Code 플러그인은 스킬로 CLI 를 몰아 쓰는 쪽을 택했다:
+   * 종료 코드를 셸에서 바로 읽고, 플러그인 클론에 실행 코드를 두지 않아도 되기 때문이다.
+   * 둘을 다 실으면 같은 도구가 두 이름으로 뜬다.
+   */
+  it('스킬만 싣는다 — MCP 는 플러그인 밖의 별도 진입점이다', () => {
     expect(MANIFEST.name).toBe('ctreg');
     expect(MANIFEST.license).toBe('Apache-2.0');
     expect(MANIFEST).not.toHaveProperty('mcpServers');
@@ -64,7 +71,8 @@ describe('플러그인 배포 매니페스트', () => {
 
   /** 패키지 이름이 바뀌어도 **명령어는 `ctreg`** 다. 문서의 모든 예시가 이것에 달려 있다. */
   it('명령어 이름은 패키지 이름과 무관하게 ctreg 다', () => {
-    expect(Object.keys(PKG.bin)).toEqual(['ctreg']);
+    // MCP 진입점이 하나 더 있다. 둘 다 같은 코어를 감싸고, 이름은 ctreg 접두사를 공유한다.
+    expect(Object.keys(PKG.bin)).toEqual(['ctreg', 'ctreg-mcp']);
   });
 });
 

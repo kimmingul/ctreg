@@ -107,6 +107,36 @@ bun 이 필요하고 만든 컴퓨터의 플랫폼 전용이다.
 
 ---
 
+### MCP 서버로 쓰기
+
+Claude Desktop, Cursor 등 **MCP 를 말하는 어떤 호스트**에서든 같은 도구 다섯을 쓸 수 있다.
+같은 패키지에 `ctreg-mcp` 명령이 들어 있다 — CLI 와 코어가 하나라 버전도 하나다.
+
+```json
+{
+  "mcpServers": {
+    "ctreg": { "command": "ctreg-mcp" }
+  }
+}
+```
+
+전역 설치 없이 쓰려면 `"command": "npx", "args": ["-y", "-p", "@kimmingul/ctreg", "ctreg-mcp"]`.
+
+**도구 인자는 CLI 옵션과 같다** — 손으로 다시 적은 게 아니라 CLI 의 옵션 표에서 파생한다.
+그래서 CLI 에 옵션이 늘면 MCP 도 따라온다. `status`·`phase`·`study-type` 은 값 목록이
+스키마에 실려 모델이 추측할 필요가 없다.
+
+**종료 코드는 결과 본문의 `exitCode` 로 온다.** MCP 도구 결과에는 종료 코드 자리가 없어서
+본문 첫 필드로 싣는다. `isError` 는 **사용법 오류(2)에만** 켜진다 — exit 3(그 레지스트리가
+그렇게 물어볼 수 없음)은 도구 오류가 아니라 세상의 답이라, 그것까지 오류로 내면 모델이
+자기 실수로 읽고 인자를 바꿔 가며 헤맨다.
+
+```json
+{ "exitCode": 3, "exit": "unsupported", "envelope": { "registries": [ { "registry": "ctis", "status": "unsupported", … } ] } }
+```
+
+CRIS 키는 CLI 와 같은 자리(`~/.config/ctreg/.env` 등)에서 읽는다.
+
 ## 5분 안에
 
 ### 무엇을 할 수 있는지부터

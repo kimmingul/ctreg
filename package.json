@@ -28,13 +28,17 @@
     "claude-code",
     "claude-code-plugin",
     "research",
-    "ctreg"
+    "ctreg",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol"
   ],
   "engines": {
     "node": ">=22"
   },
   "bin": {
-    "ctreg": "dist/cli/bin.js"
+    "ctreg": "dist/cli/bin.js",
+    "ctreg-mcp": "dist/mcp/bin.js"
   },
   "files": [
     "dist",
@@ -58,6 +62,7 @@
     "ctis-field-test": "bun run scripts/ctis-field-test.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "fast-xml-parser": "^5.11.0",
     "proper-lockfile": "^4.1.2",
     "zod": "^4.4.3"

@@ -71,7 +71,12 @@ const str = { type: 'string' } as const;
 const multi = { type: 'string', multiple: true } as const;
 const flag = { type: 'boolean' } as const;
 
-const OPTIONS = {
+/**
+ * 옵션 표. **`export` 인 이유는 MCP 서버가 여기서 도구 스키마를 파생하기 때문이다**
+ * (`src/mcp/server.ts`). 손으로 다시 적으면 옵션이 하나 늘 때 CLI 와 MCP 가 갈린다 —
+ * `COMMAND_OPTIONS` 를 `--help` 가 읽는 것과 같은 이유다.
+ */
+export const OPTIONS = {
   condition: str, intervention: str, term: str, title: str, location: str,
   'outcome-query': str, sponsor: str, lead: str, id: str, patient: str,
   investigator: str,
