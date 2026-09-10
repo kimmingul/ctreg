@@ -170,6 +170,41 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(b.envelope.warnings.some((x) => x.code === 'cris_mirror_copy')).toBe(true);   // 사본 경고를 버리지 않는다
   });
 
+  /**
+   * **ISRCTN 도 본다 — 본문 자유검색으로.** 사용자: "내가 진행한 임상시험이 ctgov, cris 이외에
+   * 다른 레지스트리에도 1-2개 정도 더 있었거든요?" 실측(2026-09-11): ISRCTN `--term "Min-Gul Kim"`
+   * 1건(ISRCTN18353234). 이름 축이 없어 본문 검색이므로 연구책임자가 아닐 수 있다 — 그것을 밝힌다.
+   * CTIS 는 네 표기 전부 0 — 자유검색이 이름에 닿지 않는다. 물어볼 수 없다고 적는다.
+   */
+  it('ISRCTN 은 표기마다 본문 자유검색으로 묻고, 본문 검색이라고 밝힌다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"김민걸"}}'))
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim"]'));
+    const calls: { cmd: string; args: Record<string, unknown> }[] = [];
+    const call = (async (cmd: string, args: Record<string, unknown>) => {
+      calls.push({ cmd, args });
+      const reg = (args.registry as string[])[0];
+      if (reg === 'cris') return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'cris', status: 'ok', total: 0 }], warnings: [], data: [] } } };
+      if (reg === 'isrctn') {
+        const total = args.term === 'Min-Gul Kim' ? 1 : 0;
+        return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'isrctn', status: 'ok', total }], warnings: [], data: cmd === 'count' ? { total } : total ? [{ id: 'ISRCTN:ISRCTN18353234' }] : [] } } };
+      }
+      const total = args.investigator === 'Min-Gul Kim' ? 1 : 0;
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total }], warnings: [], data: cmd === 'count' ? { total } : total ? [{ id: 'CTGOV:A' }] : [] } } };
+    }) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '김민걸 연구', intent: 'search' }, { ...withKey(), CTREG_CRIS_MIRROR_URL: 'https://kctis.example.test' }, f as unknown as typeof fetch, call);
+    const b = r.body as { envelope: { registries: { registry: string; status: string; total?: number }[]; data: { id: string }[]; warnings: { code: string; message: string }[] } };
+    // ISRCTN 은 investigator 가 아니라 term 으로 — 축이 없다
+    const isr = calls.filter((c) => (c.args.registry as string[])[0] === 'isrctn');
+    expect(isr.length).toBeGreaterThan(0);
+    expect(isr.every((c) => typeof c.args.term === 'string' && !('investigator' in c.args))).toBe(true);
+    expect(b.envelope.data.map((x) => x.id)).toEqual(expect.arrayContaining(['CTGOV:A', 'ISRCTN:ISRCTN18353234']));
+    expect(b.envelope.registries.find((x) => x.registry === 'isrctn')).toMatchObject({ status: 'ok', total: 1 });
+    expect(b.envelope.registries.find((x) => x.registry === 'ctis')?.status).toBe('unsupported');
+    const w = b.envelope.warnings.find((x) => x.code === 'name_fulltext_isrctn');
+    expect(w?.message).toMatch(/본문|자유검색/);
+  });
+
   it('이름만 있는데 어느 표기도 안 걸리면 0건이되 그 표기들을 밝힌다', async () => {
     const f = vi.fn()
       .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"홍길동"}}'))
