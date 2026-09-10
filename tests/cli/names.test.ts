@@ -142,6 +142,26 @@ describe('names 커맨드', () => {
     expect(r.variants.length).toBeGreaterThan(0);
   });
 
+  /**
+   * 사본 문은 쪽을 나눠 준다(공식 API 문은 후보를 어댑터가 끝까지 걸었다). 실측(2026-09-11):
+   * 김민걸 총 43건인데 crisMatched 20 — 첫 쪽만 세고 있었다. 첫 쪽만 세면 빈도가 틀리고
+   * 드문 표기가 통째로 빠진다.
+   */
+  it('레지스트리가 쪽을 나눠 주면 끝까지 걷는다 — 첫 쪽만 세지 않는다', async () => {
+    const pages: Record<string, TrialRecord[]> = {
+      first: [crisTrial('KCT1', ['김민걸', 'Min-Gul Kim']), crisTrial('KCT2', ['김민걸', 'Min-Gul Kim'])],
+      '2': [crisTrial('KCT3', ['김민걸', 'Mingul Kim'])],
+    };
+    const a = adapters([]);
+    (a.cris as { search: unknown }).search = vi.fn(async (q: { pageToken?: string }) => {
+      const data = pages[q.pageToken ?? 'first'] ?? [];
+      return { data, warnings: [], total: 3, ...(q.pageToken === undefined ? { nextPageToken: '2' } : {}) };
+    });
+    const r = (await runNames(parseCliArgs(['names', '김민걸']), a)).data as NamesResult;
+    expect(r.crisMatched).toBe(3);
+    expect(r.variants.map((v) => [v.name, v.crisTrials])).toEqual([['Min-Gul Kim', 2], ['Mingul Kim', 1]]);
+  });
+
   it('이름이 없으면 사용법 오류다', () => {
     expect(() => parseCliArgs(['names', '--term', 'x'])).toThrow();
   });
