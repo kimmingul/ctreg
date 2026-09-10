@@ -73,6 +73,21 @@ describe('names 커맨드', () => {
     expect(r.variants.map((v) => v.name).sort()).toEqual(['Min Gul KIm', 'Min Gul Kim']);
   });
 
+  /**
+   * **세는 것은 시험 수다.** CRIS 는 한 사람을 여러 역할로 싣는다 — 실측: 연구책임자와
+   * 연구실무담당자에 같은 이름이 둘 다. 같은 표기가 한 시험에 두 번 나와도 그 표기를 쓴
+   * 시험은 하나다. 두 번 세면 빈도가 역할 수에 끌려 "많이 쓴 표기" 순서가 틀린다.
+   * 사보타주로 확인했다 — 이 검사가 없을 때 중복 제거를 지워도 8개 전부 초록이었다.
+   */
+  it('한 시험에 같은 표기가 두 역할로 실려도 한 번만 센다', async () => {
+    const data = [
+      crisTrial('KCT1', ['김민걸', 'Min-Gul Kim', 'Min-Gul Kim']),
+      crisTrial('KCT2', ['김민걸', 'Min Gul Kim']),
+    ];
+    const r = (await runNames(parseCliArgs(['names', '김민걸', '--term', 'x']), adapters(data))).data as NamesResult;
+    expect(r.variants.find((v) => v.name === 'Min-Gul Kim')!.crisTrials).toBe(1);
+  });
+
   it('한국어 이름 자신은 표기 목록에 넣지 않는다', async () => {
     const data = [crisTrial('KCT1', ['김민걸', 'Min-Gul Kim', '김민걸'])];
     const r = (await runNames(parseCliArgs(['names', '김민걸', '--term', 'x']), adapters(data))).data as NamesResult;
