@@ -70,6 +70,9 @@
   .pill.error { color: var(--bad); background: var(--bad-bg); }
   .warn { font-size: 13px; color: var(--warn); background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 8px 12px; margin: 6px 0; border-radius: 0 4px 4px 0; }
   .warn code { font-family: var(--mono); }
+  details.warn { padding: 0; }
+  details.warn summary { padding: 8px 12px; cursor: pointer; }
+  details.warn > div { padding: 4px 12px 8px 24px; font-size: 12px; }
   .empty { color: var(--ink-2); padding: 20px 0; }
 
   .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; }
@@ -246,7 +249,15 @@
     }).join('')}</div>`);
     (env.registries || []).filter((r) => r.status !== 'ok' && r.error).forEach((r) =>
       out.push(`<div class="warn"><strong>${r.registry}</strong> — ${esc(r.error.message)}${r.error.hint ? `<br><small>${esc(r.error.hint)}</small>` : ''}</div>`));
-    (env.warnings || []).forEach((w) => out.push(`<div class="warn"><code>${esc(w.code)}</code> ${esc(w.message)}</div>`));
+    // 같은 코드의 경고는 묶는다 — locations_truncated 는 시험마다 하나씩 와서 화면에서 표를
+    // 밀어낸다(실측: 20건 검색에 여덟 줄). 정보는 잃지 않는다: 건수와 첫 문장을 보이고, 펼치면 전부.
+    const groups = new Map();
+    for (const w of env.warnings || []) { if (!groups.has(w.code)) groups.set(w.code, []); groups.get(w.code).push(w); }
+    for (const [code, ws] of groups) {
+      if (ws.length === 1) { out.push(`<div class="warn"><code>${esc(code)}</code> ${esc(ws[0].message)}</div>`); continue; }
+      out.push(`<details class="warn"><summary><code>${esc(code)}</code> × ${ws.length} — ${esc(ws[0].message.split('.')[0])}…</summary>${
+        ws.map((w) => `<div>${w.id ? `<code>${esc(w.id)}</code> ` : ''}${esc(w.message)}</div>`).join('')}</details>`);
+    }
 
     const d = env.data;
     if (current === 'search' || current === 'get') out.push(records(d || []));
