@@ -8,8 +8,8 @@ const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-ask-')),
 const withKey = () => ({ ...env(), CTREG_LLM_API_KEY: 'test-key', CTREG_LLM_BASE_URL: 'https://llm.example/v1', CTREG_LLM_MODEL: 'test-model' });
 
 /** LLM 응답을 흉내낸다 — OpenAI 호환 chat.completions 모양. */
-const llm = (content: string) =>
-  vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200, headers: { 'content-type': 'application/json' } }));
+const llmRes = (content: string) => new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200, headers: { 'content-type': 'application/json' } });
+const llm = (content: string) => vi.fn(async () => llmRes(content));
 
 /**
  * AI 모드 — 검색창의 자연어를 도구·인자로 바꾸는 한 자리. **LLM 이 하는 일은 이것뿐이다.**
@@ -61,6 +61,50 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(args).toEqual({ registry: ['ctgov'] });   // registries 는 registry 만 받는다
     expect(args).not.toHaveProperty('evil');
     expect(args).not.toHaveProperty('condition');
+  });
+
+  /**
+   * **이름만 쳐도 찾아야 한다.** Claude 에 MCP 로 붙였을 때는 "김민걸 연구 찾아줘" 가 됐다 —
+   * 에이전트가 names 실패 뒤 로마자 후보를 여럿 만들어 ctgov 에 각각 물었기 때문이다. 페이지는
+   * 한 번 부르고 끝이라 그 절차를 서버가 대신한다. 단, **추측했다고 밝힌다** — 스킬 지침
+   * 그대로("찾지 못해 추측했다면 추측했다고 답에 밝혀라").
+   */
+  it('이름만 있으면 로마자 후보로 ctgov 에 각각 묻고 합쳐 낸다 — 추측했다고 밝히면서', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"김민걸","ctgov":true}}'))
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim","Mingul Kim","Min Gul Kim"]'));
+    const calls: { cmd: string; args: Record<string, unknown> }[] = [];
+    const totals: Record<string, number> = { 'Min-Gul Kim': 2, 'Mingul Kim': 1, 'Min Gul Kim': 0 };
+    const call = (async (cmd: string, args: Record<string, unknown>) => {
+      calls.push({ cmd, args });
+      const v = args.investigator as string; const total = totals[v] ?? 0;
+      const data = cmd === 'count' ? { total } : v === 'Min-Gul Kim' ? [{ id: 'CTGOV:A' }, { id: 'CTGOV:B' }] : [{ id: 'CTGOV:B' }];
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total }], warnings: [], data } } };
+    }) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '김민걸 교수의 임상시험 리스트', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    expect(r.status).toBe(200);
+    const b = r.body as { exitCode: number; resolved: { command: string; args: Record<string, unknown> }; envelope: { data: { id: string }[]; warnings: { code: string; message: string }[] } };
+    expect(b.exitCode).toBe(0);
+    expect(b.resolved.command).toBe('search');
+    expect(b.resolved.args.investigator).toEqual(['Min-Gul Kim', 'Mingul Kim']);   // 걸린 표기만, 많은 순
+    expect(b.envelope.data.map((x) => x.id)).toEqual(['CTGOV:A', 'CTGOV:B']);       // 합치고 중복 제거
+    const w = b.envelope.warnings.find((x) => x.code === 'name_romanized_guess');
+    expect(w?.message).toMatch(/추측/);
+    expect(w?.message).toMatch(/Min-Gul Kim/);
+    expect(calls.filter((c) => c.cmd === 'search').map((c) => c.args.investigator)).toEqual(['Min-Gul Kim', 'Mingul Kim']);   // 0건 표기는 열지 않는다
+  });
+
+  it('이름만 있는데 어느 표기도 안 걸리면 0건이되 그 표기들을 밝힌다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"홍길동"}}'))
+      .mockResolvedValueOnce(llmRes('["Gil-Dong Hong","Gildong Hong"]'));
+    const call = (async (cmd: string) => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total: 0 }], warnings: [], data: cmd === 'count' ? { total: 0 } : [] } } })) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '홍길동 연구', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    const b = r.body as { exitCode: number; envelope: { data: unknown[]; warnings: { code: string; message: string }[] } };
+    expect(b.exitCode).toBe(0);
+    expect(b.envelope.data).toEqual([]);
+    expect(b.envelope.warnings[0]?.message).toMatch(/Gil-Dong Hong/);
+    expect(b.envelope.warnings[0]?.message).toMatch(/소속|기관/);
   });
 
   it('모델이 JSON 이 아닌 것을 내면 502 다', async () => {
