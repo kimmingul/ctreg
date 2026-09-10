@@ -108,9 +108,15 @@ describe('MCP 결과는 종료 코드 계약을 싣는다', () => {
     expect((JSON.parse(unsupported.content[0]!.text) as { exitCode: number }).exitCode).toBe(EXIT.UNSUPPORTED);
   });
 
-  it('exit 0 의 0건은 오류가 아니다', async () => {
-    const r = await callTool('count', { condition: 'zzz-no-such-condition-zzz', registry: ['ctis'], term: 'zzz' }, env());
+  /**
+   * 원래는 실제 CTIS 를 불러 0건을 받았는데, 다른 프로세스 테스트와 겹치면 5초를 넘겨
+   * 플레이크가 났다. 이 검사가 지키는 것은 "0건이 오류가 아니다" 이지 네트워크가 아니므로
+   * `registries` 로 바꾼다 — 네트워크 없이 exit 0 을 내는 유일한 커맨드다.
+   */
+  it('exit 0 은 오류가 아니다', async () => {
+    const r = await callTool('registries', { registry: ['ctgov'] }, env());
     expect(r.isError).toBeFalsy();
+    expect((JSON.parse(r.content[0]!.text) as { exitCode: number }).exitCode).toBe(EXIT.OK);
   });
 });
 
