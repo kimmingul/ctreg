@@ -4,6 +4,8 @@ import { COMMAND_OPTIONS, COMMANDS, OPTIONS } from '../cli/args.js';
 import { EXIT, type ExitCode } from '../cli/exit-codes.js';
 import { run } from '../cli/index.js';
 import { readVersion } from '../cli/version.js';
+import { loadConfig } from '../runtime/config.js';
+import { record } from './stats.js';
 import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../core/vocab.js';
 
 /**
@@ -101,6 +103,11 @@ export function argvFor(cmd: Command, args: ToolArgs): string[] {
   return argv;
 }
 
+const registriesOf = (args: ToolArgs): string[] => {
+  const r = args.registry;
+  return Array.isArray(r) ? r.map(String) : typeof r === 'string' ? [r] : [];
+};
+
 export type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
 
 /**
@@ -117,7 +124,20 @@ export type ToolResult = { content: { type: 'text'; text: string }[]; isError?: 
 export async function callTool(cmd: Command, args: ToolArgs, env: NodeJS.ProcessEnv = process.env): Promise<ToolResult> {
   const out: string[] = [];
   const err: string[] = [];
+  const started = Date.now();
   const exitCode: ExitCode = await run(argvFor(cmd, args), { stdout: (s) => out.push(s), stderr: (s) => err.push(s) }, env);
+  /**
+   * 호출 통계. **인자는 넘기지 않는다** — `record` 가 받는 것은 도구·레지스트리·종료코드·
+   * 소요시간뿐이고, 검색어는 여기서 이미 끊긴다. 레지스트리는 봉투가 아니라 인자에서 읽는다:
+   * 봉투를 파싱하기 전이라서다. `all` 은 CLI 가 풀기 전의 값 그대로 남긴다.
+   */
+  record(loadConfig(env).cacheDir, {
+    at: new Date(started).toISOString(),
+    tool: cmd,
+    registries: registriesOf(args),
+    exitCode,
+    ms: Date.now() - started,
+  });
 
   let envelope: unknown;
   try {

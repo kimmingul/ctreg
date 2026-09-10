@@ -92,6 +92,26 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
     expect(body.envelope.registries[0]!.error?.message ?? '').not.toContain('인증키가 없습니다');
   }, 30_000);
 
+  /**
+   * **통계는 부르는 자리에서 쌓인다.** 모듈 자체는 단위 테스트가 덮지만, `callTool` 이
+   * 실제로 `record` 를 부르는지는 여기서만 안다 — 위의 도구 호출들이 쌓였는지 본다.
+   * 호출 순서에 기대지 않으려고 "0 보다 크다" 만 본다.
+   */
+  it('/stats 가 지금까지의 호출을 집계한다', async () => {
+    const res = await fetch(new URL('/stats', base));
+    expect(res.status).toBe(200);
+    const a = (await res.json()) as { total: number; byTool: Record<string, number>; byExit: Record<string, number> };
+    expect(a.total).toBeGreaterThan(0);
+    expect(a.byTool.search).toBeGreaterThan(0);
+    expect(a.byExit['3']).toBeGreaterThan(0); // 위 exit 3 테스트가 남긴 것
+  });
+
+  it('/stats 는 검색어를 담지 않는다', async () => {
+    const text = await (await fetch(new URL('/stats', base))).text();
+    expect(text).not.toContain('phase_3');
+    expect(text).not.toContain('melanoma');
+  });
+
   it('/mcp 밖은 404 다 — 서버가 다른 것을 서빙하지 않는다', async () => {
     const res = await fetch(new URL('/', base));
     expect(res.status).toBe(404);
