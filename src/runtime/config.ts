@@ -29,6 +29,8 @@ export type Config = {
    * 일어나는지는 어댑터가 정한다(exit 4 로 "키가 없다" 를 말한다).
    */
   crisServiceKey?: string;
+  /** CRIS 사본(KCTIS)의 URL. 있으면 CRIS 어댑터가 공식 API 대신 이것을 본다 — 연구책임자가 목록 축이 된다. */
+  crisMirrorUrl?: string;
   /**
    * **ICTRP 를 자동 조회해도 된다고 사용자가 표시했는가.**
    *
@@ -158,6 +160,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // EMA 의 CTIS 공개 포털. 인증이 없고, 재사용은 출처 표시만 요구한다(법적 고지).
     ctisBaseUrl: env.CTREG_CTIS_BASE_URL ?? 'https://euclinicaltrials.eu/ctis-public-api',
     ...(env.CTREG_CRIS_SERVICE_KEY ? { crisServiceKey: env.CTREG_CRIS_SERVICE_KEY } : {}),
+    ...(env.CTREG_CRIS_MIRROR_URL ? { crisMirrorUrl: env.CTREG_CRIS_MIRROR_URL.replace(/\/+$/, '') } : {}),
     ...(env.CTREG_LLM_API_KEY ? { llmApiKey: env.CTREG_LLM_API_KEY } : {}),
     ...(env.CTREG_LLM_BASE_URL ? { llmBaseUrl: env.CTREG_LLM_BASE_URL.replace(/\/+$/, '') } : {}),
     ...(env.CTREG_LLM_MODEL ? { llmModel: env.CTREG_LLM_MODEL } : {}),

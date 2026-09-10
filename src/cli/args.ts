@@ -20,7 +20,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
   ctreg get     <ID...> [출력]
   ctreg results <ID> [--section s] [--outcome q] [--ae-organ q] [--ae-term q] [--full]
   ctreg count   [search 와 동일한 필터]
-  ctreg names   <한국어 이름> --term <좁힐 말> [--ctgov]   한국어 이름 → CRIS 에 등록된 로마자 표기
+  ctreg names   <한국어 이름> [--term <좁힐 말>] [--ctgov] 한국어 이름 → CRIS 에 등록된 로마자 표기
   ctreg registries
 
 검색 축   --condition --intervention --term --title --location --outcome-query
@@ -393,15 +393,13 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 
   if (command === 'names') {
     /**
-     * 이름은 위치 인자 하나다. `--term` 은 필수다 — CRIS 는 사람 이름으로 거를 수 없어
-     * 후보를 좁힐 말이 있어야 한다. 없으면 어댑터가 exit 3 을 내지만, 여기서 exit 2 로
-     * 막는 것이 맞다: 요청이 잘못된 것이고 레지스트리 탓이 아니다.
+     * 이름은 위치 인자 하나다. `--term` 은 **선택**이다 — 어느 문으로 CRIS 에 들어가느냐에
+     * 달렸다. 사본(CTREG_CRIS_MIRROR_URL)은 이름이 목록 축이라 이름만으로 되고, 공식 API 는
+     * 사람 이름으로 못 걸러 어댑터가 "그렇게 물어볼 수 없다"(exit 3)를 낸다. 파서가 여기서
+     * 막으면(전에는 exit 2 였다) 사본을 쓰는 사용자까지 막는다.
      */
     if (positionals.length !== 1 || positionals[0]!.trim() === '') {
-      throw usageError('names 는 한국어 이름 하나를 받습니다', 'ctreg names <이름> --term <후보를 좁힐 말>. 예: ctreg names 김민걸 --term 전북대학교병원');
-    }
-    if (!v.term || v.term.trim() === '') {
-      throw usageError('names 에는 --term 이 필요합니다', 'CRIS 는 사람 이름으로 거를 수 없어 후보를 좁힐 말이 있어야 합니다 — 기관명이나 연구 주제. 예: --term 전북대학교병원');
+      throw usageError('names 는 한국어 이름 하나를 받습니다', 'ctreg names <이름> [--term <후보를 좁힐 말>]. 예: ctreg names 김민걸 --term 전북대학교병원');
     }
   }
 

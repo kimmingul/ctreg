@@ -90,7 +90,7 @@ describe('CRIS 미러 어댑터', () => {
     const { fetchImpl, urls, sleep } = stub(() => ({ body: { total: 0, page: 3, limit: 20, items: [], meta } }));
     const a = createCrisMirrorAdapter(cfg(), { fetchImpl, sleep });
     await a.search({ term: '당뇨', status: ['recruiting', 'active_not_recruiting'], pageToken: '3', pageSize: 20 } as NormalizedQuery, fetchOpts);
-    const u = decodeURIComponent(urls[0]!);
+    const u = decodeURIComponent(urls[0]!).replace(/\+/g, ' ');
     expect(u).toContain('status=Recruiting,Active, not recruiting');
     expect(u).toContain('page=3');
     expect(u).toContain('q=당뇨');

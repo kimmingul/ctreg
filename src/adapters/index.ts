@@ -3,6 +3,7 @@ import type { RegistryKey } from '../core/registry.js';
 import type { Config } from '../runtime/config.js';
 import type { HttpDeps } from '../runtime/http.js';
 import { createCrisAdapter } from './cris/adapter.js';
+import { createCrisMirrorAdapter } from './cris/mirror.js';
 import { createCtisAdapter } from './ctis/adapter.js';
 import { createCtgovAdapter } from './ctgov/adapter.js';
 import { createIctrpAdapter } from './ictrp/adapter.js';
@@ -20,7 +21,8 @@ export function createAdapters(cfg: Config, deps: HttpDeps = {}): Partial<Record
     ctgov: createCtgovAdapter(cfg, deps),
     isrctn: createIsrctnAdapter(cfg, deps),
     ictrp: createIctrpAdapter(cfg, deps),
-    cris: createCrisAdapter(cfg, deps),
+    // 같은 레지스트리, 다른 문. 사본(KCTIS)이 설정돼 있으면 그쪽 — 연구책임자가 목록 축이 된다.
+    cris: cfg.crisMirrorUrl ? createCrisMirrorAdapter(cfg, deps) : createCrisAdapter(cfg, deps),
     ctis: createCtisAdapter(cfg, deps),
   };
 }

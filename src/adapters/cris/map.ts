@@ -152,6 +152,12 @@ const STATUS: Record<string, TrialStatus> = {
   '연구종결': 'completed',
   '연구중단': 'terminated',
   '초청등록': 'enrolling_by_invitation',
+  // 사본(KCTIS, 12,585건) 전수에서 본 일곱 값 — 위 표본에는 없던 것들. 영문 짝은 미러의 recruitment_status_en 이다.
+  '대상자 모집 전': 'not_yet_recruiting',
+  '모집추가없이 진행중': 'active_not_recruiting',
+  '일시중지': 'suspended',
+  '모집중단': 'terminated',
+  '연구철회': 'withdrawn',
 };
 
 const str = (o: CrisDetail, k: string): string | undefined =>

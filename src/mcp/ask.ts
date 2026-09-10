@@ -147,47 +147,75 @@ export function topKoreanFacility(items: unknown[]): { facility: string; count: 
  * 결과의 시험 장소에서 소속을 읽어 그것을 좁힐 말로 쓴다(아래 3).
  */
 async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.ProcessEnv, fetchImpl: typeof fetch, call: Call): Promise<ApiResponse> {
+  const PAGE = 100;
+  const mirror = loadConfig(env).crisMirrorUrl !== undefined;
+
+  /**
+   * 0) **사본이 있으면 CRIS 부터 — 한국어 이름 그대로.** 사본은 이름이 목록 축이라 소속 추측이
+   * 필요 없고, 거기서 읽은 영문 표기는 **등록된** 것이다(오타까지). 그 표기로 ctgov 를 물으면
+   * 모델의 로마자 추측은 보조가 된다. 사용자가 CRIS 전체 DB 를 만든 이유가 이것이다.
+   */
+  const crisItems: unknown[] = [];
+  const crisWarnings: Env['warnings'] = [];
+  let crisStatus: Env['registries'][number] | undefined;
+  const registered: string[] = [];
+  if (mirror) {
+    let token: string | undefined;
+    for (let page = 0; page < 5; page += 1) {
+      const r = envelopeOf(await call('search', { registry: ['cris'], investigator: korean, 'page-size': PAGE, ...(token ? { 'page-token': token } : {}) }, env));
+      const st = r.envelope?.registries.find((x) => x.registry === 'cris');
+      crisStatus ??= st;
+      if (st?.status !== 'ok') break;
+      for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string; contacts?: { name?: string; role?: string }[] }[]) {
+        crisItems.push(item);
+        for (const c of item.contacts ?? []) {
+          const n = (c.name ?? '').trim();
+          if (c.role === '연구책임자' && n !== '' && n !== korean && /[A-Za-z]/.test(n) && !registered.includes(n)) registered.push(n);
+        }
+      }
+      for (const w of r.envelope?.warnings ?? []) if (!crisWarnings.some((x) => x.code === w.code && x.message === w.message)) crisWarnings.push(w);
+      token = (st as { nextPageToken?: string }).nextPageToken;   // 봉투는 쪽 토큰을 레지스트리 항목에 싣는다
+      if (!token) break;
+    }
+  }
+
+  // 1) 모델의 로마자 추측 — 사본이 없으면 이것뿐이고, 있으면 등록에 없는 표기를 보탠다.
   const text = await complete(llm, fetchImpl, [
     { role: 'system', content: '한국어 사람 이름의 영문(로마자) 표기 후보를 낸다. ClinicalTrials.gov 등록 관행대로 "이름 성" 순서(예: Min-Gul Kim). 하이픈·붙임·띄움 변형과 흔한 관용 표기(이→Lee/Rhee/Yi, 박→Park, 최→Choi, 정→Jung/Jeong/Chung 등)를 포함해 많이 쓰는 순으로 최대 8개. 출력은 JSON 문자열 배열 하나뿐이다. 다른 글자는 내지 마라.' },
     { role: 'user', content: korean },
   ]);
   if (isResponse(text)) return text;
-  let variants: string[] = [];
+  let guessed: string[] = [];
   try {
     const cleaned = text.replace(/```(?:json)?/gi, '').trim();
     const arr = JSON.parse(cleaned.slice(cleaned.indexOf('['), cleaned.lastIndexOf(']') + 1)) as unknown;
-    if (Array.isArray(arr)) variants = arr.filter((x): x is string => typeof x === 'string' && /^[A-Za-z][A-Za-z .'-]*$/.test(x.trim())).map((x) => x.trim());
+    if (Array.isArray(arr)) guessed = arr.filter((x): x is string => typeof x === 'string' && /^[A-Za-z][A-Za-z .'-]*$/.test(x.trim())).map((x) => x.trim());
   } catch { /* 아래에서 빈 배열로 처리 */ }
   // 붙임 표기는 규칙이라 서버가 만든다 — 실측에서 모델이 `Mingul Kim`(17건)을 빠뜨렸다. ctgov 는
   // 하이픈과 띄움을 같게 보지만(둘 다 45건) 붙임은 다른 사람이다.
-  variants = variants.flatMap((v) => (v.includes('-') ? [v, v.replace(/-([A-Za-z])/g, (_, c: string) => c.toLowerCase())] : [v]));
+  const joined = (v: string): string[] => (v.includes('-') ? [v, v.replace(/-([A-Za-z])/g, (_, c: string) => c.toLowerCase())] : [v]);
   const seen = new Set<string>();
-  variants = variants.filter((v) => { const k = v.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  const dedupe = (xs: string[]): string[] => xs.filter((v) => { const k = v.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  const fromCris = dedupe(registered.flatMap(joined));
+  const fromModel = dedupe(guessed.flatMap(joined)).slice(0, 12);
+  const variants = [...fromCris, ...fromModel];
   if (variants.length === 0) {
     return { status: 502, body: { error: 'llm_unparseable', message: '모델이 이름의 영문 표기를 내지 못했다. 소속 기관이나 연구 주제를 함께 적어 보라.', raw: text.slice(0, 300) } };
   }
 
-  // 1) 표기마다 건수 — 걸린 것만 연다.
+  // 2) 표기마다 ctgov 건수 — 걸린 것만 연다.
   const counts = await Promise.all(variants.map(async (v) => {
     const r = envelopeOf(await call('count', { registry: ['ctgov'], investigator: v }, env));
     const total = r.exitCode === 0 ? ((r.envelope?.data as { total?: number } | undefined)?.total ?? 0) : 0;
     return { v, total };
   }));
-  const hits = counts.filter((c) => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 4);
+  const hits = counts.filter((c) => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 6);
   const tried = counts.map((c) => `${c.v} ${c.total}건`).join(' · ');
-  const guide = '소속 기관이나 연구 주제를 함께 적으면 CRIS 에서 실제 등록된 표기를 읽어 정확히 대조한다(이름 대조).';
+  const guide = mirror
+    ? ''
+    : ' 소속 기관이나 연구 주제를 함께 적으면 CRIS 에서 실제 등록된 표기를 읽어 정확히 대조한다(이름 대조).';
 
-  if (hits.length === 0) {
-    const envelope: Env = {
-      registries: [{ registry: 'ctgov', status: 'ok', total: 0 }, { registry: 'cris', status: 'unsupported', error: CRIS_NEEDS_TERM }],
-      warnings: [{ code: 'name_romanized_guess', message: `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 물었으나 어느 표기도 걸리지 않았다: ${tried}. 다른 표기로 등록돼 있을 수 있다. ${guide}` }],
-      data: intent === 'count' ? { total: 0 } : [],
-    };
-    return { status: 200, body: { exitCode: 0, exit: 'ok', envelope, resolved: { command: intent, tool: intent, args: { registry: ['ctgov'], investigator: variants }, model: llm.model, via: 'name_only' } } };
-  }
-
-  // 2) 걸린 표기마다 검색 — 합치고 중복을 뺀다. 한 쪽에 다 들어오면 합이 곧 전체다.
-  const PAGE = 100;
+  // 3) 걸린 표기마다 ctgov 검색 — 합치고 중복을 뺀다. 한 쪽에 다 들어오면 합이 곧 전체다.
   const results = await Promise.all(hits.map((h) => call('search', { registry: ['ctgov'], investigator: h.v, 'page-size': PAGE }, env).then(envelopeOf)));
   const byId = new Map<string, unknown>();
   const warnings: Env['warnings'] = [];
@@ -197,51 +225,64 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
   const merged = [...byId.values()];
   warnings.unshift({
     code: 'name_romanized_guess',
-    message: `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 각각 물었다: ${tried}. 표기가 다르면 다른 사람으로 걸리므로 이 후보에 없는 표기로 등록된 시험은 빠진다. ${guide}`,
+    message: hits.length === 0
+      ? `${fromCris.length > 0 ? `CRIS 에 등록된 표기 ${fromCris.length}개(${fromCris.join(', ')})와 ` : '한국어 이름을 로마자로 '}추측한 표기로 ClinicalTrials.gov 에 물었으나 어느 표기도 걸리지 않았다: ${tried}. 다른 표기로 등록돼 있을 수 있다.${guide}`
+      : fromCris.length > 0
+        ? `CRIS 에 등록된 표기 ${fromCris.length}개(${fromCris.join(', ')})와 추측한 표기 ${fromModel.length}개로 ClinicalTrials.gov 에 각각 물었다: ${tried}. 표기가 다르면 다른 사람으로 걸리므로 이 밖의 표기로 등록된 시험은 빠진다.`
+        : `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 각각 물었다: ${tried}. 표기가 다르면 다른 사람으로 걸리므로 이 후보에 없는 표기로 등록된 시험은 빠진다.${guide}`,
   });
   if (truncated) warnings.push({ code: 'name_scan_truncated', message: `표기 하나에 ${PAGE}건을 넘는 것이 있어 그 뒤는 열지 않았다 — 합계가 전체보다 작다.`, registry: 'ctgov' });
 
-  /**
-   * 3) CRIS — 이름으로는 못 거르지만 **ctgov 시험 장소가 소속을 말해 준다**(실측: Chonbuk National
-   * University Hospital 27/45). 그 기관을 좁힐 말로 국문(모델이 옮김)·영문 둘 다 물어 연구책임자를
-   * 대조한다 — `names` 가 하는 바로 그 일이다. 다른 기관에서 한 CRIS 시험은 빠지고, 그것을 적는다.
-   */
   const registries: Env['registries'] = [{ registry: 'ctgov', status: 'ok', total: merged.length }];
-  const site = topKoreanFacility(merged);
-  if (!site) {
-    registries.push({ registry: 'cris', status: 'unsupported', error: CRIS_NEEDS_TERM });
-  } else if (!acquireNames()) {
-    return NAMES_BUSY;
-  } else try {
-    const ko = await complete(llm, fetchImpl, [
-      { role: 'system', content: '영문 기관명을 한국어 정식 명칭 하나로 옮긴다(예: Chonbuk National University Hospital → 전북대학교병원). 기관명만 내라. 다른 글자는 내지 마라.' },
-      { role: 'user', content: site.facility },
-    ]);
-    const terms = [site.facility];
-    const koName = isResponse(ko) ? '' : ko.replace(/```/g, '').trim().split('\n')[0]!.trim();
-    if (/^[가-힣A-Za-z0-9 ()·-]{2,40}$/.test(koName) && koName !== site.facility) terms.unshift(koName);
-    let crisTotal = 0; let crisFailed: Env['registries'][number]['error'] | undefined;
-    for (const term of terms) {
-      const r = envelopeOf(await call('search', { registry: ['cris'], term, investigator: korean, 'page-size': PAGE }, env));
-      const st = r.envelope?.registries.find((x) => x.registry === 'cris');
-      if (st?.status !== 'ok') { crisFailed ??= st?.error; continue; }
-      for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string }[]) if (item.id && !byId.has(item.id)) { byId.set(item.id, item); crisTotal++; }
-      for (const w of r.envelope?.warnings ?? []) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
-    }
-    registries.push(crisTotal > 0 || !crisFailed ? { registry: 'cris', status: 'ok', total: crisTotal } : { registry: 'cris', status: 'error', error: crisFailed });
-    warnings.splice(1, 0, {
-      code: 'name_affiliation_guess',
-      message: `CRIS 는 이름으로 못 걸러서, ClinicalTrials.gov 시험 장소에서 소속을 읽었다(${site.facility} ${site.count}건${koName && koName !== site.facility ? ` → ${koName}` : ''}). 그 기관을 좁힐 말로 CRIS 시험의 연구책임자를 대조했다: ${crisTotal}건. 다른 기관에서 한 CRIS 시험은 빠진다.`,
-      registry: 'cris',
-    });
-  } finally { releaseNames(); }
+  let site: { facility: string; count: number } | undefined;
+  if (mirror) {
+    // 4-a) 사본: 이미 물었다. 항목을 합치고 사본 경고를 그대로 싣는다.
+    for (const item of crisItems as { id?: string }[]) if (item.id && !byId.has(item.id)) byId.set(item.id, item);
+    for (const w of crisWarnings) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
+    registries.push(crisStatus?.status === 'ok' ? { registry: 'cris', status: 'ok', total: crisItems.length } : (crisStatus ?? { registry: 'cris', status: 'error', error: { code: 'upstream', message: 'CRIS 사본이 답하지 않았다.' } }));
+  } else {
+    /**
+     * 4-b) 공식 API 문 — CRIS 는 이름으로 못 거르지만 **ctgov 시험 장소가 소속을 말해 준다**(실측:
+     * Chonbuk National University Hospital 27/45). 그 기관을 좁힐 말로 국문(모델이 옮김)·영문 둘 다
+     * 물어 연구책임자를 대조한다 — `names` 가 하는 바로 그 일이다. 다른 기관에서 한 CRIS 시험은 빠지고, 그것을 적는다.
+     */
+    site = topKoreanFacility(merged);
+    if (!site) {
+      registries.push({ registry: 'cris', status: 'unsupported', error: CRIS_NEEDS_TERM });
+    } else if (!acquireNames()) {
+      return NAMES_BUSY;
+    } else try {
+      const ko = await complete(llm, fetchImpl, [
+        { role: 'system', content: '영문 기관명을 한국어 정식 명칭 하나로 옮긴다(예: Chonbuk National University Hospital → 전북대학교병원). 기관명만 내라. 다른 글자는 내지 마라.' },
+        { role: 'user', content: site.facility },
+      ]);
+      const terms = [site.facility];
+      const koName = isResponse(ko) ? '' : ko.replace(/```/g, '').trim().split('\n')[0]!.trim();
+      if (/^[가-힣A-Za-z0-9 ()·-]{2,40}$/.test(koName) && koName !== site.facility) terms.unshift(koName);
+      let crisTotal = 0; let crisFailed: Env['registries'][number]['error'] | undefined;
+      for (const term of terms) {
+        const r = envelopeOf(await call('search', { registry: ['cris'], term, investigator: korean, 'page-size': PAGE }, env));
+        const st = r.envelope?.registries.find((x) => x.registry === 'cris');
+        if (st?.status !== 'ok') { crisFailed ??= st?.error; continue; }
+        for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string }[]) if (item.id && !byId.has(item.id)) { byId.set(item.id, item); crisTotal++; }
+        for (const w of r.envelope?.warnings ?? []) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
+      }
+      registries.push(crisTotal > 0 || !crisFailed ? { registry: 'cris', status: 'ok', total: crisTotal } : { registry: 'cris', status: 'error', error: crisFailed });
+      warnings.splice(1, 0, {
+        code: 'name_affiliation_guess',
+        message: `CRIS 는 이름으로 못 걸러서, ClinicalTrials.gov 시험 장소에서 소속을 읽었다(${site.facility} ${site.count}건${koName && koName !== site.facility ? ` → ${koName}` : ''}). 그 기관을 좁힐 말로 CRIS 시험의 연구책임자를 대조했다: ${crisTotal}건. 다른 기관에서 한 CRIS 시험은 빠진다.`,
+        registry: 'cris',
+      });
+    } finally { releaseNames(); }
+  }
   const all = [...byId.values()];
   const envelope: Env = {
     registries,
     warnings,
     data: intent === 'count' ? { total: all.length } : all,
   };
-  return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args: { registry: ['ctgov', 'cris'], investigator: hits.map((h) => h.v), ...(site ? { korean_name: korean, term: site.facility } : {}) }, model: llm.model, via: 'name_only' } } };
+  const args: Record<string, unknown> = { registry: ['ctgov', 'cris'], investigator: hits.map((h) => h.v), korean_name: korean, ...(site ? { term: site.facility } : {}) };
+  return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args, model: llm.model, via: mirror ? 'name_only_mirror' : 'name_only' } } };
 }
 
 export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, fetchImpl: typeof fetch = fetch, call: Call = callTool): Promise<ApiResponse> {
