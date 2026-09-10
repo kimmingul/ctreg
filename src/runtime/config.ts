@@ -41,6 +41,13 @@ export type Config = {
    * 이유가 없다. 나머지 세 레지스트리는 이 값과 무관하게 그대로 동작한다.
    */
   ictrpAcknowledged: boolean;
+  /**
+   * 검색 웹페이지의 AI 모드 — 자연어를 도구·조건으로 바꾸는 LLM. OpenAI 호환 API 면 된다.
+   * `llmApiKey` 가 없으면 AI 모드는 켜지지 않고 나머지는 그대로 동작한다.
+   */
+  llmApiKey?: string;
+  llmBaseUrl?: string;
+  llmModel?: string;
 };
 
 function num(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -151,5 +158,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // EMA 의 CTIS 공개 포털. 인증이 없고, 재사용은 출처 표시만 요구한다(법적 고지).
     ctisBaseUrl: env.CTREG_CTIS_BASE_URL ?? 'https://euclinicaltrials.eu/ctis-public-api',
     ...(env.CTREG_CRIS_SERVICE_KEY ? { crisServiceKey: env.CTREG_CRIS_SERVICE_KEY } : {}),
+    ...(env.CTREG_LLM_API_KEY ? { llmApiKey: env.CTREG_LLM_API_KEY } : {}),
+    ...(env.CTREG_LLM_BASE_URL ? { llmBaseUrl: env.CTREG_LLM_BASE_URL.replace(/\/+$/, '') } : {}),
+    ...(env.CTREG_LLM_MODEL ? { llmModel: env.CTREG_LLM_MODEL } : {}),
   };
 }

@@ -3,301 +3,260 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ctreg</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<title>Clinical Trial Registry</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>
-  /* 토큰 — 종이와 잉크. 레지스트리 기록지처럼 정직하게. */
   :root {
-    --paper: #F7F5F0; --ink: #1C1B18; --ink-2: #6B675E; --rule: #D9D5CC; --well: #EFECE4;
-    --accent: #0F5C63; --accent-ink: #FFFFFF; --warn: #8A5A00; --warn-bg: #FBF3E0; --bad: #8C2B2B; --bad-bg: #F9E8E8;
+    --bg: #FFFFFF; --ink: #202124; --ink-2: #5F6368; --rule: #DADCE0; --well: #F1F3F4; --pill: #FFFFFF;
+    --link: #1A0DAB; --accent: #0F5C63; --accent-ink: #FFFFFF;
+    --warn: #7A4E00; --warn-bg: #FEF7E0; --bad: #A50E0E; --bad-bg: #FCE8E6;
     --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --paper: #17170F; --ink: #ECE8DF; --ink-2: #A39E92; --rule: #3A3830; --well: #23221B;
-      --accent: #5FB8C0; --accent-ink: #0F1A1B; --warn: #E0B25A; --warn-bg: #2E2611; --bad: #E08484; --bad-bg: #2E1A1A;
+      --bg: #1F2125; --ink: #E8EAED; --ink-2: #9AA0A6; --rule: #3C4043; --well: #303134; --pill: #2A2C31;
+      --link: #8AB4F8; --accent: #7FCBD2; --accent-ink: #0F1A1B;
+      --warn: #FDD663; --warn-bg: #3A2F12; --bad: #F28B82; --bad-bg: #3C1F1D;
     }
   }
   :root[data-theme="dark"] {
-    --paper: #17170F; --ink: #ECE8DF; --ink-2: #A39E92; --rule: #3A3830; --well: #23221B;
-    --accent: #5FB8C0; --accent-ink: #0F1A1B; --warn: #E0B25A; --warn-bg: #2E2611; --bad: #E08484; --bad-bg: #2E1A1A;
+    --bg: #1F2125; --ink: #E8EAED; --ink-2: #9AA0A6; --rule: #3C4043; --well: #303134; --pill: #2A2C31;
+    --link: #8AB4F8; --accent: #7FCBD2; --accent-ink: #0F1A1B;
+    --warn: #FDD663; --warn-bg: #3A2F12; --bad: #F28B82; --bad-bg: #3C1F1D;
   }
 
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); }
-  main { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.6 var(--sans); }
+  a { color: var(--link); }
+  button { font: inherit; }
 
-  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; }
-  header h1 { margin: 0; font: 500 22px/1 var(--mono); letter-spacing: -0.01em; }
-  header p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  /* 첫 화면 — 로고 · 알약 · 버튼 둘. 그 밖에 아무것도 없다. */
+  .home { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 20px 16vh; gap: 28px; }
+  body.searched .home { min-height: 0; justify-content: flex-start; padding: 18px 20px 12px; gap: 18px; flex-direction: row; flex-wrap: wrap; align-items: center; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--rule); }
 
-  /* 도구 탭 — 탭 하나가 도구 하나다. */
-  .tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; margin-bottom: 18px; }
-  .tabs button { font: 500 14px var(--sans); color: var(--ink-2); background: none; border: 1px solid transparent; border-radius: 4px; padding: 7px 12px; cursor: pointer; }
-  .tabs button:hover { color: var(--ink); background: var(--well); }
-  .tabs button[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); }
-  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .logo { font: 500 clamp(32px, 5.4vw, 52px)/1.1 var(--sans); letter-spacing: -0.025em; color: var(--ink); text-decoration: none; text-align: center; white-space: nowrap; }
+  .logo b { color: var(--accent); font-weight: 500; }
+  body.searched .logo { font-size: 20px; }
 
-  .summary { color: var(--ink-2); margin: 0 0 14px; }
+  /* 알약 — 구글의 것. 왼쪽 +, 오른쪽 AI 모드 칩. */
+  .pill { width: min(690px, 100%); height: 52px; display: flex; align-items: center; background: var(--pill); border: 1px solid var(--rule); border-radius: 26px; padding: 0 8px 0 6px; position: relative; }
+  .pill:focus-within, .pill:hover { box-shadow: 0 1px 6px rgba(32,33,36,.2); border-color: transparent; }
+  .pill input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--ink); font: 16px var(--sans); outline: none; padding: 0 8px; }
+  .pill .sep { width: 1px; height: 24px; background: var(--rule); margin: 0 2px; }
+  .icon { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; flex: none; }
+  .icon:hover { background: var(--well); color: var(--ink); }
+  .icon:focus-visible, .chip:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .chip { flex: none; height: 38px; padding: 0 14px 0 10px; border: 0; border-radius: 19px; background: var(--well); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+  .chip:hover { filter: brightness(.97); }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 
-  /* 입력 — 주 칸 하나가 크고, 나머지는 접힌다. */
-  form { display: grid; gap: 12px; }
-  .primary { display: flex; gap: 8px; }
-  .primary input { flex: 1; font: 17px var(--sans); padding: 11px 14px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); }
-  .primary input:focus-visible, .field input:focus-visible, .field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-  .primary button { font: 500 15px var(--sans); padding: 0 20px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
-  .primary button:disabled { opacity: .55; cursor: wait; }
-  .regs { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; color: var(--ink-2); }
-  .regs label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
-  details { border: 1px solid var(--rule); border-radius: 6px; padding: 0 14px; }
-  details summary { cursor: pointer; padding: 9px 0; color: var(--ink-2); font-size: 14px; user-select: none; }
-  .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 18px; padding: 4px 0 14px; }
-  .field { display: grid; gap: 4px; }
-  .field label { font-size: 13px; font-weight: 500; }
-  .field small { color: var(--ink-2); font-size: 12px; line-height: 1.4; }
-  .field input, .field select { font: 14px var(--sans); padding: 7px 9px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); }
-  .field select[multiple] { min-height: 92px; }
-  .field.check { grid-template-columns: auto 1fr; align-items: start; gap: 8px; }
-  .field.check input { margin-top: 3px; }
-  .note { font-size: 13px; color: var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 8px 12px; }
+  /* + 메뉴 */
+  .menu { position: absolute; left: 4px; top: 56px; min-width: 220px; background: var(--pill); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 4px 16px rgba(32,33,36,.18); padding: 6px; z-index: 5; }
+  .menu[hidden] { display: none; }
+  .menu button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--ink); padding: 9px 12px; border-radius: 8px; cursor: pointer; }
+  .menu button:hover { background: var(--well); }
+  .menu button small { display: block; color: var(--ink-2); font-size: 12px; }
+  .menu hr { border: 0; border-top: 1px solid var(--rule); margin: 6px 0; }
+  .menu .syntax { padding: 6px 12px 4px; font-size: 12px; color: var(--ink-2); }
+  .menu .syntax code { font-family: var(--mono); }
 
-  /* 결과 — 요약 줄이 먼저, 표는 그다음. */
-  #out { margin-top: 26px; }
-  .status { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 14px; margin-bottom: 10px; }
-  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--well); font-family: var(--mono); font-size: 13px; }
-  .pill.unsupported { color: var(--warn); background: var(--warn-bg); }
-  .pill.error { color: var(--bad); background: var(--bad-bg); }
-  .warn { font-size: 13px; color: var(--warn); background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 8px 12px; margin: 6px 0; border-radius: 0 4px 4px 0; }
-  .warn code { font-family: var(--mono); }
+  .btns { display: flex; gap: 12px; }
+  body.searched .btns { display: none; }
+  .btn { height: 38px; padding: 0 18px; border: 1px solid transparent; border-radius: 6px; background: var(--well); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--rule); box-shadow: 0 1px 2px rgba(32,33,36,.1); }
+
+  /* 결과 */
+  .results { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; }
+  .mode { font-size: 12px; color: var(--ink-2); margin: 0 0 10px; }
+  .mode code { font-family: var(--mono); }
+  .stat { font-size: 13px; color: var(--ink-2); margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .stat .no { color: var(--warn); }
+  .stat .err { color: var(--bad); }
+  .item { max-width: 652px; margin: 0 0 22px; }
+  .item .meta { font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 0 8px; }
+  .item .meta .id { font-family: var(--mono); font-size: 12px; }
+  .item h3 { margin: 2px 0 3px; font: 400 19px/1.3 var(--sans); }
+  .item h3 a { text-decoration: none; }
+  .item h3 a:hover { text-decoration: underline; }
+  .item .sub { font-size: 13px; color: var(--ink); }
+  .tag { font-family: var(--mono); font-size: 11px; padding: 0 5px; border-radius: 3px; background: var(--well); color: var(--ink-2); }
+  .warn { max-width: 652px; font-size: 13px; color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 8px 12px; margin: 0 0 10px; }
+  .warn code { font-family: var(--mono); font-size: 12px; }
   details.warn { padding: 0; }
   details.warn summary { padding: 8px 12px; cursor: pointer; }
-  details.warn > div { padding: 4px 12px 8px 24px; font-size: 12px; }
-  .empty { color: var(--ink-2); padding: 20px 0; }
+  details.warn > div { padding: 2px 12px 8px 24px; font-size: 12px; }
+  .bad { color: var(--bad); background: var(--bad-bg); }
+  .empty { color: var(--ink-2); max-width: 652px; }
+  .attribution { font-size: 12px; color: var(--ink-2); max-width: 652px; margin-top: 8px; }
+  .tablewrap { overflow-x: auto; max-width: 652px; }
+  table { border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 500; color: var(--ink-2); font-size: 12px; }
+  td.num, td.mono { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  pre { background: var(--well); padding: 12px; border-radius: 6px; overflow-x: auto; font: 12px/1.5 var(--mono); max-width: 652px; }
 
-  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
-  th { font-size: 12px; font-weight: 500; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; background: var(--well); }
-  tr:last-child td { border-bottom: 0; }
-  td.id, td.num { font-family: var(--mono); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  td.title { min-width: 320px; }
-  td a { color: var(--accent); }
-  .tag { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 1px 6px; border-radius: 3px; background: var(--well); margin-right: 4px; }
-  .attribution { font-size: 12px; color: var(--ink-2); margin-top: 8px; }
-
-  pre { background: var(--well); padding: 12px; border-radius: 6px; overflow-x: auto; font: 13px/1.5 var(--mono); }
-
-  footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-2); }
-  footer strong { color: var(--ink); }
-  footer a { color: var(--accent); }
-  @media (prefers-reduced-motion: no-preference) { .primary button { transition: opacity .15s; } }
+  footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--well); border-top: 1px solid var(--rule); font-size: 12px; color: var(--ink-2); padding: 10px 20px; text-align: center; }
+  body.searched footer { position: static; margin-top: 30px; }
+  footer strong { color: var(--ink); font-weight: 500; }
+  @media (prefers-reduced-motion: no-preference) { .pill, .chip, .btn { transition: all .12s; } }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>ctreg</h1>
-    <p>임상시험 레지스트리 다섯 곳을 하나의 화면으로 — ClinicalTrials.gov · ISRCTN · EU CTIS · CRIS · WHO ICTRP</p>
-  </header>
+<div class="home">
+  <a class="logo" href="/">Clinical Trial <b>Registry</b></a>
 
-  <div class="tabs" role="tablist" id="tabs"></div>
-  <p class="summary" id="summary"></p>
-
-  <form id="form" autocomplete="off">
-    <div id="primary" class="primary"></div>
-    <div id="regs" class="regs"></div>
-    <div id="note" class="note" hidden></div>
-    <details id="adv" hidden><summary>고급</summary><div class="fields" id="fields"></div></details>
+  <form class="pill" id="form" autocomplete="off" role="search">
+    <button type="button" class="icon" id="plus" aria-label="더 보기" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="menu" id="menu" hidden>
+      <button type="button" data-cmd="get">등록번호로<small>CTGOV:NCT… CRIS:KCT… 여러 개 가능</small></button>
+      <button type="button" data-cmd="results">결과 데이터<small>평가변수·이상반응 — ClinicalTrials.gov 만</small></button>
+      <button type="button" data-cmd="names">이름 대조<small>한국어 이름 → 등록된 로마자 표기</small></button>
+      <button type="button" data-cmd="registries">레지스트리 다섯<small>각각 무엇을 할 수 있는지</small></button>
+      <hr>
+      <div class="syntax">검색창 문법 — <code>status:recruiting</code> <code>phase:phase_3</code> <code>registry:cris</code> <code>condition:…</code></div>
+    </div>
+    <input id="q" aria-label="검색" autofocus>
+    <input id="q2" aria-label="좁힐 말" placeholder="좁힐 말 — 기관·주제" hidden>
+    <span class="sep"></span>
+    <button type="button" class="chip" id="ai" aria-pressed="false" title="자연어로 물으면 AI 가 조건을 고른다"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 모드</button>
   </form>
 
-  <section id="out" aria-live="polite"></section>
+  <div class="btns">
+    <button type="button" class="btn" data-go="search">시험 검색</button>
+    <button type="button" class="btn" data-go="count">건수만</button>
+  </div>
+</div>
 
-  <footer>
-    <strong>이 페이지의 출력은 임상시험 적격 판정이 아니다.</strong> 레지스트리 기재사항은 스크리닝을 대체하지
-    않는다. 어떤 칸이 비어 있는 것은 "그런 사실이 없다" 가 아니라 "이 레지스트리가 그 항목을 기재하지
-    않았다" 는 뜻일 수 있다. 결과가 0건인 것과 "그렇게 검색할 수 없음" 은 다른 답이고, 이 페이지는 둘을
-    섞지 않는다.
-    같은 도구가 <a href="https://github.com/kimmingul/ctreg">CLI · Claude Code 플러그인 · MCP 서버</a>로도 있다.
-  </footer>
-</main>
+<section class="results" id="out" aria-live="polite"></section>
+
+<footer><strong>이 결과는 임상시험 적격 판정이 아니다.</strong> 레지스트리 기재사항은 스크리닝을 대체하지 않는다. 0건과 "그렇게 검색할 수 없음" 은 다른 답이다 · ClinicalTrials.gov · ISRCTN · EU CTIS · CRIS · WHO ICTRP · <a href="https://github.com/kimmingul/ctreg">ctreg</a></footer>
 
 <script>
 (() => {
-  // 칸을 손으로 적지 않는다 — /api/schema 가 정본이다. MCP 스키마와 --help 가 읽는 그 표다.
   const $ = (id) => document.getElementById(id);
-  const REGS = ['ctgov', 'isrctn', 'ctis', 'cris', 'ictrp'];
   const REG_LABEL = { ctgov: 'ClinicalTrials.gov', isrctn: 'ISRCTN', ctis: 'EU CTIS', cris: 'CRIS', ictrp: 'WHO ICTRP' };
-  // 탭 순서와 라벨. 주 칸(크게 그리는 것)이 무엇인지도 여기서 정한다.
-  const TABS = [
-    { cmd: 'search',     label: '검색',      primary: 'term',        placeholder: '질환, 약물, 기관… 자유 텍스트' },
-    { cmd: 'count',      label: '건수',      primary: 'term',        placeholder: '질환, 약물, 기관… 자유 텍스트' },
-    { cmd: 'get',        label: '등록번호',   primary: 'ids',         placeholder: 'CTGOV:NCT01234567 CRIS:KCT0012487 — 여러 개는 띄어쓰기' },
-    { cmd: 'results',    label: '결과 데이터', primary: 'trial_id',    placeholder: 'CTGOV:NCT01234567 — 구조화된 결과는 ctgov 만' },
-    { cmd: 'names',      label: '이름 대조',   primary: 'korean_name', placeholder: '한국어 연구자 이름 — 예: 김민걸' },
-    { cmd: 'registries', label: '레지스트리', primary: null },
-  ];
-  const NOTE = {
-    names: '이름 대조는 CRIS 후보를 하나씩 열어 확인하므로 1~3분 걸릴 수 있다. 서버가 한 번에 하나만 처리한다.',
-    results: '구조화된 결과 데이터를 주는 레지스트리는 ClinicalTrials.gov 뿐이다. 다른 곳은 "그렇게 물어볼 수 없음" 으로 답한다.',
+  const REG_DEFAULT = ['ctgov', 'isrctn', 'ctis', 'cris']; // 고르는 칸이 없으니 넓게 본다. ictrp 는 꺼져 있다.
+  const PRIMARY = { search: 'term', count: 'term', get: 'ids', results: 'trial_id', names: 'korean_name', registries: null };
+  let schema = null, mode = 'search', ai = false, busy = false;
+
+  fetch('/api/schema').then((r) => r.json()).then((s) => { schema = s; });
+
+  // + 메뉴
+  $('plus').onclick = () => { const open = $('menu').hidden; $('menu').hidden = !open; $('plus').setAttribute('aria-expanded', open); };
+  document.addEventListener('click', (e) => { if (!e.target.closest('#plus, #menu')) { $('menu').hidden = true; $('plus').setAttribute('aria-expanded', 'false'); } });
+  $('menu').onclick = (e) => {
+    const b = e.target.closest('button[data-cmd]'); if (!b) return;
+    setMode(b.dataset.cmd); $('menu').hidden = true;
+    if (mode === 'registries') submit(); else $('q').focus();
   };
-  let schema = null, current = 'search', busy = false;
+  document.querySelector('.btns').onclick = (e) => { const b = e.target.closest('[data-go]'); if (b) { setMode(b.dataset.go); submit(); } };
+  $('ai').onclick = () => { ai = !ai; $('ai').setAttribute('aria-pressed', ai); $('q').focus(); };
+  $('form').onsubmit = (e) => { e.preventDefault(); if (mode === 'get' || mode === 'results' || mode === 'names' || mode === 'registries') submit(); else { setMode('search'); submit(); } };
 
-  fetch('/api/schema').then((r) => r.json()).then((s) => { schema = s; renderTabs(); select('search'); });
-
-  function renderTabs() {
-    $('tabs').innerHTML = TABS.map((t) =>
-      `<button type="button" role="tab" data-cmd="${t.cmd}" aria-selected="${t.cmd === current}">${t.label}</button>`).join('');
-    $('tabs').onclick = (e) => { const b = e.target.closest('button'); if (b) select(b.dataset.cmd); };
+  function setMode(m) {
+    mode = m;
+    $('q2').hidden = m !== 'names';
+    if (m === 'names') $('q2').required = true;
   }
 
-  function select(cmd) {
-    current = cmd;
-    const tab = TABS.find((t) => t.cmd === cmd);
-    const spec = schema.commands[cmd];
-    [...$('tabs').children].forEach((b) => b.setAttribute('aria-selected', b.dataset.cmd === cmd));
-    $('summary').textContent = spec.summary;
-    $('out').innerHTML = '';
-
-    // 주 칸
-    const p = $('primary');
-    if (tab.primary) {
-      p.innerHTML = `<input name="__primary" placeholder="${tab.placeholder}" aria-label="${tab.label}" required>
-                     <button type="submit">찾기</button>`;
-      p.querySelector('input').focus();
-    } else {
-      p.innerHTML = `<button type="submit">보기</button>`;
+  /** 검색창 문법 — "조건:값" 은 그 축으로, 나머지는 primary 로. AI 모드가 아닐 때의 규칙이다. */
+  function parse(q) {
+    const args = {}; const free = [];
+    const names = new Set((schema?.commands[mode]?.options || []).map((o) => o.name));
+    for (const tok of q.match(/(\S+?:"[^"]*"|\S+)/g) || []) {
+      const m = /^([a-z-]+):(.+)$/.exec(tok);
+      if (m && names.has(m[1])) {
+        const v = m[2].replace(/^"|"$/g, '');
+        const o = schema.commands[mode].options.find((x) => x.name === m[1]);
+        if (o.multiple) (args[m[1]] ||= []).push(v); else args[m[1]] = v;
+      } else free.push(tok);
     }
-
-    // 레지스트리 체크 — 그 축을 받는 커맨드에만. names 는 cris 고정이라 없다.
-    const hasReg = spec.options.some((o) => o.name === 'registry');
-    $('regs').innerHTML = hasReg ? REGS.map((r) =>
-      `<label><input type="checkbox" name="registry" value="${r}" ${['ctgov','isrctn','ctis'].includes(r) ? 'checked' : ''}> ${REG_LABEL[r]}${r === 'cris' ? ' <small>(서버에 키 있음)</small>' : r === 'ictrp' ? ' <small>(기본 꺼짐)</small>' : ''}</label>`).join('') : '';
-
-    // 안내
-    $('note').hidden = !NOTE[cmd]; $('note').textContent = NOTE[cmd] || '';
-
-    // 고급 — 주 칸과 registry 를 뺀 나머지를 스키마대로 그린다.
-    const rest = spec.options.filter((o) => o.name !== tab.primary && o.name !== 'registry');
-    // names 의 term 은 필수라 고급이 아니라 주 칸 옆에 둔다.
-    const required = cmd === 'names' ? rest.filter((o) => o.name === 'term') : [];
-    const advanced = rest.filter((o) => !required.includes(o));
-    if (required.length) {
-      // 찾기 버튼 **앞에** 둔다 — 뒤에 두면 이름 → 찾기 → 좁힐 말 순서가 되어 필수 칸을 놓친다(실제 화면에서 그랬다).
-      p.querySelector('button[type=submit]').insertAdjacentHTML('beforebegin', required.map((o) =>
-        `<input name="${o.name}" placeholder="좁힐 말 — 기관명·연구 주제 (필수)" aria-label="${o.name}" required style="flex:.7">`).join(''));
-    }
-    $('adv').hidden = advanced.length === 0;
-    $('adv').open = false;
-    $('fields').innerHTML = advanced.map(field).join('');
-  }
-
-  function field(o) {
-    const help = `<small>${esc(o.help)}</small>`;
-    if (o.type === 'boolean') return `<div class="field check"><input type="checkbox" name="${o.name}" id="f-${o.name}"><div><label for="f-${o.name}">${o.name}</label>${help}</div></div>`;
-    if (o.values) return `<div class="field"><label for="f-${o.name}">${o.name}</label><select name="${o.name}" id="f-${o.name}" ${o.multiple ? 'multiple' : ''}>${o.multiple ? '' : '<option value="">—</option>'}${o.values.map((v) => `<option>${v}</option>`).join('')}</select>${help}</div>`;
-    return `<div class="field"><label for="f-${o.name}">${o.name}</label><input name="${o.name}" id="f-${o.name}">${help}</div>`;
-  }
-
-  // 폼 → 인자. 빈 칸은 보내지 않는다 — CLI 파서가 undefined 를 "안 줌" 으로 읽는다.
-  function collect() {
-    const tab = TABS.find((t) => t.cmd === current);
-    const fd = new FormData($('form'));
-    const args = {};
-    const primary = (fd.get('__primary') || '').toString().trim();
-    if (tab.primary === 'ids') args.ids = primary.split(/\s+/).filter(Boolean);
-    else if (tab.primary) args[tab.primary] = primary;
-    const regs = fd.getAll('registry'); if (regs.length) args.registry = regs;
-    for (const o of schema.commands[current].options) {
-      if (o.name === 'registry' || o.name === tab.primary) continue;
-      if (o.type === 'boolean') { if (fd.get(o.name) === 'on') args[o.name] = true; continue; }
-      const vals = fd.getAll(o.name).map(String).map((s) => s.trim()).filter(Boolean);
-      if (!vals.length) continue;
-      args[o.name] = o.multiple ? vals : vals[0];
-    }
+    const p = free.join(' ').trim();
+    if (PRIMARY[mode] === 'ids') args.ids = p.split(/\s+/).filter(Boolean);
+    else if (PRIMARY[mode] && p) args[PRIMARY[mode]] = p;
+    if (mode === 'names') { args.term = $('q2').value.trim(); args.ctgov = true; }
+    if (!args.registry && (mode === 'search' || mode === 'count')) args.registry = REG_DEFAULT;
+    if (mode === 'search' && !args['page-size']) args['page-size'] = 10;
     return args;
   }
 
-  $('form').onsubmit = async (e) => {
-    e.preventDefault();
-    if (busy) return;
+  async function submit() {
+    if (busy || !schema) return;
+    const q = $('q').value.trim();
+    if (PRIMARY[mode] && !q) { $('q').focus(); return; }
     busy = true;
-    const btn = $('form').querySelector('button[type=submit]'); btn.disabled = true;
-    $('out').innerHTML = `<p class="empty">${current === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : '조회 중…'}</p>`;
+    document.body.classList.add('searched');
+    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중…' : '조회 중…'}</p>`;
     try {
-      const res = await fetch(`/api/${current}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(collect()) });
-      const body = await res.json();
-      if (res.status === 429) { $('out').innerHTML = `<div class="warn">${esc(body.message || '지금은 받을 수 없다.')}</div>`; return; }
-      render(body);
+      // AI 모드: 자연어를 서버의 /api/ask 가 도구·인자로 바꾼다. 아니면 검색창 문법 그대로.
+      const url = ai && (mode === 'search' || mode === 'count') ? '/api/ask' : `/api/${mode}`;
+      const body = ai && (mode === 'search' || mode === 'count') ? { q, intent: mode } : parse(q);
+      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (res.status === 429) { $('out').innerHTML = `<div class="warn">${esc(data.message || '지금은 받을 수 없다.')}</div>`; return; }
+      if (res.status === 501) { $('out').innerHTML = `<div class="warn">${esc(data.message || 'AI 모드가 아직 켜져 있지 않다.')}</div>`; return; }
+      render(data);
     } catch (err) {
-      $('out').innerHTML = `<div class="warn">서버에 닿지 못했다: ${esc(String(err))}</div>`;
-    } finally { busy = false; btn.disabled = false; }
-  };
+      $('out').innerHTML = `<div class="warn bad">서버에 닿지 못했다: ${esc(String(err))}</div>`;
+    } finally { busy = false; }
+  }
 
-  // 결과 — 봉투를 그대로 그린다. 요약하거나 해석하지 않는다.
   function render(body) {
     const env = body.envelope || {};
     const out = [];
-    if (body.exitCode === 2) {
-      out.push(`<div class="warn"><strong>입력을 고쳐야 한다.</strong> ${esc(env.error?.message || '')}<br><code>${esc(env.error?.hint || '')}</code></div>`);
-      $('out').innerHTML = out.join(''); return;
-    }
-    // 레지스트리별 상태 — "그렇게 물어볼 수 없음" 은 빈 표가 아니라 따로 보인다.
-    out.push(`<div class="status">${(env.registries || []).map((r) => {
-      if (r.status === 'ok') return `<span class="pill">${r.registry} · ${r.total ?? 0}건</span>`;
-      const why = r.error ? esc(r.error.message) : '';
-      return `<span class="pill ${r.status}" title="${why}">${r.registry} · ${r.status === 'unsupported' ? '그렇게 물어볼 수 없음' : '실패'}</span>`;
-    }).join('')}</div>`);
+    // AI 모드였으면 무엇으로 물었는지 먼저 보인다 — 모델이 고른 조건을 숨기지 않는다.
+    if (body.resolved) out.push(`<p class="mode">AI 가 이렇게 물었다: <code>${esc(body.resolved.tool)}</code> ${esc(JSON.stringify(body.resolved.args))}</p>`);
+    const cmd = body.resolved?.command || mode;
+    if (body.exitCode === 2) { $('out').innerHTML = out.join('') + `<div class="warn bad"><strong>입력을 고쳐야 한다.</strong> ${esc(env.error?.message || '')}<br><code>${esc(env.error?.hint || '')}</code></div>`; return; }
+    out.push(`<p class="stat">${(env.registries || []).map((r) =>
+      r.status === 'ok' ? `<span>${REG_LABEL[r.registry] || r.registry} ${(r.total ?? 0).toLocaleString()}건</span>`
+      : r.status === 'unsupported' ? `<span class="no" title="${esc(r.error?.message || '')}">${REG_LABEL[r.registry] || r.registry} — 그렇게 물어볼 수 없음</span>`
+      : `<span class="err" title="${esc(r.error?.message || '')}">${REG_LABEL[r.registry] || r.registry} — 실패</span>`).join('')}</p>`);
     (env.registries || []).filter((r) => r.status !== 'ok' && r.error).forEach((r) =>
-      out.push(`<div class="warn"><strong>${r.registry}</strong> — ${esc(r.error.message)}${r.error.hint ? `<br><small>${esc(r.error.hint)}</small>` : ''}</div>`));
-    // 같은 코드의 경고는 묶는다 — locations_truncated 는 시험마다 하나씩 와서 화면에서 표를
-    // 밀어낸다(실측: 20건 검색에 여덟 줄). 정보는 잃지 않는다: 건수와 첫 문장을 보이고, 펼치면 전부.
+      out.push(`<div class="warn${r.status === 'error' ? ' bad' : ''}"><strong>${REG_LABEL[r.registry] || r.registry}</strong> — ${esc(r.error.message)}${r.error.hint ? `<br><small>${esc(r.error.hint)}</small>` : ''}</div>`));
     const groups = new Map();
     for (const w of env.warnings || []) { if (!groups.has(w.code)) groups.set(w.code, []); groups.get(w.code).push(w); }
     for (const [code, ws] of groups) {
-      if (ws.length === 1) { out.push(`<div class="warn"><code>${esc(code)}</code> ${esc(ws[0].message)}</div>`); continue; }
-      out.push(`<details class="warn"><summary><code>${esc(code)}</code> × ${ws.length} — ${esc(ws[0].message.split('.')[0])}…</summary>${
-        ws.map((w) => `<div>${w.id ? `<code>${esc(w.id)}</code> ` : ''}${esc(w.message)}</div>`).join('')}</details>`);
+      if (ws.length === 1) out.push(`<div class="warn"><code>${esc(code)}</code> ${esc(ws[0].message)}</div>`);
+      else out.push(`<details class="warn"><summary><code>${esc(code)}</code> × ${ws.length} — ${esc(ws[0].message.split('.')[0])}…</summary>${ws.map((w) => `<div>${w.id ? `<code>${esc(w.id)}</code> ` : ''}${esc(w.message)}</div>`).join('')}</details>`);
     }
-
     const d = env.data;
-    if (current === 'search' || current === 'get') out.push(records(d || []));
-    else if (current === 'count') out.push(d && d.total != null ? `<p class="empty">합계 <strong>${d.total}</strong>건 — 레지스트리별 수는 위에. 같은 시험이 여러 곳에 등록될 수 있어 합은 참고만.</p>` : '<p class="empty">세지 못했다.</p>');
-    else if (current === 'names') out.push(names(d));
-    else if (current === 'registries') out.push(registries(d || []));
+    if (cmd === 'search' || cmd === 'get') out.push(items(d || []));
+    else if (cmd === 'count') out.push(d && d.total != null ? `<p class="empty">합계 <strong>${d.total.toLocaleString()}</strong>건 — 레지스트리별 수는 위에. 같은 시험이 여러 곳에 등록될 수 있어 합은 참고만.</p>` : '<p class="empty">세지 못했다.</p>');
+    else if (cmd === 'names') out.push(names(d));
+    else if (cmd === 'registries') out.push(registries(d || []));
     else out.push(`<pre>${esc(JSON.stringify(d, null, 2))}</pre>`);
     $('out').innerHTML = out.join('');
   }
 
-  function records(list) {
-    if (!list.length) return '<p class="empty">0건. 위 상태에 "그렇게 물어볼 수 없음" 이 있으면 빈 것이 아니라 못 물은 것이다.</p>';
+  function items(list) {
+    if (!list.length) return '<p class="empty">0건. 위에 "그렇게 물어볼 수 없음" 이 있으면 빈 것이 아니라 못 물은 것이다.</p>';
     const attributions = [...new Set(list.map((r) => r.attribution).filter(Boolean))];
-    return `<div class="tablewrap"><table><thead><tr><th>등록번호</th><th>제목</th><th>상태</th><th>단계</th><th>의뢰</th><th>나라</th></tr></thead><tbody>${
-      list.map((r) => `<tr>
-        <td class="id"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.id)}</a></td>
-        <td class="title">${esc(r.title)}${r.hasResults ? ' <span class="tag">results</span>' : ''}</td>
-        <td><span class="tag">${esc(r.status)}</span>${r.statusRaw && r.statusRaw !== r.status ? `<small>${esc(r.statusRaw)}</small>` : ''}</td>
-        <td>${(r.phase || []).map((p) => `<span class="tag">${esc(p)}</span>`).join('')}</td>
-        <td>${esc(r.sponsor?.lead || '')}</td>
-        <td>${[...new Set((r.locations || []).map((l) => l.country).filter(Boolean))].slice(0, 3).join(', ')}${r.locationsTotal > (r.locations || []).length ? ` <small>+${r.locationsTotal - r.locations.length}</small>` : ''}</td>
-      </tr>`).join('')}</tbody></table></div>${attributions.map((a) => `<p class="attribution">${esc(a)}</p>`).join('')}`;
+    return list.map((r) => {
+      const countries = [...new Set((r.locations || []).map((l) => l.country).filter(Boolean))].slice(0, 3).join(', ');
+      const more = r.locationsTotal > (r.locations || []).length ? ` 외 ${r.locationsTotal - r.locations.length}` : '';
+      return `<article class="item">
+        <div class="meta"><span class="id">${esc(r.id)}</span><span class="tag">${esc(r.status)}</span>${(r.phase || []).map((p) => `<span class="tag">${esc(p)}</span>`).join('')}${r.hasResults ? '<span class="tag">results</span>' : ''}</div>
+        <h3><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h3>
+        <div class="sub">${[r.sponsor?.lead, countries ? countries + more : '', r.dates?.start ? `${r.dates.start}~${r.dates.completion || ''}` : ''].filter(Boolean).map(esc).join(' · ')}</div>
+      </article>`;
+    }).join('') + attributions.map((a) => `<p class="attribution">${esc(a)}</p>`).join('');
   }
-
   function names(d) {
     if (!d) return '<p class="empty">대조하지 못했다.</p>';
     const head = `<p class="empty"><strong>${esc(d.korean)}</strong> — "${esc(d.term)}" 로 좁힌 CRIS ${d.crisMatched}건을 대조. 이 수가 작으면 표기 목록도 불완전할 수 있다.</p>`;
     if (!d.variants.length) return head;
-    return head + `<div class="tablewrap"><table><thead><tr><th>등록된 표기</th><th>CRIS 시험</th>${d.variants.some((v) => v.ctgovTrials != null) ? '<th>ctgov 시험</th>' : ''}</tr></thead><tbody>${
-      d.variants.map((v) => `<tr><td class="id">${esc(v.name)}</td><td class="num">${v.crisTrials}</td>${v.ctgovTrials != null ? `<td class="num">${v.ctgovTrials}</td>` : ''}</tr>`).join('')}</tbody></table></div>
-      <p class="attribution">표기별 건수는 겹칠 수 있다 — 더하지 말고 각 표기로 따로 검색해 등록번호로 합친다. 오타처럼 보이는 것도 등록된 표기다.</p>`;
+    const ct = d.variants.some((v) => v.ctgovTrials != null);
+    return head + `<div class="tablewrap"><table><thead><tr><th>등록된 표기</th><th>CRIS</th>${ct ? '<th>ctgov</th>' : ''}</tr></thead><tbody>${
+      d.variants.map((v) => `<tr><td class="mono">${esc(v.name)}</td><td class="num">${v.crisTrials}</td>${ct ? `<td class="num">${v.ctgovTrials}</td>` : ''}</tr>`).join('')}</tbody></table></div>
+      <p class="attribution">표기별 건수는 겹칠 수 있다 — 더하지 말고 각 표기로 따로 검색한다. 오타처럼 보이는 것도 등록된 표기다.</p>`;
   }
-
   function registries(list) {
     return `<div class="tablewrap"><table><thead><tr><th>키</th><th>이름</th><th>권역</th><th>검색 축</th><th>결과 데이터</th></tr></thead><tbody>${
-      list.map((r) => { const n = Object.values(r.search || {}).filter((a) => a.supported).length;
-        return `<tr><td class="id">${esc(r.key)}</td><td>${esc(r.name)}</td><td>${esc(r.region || '')}</td><td class="num">${n}</td><td>${r.results?.supported ? '있음' : `<small>${esc(r.results?.scope || '없음')}</small>`}</td></tr>`; }).join('')}</tbody></table></div>`;
+      list.map((r) => `<tr><td class="mono">${esc(r.key)}</td><td>${esc(r.name)}</td><td>${esc(r.region || '')}</td><td class="num">${Object.values(r.search || {}).filter((a) => a.supported).length}</td><td>${r.results?.supported ? '있음' : `<small>${esc(r.results?.scope || '없음')}</small>`}</td></tr>`).join('')}</tbody></table></div>`;
   }
-
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 })();
 </script>
