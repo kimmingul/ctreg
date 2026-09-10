@@ -52,7 +52,7 @@ export function systemPrompt(intent: Intent = 'search'): string {
 출력은 JSON 하나뿐이다. 다른 글자는 한 자도 내지 마라:
 {"tool": "<도구 이름>", "args": { ... }, "wants": "list" | "answer"}
 
-wants: 사용자가 원하는 것이 시험 **목록·건수**면 "list", 목록이 아니라 **설명·특징·분야·경향·비교·요약** 같은 답이면 "answer" (예: "~의 임상시험 특징 설명", "주로 어떤 연구를 하나"). 조회 조건(tool·args)은 어느 쪽이든 똑같이 채운다 — answer 도 그 조회 결과를 읽고 답하는 것이다.
+wants: 사용자가 원하는 것이 시험 **목록·건수**면 "list", 목록이 아니라 **설명·특징·분야·경향·비교·순위·평가·요약** 같은 답이면 "answer" (예: "~의 임상시험 특징 설명", "주로 어떤 연구를 하나", "한국에서 등수", "어느 회사와 많이 하나"). 답할 수 없어 보이는 물음(순위 등)도 "answer" 다 — 답변 단계가 "이 자료로는 알 수 없다" 를 말한다. 조회 조건(tool·args)은 어느 쪽이든 똑같이 채운다 — answer 도 그 조회 결과를 읽고 답하는 것이다.
 
 도구와 인자:
 ${tools}
@@ -338,7 +338,7 @@ export type Answer = { text?: string; error?: string; basedOn: number; truncated
 async function answerFrom(q: string, envelope: Env | undefined, llm: Llm, fetchImpl: typeof fetch): Promise<Answer> {
   const { rows, truncated } = compactRecords(envelope?.data);
   const regs = (envelope?.registries ?? []).map((r) => `${r.registry}: ${r.status}${r.total !== undefined ? ` ${r.total}건` : ''}`).join(', ');
-  const warns = (envelope?.warnings ?? []).map((w) => `- ${w.code}: ${w.message.slice(0, 200)}`).join('\n');
+  const warns = (envelope?.warnings ?? []).map((w) => `- ${w.code}: ${w.message.slice(0, 600)}`).join('\n');
   const text = await complete(llm, fetchImpl, [
     { role: 'system', content: `너는 임상시험 레지스트리 조회 결과를 읽고 사용자의 물음에 답한다. 한국어로, 간결하게(문단 2~4개). 규칙:
 1. **아래 레코드에 있는 것만** 말한다. 레코드에 없는 사실·수치·이름을 지어내지 마라.
@@ -394,8 +394,8 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
   // 이름만 있고 좁힐 말이 없다 — CRIS 는 후보를 못 만든다. 되묻지 않고 에이전트가 하던 절차를 여기서 한다.
   const withAnswer = async (res: ApiResponse): Promise<ApiResponse> => {
     if (parsed.wants !== 'answer' || res.status !== 200) return res;
-    const body = res.body as { envelope?: Env };
-    return { ...res, body: { ...body, answer: await answerFrom(q, body.envelope, llm, fetchImpl) } };
+    const body = res.body as { envelope?: Env; resolved?: Record<string, unknown> };
+    return { ...res, body: { ...body, resolved: { ...body.resolved, wants: 'answer' }, answer: await answerFrom(q, body.envelope, llm, fetchImpl) } };
   };
   if (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term) {
     return withAnswer(await nameOnly(resolved.args.korean_name, intent, llm, env, fetchImpl, call));
