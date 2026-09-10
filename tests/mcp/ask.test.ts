@@ -49,6 +49,20 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(r.status).toBe(502);
   });
 
+  /**
+   * **모델이 준 인자를 그대로 실행에 넘기지 않는다.** 그 도구가 받지 않는 키는 걸러진다.
+   * 사보타주로 확인했다 — sanitize 를 우회해도 8개 전부 초록이었다. 걸러지는지 보려면
+   * 걸러진 뒤의 인자(resolved.args)를 봐야 한다.
+   */
+  it('그 도구가 받지 않는 인자는 실행 전에 걸러진다', async () => {
+    const f = llm('{"tool":"registries","args":{"registry":["ctgov"],"condition":"x","evil":"rm -rf"}}');
+    const r = await ask({ q: '레지스트리', intent: 'search' }, withKey(), f as unknown as typeof fetch);
+    const args = (r.body as { resolved: { args: Record<string, unknown> } }).resolved.args;
+    expect(args).toEqual({ registry: ['ctgov'] });   // registries 는 registry 만 받는다
+    expect(args).not.toHaveProperty('evil');
+    expect(args).not.toHaveProperty('condition');
+  });
+
   it('모델이 JSON 이 아닌 것을 내면 502 다', async () => {
     const f = llm('죄송하지만 그 질문은…');
     const r = await ask({ q: 'x', intent: 'search' }, withKey(), f as unknown as typeof fetch);
