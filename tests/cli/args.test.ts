@@ -295,8 +295,15 @@ describe('--help 는 값 어휘를 적는다', () => {
     // 확인했다(`status` 만 항상 적게 만들어도 phase 만 보는 검사는 침묵했다).
     for (const c of ['get', 'results', 'registries'] as const) {
       const text = helpFor(c);
+      /**
+       * 값 표의 줄 모양(`--status  a|b|c`)을 본다. 값 문자열의 부분 일치로 검사하면
+       * `'na'` 가 "이상반응" 같은 한국어 설명에도 걸린다 — 옵션 설명이 --help 에 들어오면서
+       * 실제로 그렇게 오탐이 났다. 지키려는 것은 "값 표가 없다" 이고, 그것을 정확히 본다.
+       */
+      expect(text, `'${c}' 사용법에 값 표가 있습니다`).not.toMatch(/^\s+--(status|phase|study-type)\s{2,}\S+\|/m);
       for (const v of [...FILTERABLE_STATUS, ...FILTERABLE_PHASE, ...FILTERABLE_STUDY_TYPE]) {
-        expect(text, `'${c}' 사용법에 쓰지도 않는 값 '${v}' 가 있습니다`).not.toContain(v);
+        // 값이 파이프 목록의 일부로 나오는지만 본다 — 낱말 경계 없는 부분 일치는 쓰지 않는다.
+        expect(text, `'${c}' 사용법에 값 '${v}' 가 목록으로 있습니다`).not.toMatch(new RegExp(`(^|\\|)${v}(\\||$)`, 'm'));
       }
     }
   });

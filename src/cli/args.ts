@@ -95,6 +95,67 @@ export const OPTIONS = {
 
 export const OPTION_NAMES = Object.keys(OPTIONS) as (keyof typeof OPTIONS)[];
 
+/**
+ * 옵션마다 한 줄 설명. **`--help` 와 MCP 스키마가 같은 표를 읽는다** — 설명의 정본은
+ * 여기 하나다.
+ *
+ * 왜 생겼나. MCP 로 옮긴 뒤 Anthropic 의 Clinical Trials 서버와 나란히 놓고 재 보니
+ * 우리 `search` 는 인자가 세 배(31 대 10)인데 설명이 하나도 없었다(0 대 10). 도구가
+ * 적은 게 아니라 **읽을 수 없어서 없는 것처럼 보이는** 상태였다. CLI 는 "설명은 --help 가
+ * 한다" 로 충분했지만 MCP 에서는 스키마가 곧 문서다 — 모델은 부르기 전에 --help 를 못 본다.
+ *
+ * **레지스트리별로 뜻이 갈리는 것은 여기 적지 않는다.** 여기는 축의 공통 뜻이고, 어느
+ * 레지스트리가 그 축을 어떻게 보는지는 `ctreg registries` 의 `scope` 가 정본이다. ctgov 의
+ * `term` 설명을 CTIS 에도 붙이면 거짓이 된다.
+ *
+ * 닫힌 어휘(status·phase·study-type)는 값마다의 뜻을 싣는다 — `phase_3` 만 보고 모델이
+ * 고를 수 없다. 값 목록 자체는 `core/vocab.ts` 가 정본이고 여기는 그 뜻만 적는다.
+ *
+ * `Record<keyof typeof OPTIONS, …>` 라서 **옵션을 더하고 설명을 잊으면 컴파일이 깨진다.**
+ */
+export const OPTION_HELP: Record<keyof typeof OPTIONS, string> = {
+  condition: '질환·상태 이름 (예: "melanoma", "제2형 당뇨병"). 가장 흔한 시작점. 레지스트리마다 동의어 확장 여부가 다르다',
+  intervention: '약물·치료·시술 이름 (예: "pembrolizumab", "radiation"). 상품명·일반명 모두',
+  term: '자유 텍스트 — 제목·질환·중재·요약 전반을 훑는다. 어느 필드에 걸렸는지는 응답이 말해주지 않는다. CRIS 는 이 축 하나뿐이다',
+  title: '시험 제목만 본다. term 보다 좁고 정확하다',
+  location: '나라·도시·기관 이름. 레지스트리마다 받는 단위가 다르다(CTIS·ICTRP 는 나라만) — registries 로 확인',
+  'outcome-query': '1차·2차 평가변수 문구 (예: "overall survival", "HbA1c")',
+  sponsor: '의뢰기관·연구비 지원기관 이름 (예: "Pfizer", "전북대학교병원")',
+  lead: '주 스폰서만 본다 — 공동 스폰서는 제외. sponsor 보다 좁다',
+  id: '등록번호나 보조 식별자로 거른다 (예: "NCT01234567"). 한 건을 정확히 가져오려면 get 을 써라',
+  patient: '환자 상황을 한 문구로 (예: "EGFR positive"). 긴 서술은 0건이 나기 쉽다 — 짧은 핵심 문구가 낫다. ctgov 전용',
+  investigator: '연구책임자 이름. ctgov 와 cris 만 지원. 한국어 이름은 cris 에 먼저 물어 등록된 영문 표기를 읽은 뒤 ctgov 에 그 표기로 물어라 — 로마자 표기가 다르면 다른 사람으로 취급된다',
+  status: '모집 상태. 여러 개 가능. recruiting=모집 중(환자가 참여 가능) · not_yet_recruiting=승인됐으나 시작 전 · enrolling_by_invitation=초대 등록 · active_not_recruiting=진행 중이나 모집 종료 · suspended=일시 중단 · terminated=조기 종료 · completed=완료 · withdrawn=시작 전 철회',
+  phase: '임상 단계. 여러 개 가능. early_phase_1=탐색적 초기 · phase_1=안전성·용량 · phase_2=유효성·부작용 · phase_3=대규모 유효성 확인 · phase_4=시판 후 · na=해당 없음(관찰연구 등)',
+  'study-type': '연구 유형. interventional=중재(약물시험 대부분) · observational=관찰 · expanded_access=확대 접근(시험 밖 치료 제공)',
+  near: '중심 좌표 "위도,경도" (예: "37.5665,126.978"). 지명은 받지 않는다 — 좌표로 바꿔서 줘라. ctgov 전용',
+  radius: 'near 의 반경. 단위 필수 (예: "50km", "30mi"). 기본 50km',
+  'updated-since': '이 날 이후 갱신된 시험 (YYYY-MM-DD)',
+  'updated-before': '이 날 이전 갱신된 시험 (YYYY-MM-DD)',
+  'start-after': '이 날 이후 시작한 시험 (YYYY-MM-DD)',
+  'start-before': '이 날 이전 시작한 시험 (YYYY-MM-DD)',
+  'completion-after': '이 날 이후 종료(예정)된 시험 (YYYY-MM-DD)',
+  'completion-before': '이 날 이전 종료(예정)된 시험 (YYYY-MM-DD)',
+  registry: '어느 레지스트리를 볼지. ctgov(미국·기본값) · isrctn(영국) · ctis(EU) · cris(한국) · ictrp(WHO 집계, 기본 꺼짐). 여러 개 가능. "all" 이면 다섯 전부 — 일부가 실패해도 나머지는 온다(exit 5)',
+  include: '더 받을 상세 섹션. locations · eligibility · outcomes · contacts · all. 기본은 core 만',
+  'page-size': '한 번에 받을 건수. 기본 20, 최대 200. 개요면 50, 빠른 확인이면 5',
+  'page-token': '이전 응답의 nextPageToken. 다음 쪽을 받을 때만',
+  sort: '정렬 키. 레지스트리마다 받는 값이 다르다 — registries 로 확인',
+  'eligibility-chars': 'eligibility 섹션의 글자 상한',
+  raw: '레지스트리 원문을 source 필드에 함께 싣는다',
+  format: '출력 형식 json|ndjson|text',
+  'no-cache': '이번 호출은 캐시를 쓰지 않는다',
+  refresh: '캐시를 갱신하며 조회한다',
+  section: '받을 결과 섹션. outcomes(평가변수) · adverse(이상반응) · flow(참가자 흐름) · baseline(기저 특성). 기본 전부',
+  outcome: '이 문구가 든 평가변수만 펼친다 (예: "survival")',
+  'ae-organ': '이 기관계의 이상반응만 (예: "Gastrointestinal")',
+  'ae-term': '이 용어가 든 이상반응만 (예: "nausea")',
+  full: '요약하지 않고 전부 펼친다. 페이로드가 커진다',
+  help: '사용법',
+  version: '버전',
+};
+
+
 /** 어느 커맨드에서나 뜻이 같은 것들. 표를 다섯 번 반복하지 않으려고 따로 뺀다. */
 const COMMON_OPTIONS = ['registry', 'format', 'help', 'version'] as const;
 /** 네트워크를 치는 커맨드만 캐시를 말할 수 있다. `registries` 는 정적 선언 덤프다. */
@@ -157,7 +218,15 @@ const COMMAND_SUMMARY: Record<(typeof COMMANDS)[number], string> = {
  */
 export function helpFor(command: (typeof COMMANDS)[number]): string {
   const accepts = new Set<string>(COMMAND_OPTIONS[command]);
-  const opts = COMMAND_OPTIONS[command].map((o) => `--${o}`).join(' ');
+  /**
+   * 옵션마다 한 줄 설명을 붙인다 — `OPTION_HELP` 에서 읽는다. MCP 스키마가 읽는 표와 같아서
+   * 두 곳이 갈리지 않는다. 설명이 긴 닫힌 어휘(status·phase·study-type)는 아래 값 표가
+   * 따로 있으니 여기서는 첫 문장만 싣는다.
+   */
+  const width = Math.max(...COMMAND_OPTIONS[command].map((o) => o.length)) + 4;
+  const opts = COMMAND_OPTIONS[command]
+    .map((o) => `  --${o.padEnd(width)}${OPTION_HELP[o].split('. ')[0]}`)
+    .join('\n');
   const positional =
     command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : '';
   /**
@@ -181,7 +250,7 @@ export function helpFor(command: (typeof COMMANDS)[number]): string {
 ${COMMAND_SUMMARY[command]}
 
 받는 옵션
-  ${opts}
+${opts}
 ${vocabBlock}
 값이 레지스트리마다 다른 축은 \`ctreg registries\` 가 말한다.
 전체 사용법은 \`ctreg --help\` 다.
