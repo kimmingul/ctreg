@@ -101,6 +101,13 @@
   /* 결과 */
   .results { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; }
   .mode { font-size: 12px; color: var(--ink-2); margin: 0 0 10px; }
+  /* 답변 층 — 결과 위에, 결과와 다른 면으로. 요약이지 원본이 아니라는 것이 한눈에 보여야 한다. */
+  .answer { max-width: 652px; margin: 0 0 22px; padding: 14px 18px; border-radius: 12px; background: var(--well); border: 1px solid var(--rule); }
+  .answer .label { font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+  .answer .label code { font-family: var(--mono); }
+  .answer p { margin: 0 0 8px; font-size: 14px; line-height: 1.65; }
+  .answer p:last-child { margin-bottom: 0; }
+  .answer p code { font-family: var(--mono); font-size: 12px; background: var(--well-2); padding: 0 4px; border-radius: 3px; }
   .mode code { font-family: var(--mono); }
   .stat { font-size: 13px; color: var(--ink-2); margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .stat .no { color: var(--warn); }
@@ -161,7 +168,7 @@
     .logo { transition: font-size var(--slow) var(--ease); }
     .btns { transition: opacity var(--fast) var(--ease); }
     /* 결과 항목 — 위에서 순서대로 fade-in. 8개까지만 지연을 준다; 그 뒤는 바로. */
-    .item, .stat, .warn, .tablewrap, .mode { animation: rise var(--slow) var(--ease) both; }
+    .item, .stat, .warn, .tablewrap, .mode, .answer { animation: rise var(--slow) var(--ease) both; }
     .item:nth-child(2) { animation-delay: 30ms; } .item:nth-child(3) { animation-delay: 60ms; } .item:nth-child(4) { animation-delay: 90ms; }
     .item:nth-child(5) { animation-delay: 120ms; } .item:nth-child(6) { animation-delay: 150ms; } .item:nth-child(7) { animation-delay: 180ms; } .item:nth-child(8) { animation-delay: 210ms; }
     @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -291,7 +298,7 @@
     if (mode === 'names' && !$('q2').value.trim()) { askForTerm(q); return; }
     busy = true;
     document.body.classList.add('searched', 'busy');
-    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중… (이름만 쳤으면 표기 후보를 여럿 물어 30초쯤 걸린다)' : '조회 중…'}</p>`;
+    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중… (이름만 쳤거나 설명을 물었으면 30초쯤 걸린다)' : '조회 중…'}</p>`;
     try {
       // AI 모드: 자연어를 서버의 /api/ask 가 도구·인자로 바꾼다. 아니면 검색창 문법 그대로.
       const url = ai && (mode === 'search' || mode === 'count') ? '/api/ask' : `/api/${mode}`;
@@ -311,6 +318,13 @@
     const out = [];
     // AI 모드였으면 무엇으로 물었는지 먼저 보인다 — 모델이 고른 조건을 숨기지 않는다.
     if (body.resolved) out.push(`<p class="mode">AI 가 이렇게 물었다: <code>${esc(body.resolved.tool)}</code> ${esc(JSON.stringify(body.resolved.args))}</p>`);
+    // 답변 층 — 모델의 요약. 원본이 아니라는 것을 라벨로 못 박고, 원본은 그대로 아래 둔다.
+    if (body.answer) {
+      const a = body.answer;
+      out.push(a.text
+        ? `<section class="answer"><div class="label">모델의 요약 — 조회 결과 ${a.basedOn}건${a.truncated ? ' (앞 150건)' : ''}을 읽고 <code>${esc(a.model)}</code> 이 쓴 것. <strong>원본은 아래.</strong> 틀릴 수 있다.</div>${a.text.split(/\n{2,}/).map((p) => `<p>${esc(p).replace(/\[(CTGOV|CRIS|ISRCTN|CTIS):([A-Za-z0-9-]+)\]/g, '<code>$1:$2</code>')}</p>`).join('')}</section>`
+        : `<div class="warn">요약에 실패했다 — ${esc(a.error || '')}. 원본은 아래 그대로 있다.</div>`);
+    }
     const cmd = body.resolved?.command || mode;
     if (body.exitCode === 2) { $('out').innerHTML = out.join('') + `<div class="warn bad"><strong>입력을 고쳐야 한다.</strong> ${esc(env.error?.message || '')}<br><code>${esc(env.error?.hint || '')}</code></div>`; return; }
     out.push(`<p class="stat">${(env.registries || []).map((r) =>

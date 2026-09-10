@@ -26,7 +26,7 @@ import { acquireNames, NAMES_BUSY, releaseNames, type ApiResponse } from './web.
 
 type Command = (typeof COMMANDS)[number];
 type Intent = 'search' | 'count';
-export type Resolution = { tool: Command; args: Record<string, unknown> };
+export type Resolution = { tool: Command; args: Record<string, unknown>; wants?: 'list' | 'answer' };
 
 const isCommand = (s: unknown): s is Command => typeof s === 'string' && (COMMANDS as readonly string[]).includes(s);
 
@@ -50,7 +50,9 @@ export function systemPrompt(intent: Intent = 'search'): string {
   return `너는 임상시험 레지스트리 검색 도구의 입력 파서다. 사용자의 자연어를 **도구 하나와 그 인자**로 바꾼다. 그것만 한다 — 답하거나 요약하거나 설명하지 않는다.
 
 출력은 JSON 하나뿐이다. 다른 글자는 한 자도 내지 마라:
-{"tool": "<도구 이름>", "args": { ... }}
+{"tool": "<도구 이름>", "args": { ... }, "wants": "list" | "answer"}
+
+wants: 사용자가 원하는 것이 시험 **목록·건수**면 "list", 목록이 아니라 **설명·특징·분야·경향·비교·요약** 같은 답이면 "answer" (예: "~의 임상시험 특징 설명", "주로 어떤 연구를 하나"). 조회 조건(tool·args)은 어느 쪽이든 똑같이 채운다 — answer 도 그 조회 결과를 읽고 답하는 것이다.
 
 도구와 인자:
 ${tools}
@@ -78,10 +80,10 @@ export function parseResolution(text: string): Resolution | undefined {
   const end = cleaned.lastIndexOf('}');
   if (start < 0 || end <= start) return undefined;
   try {
-    const obj = JSON.parse(cleaned.slice(start, end + 1)) as { tool?: unknown; args?: unknown };
+    const obj = JSON.parse(cleaned.slice(start, end + 1)) as { tool?: unknown; args?: unknown; wants?: unknown };
     if (!isCommand(obj.tool)) return undefined;
     const args = obj.args !== null && typeof obj.args === 'object' ? (obj.args as Record<string, unknown>) : {};
-    return { tool: obj.tool, args };
+    return { tool: obj.tool, args, ...(obj.wants === 'answer' ? { wants: 'answer' as const } : {}) };
   } catch {
     return undefined;
   }
@@ -310,6 +312,56 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
   return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args, model: llm.model, via: mirror ? 'name_only_mirror' : 'name_only' } } };
 }
 
+/** 요약에 넣는 레코드 — 근거로 쓸 만큼만. 전부 넣으면 토큰이 새고, 너무 줄이면 모델이 지어낸다. */
+type Compact = Record<string, unknown>;
+export function compactRecords(data: unknown, cap = 150): { rows: Compact[]; truncated: boolean } {
+  const list = Array.isArray(data) ? data : data === null || data === undefined ? [] : [data];
+  const rows = (list.slice(0, cap) as Record<string, unknown>[]).map((r) => {
+    const o: Compact = {};
+    for (const k of ['id', 'registry', 'title', 'status', 'phase', 'studyType', 'conditions', 'interventions', 'hasResults', 'locationsTotal', 'korean', 'variants', 'crisMatched', 'total']) if (r[k] !== undefined && r[k] !== null) o[k] = r[k];
+    const sp = r.sponsor as { lead?: string } | undefined; if (sp?.lead) o.sponsor = sp.lead;
+    const en = r.enrollment as { count?: number } | undefined; if (en?.count !== undefined) o.enrollment = en.count;
+    const d = r.dates as { start?: string; completion?: string } | undefined; if (d?.start || d?.completion) o.dates = `${d.start ?? '?'}~${d.completion ?? '?'}`;
+    const c = r.contacts as { name?: string; role?: string }[] | undefined; if (c?.length) o.pi = c.filter((x) => x.role === '연구책임자').map((x) => x.name).join('/');
+    return o;
+  });
+  return { rows, truncated: list.length > cap };
+}
+
+export type Answer = { text?: string; error?: string; basedOn: number; truncated: boolean; model: string };
+
+/**
+ * **답변 층.** 조회 결과를 모델에게 주고 사용자의 물음에 답하게 한다. 선은 하나다 — **결과에 있는 것만.**
+ * 없는 것(다른 연구자와의 비교·순위·데이터 밖의 사실)은 없다고 말하게 한다. 요약이 실패해도
+ * 결과는 나간다: 원본이 요약보다 값지다. 페이지는 이것을 "모델의 요약 — 원본은 아래" 로 표시한다.
+ */
+async function answerFrom(q: string, envelope: Env | undefined, llm: Llm, fetchImpl: typeof fetch): Promise<Answer> {
+  const { rows, truncated } = compactRecords(envelope?.data);
+  const regs = (envelope?.registries ?? []).map((r) => `${r.registry}: ${r.status}${r.total !== undefined ? ` ${r.total}건` : ''}`).join(', ');
+  const warns = (envelope?.warnings ?? []).map((w) => `- ${w.code}: ${w.message.slice(0, 200)}`).join('\n');
+  const text = await complete(llm, fetchImpl, [
+    { role: 'system', content: `너는 임상시험 레지스트리 조회 결과를 읽고 사용자의 물음에 답한다. 한국어로, 간결하게(문단 2~4개). 규칙:
+1. **아래 레코드에 있는 것만** 말한다. 레코드에 없는 사실·수치·이름을 지어내지 마라.
+2. 물음이 레코드로는 답할 수 없는 것이면(예: 다른 연구자와의 비교·순위, 레지스트리 밖의 정보) **"이 조회 결과로는 알 수 없다"** 고 말하고, 무엇이 있으면 답할 수 있는지 한 줄 적어라.
+3. 근거 레코드는 등록번호로 가리켜라 — 예: [CTGOV:NCT01234567].
+4. 경향을 말할 때는 수를 세어 말하라("N건 중 M건이 …").
+5. 레지스트리 상태·경고에 "그렇게 물어볼 수 없음"·"사본"·"추측" 이 있으면 답의 한계로 한 줄 언급하라.
+6. 의학적 판단·적격 판정을 하지 마라.` },
+    { role: 'user', content: `물음: ${q}
+
+레지스트리: ${regs || '(없음)'}
+경고:
+${warns || '(없음)'}
+
+레코드 ${rows.length}건${truncated ? ' (앞 150건만)' : ''}:
+${JSON.stringify(rows)}` },
+  ]);
+  const base = { basedOn: rows.length, truncated, model: llm.model };
+  if (isResponse(text)) return { ...base, error: (text.body as { message?: string }).message ?? '요약에 실패했다.' };
+  const t = text.trim();
+  return t === '' ? { ...base, error: '모델이 빈 답을 냈다.' } : { ...base, text: t };
+}
+
 export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, fetchImpl: typeof fetch = fetch, call: Call = callTool): Promise<ApiResponse> {
   const cfg = loadConfig(env);
   if (!cfg.llmApiKey) {
@@ -340,11 +392,16 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
    */
   if ((resolved.tool === 'search' || resolved.tool === 'count') && resolved.tool !== intent) resolved.tool = intent;
   // 이름만 있고 좁힐 말이 없다 — CRIS 는 후보를 못 만든다. 되묻지 않고 에이전트가 하던 절차를 여기서 한다.
+  const withAnswer = async (res: ApiResponse): Promise<ApiResponse> => {
+    if (parsed.wants !== 'answer' || res.status !== 200) return res;
+    const body = res.body as { envelope?: Env };
+    return { ...res, body: { ...body, answer: await answerFrom(q, body.envelope, llm, fetchImpl) } };
+  };
   if (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term) {
-    return nameOnly(resolved.args.korean_name, intent, llm, env, fetchImpl, call);
+    return withAnswer(await nameOnly(resolved.args.korean_name, intent, llm, env, fetchImpl, call));
   }
   const r = await call(resolved.tool, resolved.args, env);
   const out = r.structuredContent as { exitCode: number };
   // 모델의 선택을 결과에 싣는다 — 사용자가 봐야 틀렸을 때 알아챈다.
-  return { status: out.exitCode === 2 ? 400 : 200, body: { ...out, resolved: { command: resolved.tool, tool: resolved.tool, args: resolved.args, model } } };
+  return withAnswer({ status: out.exitCode === 2 ? 400 : 200, body: { ...out, resolved: { command: resolved.tool, tool: resolved.tool, args: resolved.args, model, ...(parsed.wants ? { wants: parsed.wants } : {}) } } });
 }
