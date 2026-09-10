@@ -183,7 +183,8 @@
     const required = cmd === 'names' ? rest.filter((o) => o.name === 'term') : [];
     const advanced = rest.filter((o) => !required.includes(o));
     if (required.length) {
-      p.insertAdjacentHTML('beforeend', required.map((o) =>
+      // 찾기 버튼 **앞에** 둔다 — 뒤에 두면 이름 → 찾기 → 좁힐 말 순서가 되어 필수 칸을 놓친다(실제 화면에서 그랬다).
+      p.querySelector('button[type=submit]').insertAdjacentHTML('beforebegin', required.map((o) =>
         `<input name="${o.name}" placeholder="좁힐 말 — 기관명·연구 주제 (필수)" aria-label="${o.name}" required style="flex:.7">`).join(''));
     }
     $('adv').hidden = advanced.length === 0;
