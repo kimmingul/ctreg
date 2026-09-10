@@ -172,13 +172,17 @@ CTREG_MCP_PORT=3000 CTREG_MCP_HOST=0.0.0.0 ctreg-mcp-http
 
 stateless 라 요청마다 독립이고, 여러 대로 늘려도 된다. `/mcp` 하나만 서빙하고 나머지는 404 다.
 
-**띄워져 있다 — `https://ctreg-mcp.fly.dev/mcp`** (2026-09-10, 도쿄). 인증 없이 누구나 쓴다:
+**띄워져 있다 — `https://ctreg.trialinsight.ai/mcp`** (2026-09-10, 도쿄. `ctreg-mcp.fly.dev` 로도
+같은 곳이다). 인증 없이 누구나 쓴다:
 
 ```json
-{ "mcpServers": { "ctreg": { "url": "https://ctreg-mcp.fly.dev/mcp" } } }
+{ "mcpServers": { "ctreg": { "url": "https://ctreg.trialinsight.ai/mcp" } } }
 ```
 
-호출 통계는 `https://ctreg-mcp.fly.dev/stats`. 머신 하나가 항상 켜져 있어 첫 요청도 바로 답한다.
+**경로 `/mcp` 까지 적어야 한다.** 루트(`/`)는 404 다 — 커스텀 커넥터 화면에 도메인만 넣으면
+"서버를 찾을 수 없음(404)" 이 나온다. 실제로 그렇게 걸렸다.
+
+호출 통계는 `https://ctreg.trialinsight.ai/stats`. 머신 하나가 항상 켜져 있어 첫 요청도 바로 답한다.
 
 **Fly.io 로 띄우는 파일이 `deploy/fly/` 에 있다.** 순서는 `fly.toml` 머리에 적혀 있다 —
 앱 만들기 → 볼륨 → CRIS 키를 secret 으로 → deploy. 이미지는 저장소가 아니라 **npm 에서 받는다**
