@@ -7,6 +7,24 @@ import { toPhase, toStudyType } from './vocab.js';
  * 공식 목록 API 가 내는 한 항목. **16개가 전부다**(실측 2026-08-28, 포털의 출력결과 표와
  * 실제 응답이 일치한다). 그래서 이 어댑터의 레코드는 얇다 — 없는 것을 지어내지 않는다.
  */
+/**
+ * **공공누리 제2유형이 요구하는 출처 표시.**
+ *
+ * 이 데이터셋(공공데이터포털 3033869 「질병관리청_임상연구 DB」)의 이용허락은
+ * *"공공저작물 : 출처표시, 상업적 이용금지"* 다. 공공누리 조건(kogl.or.kr, 제2유형):
+ *
+ * - *"비영리 목적으로만 저작물을 이용하셔야 합니다."*
+ * - 온라인 이용 시 *"출처 웹사이트에 대한 하이퍼링크를 제공하여야 합니다."*
+ *
+ * 그래서 하이퍼링크를 문자열에 싣고, CTIS 와 같은 이유로 봉투가 아니라 **레코드마다** 싣는다 —
+ * 레코드를 하나씩 꺼내 쓰는 소비자에게도 표시가 따라가야 한다. `mapDetail` 은 `mapItem`
+ * 을 거치므로 한 자리에서 둘을 덮는다.
+ *
+ * 상업적 이용 금지는 이 상수가 막을 수 없다 — 그것은 배포하는 쪽의 조건이고 README 가 말한다.
+ */
+export const CRIS_ATTRIBUTION =
+  '출처: 질병관리청 임상연구정보서비스(CRIS) https://cris.nih.go.kr — 공공누리 제2유형(출처표시·상업적 이용금지)';
+
 export type CrisItem = {
   trial_id?: string;
   scientific_title_kr?: string;
@@ -103,6 +121,7 @@ export function mapItem(item: CrisItem, fetchedAt: string): TrialRecord {
     ...(intervention !== undefined ? { interventions: [{ name: intervention }] } : {}),
     ...(sponsorLead !== undefined ? { sponsor: { lead: sponsorLead } } : {}),
     ...(Object.keys(dates).length > 0 ? { dates } : {}),
+    attribution: CRIS_ATTRIBUTION,
     fetchedAt,
   };
 }

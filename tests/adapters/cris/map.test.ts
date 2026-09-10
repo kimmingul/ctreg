@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CRIS_PI_ROLE, mapDetail, mapItem } from '../../../src/adapters/cris/map.js';
+import { CRIS_ATTRIBUTION, CRIS_PI_ROLE, mapDetail, mapItem } from '../../../src/adapters/cris/map.js';
 import { TrialRecordSchema } from '../../../src/core/record.js';
 
 const AT = '2026-08-28T00:00:00.000Z';
@@ -77,6 +77,32 @@ describe('CRIS 레코드 매핑', () => {
  * 참여기관, 결과변수까지. `get` 이 이것을 쓰는 이유이고, `search`(목록)와 `get`(상세)의
  * 레코드가 다른 이유이기도 하다.
  */
+/**
+ * **공공누리 제2유형이 요구하는 출처 표시.** 이 데이터셋의 이용허락은 "출처표시, 상업적
+ * 이용금지" 이고(data.go.kr 3033869), 공공누리 조건은 온라인 이용 시 **출처 웹사이트에
+ * 대한 하이퍼링크** 를 요구한다. CTIS 와 같은 이유로 봉투가 아니라 **레코드마다** 싣는다 —
+ * 레코드를 하나씩 꺼내 쓰는 소비자에게도 표시가 따라가야 한다.
+ *
+ * 사보타주로 확인하려는 것: 이 필드가 빠져도 스위트가 초록이면 이용 조건 위반이 무방비다.
+ */
+describe('CRIS 출처 표시', () => {
+  it('레코드마다 출처 표시를 싣는다 — 목록도 상세도', () => {
+    const detail = JSON.parse(readFileSync(join(__dirname, '../../fixtures/cris/detail.json'), 'utf8')) as Record<string, unknown>;
+    // 상수가 undefined 면 toBe(undefined) 가 통과한다 — 먼저 상수가 문자열인지 못 박는다.
+    expect(typeof CRIS_ATTRIBUTION).toBe('string');
+    expect(mapItem(REAL, AT).attribution).toBe(CRIS_ATTRIBUTION);
+    expect(mapDetail(detail, AT).attribution).toBe(CRIS_ATTRIBUTION);
+  });
+
+  /** 공공누리가 요구하는 세 가지: 기관명, 저작물명, 출처 웹사이트 하이퍼링크. */
+  it('출처 표시에 기관·저작물·하이퍼링크가 있다', () => {
+    expect(CRIS_ATTRIBUTION).toContain('질병관리청');
+    expect(CRIS_ATTRIBUTION).toContain('CRIS');
+    expect(CRIS_ATTRIBUTION).toMatch(/https:\/\/cris\.nih\.go\.kr/);
+    expect(CRIS_ATTRIBUTION).toContain('공공누리');
+  });
+});
+
 describe('CRIS 상세 매핑', () => {
   const detail = JSON.parse(
     readFileSync(join(__dirname, '../../fixtures/cris/detail.json'), 'utf8'),
