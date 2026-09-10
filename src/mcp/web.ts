@@ -75,6 +75,10 @@ export type ApiResponse = { status: number; body: unknown };
  * 하나라는 배포 조건과 같은 것). 여럿이 되면 이 락도 공유 저장소로 옮겨야 한다.
  */
 let namesInFlight = false;
+export const NAMES_BUSY = { status: 429, body: { error: 'names_busy', message: '다른 이름 대조가 진행 중이다. 1~3분 뒤 다시 시도해라 — 서버가 한 번에 하나만 처리한다.' } } as const;
+/** 락을 잡으면 true. AI 모드의 이름만 경로(CRIS 대조)도 같은 락을 쓴다. */
+export function acquireNames(): boolean { if (namesInFlight) return false; namesInFlight = true; return true; }
+export function releaseNames(): void { namesInFlight = false; }
 
 export async function api(path: string, rawBody: string, env: NodeJS.ProcessEnv = process.env): Promise<ApiResponse> {
   const cmd = path.replace(/^\/api\//, '');
@@ -85,16 +89,13 @@ export async function api(path: string, rawBody: string, env: NodeJS.ProcessEnv 
   } catch {
     return { status: 400, body: { error: 'body must be JSON' } };
   }
-  if (cmd === 'names') {
-    if (namesInFlight) return { status: 429, body: { error: 'names_busy', message: '다른 이름 대조가 진행 중이다. 1~3분 뒤 다시 시도해라 — 서버가 한 번에 하나만 처리한다.' } };
-    namesInFlight = true;
-  }
+  if (cmd === 'names' && !acquireNames()) return NAMES_BUSY;
   try {
     const r = await callTool(cmd, args, env);
     const body = r.structuredContent as { exitCode: number };
     return { status: body.exitCode === EXIT.USAGE ? 400 : 200, body };
   } finally {
-    if (cmd === 'names') namesInFlight = false;
+    if (cmd === 'names') releaseNames();
   }
 }
 

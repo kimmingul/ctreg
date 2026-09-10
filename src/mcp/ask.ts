@@ -2,7 +2,7 @@ import { COMMAND_OPTIONS, COMMANDS, OPTION_HELP } from '../cli/args.js';
 import { FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE } from '../core/vocab.js';
 import { loadConfig } from '../runtime/config.js';
 import { callTool } from './server.js';
-import type { ApiResponse } from './web.js';
+import { acquireNames, NAMES_BUSY, releaseNames, type ApiResponse } from './web.js';
 
 /**
  * AI 모드 — 검색창의 자연어를 **도구·인자로 바꾸는 한 자리.**
@@ -113,10 +113,25 @@ async function complete(llm: Llm, fetchImpl: typeof fetch, messages: { role: 'sy
     return { status: 502, body: { error: 'llm_unreachable', message: `LLM 에 닿지 못했다: ${(e as Error).message}` } };
   }
 }
+const CRIS_NEEDS_TERM = { code: 'unsupported', message: 'CRIS 는 사람 이름으로 목록을 거르지 못한다(공개 API 목록 16항목에 연구책임자가 없다). ClinicalTrials.gov 에서 소속을 읽어 오지도 못했다.', hint: '소속 기관이나 연구 주제를 함께 적어라 — 그 기관의 시험을 열어 연구책임자를 대조한다.' };
 const isResponse = (x: unknown): x is ApiResponse => typeof x === 'object' && x !== null && 'status' in x;
 
-type Env = { registries: { registry: string; status: string; total?: number }[]; warnings: { code: string; message: string; registry?: string }[]; data: unknown };
+type Env = { registries: { registry: string; status: string; total?: number; error?: { code: string; message: string; hint?: string } }[]; warnings: { code: string; message: string; registry?: string }[]; data: unknown };
 const envelopeOf = (r: Awaited<ReturnType<Call>>): { exitCode: number; envelope?: Env } => r.structuredContent as { exitCode: number; envelope?: Env };
+
+/** ctgov 항목들의 시험 장소에서 한국 시설을 세어 가장 많은 것을 낸다 — 연구자의 소속. */
+export function topKoreanFacility(items: unknown[]): { facility: string; count: number } | undefined {
+  const tally = new Map<string, number>();
+  for (const it of items as { locations?: { facility?: string; country?: string }[] }[]) {
+    for (const l of it.locations ?? []) {
+      if (!l.facility || !/korea/i.test(l.country ?? '')) continue;
+      const k = l.facility.replace(/[.\s]+$/, '').trim();
+      tally.set(k, (tally.get(k) ?? 0) + 1);
+    }
+  }
+  const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+  return top ? { facility: top[0], count: top[1] } : undefined;
+}
 
 /**
  * **이름만 쳤을 때.** Claude 에 MCP 로 붙였을 때는 "김민걸 연구 찾아줘" 가 됐다 — 에이전트가
@@ -128,8 +143,8 @@ const envelopeOf = (r: Awaited<ReturnType<Call>>): { exitCode: number; envelope?
  * 이유다. 후보에 없는 표기로 등록된 시험은 빠지고, 그 사실을 경고에 적는다. 소속·주제를
  * 주면 `names` 가 CRIS 에서 **등록된** 표기를 읽어 오므로 그 길을 안내한다.
  *
- * ctgov 만 묻는다 — 이름 축을 받는 곳이 ctgov 와 CRIS 뿐이고 CRIS 는 좁힐 말 없이는 후보를
- * 못 만든다(실측: 자유검색에 이름을 넣으면 0건).
+ * CRIS 는 좁힐 말 없이는 후보를 못 만든다(실측: 자유검색에 이름을 넣으면 0건) — 그래서 ctgov
+ * 결과의 시험 장소에서 소속을 읽어 그것을 좁힐 말로 쓴다(아래 3).
  */
 async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.ProcessEnv, fetchImpl: typeof fetch, call: Call): Promise<ApiResponse> {
   const text = await complete(llm, fetchImpl, [
@@ -164,7 +179,7 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
 
   if (hits.length === 0) {
     const envelope: Env = {
-      registries: [{ registry: 'ctgov', status: 'ok', total: 0 }],
+      registries: [{ registry: 'ctgov', status: 'ok', total: 0 }, { registry: 'cris', status: 'unsupported', error: CRIS_NEEDS_TERM }],
       warnings: [{ code: 'name_romanized_guess', message: `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 물었으나 어느 표기도 걸리지 않았다: ${tried}. 다른 표기로 등록돼 있을 수 있다. ${guide}` }],
       data: intent === 'count' ? { total: 0 } : [],
     };
@@ -185,12 +200,48 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
     message: `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 각각 물었다: ${tried}. 표기가 다르면 다른 사람으로 걸리므로 이 후보에 없는 표기로 등록된 시험은 빠진다. ${guide}`,
   });
   if (truncated) warnings.push({ code: 'name_scan_truncated', message: `표기 하나에 ${PAGE}건을 넘는 것이 있어 그 뒤는 열지 않았다 — 합계가 전체보다 작다.`, registry: 'ctgov' });
+
+  /**
+   * 3) CRIS — 이름으로는 못 거르지만 **ctgov 시험 장소가 소속을 말해 준다**(실측: Chonbuk National
+   * University Hospital 27/45). 그 기관을 좁힐 말로 국문(모델이 옮김)·영문 둘 다 물어 연구책임자를
+   * 대조한다 — `names` 가 하는 바로 그 일이다. 다른 기관에서 한 CRIS 시험은 빠지고, 그것을 적는다.
+   */
+  const registries: Env['registries'] = [{ registry: 'ctgov', status: 'ok', total: merged.length }];
+  const site = topKoreanFacility(merged);
+  if (!site) {
+    registries.push({ registry: 'cris', status: 'unsupported', error: CRIS_NEEDS_TERM });
+  } else if (!acquireNames()) {
+    return NAMES_BUSY;
+  } else try {
+    const ko = await complete(llm, fetchImpl, [
+      { role: 'system', content: '영문 기관명을 한국어 정식 명칭 하나로 옮긴다(예: Chonbuk National University Hospital → 전북대학교병원). 기관명만 내라. 다른 글자는 내지 마라.' },
+      { role: 'user', content: site.facility },
+    ]);
+    const terms = [site.facility];
+    const koName = isResponse(ko) ? '' : ko.replace(/```/g, '').trim().split('\n')[0]!.trim();
+    if (/^[가-힣A-Za-z0-9 ()·-]{2,40}$/.test(koName) && koName !== site.facility) terms.unshift(koName);
+    let crisTotal = 0; let crisFailed: Env['registries'][number]['error'] | undefined;
+    for (const term of terms) {
+      const r = envelopeOf(await call('search', { registry: ['cris'], term, investigator: korean, 'page-size': PAGE }, env));
+      const st = r.envelope?.registries.find((x) => x.registry === 'cris');
+      if (st?.status !== 'ok') { crisFailed ??= st?.error; continue; }
+      for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string }[]) if (item.id && !byId.has(item.id)) { byId.set(item.id, item); crisTotal++; }
+      for (const w of r.envelope?.warnings ?? []) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
+    }
+    registries.push(crisTotal > 0 || !crisFailed ? { registry: 'cris', status: 'ok', total: crisTotal } : { registry: 'cris', status: 'error', error: crisFailed });
+    warnings.splice(1, 0, {
+      code: 'name_affiliation_guess',
+      message: `CRIS 는 이름으로 못 걸러서, ClinicalTrials.gov 시험 장소에서 소속을 읽었다(${site.facility} ${site.count}건${koName && koName !== site.facility ? ` → ${koName}` : ''}). 그 기관을 좁힐 말로 CRIS 시험의 연구책임자를 대조했다: ${crisTotal}건. 다른 기관에서 한 CRIS 시험은 빠진다.`,
+      registry: 'cris',
+    });
+  } finally { releaseNames(); }
+  const all = [...byId.values()];
   const envelope: Env = {
-    registries: [{ registry: 'ctgov', status: 'ok', total: merged.length }],
+    registries,
     warnings,
-    data: intent === 'count' ? { total: merged.length } : merged,
+    data: intent === 'count' ? { total: all.length } : all,
   };
-  return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args: { registry: ['ctgov'], investigator: hits.map((h) => h.v) }, model: llm.model, via: 'name_only' } } };
+  return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args: { registry: ['ctgov', 'cris'], investigator: hits.map((h) => h.v), ...(site ? { korean_name: korean, term: site.facility } : {}) }, model: llm.model, via: 'name_only' } } };
 }
 
 export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, fetchImpl: typeof fetch = fetch, call: Call = callTool): Promise<ApiResponse> {
