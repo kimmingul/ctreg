@@ -47,6 +47,7 @@ const baseArgs = (overrides: Partial<ParsedArgs> = {}): ParsedArgs => ({
   format: 'json',
   help: false,
   version: false,
+  namesCtgov: false,
   ...overrides,
 });
 

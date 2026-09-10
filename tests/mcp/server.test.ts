@@ -31,7 +31,7 @@ describe('MCP 도구 표면은 CLI 에서 파생된다', () => {
     // format/help/version 은 프로세스 경계의 물건이고, 나머지는 셸 사용자용 운영 옵션이다(3층).
     const excluded = new Set(['format', 'help', 'version', 'no-cache', 'refresh', 'raw', 'page-token', 'eligibility-chars']);
     // 위치 인자(get 의 ids, results 의 id)는 옵션 표에 없다 — 따로 확인한다(아래).
-    const positional = new Set(['ids', 'trial_id']);
+    const positional = new Set(['ids', 'trial_id', 'korean_name']);
     for (const cmd of COMMANDS) {
       const want = COMMAND_OPTIONS[cmd].filter((o) => !excluded.has(o)).sort();
       const got = Object.keys(toolSchemas()[cmd].shape).filter((k) => !positional.has(k)).sort();
@@ -45,7 +45,7 @@ describe('MCP 도구 표면은 CLI 에서 파생된다', () => {
    */
   it('위치 인자 이름은 어떤 옵션 이름과도 겹치지 않는다', () => {
     const optionNames = new Set(Object.keys(OPTIONS));
-    for (const k of ['ids', 'trial_id']) expect(optionNames.has(k), k).toBe(false);
+    for (const k of ['ids', 'trial_id', 'korean_name']) expect(optionNames.has(k), k).toBe(false);
   });
 
   it('get 과 results 는 위치 인자를 받는다', () => {

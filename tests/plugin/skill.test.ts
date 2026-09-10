@@ -93,8 +93,15 @@ describe('슬래시 커맨드', () => {
    * 그 레지스트리는 슬래시로 부를 수 없는 채 조용히 남는다 — 목록이 두 곳에 있을 때
    * 벌어지는 그 일이다. 여기서 묶어 두면 어댑터를 더하는 사람이 반드시 마주친다.
    */
-  it('레지스트리마다 커맨드가 있고, 전부 부르는 all 이 있다', () => {
-    expect(new Set(files)).toEqual(new Set([...REGISTRY_KEYS.map((k) => `${k}.md`), 'all.md']));
+  /**
+   * 커맨드는 두 종류다 — **레지스트리 하나를 고르는 것**(키마다 하나 + all)과 **워크플로**
+   * (레지스트리를 가로지르는 절차). 전자는 REGISTRY_KEYS 에 묶여 어댑터가 늘면 반드시
+   * 따라오고, 후자는 여기 목록에 이름을 대야 한다 — 그래야 워크플로 커맨드가 조용히 늘거나
+   * 사라지지 않는다.
+   */
+  const WORKFLOW_COMMANDS = ['names'];
+  it('레지스트리마다 커맨드가 있고, all 과 워크플로 커맨드가 있다', () => {
+    expect(new Set(files)).toEqual(new Set([...REGISTRY_KEYS.map((k) => `${k}.md`), 'all.md', ...WORKFLOW_COMMANDS.map((c) => `${c}.md`)]));
   });
 
   it('커맨드마다 프론트매터가 있다', () => {
@@ -126,6 +133,11 @@ describe('슬래시 커맨드', () => {
   it('레지스트리 커맨드는 자기 키를 건다', () => {
     for (const k of REGISTRY_KEYS) expect(read(`${k}.md`), k).toContain(`--registry ${k}`);
     expect(read('all.md')).toContain('--registry all');
+  });
+
+  /** 워크플로 커맨드는 CLI 커맨드 하나에 대응한다 — 그 이름을 본문이 말해야 한다. */
+  it('워크플로 커맨드는 자기 CLI 커맨드를 가리킨다', () => {
+    for (const c of WORKFLOW_COMMANDS) expect(read(`${c}.md`), c).toContain(`ctreg ${c}`);
   });
 });
 

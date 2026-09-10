@@ -78,6 +78,7 @@ export function toolSchemas(): Record<Command, z.ZodObject<Record<string, ZodTyp
     if (cmd === 'get') shape.ids = z.array(z.string()).min(1).describe('접두사 붙은 ID 들 (예: CTGOV:NCT01234567)');
     // `id` 가 아니다 — search 의 검색 축 `--id` 와 이름이 겹쳐 모델이 둘을 섞는다.
     if (cmd === 'results') shape.trial_id = z.string().describe('접두사 붙은 ID 하나 (예: CTGOV:NCT01234567)');
+    if (cmd === 'names') shape.korean_name = z.string().describe('한국어 이름 (예: "김민걸"). 이 사람이 CRIS 에 등록한 로마자 표기를 찾는다');
     for (const opt of COMMAND_OPTIONS[cmd]) {
       if (EXCLUDED.has(opt)) continue;
       shape[opt] = fieldFor(opt);
@@ -100,9 +101,10 @@ export function argvFor(cmd: Command, args: ToolArgs): string[] {
   const argv: string[] = [cmd];
   if (cmd === 'get' && Array.isArray(args.ids)) argv.push(...(args.ids as string[]));
   if (cmd === 'results' && typeof args.trial_id === 'string') argv.push(args.trial_id);
+  if (cmd === 'names' && typeof args.korean_name === 'string') argv.push(args.korean_name);
 
   for (const [name, value] of Object.entries(args)) {
-    if (name === 'ids' || name === 'trial_id') continue;
+    if (name === 'ids' || name === 'trial_id' || name === 'korean_name') continue;
     if (value === undefined || value === null || value === false) continue;
     if (value === true) { argv.push(`--${name}`); continue; }
     const values = Array.isArray(value) ? value : [value];
@@ -201,7 +203,7 @@ const DESCRIPTION: Record<Command, string> = {
 - warnings 를 반드시 읽어라 — 잘렸거나 이어받을 수 없는 것을 거기서 말한다
 
 팁:
-- 한국어 이름·용어는 cris 에 먼저 물어 레코드의 영문 표기를 읽고, 그 표기로 다른 곳을 물어라. 로마자 표기가 다르면 다른 사람으로 취급된다
+- 한국어 연구자 이름은 **names 도구를 먼저** — 등록된 로마자 표기를 전부 알려준다. 표기가 다르면 다른 사람으로 취급된다
 - cris 는 term 축 하나뿐이다 — condition 을 주면 exit 3 이다
 - 레지스트리마다 status·phase 가 실제로 걸리는지 다르다 — registries 의 scope 가 말한다`,
 
@@ -237,6 +239,25 @@ const DESCRIPTION: Record<Command, string> = {
 **구조화된 결과를 주는 레지스트리는 ctgov 뿐이다.** isrctn·ctis 는 결과가 PDF 라 exit 3 이고, cris 는 공개 API 가 결과를 내주지 않는다. 결과가 있는지 여부만은 레코드의 hasResults 로 미리 알 수 있다.
 
 기본은 요약이다. section 으로 좁히고, outcome/ae-organ/ae-term 으로 펼칠 것을 고른다. full 은 페이로드가 크다.`,
+
+  names: `한국어 이름을 **실제로 등록된** 로마자 표기로 바꾼다. 이 서버만 할 수 있는 일이다.
+
+언제 쓰나:
+- 사용자가 한국어 이름으로 연구자를 물었을 때, **다른 레지스트리를 검색하기 전에 먼저**
+- "이 사람 이름이 영어로 어떻게 등록돼 있나"
+
+왜 필요한가:
+로마자 표기가 결과를 가른다. 실측: ctgov 에서 "Min-Gul Kim" 45건, "Mingul Kim" 17건 — 겹치지 않는다.
+이름을 직접 영어로 옮기면 둘 중 하나를 고르게 되고, 어느 쪽이든 절반을 놓친 채 자신 있게 답한다.
+CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리라 본인이 등록한 표기를 그대로 읽을 수 있다.
+
+쓰는 법:
+- term 이 필수다 — CRIS 는 사람 이름으로 거를 수 없어 후보를 좁힐 말(기관명·연구 주제)이 있어야 한다
+- 결과의 variants 가 표기 목록이다. 많이 쓴 것이 먼저. 오타도 별개 표기로 나온다 — 합치지 마라
+- ctgov: true 를 주면 표기마다 ctgov 건수를 함께 낸다 → 어느 표기로 물어야 하는지 바로 보인다
+- 그다음 search 에 investigator 로 그 표기들을 **하나씩** 물어라. 건수는 겹칠 수 있으니 더하지 마라
+
+빈 결과는 "그런 사람이 없다" 가 아니다 — 국내 등록이 없거나 term 이 닿지 않은 것이다. 다른 term 으로 다시 물어라.`,
 
   registries: `이 서버가 다루는 레지스트리 다섯과 각각이 무엇을 할 수 있는지.
 

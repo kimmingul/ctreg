@@ -8,7 +8,7 @@ import {
 } from '../core/vocab.js';
 import { usageError } from '../runtime/errors.js';
 
-export const COMMANDS = ['search', 'get', 'results', 'count', 'registries'] as const;
+export const COMMANDS = ['search', 'get', 'results', 'count', 'registries', 'names'] as const;
 
 // FILTERABLE_STATUS 는 8개라 한 줄에 다 넣으면 80컬럼에서 단어 중간이 잘린다.
 // 3/5로 나눠 두 줄에 걸치되, 나누는 지점(3)은 순전히 줄바꿈용 상수이지 값이
@@ -20,6 +20,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
   ctreg get     <ID...> [출력]
   ctreg results <ID> [--section s] [--outcome q] [--ae-organ q] [--ae-term q] [--full]
   ctreg count   [search 와 동일한 필터]
+  ctreg names   <한국어 이름> --term <좁힐 말> [--ctgov]   한국어 이름 → CRIS 에 등록된 로마자 표기
   ctreg registries
 
 검색 축   --condition --intervention --term --title --location --outcome-query
@@ -65,6 +66,8 @@ export type ParsedArgs = {
   help: boolean;
   /** `--version`. `--help` 보다 먼저 처리된다 — 커맨드가 무엇이든 답이 같다. */
   version: boolean;
+  /** `names --ctgov`. 표기마다 ctgov 건수를 함께 센다. */
+  namesCtgov: boolean;
 };
 
 const str = { type: 'string' } as const;
@@ -90,6 +93,7 @@ export const OPTIONS = {
   'eligibility-chars': str, raw: flag,
   format: str, 'no-cache': flag, refresh: flag,
   section: multi, outcome: multi, 'ae-organ': str, 'ae-term': str, full: flag,
+  ctgov: flag,
   help: flag, version: flag,
 } as const;
 
@@ -151,6 +155,7 @@ export const OPTION_HELP: Record<keyof typeof OPTIONS, string> = {
   'ae-organ': '이 기관계의 이상반응만 (예: "Gastrointestinal")',
   'ae-term': '이 용어가 든 이상반응만 (예: "nausea")',
   full: '요약하지 않고 전부 펼친다. 페이로드가 커진다',
+  ctgov: 'names 전용. 찾은 표기마다 ctgov 에서 몇 건 걸리는지 함께 센다 — 요청이 표기 수만큼 늘어 기본은 끈다',
   help: '사용법',
   version: '버전',
 };
@@ -200,6 +205,10 @@ export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof 
   results: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, 'section', 'outcome', 'ae-organ', 'ae-term', 'full'],
   // registries 는 정적 capability 덤프다. 네트워크도, 질의도 없다.
   registries: [...COMMON_OPTIONS],
+  // names 는 이름 하나(위치 인자)와 후보를 좁힐 term 을 받는다. 레지스트리는 cris 로 고정이라
+  // --registry 를 받지 않는다 — 받으면 "cris 가 아닌 곳에서 한국어 이름을 찾는다" 는 뜻이 없는
+  // 요청이 성립한다.
+  names: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'term', 'page-size', 'ctgov'],
 };
 
 /** 커맨드 한 줄 요약. `--help` 가 이것과 옵션 표를 함께 낸다. */
@@ -209,6 +218,7 @@ const COMMAND_SUMMARY: Record<(typeof COMMANDS)[number], string> = {
   get: '접두사 붙은 ID 여럿을 한 번에 받아 온다. 검색이 아니라 조회다.',
   results: 'ID 하나의 결과(평가변수·이상반응·흐름·기저)를 낸다. 기본은 요약이다.',
   registries: '이 빌드가 다루는 레지스트리와 각 축이 무엇을 보는지 낸다. 네트워크를 타지 않는다.',
+  names: '한국어 이름을 CRIS 에 등록된 로마자 표기로. 표기가 여럿이면 전부, 빈도와 함께.',
 };
 
 /**
@@ -228,7 +238,7 @@ export function helpFor(command: (typeof COMMANDS)[number]): string {
     .map((o) => `  --${o.padEnd(width)}${OPTION_HELP[o].split('. ')[0]}`)
     .join('\n');
   const positional =
-    command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : '';
+    command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : command === 'names' ? ' <한국어 이름>' : '';
   /**
    * 닫힌 어휘 축을 받는 커맨드면 **값도 적는다.** F5·F9 를 닫은 것이 "`--help` 가 값
    * 어휘를 적는다" 였는데, 서브커맨드별 사용법이 값을 빼면 사용자가 가장 자주 밟는
@@ -363,7 +373,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   if (v.version) {
     return {
       command: undefined, positionals: [], registries: [...REGISTRY_KEYS],
-      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: false, version: true,
+      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: false, version: true, namesCtgov: false,
     };
   }
 
@@ -373,13 +383,27 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     const asked = (COMMANDS as readonly string[]).includes(command ?? '') ? (command as (typeof COMMANDS)[number]) : undefined;
     return {
       command: asked, positionals: [], registries: [...REGISTRY_KEYS],
-      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true, version: false,
+      query: {}, fetch: baseFetch(), results: baseResults(), format: 'json', help: true, version: false, namesCtgov: false,
     };
   }
   if (!command || !(COMMANDS as readonly string[]).includes(command)) {
     throw usageError(command ? `모르는 커맨드: '${command}'` : '커맨드가 없습니다', USAGE);
   }
   assertCommandAccepts(command as (typeof COMMANDS)[number], v as Record<string, unknown>);
+
+  if (command === 'names') {
+    /**
+     * 이름은 위치 인자 하나다. `--term` 은 필수다 — CRIS 는 사람 이름으로 거를 수 없어
+     * 후보를 좁힐 말이 있어야 한다. 없으면 어댑터가 exit 3 을 내지만, 여기서 exit 2 로
+     * 막는 것이 맞다: 요청이 잘못된 것이고 레지스트리 탓이 아니다.
+     */
+    if (positionals.length !== 1 || positionals[0]!.trim() === '') {
+      throw usageError('names 는 한국어 이름 하나를 받습니다', 'ctreg names <이름> --term <후보를 좁힐 말>. 예: ctreg names 김민걸 --term 전북대학교병원');
+    }
+    if (!v.term || v.term.trim() === '') {
+      throw usageError('names 에는 --term 이 필요합니다', 'CRIS 는 사람 이름으로 거를 수 없어 후보를 좁힐 말이 있어야 합니다 — 기관명이나 연구 주제. 예: --term 전북대학교병원');
+    }
+  }
 
   // --- 출력 ---
   const format = (v.format ?? 'json') as ParsedArgs['format'];
@@ -403,7 +427,11 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   // 번 돌아 count 가 정확히 진실의 2배인 수를 경고 없이 사실로 내고(리뷰 I4), search
   // 는 같은 레코드를 두 번 내며, "레지스트리마다 registries[] 항목 하나" 라는 봉투의
   // 형태 규칙이 깨진다. 순서는 호출자가 준 순서를 그대로 유지한다.
-  const fallback: readonly string[] = command === 'registries' ? REGISTRY_KEYS : [DEFAULT_REGISTRY];
+  const fallback: readonly string[] =
+    command === 'registries' ? REGISTRY_KEYS
+    // names 는 CRIS 가 대조표다 — 국문·영문을 나란히 싣는 레지스트리가 그곳뿐이다.
+    : command === 'names' ? ['cris']
+    : [DEFAULT_REGISTRY];
   /**
    * **`all` 은 선언된 전부로 풀린다.** 사용자가 다섯을 손으로 나열하게 두면 여섯 번째
    * 어댑터가 붙는 날 그 호출은 **조용히 다섯만** 본다 — 오류도 경고도 없이 새 레지스트리가
@@ -569,6 +597,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     format,
     help: false,
     version: false,
+    namesCtgov: v.ctgov ?? false,
   };
 }
 

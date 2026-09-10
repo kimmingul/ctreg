@@ -9,6 +9,7 @@ import { readVersion } from './version.js';
 import { runCount } from './commands/count.js';
 import { IdRoutingError, runGet } from './commands/get.js';
 import { runRegistries } from './commands/registries.js';
+import { runNames } from './commands/names.js';
 import { runResults } from './commands/results.js';
 import { runSearch } from './commands/search.js';
 import { EXIT, type ExitCode } from './exit-codes.js';
@@ -62,6 +63,7 @@ export async function run(
       case 'search': envelope = await runSearch(args, adapters); break;
       case 'get': envelope = await runGet(args, adapters); break;
       case 'results': envelope = await runResults(args, adapters); break;
+      case 'names': envelope = await runNames(args, adapters); break;
     }
 
     io.stdout(render(envelope, format));
