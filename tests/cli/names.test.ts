@@ -124,9 +124,22 @@ describe('names 커맨드', () => {
     expect(env.warnings.some((w) => w.code === 'names_none_found')).toBe(true);
   });
 
-  /** CRIS 의 --investigator 는 --term 없이는 성립하지 않는다(후보를 좁힐 축이 없다). */
-  it('--term 이 없으면 사용법 오류다', () => {
-    expect(() => parseCliArgs(['names', '김민걸'])).toThrow(/--term/);
+  /**
+   * `--term` 은 이제 선택이다. 사본(CTREG_CRIS_MIRROR_URL)이면 이름만으로 되고, 공식 API 면
+   * 어댑터가 "그 문으로는 못 묻는다"(exit 3)를 낸다 — 요청이 잘못된 것(exit 2)이 아니다.
+   * 파서가 막으면 사본을 쓰는 사용자까지 막는다.
+   */
+  it('--term 없이도 파싱된다 — 되는지는 어댑터(문)가 정한다', () => {
+    const a = parseCliArgs(['names', '김민걸']);
+    expect(a.positionals).toEqual(['김민걸']);
+    expect(a.query.term).toBeUndefined();
+  });
+
+  it('--term 없이 이름만으로 찾으면 결과의 term 이 비어 있다', async () => {
+    const data = [crisTrial('KCT1', ['김민걸', 'Min Gul Kim'])];
+    const r = (await runNames(parseCliArgs(['names', '김민걸']), adapters(data))).data as NamesResult;
+    expect(r.term).toBeUndefined();
+    expect(r.variants.length).toBeGreaterThan(0);
   });
 
   it('이름이 없으면 사용법 오류다', () => {
