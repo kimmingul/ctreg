@@ -23,7 +23,7 @@
 | `cris` | CRIS (한국) | 2 | 키 필요(무료·자동승인) | 「어댑터 #4」 절 · `cris-field-test-*.md` |
 | `ctis` | EU CTIS | 5 | 공개 API, 조건 없음 | 「어댑터 #5」 절 · `ctis-field-test-*.md` |
 
-테스트 **839 통과 / 11 skipped**. 타입체크·빌드 클린.
+테스트 **848 통과 / 11 skipped**. 타입체크·빌드 클린.
 
 **배포됐다(2026-09-01).** `npm i -g @kimmingul/ctreg` · `/plugin marketplace add kimmingul/ctreg`.
 이름은 스코프가 붙지만 **명령어는 `ctreg`** 다 — npm 이 `ctreg` 를 기존 패키지(`stres`)와
