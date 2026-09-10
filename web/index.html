@@ -42,6 +42,8 @@
   }
 
   * { box-sizing: border-box; }
+  /* 보이지 않는 submit 버튼 — 입력칸이 둘이면 브라우저가 엔터로 암묵 제출을 하지 않는다. */
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; padding: 0; margin: -1px; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.6 var(--sans); }
   a { color: var(--link); }
@@ -194,8 +196,9 @@
     </div>
     <input id="q" aria-label="검색" autofocus>
     <input id="q2" aria-label="좁힐 말" placeholder="좁힐 말 — 기관·주제" hidden>
+    <button type="submit" class="sr" tabindex="-1" aria-hidden="true">검색</button>
     <span class="sep"></span>
-    <button type="button" class="chip" id="ai" aria-pressed="false" title="자연어로 물으면 AI 가 조건을 고른다"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 모드</button>
+    <button type="button" class="chip" id="ai" aria-pressed="true" title="자연어로 물으면 AI 가 조건을 고른다"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 모드</button>
   </form>
 
   <div class="btns">
@@ -214,9 +217,12 @@
   const REG_LABEL = { ctgov: 'ClinicalTrials.gov', isrctn: 'ISRCTN', ctis: 'EU CTIS', cris: 'CRIS', ictrp: 'WHO ICTRP' };
   const REG_DEFAULT = ['ctgov', 'isrctn', 'ctis', 'cris']; // 고르는 칸이 없으니 넓게 본다. ictrp 는 꺼져 있다.
   const PRIMARY = { search: 'term', count: 'term', get: 'ids', results: 'trial_id', names: 'korean_name', registries: null };
-  let schema = null, mode = 'search', ai = false, busy = false;
+  let schema = null, mode = 'search', ai = true, busy = false;
+  // 기본은 AI 모드 — 구글처럼 그냥 자연어로 친다. 끈 선택은 브라우저가 기억한다.
+  try { if (localStorage.getItem('ctreg.ai') === 'off') ai = false; } catch {}
+  $('ai').setAttribute('aria-pressed', ai);
 
-  fetch('/api/schema').then((r) => r.json()).then((s) => { schema = s; });
+  const ready = fetch('/api/schema').then((r) => r.json()).then((s) => { schema = s; });
 
   // + 메뉴
   $('plus').onclick = () => { const open = $('menu').hidden; $('menu').hidden = !open; $('plus').setAttribute('aria-expanded', open); };
@@ -235,7 +241,7 @@
     try { localStorage.setItem('ctreg.theme', root.dataset.theme); } catch {}
     setTimeout(() => root.classList.remove('theming'), 400);
   };
-  $('ai').onclick = () => { ai = !ai; $('ai').setAttribute('aria-pressed', ai); $('q').focus(); };
+  $('ai').onclick = () => { ai = !ai; $('ai').setAttribute('aria-pressed', ai); try { localStorage.setItem('ctreg.ai', ai ? 'on' : 'off'); } catch {} $('q').focus(); };
   $('form').onsubmit = (e) => { e.preventDefault(); if (mode === 'get' || mode === 'results' || mode === 'names' || mode === 'registries') submit(); else { setMode('search'); submit(); } };
 
   function setMode(m) {
@@ -266,7 +272,8 @@
   }
 
   async function submit() {
-    if (busy || !schema) return;
+    if (busy) return;
+    if (!schema) { await ready; if (busy) return; }   // 스키마가 오기 전의 엔터를 버리지 않는다
     const q = $('q').value.trim();
     if (PRIMARY[mode] && !q) { $('q').focus(); return; }
     busy = true;
