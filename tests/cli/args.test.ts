@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COMMAND_OPTIONS, COMMANDS, helpFor, OPTION_NAMES, parseCliArgs, USAGE } from '../../src/cli/args.js';
+import { COMMAND_OPTIONS, COMMANDS, helpFor, OPTION_HELP, OPTION_NAMES, parseCliArgs, USAGE } from '../../src/cli/args.js';
 import { CAPS } from '../../src/core/query.js';
 import { REGISTRY_KEYS } from '../../src/core/registry.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
@@ -288,6 +288,22 @@ describe('--help 는 값 어휘를 적는다', () => {
     for (const v of FILTERABLE_STUDY_TYPE) expect(tokens, `--study-type 값 '${v}' 가 search --help 에 없습니다`).toContain(v);
     // count 도 같은 축을 받는다.
     expect(helpFor('count')).toContain(FILTERABLE_PHASE[0]!);
+  });
+
+  /**
+   * **--help 도 OPTION_HELP 를 실제로 읽는가.** "설명의 정본이 하나" 라는 주장은 두 소비자
+   * (MCP 스키마·--help)가 둘 다 그 표를 읽을 때만 참이다. MCP 쪽은 스키마 테스트가 덮는데
+   * --help 쪽은 아무도 안 봤다 — 사보타주로 helpFor 가 이름만 내게 바꿔도 67개 전부
+   * 초록이었다. 표가 있어도 한쪽이 안 읽으면 정본이 아니다.
+   */
+  it('--help 가 OPTION_HELP 의 설명을 실제로 싣는다', () => {
+    for (const c of COMMANDS) {
+      const text = helpFor(c);
+      for (const o of COMMAND_OPTIONS[c]) {
+        const first = OPTION_HELP[o].split('. ')[0]!;
+        expect(text, `'${c}' 사용법에 --${o} 의 설명이 없습니다`).toContain(first);
+      }
+    }
   });
 
   it('그 축을 안 받는 커맨드에는 값도 적지 않는다 — 받지 않는 것을 적으면 F3 이 도로 열린다', () => {
