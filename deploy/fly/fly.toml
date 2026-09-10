@@ -25,7 +25,7 @@ primary_region = "nrt"     # 도쿄. CRIS·한국 사용자와 가깝다. 서울
 [build]
   dockerfile = "Dockerfile"
   [build.args]
-    CTREG_VERSION = "0.9.2"   # 새 버전을 낼 때 여기도 올린다 — 그래야 재배포가 새 코드를 받는다
+    CTREG_VERSION = "0.9.3"   # 새 버전을 낼 때 여기도 올린다 — 그래야 재배포가 새 코드를 받는다
 
 [http_service]
   internal_port = 8080
