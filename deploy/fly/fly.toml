@@ -14,6 +14,9 @@
 # 둘이 되어 레지스트리에 두 배로 나간다.
 
 app = "ctreg-mcp"          # fly launch 가 이름이 겹치면 바꿔 준다
+# `fly launch` 는 개인 org 를 기본으로 잡는데 결제수단은 이쪽에 있다(2026-09-10 실제로 걸렸다).
+# 여기 박아 두면 --org 를 잊어도 맞는 곳으로 간다.
+org = "nanum-space-co-ltd"
 primary_region = "nrt"     # 도쿄. CRIS·한국 사용자와 가깝다. 서울(icn)이 열려 있으면 그쪽
 
 [build]
