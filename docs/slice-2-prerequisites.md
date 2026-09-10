@@ -23,7 +23,7 @@
 | `cris` | CRIS (한국) | 2 | 키 필요(무료·자동승인) | 「어댑터 #4」 절 · `cris-field-test-*.md` |
 | `ctis` | EU CTIS | 5 | 공개 API, 조건 없음 | 「어댑터 #5」 절 · `ctis-field-test-*.md` |
 
-테스트 **863 통과 / 11 skipped**. 타입체크·빌드 클린.
+테스트 **873 통과 / 11 skipped**. 타입체크·빌드 클린.
 
 **배포됐다(2026-09-01).** `npm i -g @kimmingul/ctreg` · `/plugin marketplace add kimmingul/ctreg`.
 이름은 스코프가 붙지만 **명령어는 `ctreg`** 다 — npm 이 `ctreg` 를 기존 패키지(`stres`)와
@@ -140,6 +140,22 @@ MCP 도구 표면을 Anthropic 의 Clinical Trials 서버와 나란히 놓고 �
 있었다. 덮었다.
 
 절차를 또 어겼다 — 커밋 전 `git checkout` 으로 `args.ts` 작업이 날아갔다(네 번째).
+
+### MCP 도구 이름·읽기 전용·출력 구조 (2026-09-10)
+
+CLI 커맨드 이름을 MCP 도구 이름으로 그대로 쓰고 있었다. 셸에서는 `ctreg` 가 앞에 있어
+충분하지만 MCP 목록에서 `search` 는 무엇을 검색하는지 말하지 않고, Anthropic 서버의
+`search_trials` 와 겹치면 모델이 둘을 섞는다. **정본 하나를 지켜 온 저장소에서 의도적으로
+가른 자리다** — 셸과 MCP 는 다른 독자다. 대응표 `TOOL_NAME` 이 코드에 있고 테스트가 Clinical
+Trials 서버의 여섯 이름과 겹치지 않는지 본다.
+
+여섯 도구 전부 `readOnlyHint`. `outputSchema` 로 바깥 틀을 선언하고 `structuredContent` 를
+싣는다. 봉투 안쪽은 `TrialRecordSchema` 가 정본이라 여기서 다시 그리지 않는다. 서버가 표를
+만드는 길은 택하지 않았다 — 출력은 재료지 답이 아니다. 대신 설명마다 답 형식을 지시한다.
+
+사보타주 넷 중 하나가 살아남았다 — **`registerTool` 에 어노테이션을 넘기는 한 줄**을 지워도
+41개 초록. 함수는 검사되는데 부르는 자리는 아무도 안 봤다(같은 모양, 다섯 번째). 와이어
+(`tools/list` 응답)에서 검사하게 덮었다.
 
 ### 열려 있는 것
 

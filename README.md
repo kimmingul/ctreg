@@ -123,6 +123,24 @@ Claude Desktop, Cursor 등 **MCP 를 말하는 어떤 호스트**에서든 같�
 
 전역 설치 없이 쓰려면 `"command": "npx", "args": ["-y", "-p", "@kimmingul/ctreg", "ctreg-mcp"]`.
 
+**도구 이름은 CLI 커맨드와 다르다** — 의도적으로. 셸에서는 `ctreg search` 로 충분하지만 여러
+MCP 서버가 함께 붙은 목록에서 `search` 는 무엇을 검색하는지 말하지 않고, Anthropic 의 Clinical
+Trials 서버(`search_trials`)와 겹치면 모델이 둘을 섞는다.
+
+| CLI | MCP 도구 |
+| :-- | :-- |
+| `search` | `search_trials_multi_registry` |
+| `get` | `get_trial_by_id` |
+| `count` | `count_trials` |
+| `results` | `get_trial_results` |
+| `registries` | `list_registries_and_capabilities` |
+| `names` | `resolve_korean_investigator_name` |
+
+**여섯 도구 전부 읽기 전용이다** — `readOnlyHint` 어노테이션으로 표시되어 호스트가 확인 없이
+실행해도 된다고 판단한다. 결과는 `outputSchema` 로 바깥 틀(`exitCode`·`envelope`)이 선언되고
+`structuredContent` 로도 실린다. 도구 설명마다 "사용자에게 답할 때 이 순서로" 가 있어 답의
+모양이 일정해진다 — 서버가 표를 만들어 주지는 않는다. 이 도구의 출력은 재료지 답이 아니다.
+
 **도구 인자는 CLI 옵션과 같다** — 손으로 다시 적은 게 아니라 CLI 의 옵션 표에서 파생한다.
 그래서 CLI 에 옵션이 늘면 MCP 도 따라온다. `status`·`phase`·`study-type` 은 값 목록이
 스키마에 실려 모델이 추측할 필요가 없다.
