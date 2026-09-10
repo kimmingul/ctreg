@@ -113,8 +113,82 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
     expect(text).not.toContain('melanoma');
   });
 
-  it('/mcp 밖은 404 다 — 서버가 다른 것을 서빙하지 않는다', async () => {
+  /**
+   * **웹 API 는 MCP 와 같은 코어를 감싼다.** `/api/<커맨드>` 가 `callTool` 과 같은 봉투를 낸다 —
+   * 페이지가 MCP 클라이언트가 아니라서 JSON-RPC 대신 평범한 POST 를 쓸 뿐이다. 같은 프로세스
+   * 안이라 요청률 버킷도 공유한다: 웹 검색과 MCP 호출이 합쳐서 1 req/s 를 지킨다.
+   */
+  it('/api/<커맨드> 가 MCP 와 같은 봉투를 낸다 — exitCode 포함', async () => {
+    const res = await fetch(new URL('/api/registries', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { exitCode: number; envelope: { registries: unknown[] } };
+    expect(body.exitCode).toBe(0);
+    expect(body.envelope.registries).toHaveLength(5);
+  });
+
+  /** exit 3 이 HTTP 오류로 둔갑하면 안 된다 — 요청은 옳았고 레지스트리가 그렇게 못 물을 뿐이다. */
+  it('/api 의 exit 3 은 HTTP 200 에 exitCode 3 이다', async () => {
+    const res = await fetch(new URL('/api/search', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ registry: ['ctis'], condition: 'x', phase: ['phase_3'] }) });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { exitCode: number }).exitCode).toBe(3);
+  }, 30_000);
+
+  /** 사용법 오류는 400 이다 — 페이지가 고쳐야 할 입력이다. */
+  it('/api 의 exit 2 는 HTTP 400 이다', async () => {
+    const res = await fetch(new URL('/api/search', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'page-size': -1 }) });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { exitCode: number }).exitCode).toBe(2);
+  });
+
+  it('/api/<모르는 커맨드> 는 404 다', async () => {
+    const res = await fetch(new URL('/api/nope', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    expect(res.status).toBe(404);
+  });
+
+  /**
+   * **페이지의 고급 검색 칸은 손으로 안 적는다.** `/api/schema` 가 OPTION_HELP 를 그대로
+   * 낸다 — MCP 스키마와 --help 가 읽는 그 표다. 옵션이 늘면 페이지가 따라온다.
+   */
+  it('/api/schema 가 커맨드별 옵션과 설명을 낸다', async () => {
+    const res = await fetch(new URL('/api/schema', base));
+    expect(res.status).toBe(200);
+    const schema = (await res.json()) as { commands: Record<string, { options: { name: string; help: string; type: string; multiple: boolean; values?: string[] }[]; summary: string }>; toolName: Record<string, string> };
+    expect(Object.keys(schema.commands).sort()).toEqual([...COMMANDS].sort());
+    const cond = schema.commands.search!.options.find((o) => o.name === 'condition');
+    expect(cond?.help).toBeTruthy();
+    const phase = schema.commands.search!.options.find((o) => o.name === 'phase');
+    expect(phase?.values).toContain('phase_3');
+    expect(phase?.multiple).toBe(true);
+  });
+
+  /** 루트는 이제 검색 페이지다 — 404 가 아니다. */
+  it('/ 가 검색 페이지를 낸다', async () => {
     const res = await fetch(new URL('/', base));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    const html = await res.text();
+    expect(html).toContain('적격 판정이 아니다');   // 면책이 페이지에 보인다
+    expect(html).toContain('/api/schema');          // 칸을 스키마에서 그린다
+  });
+
+  /**
+   * **names 는 한 번에 하나만.** CRIS 후보를 하나씩 여는 데 1~3분이 걸리고, 그동안 요청률
+   * 버킷(1 req/s)을 혼자 쓴다. 둘이 동시에 오면 둘 다 두 배로 늦어지고 다른 도구까지 막힌다.
+   * 두 번째 요청은 기다리지 않고 429 로 바로 돌려보낸다 — 페이지가 "지금 다른 대조가 진행
+   * 중" 을 보여줄 수 있게. 검사는 첫 요청을 붙들어 둔 채 두 번째를 쏘는 것으로 한다 —
+   * 실제 CRIS 를 부르면 느리고 키가 필요하니 존재하지 않는 term 으로 exit 를 빨리 받는다.
+   */
+  it('/api/names 는 동시에 하나만 받는다 — 두 번째는 429', async () => {
+    const call = () => fetch(new URL('/api/names', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ korean_name: '홍길동', term: 'zzz-nope' }) });
+    const [a, b] = await Promise.all([call(), call()]);
+    const codes = [a.status, b.status].sort();
+    // 하나는 통과(200 이든 키 없어 4xx 가 아닌 봉투든), 하나는 429.
+    expect(codes).toContain(429);
+    expect(codes.filter((c) => c === 429)).toHaveLength(1);
+  }, 60_000);
+
+  it('/mcp · /stats · /api · / 밖은 404 다', async () => {
+    const res = await fetch(new URL('/nope', base));
     expect(res.status).toBe(404);
   });
 });

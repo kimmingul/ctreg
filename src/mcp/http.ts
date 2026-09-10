@@ -3,6 +3,7 @@ import { createServer as createHttpServer } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { loadConfig, loadEnvFiles } from '../runtime/config.js';
 import { aggregate, readAll } from './stats.js';
+import { api, page, schema } from './web.js';
 import { createServer } from './server.js';
 
 /**
@@ -18,8 +19,7 @@ import { createServer } from './server.js';
  * 된다. 새로 만드는 이유는 죽어서가 아니라 요청 사이에 아무것도 공유하지 않기 위해서다.
  * 검증 안 한 근거를 적으면 다음 사람이 없는 제약을 지키느라 시간을 쓴다.)
  *
- * **`/mcp` 와 `/stats` 만 서빙한다.** 나머지는 404 다 — 이 프로세스가 다른 것을 내주는 것처럼
- * 보이면 안 된다.
+ * **`/`(검색 페이지) · `/api/*` · `/mcp` · `/stats` 를 서빙한다.** 나머지는 404 다.
  *
  * **이 서버가 하지 않는 것**(README 의 「공개 서버」 절이 정본이다):
  * - 인증 — URL 을 아는 누구나 쓴다. 앞단(리버스 프록시)에서 걸어야 한다.
@@ -38,6 +38,22 @@ const host = process.env.CTREG_MCP_HOST ?? '127.0.0.1';
 
 const httpServer = createHttpServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+  // 검색 페이지와 그 API — web.ts 가 정본이다. 여기는 라우팅뿐이다.
+  if (url.pathname === '/' && req.method === 'GET') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(page());
+    return;
+  }
+  if (url.pathname === '/api/schema' && req.method === 'GET') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(schema()));
+    return;
+  }
+  if (url.pathname.startsWith('/api/') && req.method === 'POST') {
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    const { status, body } = await api(url.pathname, raw);
+    res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(body));
+    return;
+  }
   if (url.pathname === '/stats') {
     // 개인정보가 없으므로 인증 없이 낸다 — 도구·레지스트리·종료코드·소요시간 집계뿐이다.
     const body = JSON.stringify(aggregate(readAll(loadConfig().cacheDir)), null, 2);

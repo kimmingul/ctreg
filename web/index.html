@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ctreg</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 토큰 — 종이와 잉크. 레지스트리 기록지처럼 정직하게. */
+  :root {
+    --paper: #F7F5F0; --ink: #1C1B18; --ink-2: #6B675E; --rule: #D9D5CC; --well: #EFECE4;
+    --accent: #0F5C63; --accent-ink: #FFFFFF; --warn: #8A5A00; --warn-bg: #FBF3E0; --bad: #8C2B2B; --bad-bg: #F9E8E8;
+    --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #17170F; --ink: #ECE8DF; --ink-2: #A39E92; --rule: #3A3830; --well: #23221B;
+      --accent: #5FB8C0; --accent-ink: #0F1A1B; --warn: #E0B25A; --warn-bg: #2E2611; --bad: #E08484; --bad-bg: #2E1A1A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #17170F; --ink: #ECE8DF; --ink-2: #A39E92; --rule: #3A3830; --well: #23221B;
+    --accent: #5FB8C0; --accent-ink: #0F1A1B; --warn: #E0B25A; --warn-bg: #2E2611; --bad: #E08484; --bad-bg: #2E1A1A;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); }
+  main { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; }
+  header h1 { margin: 0; font: 500 22px/1 var(--mono); letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--ink-2); font-size: 14px; }
+
+  /* 도구 탭 — 탭 하나가 도구 하나다. */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; margin-bottom: 18px; }
+  .tabs button { font: 500 14px var(--sans); color: var(--ink-2); background: none; border: 1px solid transparent; border-radius: 4px; padding: 7px 12px; cursor: pointer; }
+  .tabs button:hover { color: var(--ink); background: var(--well); }
+  .tabs button[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .summary { color: var(--ink-2); margin: 0 0 14px; }
+
+  /* 입력 — 주 칸 하나가 크고, 나머지는 접힌다. */
+  form { display: grid; gap: 12px; }
+  .primary { display: flex; gap: 8px; }
+  .primary input { flex: 1; font: 17px var(--sans); padding: 11px 14px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .primary input:focus-visible, .field input:focus-visible, .field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .primary button { font: 500 15px var(--sans); padding: 0 20px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .primary button:disabled { opacity: .55; cursor: wait; }
+  .regs { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; color: var(--ink-2); }
+  .regs label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+  details { border: 1px solid var(--rule); border-radius: 6px; padding: 0 14px; }
+  details summary { cursor: pointer; padding: 9px 0; color: var(--ink-2); font-size: 14px; user-select: none; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 18px; padding: 4px 0 14px; }
+  .field { display: grid; gap: 4px; }
+  .field label { font-size: 13px; font-weight: 500; }
+  .field small { color: var(--ink-2); font-size: 12px; line-height: 1.4; }
+  .field input, .field select { font: 14px var(--sans); padding: 7px 9px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); }
+  .field select[multiple] { min-height: 92px; }
+  .field.check { grid-template-columns: auto 1fr; align-items: start; gap: 8px; }
+  .field.check input { margin-top: 3px; }
+  .note { font-size: 13px; color: var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 8px 12px; }
+
+  /* 결과 — 요약 줄이 먼저, 표는 그다음. */
+  #out { margin-top: 26px; }
+  .status { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 14px; margin-bottom: 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--well); font-family: var(--mono); font-size: 13px; }
+  .pill.unsupported { color: var(--warn); background: var(--warn-bg); }
+  .pill.error { color: var(--bad); background: var(--bad-bg); }
+  .warn { font-size: 13px; color: var(--warn); background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 8px 12px; margin: 6px 0; border-radius: 0 4px 4px 0; }
+  .warn code { font-family: var(--mono); }
+  .empty { color: var(--ink-2); padding: 20px 0; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 12px; font-weight: 500; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; background: var(--well); }
+  tr:last-child td { border-bottom: 0; }
+  td.id, td.num { font-family: var(--mono); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.title { min-width: 320px; }
+  td a { color: var(--accent); }
+  .tag { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 1px 6px; border-radius: 3px; background: var(--well); margin-right: 4px; }
+  .attribution { font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+
+  pre { background: var(--well); padding: 12px; border-radius: 6px; overflow-x: auto; font: 13px/1.5 var(--mono); }
+
+  footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-2); }
+  footer strong { color: var(--ink); }
+  footer a { color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) { .primary button { transition: opacity .15s; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ctreg</h1>
+    <p>임상시험 레지스트리 다섯 곳을 하나의 화면으로 — ClinicalTrials.gov · ISRCTN · EU CTIS · CRIS · WHO ICTRP</p>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <p class="summary" id="summary"></p>
+
+  <form id="form" autocomplete="off">
+    <div id="primary" class="primary"></div>
+    <div id="regs" class="regs"></div>
+    <div id="note" class="note" hidden></div>
+    <details id="adv" hidden><summary>고급</summary><div class="fields" id="fields"></div></details>
+  </form>
+
+  <section id="out" aria-live="polite"></section>
+
+  <footer>
+    <strong>이 페이지의 출력은 임상시험 적격 판정이 아니다.</strong> 레지스트리 기재사항은 스크리닝을 대체하지
+    않는다. 어떤 칸이 비어 있는 것은 "그런 사실이 없다" 가 아니라 "이 레지스트리가 그 항목을 기재하지
+    않았다" 는 뜻일 수 있다. 결과가 0건인 것과 "그렇게 검색할 수 없음" 은 다른 답이고, 이 페이지는 둘을
+    섞지 않는다.
+    같은 도구가 <a href="https://github.com/kimmingul/ctreg">CLI · Claude Code 플러그인 · MCP 서버</a>로도 있다.
+  </footer>
+</main>
+
+<script>
+(() => {
+  // 칸을 손으로 적지 않는다 — /api/schema 가 정본이다. MCP 스키마와 --help 가 읽는 그 표다.
+  const $ = (id) => document.getElementById(id);
+  const REGS = ['ctgov', 'isrctn', 'ctis', 'cris', 'ictrp'];
+  const REG_LABEL = { ctgov: 'ClinicalTrials.gov', isrctn: 'ISRCTN', ctis: 'EU CTIS', cris: 'CRIS', ictrp: 'WHO ICTRP' };
+  // 탭 순서와 라벨. 주 칸(크게 그리는 것)이 무엇인지도 여기서 정한다.
+  const TABS = [
+    { cmd: 'search',     label: '검색',      primary: 'term',        placeholder: '질환, 약물, 기관… 자유 텍스트' },
+    { cmd: 'count',      label: '건수',      primary: 'term',        placeholder: '질환, 약물, 기관… 자유 텍스트' },
+    { cmd: 'get',        label: '등록번호',   primary: 'ids',         placeholder: 'CTGOV:NCT01234567 CRIS:KCT0012487 — 여러 개는 띄어쓰기' },
+    { cmd: 'results',    label: '결과 데이터', primary: 'trial_id',    placeholder: 'CTGOV:NCT01234567 — 구조화된 결과는 ctgov 만' },
+    { cmd: 'names',      label: '이름 대조',   primary: 'korean_name', placeholder: '한국어 연구자 이름 — 예: 김민걸' },
+    { cmd: 'registries', label: '레지스트리', primary: null },
+  ];
+  const NOTE = {
+    names: '이름 대조는 CRIS 후보를 하나씩 열어 확인하므로 1~3분 걸릴 수 있다. 서버가 한 번에 하나만 처리한다.',
+    results: '구조화된 결과 데이터를 주는 레지스트리는 ClinicalTrials.gov 뿐이다. 다른 곳은 "그렇게 물어볼 수 없음" 으로 답한다.',
+  };
+  let schema = null, current = 'search', busy = false;
+
+  fetch('/api/schema').then((r) => r.json()).then((s) => { schema = s; renderTabs(); select('search'); });
+
+  function renderTabs() {
+    $('tabs').innerHTML = TABS.map((t) =>
+      `<button type="button" role="tab" data-cmd="${t.cmd}" aria-selected="${t.cmd === current}">${t.label}</button>`).join('');
+    $('tabs').onclick = (e) => { const b = e.target.closest('button'); if (b) select(b.dataset.cmd); };
+  }
+
+  function select(cmd) {
+    current = cmd;
+    const tab = TABS.find((t) => t.cmd === cmd);
+    const spec = schema.commands[cmd];
+    [...$('tabs').children].forEach((b) => b.setAttribute('aria-selected', b.dataset.cmd === cmd));
+    $('summary').textContent = spec.summary;
+    $('out').innerHTML = '';
+
+    // 주 칸
+    const p = $('primary');
+    if (tab.primary) {
+      p.innerHTML = `<input name="__primary" placeholder="${tab.placeholder}" aria-label="${tab.label}" required>
+                     <button type="submit">찾기</button>`;
+      p.querySelector('input').focus();
+    } else {
+      p.innerHTML = `<button type="submit">보기</button>`;
+    }
+
+    // 레지스트리 체크 — 그 축을 받는 커맨드에만. names 는 cris 고정이라 없다.
+    const hasReg = spec.options.some((o) => o.name === 'registry');
+    $('regs').innerHTML = hasReg ? REGS.map((r) =>
+      `<label><input type="checkbox" name="registry" value="${r}" ${['ctgov','isrctn','ctis'].includes(r) ? 'checked' : ''}> ${REG_LABEL[r]}${r === 'cris' ? ' <small>(서버에 키 있음)</small>' : r === 'ictrp' ? ' <small>(기본 꺼짐)</small>' : ''}</label>`).join('') : '';
+
+    // 안내
+    $('note').hidden = !NOTE[cmd]; $('note').textContent = NOTE[cmd] || '';
+
+    // 고급 — 주 칸과 registry 를 뺀 나머지를 스키마대로 그린다.
+    const rest = spec.options.filter((o) => o.name !== tab.primary && o.name !== 'registry');
+    // names 의 term 은 필수라 고급이 아니라 주 칸 옆에 둔다.
+    const required = cmd === 'names' ? rest.filter((o) => o.name === 'term') : [];
+    const advanced = rest.filter((o) => !required.includes(o));
+    if (required.length) {
+      p.insertAdjacentHTML('beforeend', required.map((o) =>
+        `<input name="${o.name}" placeholder="좁힐 말 — 기관명·연구 주제 (필수)" aria-label="${o.name}" required style="flex:.7">`).join(''));
+    }
+    $('adv').hidden = advanced.length === 0;
+    $('adv').open = false;
+    $('fields').innerHTML = advanced.map(field).join('');
+  }
+
+  function field(o) {
+    const help = `<small>${esc(o.help)}</small>`;
+    if (o.type === 'boolean') return `<div class="field check"><input type="checkbox" name="${o.name}" id="f-${o.name}"><div><label for="f-${o.name}">${o.name}</label>${help}</div></div>`;
+    if (o.values) return `<div class="field"><label for="f-${o.name}">${o.name}</label><select name="${o.name}" id="f-${o.name}" ${o.multiple ? 'multiple' : ''}>${o.multiple ? '' : '<option value="">—</option>'}${o.values.map((v) => `<option>${v}</option>`).join('')}</select>${help}</div>`;
+    return `<div class="field"><label for="f-${o.name}">${o.name}</label><input name="${o.name}" id="f-${o.name}">${help}</div>`;
+  }
+
+  // 폼 → 인자. 빈 칸은 보내지 않는다 — CLI 파서가 undefined 를 "안 줌" 으로 읽는다.
+  function collect() {
+    const tab = TABS.find((t) => t.cmd === current);
+    const fd = new FormData($('form'));
+    const args = {};
+    const primary = (fd.get('__primary') || '').toString().trim();
+    if (tab.primary === 'ids') args.ids = primary.split(/\s+/).filter(Boolean);
+    else if (tab.primary) args[tab.primary] = primary;
+    const regs = fd.getAll('registry'); if (regs.length) args.registry = regs;
+    for (const o of schema.commands[current].options) {
+      if (o.name === 'registry' || o.name === tab.primary) continue;
+      if (o.type === 'boolean') { if (fd.get(o.name) === 'on') args[o.name] = true; continue; }
+      const vals = fd.getAll(o.name).map(String).map((s) => s.trim()).filter(Boolean);
+      if (!vals.length) continue;
+      args[o.name] = o.multiple ? vals : vals[0];
+    }
+    return args;
+  }
+
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    if (busy) return;
+    busy = true;
+    const btn = $('form').querySelector('button[type=submit]'); btn.disabled = true;
+    $('out').innerHTML = `<p class="empty">${current === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : '조회 중…'}</p>`;
+    try {
+      const res = await fetch(`/api/${current}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(collect()) });
+      const body = await res.json();
+      if (res.status === 429) { $('out').innerHTML = `<div class="warn">${esc(body.message || '지금은 받을 수 없다.')}</div>`; return; }
+      render(body);
+    } catch (err) {
+      $('out').innerHTML = `<div class="warn">서버에 닿지 못했다: ${esc(String(err))}</div>`;
+    } finally { busy = false; btn.disabled = false; }
+  };
+
+  // 결과 — 봉투를 그대로 그린다. 요약하거나 해석하지 않는다.
+  function render(body) {
+    const env = body.envelope || {};
+    const out = [];
+    if (body.exitCode === 2) {
+      out.push(`<div class="warn"><strong>입력을 고쳐야 한다.</strong> ${esc(env.error?.message || '')}<br><code>${esc(env.error?.hint || '')}</code></div>`);
+      $('out').innerHTML = out.join(''); return;
+    }
+    // 레지스트리별 상태 — "그렇게 물어볼 수 없음" 은 빈 표가 아니라 따로 보인다.
+    out.push(`<div class="status">${(env.registries || []).map((r) => {
+      if (r.status === 'ok') return `<span class="pill">${r.registry} · ${r.total ?? 0}건</span>`;
+      const why = r.error ? esc(r.error.message) : '';
+      return `<span class="pill ${r.status}" title="${why}">${r.registry} · ${r.status === 'unsupported' ? '그렇게 물어볼 수 없음' : '실패'}</span>`;
+    }).join('')}</div>`);
+    (env.registries || []).filter((r) => r.status !== 'ok' && r.error).forEach((r) =>
+      out.push(`<div class="warn"><strong>${r.registry}</strong> — ${esc(r.error.message)}${r.error.hint ? `<br><small>${esc(r.error.hint)}</small>` : ''}</div>`));
+    (env.warnings || []).forEach((w) => out.push(`<div class="warn"><code>${esc(w.code)}</code> ${esc(w.message)}</div>`));
+
+    const d = env.data;
+    if (current === 'search' || current === 'get') out.push(records(d || []));
+    else if (current === 'count') out.push(d && d.total != null ? `<p class="empty">합계 <strong>${d.total}</strong>건 — 레지스트리별 수는 위에. 같은 시험이 여러 곳에 등록될 수 있어 합은 참고만.</p>` : '<p class="empty">세지 못했다.</p>');
+    else if (current === 'names') out.push(names(d));
+    else if (current === 'registries') out.push(registries(d || []));
+    else out.push(`<pre>${esc(JSON.stringify(d, null, 2))}</pre>`);
+    $('out').innerHTML = out.join('');
+  }
+
+  function records(list) {
+    if (!list.length) return '<p class="empty">0건. 위 상태에 "그렇게 물어볼 수 없음" 이 있으면 빈 것이 아니라 못 물은 것이다.</p>';
+    const attributions = [...new Set(list.map((r) => r.attribution).filter(Boolean))];
+    return `<div class="tablewrap"><table><thead><tr><th>등록번호</th><th>제목</th><th>상태</th><th>단계</th><th>의뢰</th><th>나라</th></tr></thead><tbody>${
+      list.map((r) => `<tr>
+        <td class="id"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.id)}</a></td>
+        <td class="title">${esc(r.title)}${r.hasResults ? ' <span class="tag">results</span>' : ''}</td>
+        <td><span class="tag">${esc(r.status)}</span>${r.statusRaw && r.statusRaw !== r.status ? `<small>${esc(r.statusRaw)}</small>` : ''}</td>
+        <td>${(r.phase || []).map((p) => `<span class="tag">${esc(p)}</span>`).join('')}</td>
+        <td>${esc(r.sponsor?.lead || '')}</td>
+        <td>${[...new Set((r.locations || []).map((l) => l.country).filter(Boolean))].slice(0, 3).join(', ')}${r.locationsTotal > (r.locations || []).length ? ` <small>+${r.locationsTotal - r.locations.length}</small>` : ''}</td>
+      </tr>`).join('')}</tbody></table></div>${attributions.map((a) => `<p class="attribution">${esc(a)}</p>`).join('')}`;
+  }
+
+  function names(d) {
+    if (!d) return '<p class="empty">대조하지 못했다.</p>';
+    const head = `<p class="empty"><strong>${esc(d.korean)}</strong> — "${esc(d.term)}" 로 좁힌 CRIS ${d.crisMatched}건을 대조. 이 수가 작으면 표기 목록도 불완전할 수 있다.</p>`;
+    if (!d.variants.length) return head;
+    return head + `<div class="tablewrap"><table><thead><tr><th>등록된 표기</th><th>CRIS 시험</th>${d.variants.some((v) => v.ctgovTrials != null) ? '<th>ctgov 시험</th>' : ''}</tr></thead><tbody>${
+      d.variants.map((v) => `<tr><td class="id">${esc(v.name)}</td><td class="num">${v.crisTrials}</td>${v.ctgovTrials != null ? `<td class="num">${v.ctgovTrials}</td>` : ''}</tr>`).join('')}</tbody></table></div>
+      <p class="attribution">표기별 건수는 겹칠 수 있다 — 더하지 말고 각 표기로 따로 검색해 등록번호로 합친다. 오타처럼 보이는 것도 등록된 표기다.</p>`;
+  }
+
+  function registries(list) {
+    return `<div class="tablewrap"><table><thead><tr><th>키</th><th>이름</th><th>권역</th><th>검색 축</th><th>결과 데이터</th></tr></thead><tbody>${
+      list.map((r) => { const n = Object.values(r.search || {}).filter((a) => a.supported).length;
+        return `<tr><td class="id">${esc(r.key)}</td><td>${esc(r.name)}</td><td>${esc(r.region || '')}</td><td class="num">${n}</td><td>${r.results?.supported ? '있음' : `<small>${esc(r.results?.scope || '없음')}</small>`}</td></tr>`; }).join('')}</tbody></table></div>`;
+  }
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+})();
+</script>
+</body>
+</html>
