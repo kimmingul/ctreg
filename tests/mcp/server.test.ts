@@ -324,4 +324,18 @@ describe('ctreg-mcp 진입점 (실제 프로세스)', () => {
     const tools = (res.get(2) as { tools: { name: string }[] }).tools.map((t) => t.name).sort();
     expect(tools).toEqual(COMMANDS.map((c) => TOOL_NAME[c]).sort());
   }, 30_000);
+
+  /**
+   * **어노테이션이 와이어에 실리는가.** `toolAnnotations()` 는 단위 테스트가 덮는데, 그것을
+   * `registerTool` 에 실제로 넘기는 한 줄은 아무도 안 봤다 — 사보타주로 그 줄을 지워도
+   * 41개 전부 초록이었다. 호스트가 읽는 것은 함수가 아니라 tools/list 응답이다.
+   */
+  it('tools/list 에 readOnlyHint 와 outputSchema 가 실려 나간다', async () => {
+    const res = await rpc([...handshake, { jsonrpc: '2.0', id: 2, method: 'tools/list' }], {});
+    const tools = (res.get(2) as { tools: { name: string; annotations?: { readOnlyHint?: boolean }; outputSchema?: unknown }[] }).tools;
+    for (const t of tools) {
+      expect(t.annotations?.readOnlyHint, t.name).toBe(true);
+      expect(t.outputSchema, t.name).toBeDefined();
+    }
+  }, 30_000);
 });
