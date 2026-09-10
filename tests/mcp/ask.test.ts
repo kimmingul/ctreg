@@ -94,6 +94,19 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(calls.filter((c) => c.cmd === 'search').map((c) => c.args.investigator)).toEqual(['Min-Gul Kim', 'Mingul Kim']);   // 0건 표기는 열지 않는다
   });
 
+  /** 실측(2026-09-10): 모델 후보 여섯에 `Mingul Kim`(17건)이 없었다. 붙임·띄움은 규칙이라 서버가 만든다. */
+  it('하이픈 표기가 오면 붙인 표기도 함께 묻는다 — 모델이 빠뜨려도', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"김민걸"}}'))
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim"]'));
+    const asked: string[] = [];
+    const call = (async (cmd: string, args: Record<string, unknown>) => { if (cmd === 'count') asked.push(args.investigator as string);
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [], warnings: [], data: cmd === 'count' ? { total: 0 } : [] } } }; }) as unknown as Parameters<typeof ask>[3];
+    await ask({ q: '김민걸', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    expect(asked).toContain('Min-Gul Kim');
+    expect(asked).toContain('Mingul Kim');
+  });
+
   it('이름만 있는데 어느 표기도 안 걸리면 0건이되 그 표기들을 밝힌다', async () => {
     const f = vi.fn()
       .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"홍길동"}}'))
