@@ -221,6 +221,59 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(cris?.status).toBe('unsupported');
   });
 
+  /**
+   * **답변 층 (사용자 선택 2, 2026-09-11).** "특징 설명"·"연구 분야" 같은 물음은 목록이 답이 아니다.
+   * 첫 변환에서 모델이 `wants: answer` 를 정하면, 조회 결과를 모델에게 주고 요약을 받는다.
+   * 선: **조회 결과만 근거로**, 없는 것은 없다고. 페이지는 "모델의 요약 — 원본은 아래" 로 표시한다.
+   */
+  it('wants=answer 면 조회 결과를 모델에게 주고 요약을 받는다 — 근거 레코드가 프롬프트에 실린다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"search","args":{"investigator":"Min-Gul Kim","registry":["ctgov"]},"wants":"answer"}'))
+      .mockResolvedValueOnce(llmRes('주로 건강인 대상 약동학 시험이다 [CTGOV:A].'));
+    const call = (async () => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total: 2 }], warnings: [],
+      data: [{ id: 'CTGOV:A', title: 'PK of X in healthy adults', status: 'completed', phase: ['phase_1'], studyType: 'interventional', conditions: ['Healthy'], sponsor: { lead: 'CKD' } }, { id: 'CTGOV:B', title: 'BE of Y', status: 'completed', phase: ['phase_1'] }] } } })) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '김민걸 교수의 임상시험 특징 설명', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    expect(r.status).toBe(200);
+    const b = r.body as { answer?: { text: string; basedOn: number; model: string }; envelope: { data: unknown[] } };
+    expect(b.answer?.text).toMatch(/약동학/);
+    expect(b.answer?.basedOn).toBe(2);
+    expect(b.envelope.data).toHaveLength(2);   // 원본은 그대로 간다
+    // 두 번째 호출: 레코드가 근거로 실리고, 지어내지 말라고 지시한다
+    const [, init] = f.mock.calls[1]! as unknown as [string, RequestInit];
+    const msgs = (JSON.parse(init.body as string) as { messages: { role: string; content: string }[] }).messages;
+    const all = msgs.map((m) => m.content).join('\n');
+    expect(all).toContain('CTGOV:A');
+    expect(all).toContain('PK of X in healthy adults');
+    expect(all).toMatch(/없다|모른다/);
+    expect(all).toContain('김민걸 교수의 임상시험 특징 설명');
+  });
+
+  it('wants 가 list 거나 없으면 요약하지 않는다 — LLM 은 한 번만', async () => {
+    const f = llm('{"tool":"search","args":{"condition":"melanoma"},"wants":"list"}');
+    const call = (async () => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [], warnings: [], data: [{ id: 'CTGOV:A' }] } } })) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '흑색종', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    expect((r.body as { answer?: unknown }).answer).toBeUndefined();
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('요약 모델이 실패해도 결과는 나간다 — 요약이 실패했다고만 적는다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"search","args":{"condition":"x"},"wants":"answer"}'))
+      .mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const call = (async () => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [], warnings: [], data: [{ id: 'CTGOV:A' }] } } })) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '특징', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    expect(r.status).toBe(200);
+    const b = r.body as { answer?: { text?: string; error?: string }; envelope: { data: unknown[] } };
+    expect(b.envelope.data).toHaveLength(1);
+    expect(b.answer?.error).toBeTruthy();
+    expect(b.answer?.text).toBeUndefined();
+  });
+
+  it('시스템 프롬프트가 wants 를 설명한다 — 목록과 답변을 가른다', () => {
+    expect(systemPrompt('search')).toMatch(/wants/);
+    expect(systemPrompt('search')).toMatch(/answer/);
+  });
+
   it('모델이 JSON 이 아닌 것을 내면 502 다', async () => {
     const f = llm('죄송하지만 그 질문은…');
     const r = await ask({ q: 'x', intent: 'search' }, withKey(), f as unknown as typeof fetch);
