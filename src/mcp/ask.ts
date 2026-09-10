@@ -203,14 +203,20 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
     return { status: 502, body: { error: 'llm_unparseable', message: '모델이 이름의 영문 표기를 내지 못했다. 소속 기관이나 연구 주제를 함께 적어 보라.', raw: text.slice(0, 300) } };
   }
 
-  // 2) 표기마다 ctgov 건수 — 걸린 것만 연다.
+  // 2) 표기마다 건수 — 걸린 것만 연다. ctgov 는 이름 축으로, ISRCTN 은 **본문 자유검색**으로(이름 축이
+  //    없다. 실측 2026-09-11: `--term "Min-Gul Kim"` 1건). CTIS 는 자유검색이 이름에 닿지 않아(네 표기
+  //    전부 0) 묻지 않고 "물어볼 수 없다" 로 적는다.
+  const totalOf = (r: ReturnType<typeof envelopeOf>): number => (r.exitCode === 0 ? ((r.envelope?.data as { total?: number } | undefined)?.total ?? 0) : 0);
   const counts = await Promise.all(variants.map(async (v) => {
-    const r = envelopeOf(await call('count', { registry: ['ctgov'], investigator: v }, env));
-    const total = r.exitCode === 0 ? ((r.envelope?.data as { total?: number } | undefined)?.total ?? 0) : 0;
-    return { v, total };
+    const [g, i] = await Promise.all([
+      call('count', { registry: ['ctgov'], investigator: v }, env).then(envelopeOf),
+      call('count', { registry: ['isrctn'], term: v }, env).then(envelopeOf),
+    ]);
+    return { v, total: totalOf(g), isrctn: totalOf(i) };
   }));
   const hits = counts.filter((c) => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 6);
-  const tried = counts.map((c) => `${c.v} ${c.total}건`).join(' · ');
+  const isrctnHits = counts.filter((c) => c.isrctn > 0).sort((a, b) => b.isrctn - a.isrctn).slice(0, 4);
+  const tried = counts.map((c) => `${c.v} ${c.total}건${c.isrctn > 0 ? `(ISRCTN ${c.isrctn})` : ''}`).join(' · ');
   const guide = mirror
     ? ''
     : ' 소속 기관이나 연구 주제를 함께 적으면 CRIS 에서 실제 등록된 표기를 읽어 정확히 대조한다(이름 대조).';
@@ -222,7 +228,15 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
   for (const r of results) for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string }[]) if (item.id && !byId.has(item.id)) byId.set(item.id, item);
   for (const r of results) for (const w of r.envelope?.warnings ?? []) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
   const truncated = hits.some((h) => h.total > PAGE);
-  const merged = [...byId.values()];
+  const merged = [...byId.values()];   // ctgov 만 — 아래 소속 추정이 시험 장소를 읽는 데 쓴다
+
+  // 3-b) ISRCTN — 걸린 표기마다 본문 검색. 합치되 ctgov 와 섞이지 않게 따로 센다.
+  let isrctnTotal = 0;
+  for (const h of isrctnHits) {
+    const r = envelopeOf(await call('search', { registry: ['isrctn'], term: h.v, 'page-size': PAGE }, env));
+    for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string }[]) if (item.id && !byId.has(item.id)) { byId.set(item.id, item); isrctnTotal++; }
+    for (const w of r.envelope?.warnings ?? []) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
+  }
   warnings.unshift({
     code: 'name_romanized_guess',
     message: hits.length === 0
@@ -233,7 +247,18 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
   });
   if (truncated) warnings.push({ code: 'name_scan_truncated', message: `표기 하나에 ${PAGE}건을 넘는 것이 있어 그 뒤는 열지 않았다 — 합계가 전체보다 작다.`, registry: 'ctgov' });
 
-  const registries: Env['registries'] = [{ registry: 'ctgov', status: 'ok', total: merged.length }];
+  const registries: Env['registries'] = [
+    { registry: 'ctgov', status: 'ok', total: merged.length },
+    { registry: 'isrctn', status: 'ok', total: isrctnTotal },
+    { registry: 'ctis', status: 'unsupported', error: { code: 'unsupported', message: 'EU CTIS 는 연구자 이름 축이 없고 자유검색도 사람 이름에 닿지 않는다(실측).', hint: '등록번호(2022-5…)나 의뢰기관·질환으로 물어라.' } },
+  ];
+  if (isrctnTotal > 0) {
+    warnings.push({
+      code: 'name_fulltext_isrctn',
+      message: `ISRCTN 은 연구자 이름 축이 없어 **본문 자유검색**으로 물었다(${isrctnHits.map((h) => `${h.v} ${h.isrctn}건`).join(' · ')}). 이름이 본문에 나오는 시험이 걸리므로 연구책임자가 아닐 수도 있다 — 레코드를 열어 확인하라.`,
+      registry: 'isrctn',
+    });
+  }
   let site: { facility: string; count: number } | undefined;
   if (mirror) {
     // 4-a) 사본: 이미 물었다. 항목을 합치고 사본 경고를 그대로 싣는다.
@@ -281,7 +306,7 @@ async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.Pr
     warnings,
     data: intent === 'count' ? { total: all.length } : all,
   };
-  const args: Record<string, unknown> = { registry: ['ctgov', 'cris'], investigator: hits.map((h) => h.v), korean_name: korean, ...(site ? { term: site.facility } : {}) };
+  const args: Record<string, unknown> = { registry: ['ctgov', 'isrctn', 'cris'], investigator: hits.map((h) => h.v), korean_name: korean, ...(site ? { term: site.facility } : {}) };
   return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args, model: llm.model, via: mirror ? 'name_only_mirror' : 'name_only' } } };
 }
 

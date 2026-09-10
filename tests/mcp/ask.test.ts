@@ -105,7 +105,7 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     const cris = calls.filter((c) => (c.args.registry as string[])[0] === 'cris');
     expect(cris.map((c) => c.args.term).sort()).toEqual(['Chonbuk National University Hospital', '전북대학교병원']);
     expect(cris.every((c) => c.args.investigator === '김민걸')).toBe(true);
-    expect(b.envelope.registries.map((r) => r.registry)).toEqual(['ctgov', 'cris']);
+    expect(b.envelope.registries.map((r) => r.registry)).toEqual(['ctgov', 'isrctn', 'ctis', 'cris']);   // 넷 다 답한다 — ISRCTN 은 본문, CTIS 는 못 물음
     const a = b.envelope.warnings.find((x) => x.code === 'name_affiliation_guess');
     expect(a?.message).toMatch(/전북대학교병원/);
     expect(b.envelope.warnings.some((x) => x.code === 'investigator_checked_by_detail')).toBe(true);   // CRIS 의 경고를 버리지 않는다
@@ -162,7 +162,7 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     const counted = calls.filter((c) => c.cmd === 'count').map((c) => c.args.investigator as string);
     expect(counted).toEqual(expect.arrayContaining(['Min-Gul Kim', 'Min Gul KIm', 'Minkul Kim']));
     expect(b.envelope.data.map((x) => x.id).sort()).toEqual(['CRIS:K1', 'CRIS:K2', 'CRIS:K3', 'CTGOV:A', 'CTGOV:B', 'CTGOV:C']);
-    expect(b.envelope.registries.map((x) => [x.registry, x.total])).toEqual([['ctgov', 3], ['cris', 3]]);
+    expect(b.envelope.registries.filter((x) => x.status === 'ok').map((x) => [x.registry, x.total])).toEqual([['ctgov', 3], ['isrctn', 0], ['cris', 3]]);
     // 등록된 표기와 추측 표기를 구별해 말한다
     const w = b.envelope.warnings.find((x) => x.code === 'name_romanized_guess');
     expect(w?.message).toMatch(/등록된 표기/);
