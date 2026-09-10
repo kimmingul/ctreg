@@ -5,8 +5,8 @@
 #   fly apps create ctreg-mcp --org nanum-space-co-ltd
 #   fly volumes create ctreg_data --app ctreg-mcp --region nrt --size 1 --yes
 #   fly secrets set --app ctreg-mcp CTREG_CRIS_SERVICE_KEY=<공공데이터포털 Decoding 키>
-#   fly secrets set --app ctreg-mcp CTREG_CRIS_MIRROR_URL=https://kctis-web.fly.dev   # CRIS 사본(KCTIS). 있으면 위 키 대신 이 문.
-#     (KCTIS 가 HOSTNAME="::" 로 재배포된 뒤에는 http://kctis-web.internal:3000 — 같은 org 의 사설망)
+#   fly secrets set --app ctreg-mcp CTREG_CRIS_MIRROR_URL=http://kctis-web.internal:3000   # CRIS 사본(KCTIS), 같은 org 의 사설망. 있으면 위 키 대신 이 문.
+#     (KCTIS 의 Next 가 HOSTNAME="::" 여야 한다 — 6PN 은 IPv6 뿐이라 0.0.0.0 이면 ECONNREFUSED)
 #   fly deploy --app ctreg-mcp --config deploy/fly/fly.toml --dockerfile deploy/fly/Dockerfile --remote-only --ha=false
 #
 # 확인:
