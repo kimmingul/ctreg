@@ -5,6 +5,8 @@
 #   fly apps create ctreg-mcp --org nanum-space-co-ltd
 #   fly volumes create ctreg_data --app ctreg-mcp --region nrt --size 1 --yes
 #   fly secrets set --app ctreg-mcp CTREG_CRIS_SERVICE_KEY=<공공데이터포털 Decoding 키>
+#   fly secrets set --app ctreg-mcp CTREG_CRIS_MIRROR_URL=https://kctis-web.fly.dev   # CRIS 사본(KCTIS). 있으면 위 키 대신 이 문.
+#     (KCTIS 가 HOSTNAME="::" 로 재배포된 뒤에는 http://kctis-web.internal:3000 — 같은 org 의 사설망)
 #   fly deploy --app ctreg-mcp --config deploy/fly/fly.toml --dockerfile deploy/fly/Dockerfile --remote-only --ha=false
 #
 # 확인:
@@ -25,7 +27,7 @@ primary_region = "nrt"     # 도쿄. CRIS·한국 사용자와 가깝다. 서울
 [build]
   dockerfile = "Dockerfile"
   [build.args]
-    CTREG_VERSION = "0.9.4"   # 새 버전을 낼 때 여기도 올린다 — 그래야 재배포가 새 코드를 받는다
+    CTREG_VERSION = "0.10.0"   # 새 버전을 낼 때 여기도 올린다 — 그래야 재배포가 새 코드를 받는다
 
 [http_service]
   internal_port = 8080
