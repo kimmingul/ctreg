@@ -95,7 +95,105 @@ function sanitize(r: Resolution): Resolution {
   return { tool: r.tool, args };
 }
 
-export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, fetchImpl: typeof fetch = fetch): Promise<ApiResponse> {
+type Call = typeof callTool;
+type Llm = { baseUrl: string; model: string; key: string };
+
+/** LLM 한 번. 실패는 ApiResponse(502) 로 돌려 호출자가 그대로 낸다. */
+async function complete(llm: Llm, fetchImpl: typeof fetch, messages: { role: 'system' | 'user'; content: string }[]): Promise<string | ApiResponse> {
+  try {
+    const res = await fetchImpl(`${llm.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${llm.key}` },
+      body: JSON.stringify({ model: llm.model, temperature: 0, messages }),
+    });
+    if (!res.ok) return { status: 502, body: { error: 'llm_http', message: `LLM 이 ${res.status} 를 냈다.` } };
+    const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    return j.choices?.[0]?.message?.content ?? '';
+  } catch (e) {
+    return { status: 502, body: { error: 'llm_unreachable', message: `LLM 에 닿지 못했다: ${(e as Error).message}` } };
+  }
+}
+const isResponse = (x: unknown): x is ApiResponse => typeof x === 'object' && x !== null && 'status' in x;
+
+type Env = { registries: { registry: string; status: string; total?: number }[]; warnings: { code: string; message: string; registry?: string }[]; data: unknown };
+const envelopeOf = (r: Awaited<ReturnType<Call>>): { exitCode: number; envelope?: Env } => r.structuredContent as { exitCode: number; envelope?: Env };
+
+/**
+ * **이름만 쳤을 때.** Claude 에 MCP 로 붙였을 때는 "김민걸 연구 찾아줘" 가 됐다 — 에이전트가
+ * names 실패 뒤 로마자 후보를 여럿 만들어 ctgov 에 각각 물었기 때문이다. 페이지는 한 번
+ * 부르고 끝이라 그 절차를 여기서 대신한다: 모델에게 표기 후보를 받고 붙임 표기를 더해(최대 12), ctgov 에
+ * 건수를 각각 물어 걸린 표기만 열고(최대 4), 합쳐 중복을 뺀다.
+ *
+ * **추측했다고 밝힌다.** 로마자 표기가 다르면 다른 사람이다 — 이 서버가 `names` 를 만든
+ * 이유다. 후보에 없는 표기로 등록된 시험은 빠지고, 그 사실을 경고에 적는다. 소속·주제를
+ * 주면 `names` 가 CRIS 에서 **등록된** 표기를 읽어 오므로 그 길을 안내한다.
+ *
+ * ctgov 만 묻는다 — 이름 축을 받는 곳이 ctgov 와 CRIS 뿐이고 CRIS 는 좁힐 말 없이는 후보를
+ * 못 만든다(실측: 자유검색에 이름을 넣으면 0건).
+ */
+async function nameOnly(korean: string, intent: Intent, llm: Llm, env: NodeJS.ProcessEnv, fetchImpl: typeof fetch, call: Call): Promise<ApiResponse> {
+  const text = await complete(llm, fetchImpl, [
+    { role: 'system', content: '한국어 사람 이름의 영문(로마자) 표기 후보를 낸다. ClinicalTrials.gov 등록 관행대로 "이름 성" 순서(예: Min-Gul Kim). 하이픈·붙임·띄움 변형과 흔한 관용 표기(이→Lee/Rhee/Yi, 박→Park, 최→Choi, 정→Jung/Jeong/Chung 등)를 포함해 많이 쓰는 순으로 최대 8개. 출력은 JSON 문자열 배열 하나뿐이다. 다른 글자는 내지 마라.' },
+    { role: 'user', content: korean },
+  ]);
+  if (isResponse(text)) return text;
+  let variants: string[] = [];
+  try {
+    const cleaned = text.replace(/```(?:json)?/gi, '').trim();
+    const arr = JSON.parse(cleaned.slice(cleaned.indexOf('['), cleaned.lastIndexOf(']') + 1)) as unknown;
+    if (Array.isArray(arr)) variants = arr.filter((x): x is string => typeof x === 'string' && /^[A-Za-z][A-Za-z .'-]*$/.test(x.trim())).map((x) => x.trim());
+  } catch { /* 아래에서 빈 배열로 처리 */ }
+  // 붙임 표기는 규칙이라 서버가 만든다 — 실측에서 모델이 `Mingul Kim`(17건)을 빠뜨렸다. ctgov 는
+  // 하이픈과 띄움을 같게 보지만(둘 다 45건) 붙임은 다른 사람이다.
+  variants = variants.flatMap((v) => (v.includes('-') ? [v, v.replace(/-([A-Za-z])/g, (_, c: string) => c.toLowerCase())] : [v]));
+  const seen = new Set<string>();
+  variants = variants.filter((v) => { const k = v.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  if (variants.length === 0) {
+    return { status: 502, body: { error: 'llm_unparseable', message: '모델이 이름의 영문 표기를 내지 못했다. 소속 기관이나 연구 주제를 함께 적어 보라.', raw: text.slice(0, 300) } };
+  }
+
+  // 1) 표기마다 건수 — 걸린 것만 연다.
+  const counts = await Promise.all(variants.map(async (v) => {
+    const r = envelopeOf(await call('count', { registry: ['ctgov'], investigator: v }, env));
+    const total = r.exitCode === 0 ? ((r.envelope?.data as { total?: number } | undefined)?.total ?? 0) : 0;
+    return { v, total };
+  }));
+  const hits = counts.filter((c) => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 4);
+  const tried = counts.map((c) => `${c.v} ${c.total}건`).join(' · ');
+  const guide = '소속 기관이나 연구 주제를 함께 적으면 CRIS 에서 실제 등록된 표기를 읽어 정확히 대조한다(이름 대조).';
+
+  if (hits.length === 0) {
+    const envelope: Env = {
+      registries: [{ registry: 'ctgov', status: 'ok', total: 0 }],
+      warnings: [{ code: 'name_romanized_guess', message: `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 물었으나 어느 표기도 걸리지 않았다: ${tried}. 다른 표기로 등록돼 있을 수 있다. ${guide}` }],
+      data: intent === 'count' ? { total: 0 } : [],
+    };
+    return { status: 200, body: { exitCode: 0, exit: 'ok', envelope, resolved: { command: intent, tool: intent, args: { registry: ['ctgov'], investigator: variants }, model: llm.model, via: 'name_only' } } };
+  }
+
+  // 2) 걸린 표기마다 검색 — 합치고 중복을 뺀다. 한 쪽에 다 들어오면 합이 곧 전체다.
+  const PAGE = 100;
+  const results = await Promise.all(hits.map((h) => call('search', { registry: ['ctgov'], investigator: h.v, 'page-size': PAGE }, env).then(envelopeOf)));
+  const byId = new Map<string, unknown>();
+  const warnings: Env['warnings'] = [];
+  for (const r of results) for (const item of (Array.isArray(r.envelope?.data) ? r.envelope.data : []) as { id?: string }[]) if (item.id && !byId.has(item.id)) byId.set(item.id, item);
+  for (const r of results) for (const w of r.envelope?.warnings ?? []) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
+  const truncated = hits.some((h) => h.total > PAGE);
+  const merged = [...byId.values()];
+  warnings.unshift({
+    code: 'name_romanized_guess',
+    message: `한국어 이름을 로마자로 추측해 ClinicalTrials.gov 에 각각 물었다: ${tried}. 표기가 다르면 다른 사람으로 걸리므로 이 후보에 없는 표기로 등록된 시험은 빠진다. ${guide}`,
+  });
+  if (truncated) warnings.push({ code: 'name_scan_truncated', message: `표기 하나에 ${PAGE}건을 넘는 것이 있어 그 뒤는 열지 않았다 — 합계가 전체보다 작다.`, registry: 'ctgov' });
+  const envelope: Env = {
+    registries: [{ registry: 'ctgov', status: 'ok', total: merged.length }],
+    warnings,
+    data: intent === 'count' ? { total: merged.length } : merged,
+  };
+  return { status: 200, body: { exitCode: truncated ? 5 : 0, exit: truncated ? 'partial' : 'ok', envelope, resolved: { command: intent, tool: intent, args: { registry: ['ctgov'], investigator: hits.map((h) => h.v) }, model: llm.model, via: 'name_only' } } };
+}
+
+export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, fetchImpl: typeof fetch = fetch, call: Call = callTool): Promise<ApiResponse> {
   const cfg = loadConfig(env);
   if (!cfg.llmApiKey) {
     return { status: 501, body: { error: 'ai_mode_off', message: 'AI 모드가 아직 켜져 있지 않다 — 서버에 LLM 키가 없다. AI 모드를 끄고 검색하거나, 검색창 문법(status:recruiting 등)을 써라.' } };
@@ -104,28 +202,13 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
   if (q === '') return { status: 400, body: { error: 'empty' } };
   const intent: Intent = body.intent === 'count' ? 'count' : 'search';
 
-  const baseUrl = (cfg.llmBaseUrl ?? 'https://ollama.com/v1').replace(/\/+$/, '');
-  const model = cfg.llmModel ?? 'glm-5.3-flash';
-  let text: string;
-  try {
-    const res = await fetchImpl(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.llmApiKey}` },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        messages: [
-          { role: 'system', content: systemPrompt(intent) },
-          { role: 'user', content: q },
-        ],
-      }),
-    });
-    if (!res.ok) return { status: 502, body: { error: 'llm_http', message: `LLM 이 ${res.status} 를 냈다.` } };
-    const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    text = j.choices?.[0]?.message?.content ?? '';
-  } catch (e) {
-    return { status: 502, body: { error: 'llm_unreachable', message: `LLM 에 닿지 못했다: ${(e as Error).message}` } };
-  }
+  const llm: Llm = { baseUrl: (cfg.llmBaseUrl ?? 'https://ollama.com/v1').replace(/\/+$/, ''), model: cfg.llmModel ?? 'glm-5.3-flash', key: cfg.llmApiKey };
+  const model = llm.model;
+  const text = await complete(llm, fetchImpl, [
+    { role: 'system', content: systemPrompt(intent) },
+    { role: 'user', content: q },
+  ]);
+  if (isResponse(text)) return text;
 
   const parsed = parseResolution(text);
   if (!parsed) {
@@ -139,7 +222,11 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
    * 버튼이 아니라 문장이 정하는 것이다.
    */
   if ((resolved.tool === 'search' || resolved.tool === 'count') && resolved.tool !== intent) resolved.tool = intent;
-  const r = await callTool(resolved.tool, resolved.args, env);
+  // 이름만 있고 좁힐 말이 없다 — CRIS 는 후보를 못 만든다. 되묻지 않고 에이전트가 하던 절차를 여기서 한다.
+  if (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term) {
+    return nameOnly(resolved.args.korean_name, intent, llm, env, fetchImpl, call);
+  }
+  const r = await call(resolved.tool, resolved.args, env);
   const out = r.structuredContent as { exitCode: number };
   // 모델의 선택을 결과에 싣는다 — 사용자가 봐야 틀렸을 때 알아챈다.
   return { status: out.exitCode === 2 ? 400 : 200, body: { ...out, resolved: { command: resolved.tool, tool: resolved.tool, args: resolved.args, model } } };

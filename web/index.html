@@ -245,9 +245,8 @@
   $('form').onsubmit = (e) => { e.preventDefault(); if (mode === 'get' || mode === 'results' || mode === 'names' || mode === 'registries') submit(); else { setMode('search'); submit(); } };
 
   /**
-   * 되묻기 — 한국어 이름은 있는데 후보를 좁힐 말이 없을 때. CRIS 공개 API 는 목록을 제목·
-   * 의뢰기관·등록번호로만 거르므로 사람 이름만으로는 후보가 안 생긴다. 이름 대조 모드로
-   * 바꾸고 "좁힐 말" 칸을 열어 그것만 더 받는다. 다음 엔터가 바로 대조로 간다.
+   * 이름 대조 도구를 직접 골랐는데 좁힐 말이 비었을 때만. (AI 모드에서 이름만 치면 서버가
+   * 로마자 후보로 ctgov 를 대신 훑는다 — 되묻지 않는다.)
    */
   function askForTerm(korean) {
     setMode('names');
@@ -292,7 +291,7 @@
     if (mode === 'names' && !$('q2').value.trim()) { askForTerm(q); return; }
     busy = true;
     document.body.classList.add('searched', 'busy');
-    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중…' : '조회 중…'}</p>`;
+    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중… (이름만 쳤으면 표기 후보를 여럿 물어 30초쯤 걸린다)' : '조회 중…'}</p>`;
     try {
       // AI 모드: 자연어를 서버의 /api/ask 가 도구·인자로 바꾼다. 아니면 검색창 문법 그대로.
       const url = ai && (mode === 'search' || mode === 'count') ? '/api/ask' : `/api/${mode}`;
@@ -301,8 +300,6 @@
       const data = await res.json();
       if (res.status === 429) { $('out').innerHTML = `<div class="warn">${esc(data.message || '지금은 받을 수 없다.')}</div>`; return; }
       if (res.status === 501) { $('out').innerHTML = `<div class="warn">${esc(data.message || 'AI 모드가 아직 켜져 있지 않다.')}</div>`; return; }
-      // AI 가 이름 대조를 골랐는데 좁힐 말이 없다 — CRIS 는 이름만으로 후보를 못 만든다. 오류가 아니라 되묻는다.
-      if (data.resolved?.command === 'names' && !data.resolved.args?.term) { askForTerm(data.resolved.args?.korean_name || q); return; }
       render(data);
     } catch (err) {
       $('out').innerHTML = `<div class="warn bad">서버에 닿지 못했다: ${esc(String(err))}</div>`;
