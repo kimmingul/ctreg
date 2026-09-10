@@ -244,6 +244,19 @@
   $('ai').onclick = () => { ai = !ai; $('ai').setAttribute('aria-pressed', ai); try { localStorage.setItem('ctreg.ai', ai ? 'on' : 'off'); } catch {} $('q').focus(); };
   $('form').onsubmit = (e) => { e.preventDefault(); if (mode === 'get' || mode === 'results' || mode === 'names' || mode === 'registries') submit(); else { setMode('search'); submit(); } };
 
+  /**
+   * 되묻기 — 한국어 이름은 있는데 후보를 좁힐 말이 없을 때. CRIS 공개 API 는 목록을 제목·
+   * 의뢰기관·등록번호로만 거르므로 사람 이름만으로는 후보가 안 생긴다. 이름 대조 모드로
+   * 바꾸고 "좁힐 말" 칸을 열어 그것만 더 받는다. 다음 엔터가 바로 대조로 간다.
+   */
+  function askForTerm(korean) {
+    setMode('names');
+    $('q').value = korean;
+    $('q2').hidden = false; $('q2').focus();
+    document.body.classList.add('searched');
+    $('out').innerHTML = `<div class="warn"><strong>${esc(korean)}</strong> — 이름만으로는 찾을 수 없다. CRIS 는 사람 이름으로 목록을 거르지 못해서, 후보를 좁힐 말이 하나 더 필요하다: <strong>소속 기관</strong>이나 <strong>연구 주제</strong>. 옆 칸에 넣고 엔터 — 예: 전북대학교병원, 약동학, 당뇨병.</div>`;
+  }
+
   function setMode(m) {
     mode = m;
     $('q2').hidden = m !== 'names';
@@ -276,6 +289,7 @@
     if (!schema) { await ready; if (busy) return; }   // 스키마가 오기 전의 엔터를 버리지 않는다
     const q = $('q').value.trim();
     if (PRIMARY[mode] && !q) { $('q').focus(); return; }
+    if (mode === 'names' && !$('q2').value.trim()) { askForTerm(q); return; }
     busy = true;
     document.body.classList.add('searched', 'busy');
     $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중…' : '조회 중…'}</p>`;
@@ -287,6 +301,8 @@
       const data = await res.json();
       if (res.status === 429) { $('out').innerHTML = `<div class="warn">${esc(data.message || '지금은 받을 수 없다.')}</div>`; return; }
       if (res.status === 501) { $('out').innerHTML = `<div class="warn">${esc(data.message || 'AI 모드가 아직 켜져 있지 않다.')}</div>`; return; }
+      // AI 가 이름 대조를 골랐는데 좁힐 말이 없다 — CRIS 는 이름만으로 후보를 못 만든다. 오류가 아니라 되묻는다.
+      if (data.resolved?.command === 'names' && !data.resolved.args?.term) { askForTerm(data.resolved.args?.korean_name || q); return; }
       render(data);
     } catch (err) {
       $('out').innerHTML = `<div class="warn bad">서버에 닿지 못했다: ${esc(String(err))}</div>`;
