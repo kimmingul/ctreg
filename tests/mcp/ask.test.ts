@@ -72,26 +72,43 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
   it('이름만 있으면 로마자 후보로 ctgov 에 각각 묻고 합쳐 낸다 — 추측했다고 밝히면서', async () => {
     const f = vi.fn()
       .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"김민걸","ctgov":true}}'))
-      .mockResolvedValueOnce(llmRes('["Min-Gul Kim","Mingul Kim","Min Gul Kim"]'));
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim","Mingul Kim","Min Gul Kim"]'))
+      .mockResolvedValueOnce(llmRes('전북대학교병원'));   // 시설명 → 국문 정식 명칭
     const calls: { cmd: string; args: Record<string, unknown> }[] = [];
     const totals: Record<string, number> = { 'Min-Gul Kim': 2, 'Mingul Kim': 1, 'Min Gul Kim': 0 };
+    const site = { facility: 'Chonbuk National University Hospital', country: 'South Korea' };
     const call = (async (cmd: string, args: Record<string, unknown>) => {
       calls.push({ cmd, args });
+      if ((args.registry as string[])[0] === 'cris') {
+        return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'cris', status: 'ok', total: 1 }], warnings: [{ code: 'investigator_checked_by_detail', message: 'x', registry: 'cris' }], data: [{ id: 'CRIS:KCT1' }] } } };
+      }
       const v = args.investigator as string; const total = totals[v] ?? 0;
-      const data = cmd === 'count' ? { total } : v === 'Min-Gul Kim' ? [{ id: 'CTGOV:A' }, { id: 'CTGOV:B' }] : [{ id: 'CTGOV:B' }];
+      const data = cmd === 'count' ? { total } : v === 'Min-Gul Kim' ? [{ id: 'CTGOV:A', locations: [site] }, { id: 'CTGOV:B', locations: [site] }] : [{ id: 'CTGOV:B', locations: [site] }];
       return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total }], warnings: [], data } } };
     }) as unknown as Parameters<typeof ask>[3];
     const r = await ask({ q: '김민걸 교수의 임상시험 리스트', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
     expect(r.status).toBe(200);
-    const b = r.body as { exitCode: number; resolved: { command: string; args: Record<string, unknown> }; envelope: { data: { id: string }[]; warnings: { code: string; message: string }[] } };
+    const b = r.body as { exitCode: number; resolved: { command: string; args: Record<string, unknown> }; envelope: { registries: { registry: string; status: string }[]; data: { id: string }[]; warnings: { code: string; message: string }[] } };
     expect(b.exitCode).toBe(0);
     expect(b.resolved.command).toBe('search');
     expect(b.resolved.args.investigator).toEqual(['Min-Gul Kim', 'Mingul Kim']);   // 걸린 표기만, 많은 순
-    expect(b.envelope.data.map((x) => x.id)).toEqual(['CTGOV:A', 'CTGOV:B']);       // 합치고 중복 제거
+    expect(b.envelope.data.map((x) => x.id)).toEqual(['CTGOV:A', 'CTGOV:B', 'CRIS:KCT1']);   // 합치고 중복 제거, CRIS 도
     const w = b.envelope.warnings.find((x) => x.code === 'name_romanized_guess');
     expect(w?.message).toMatch(/추측/);
     expect(w?.message).toMatch(/Min-Gul Kim/);
-    expect(calls.filter((c) => c.cmd === 'search').map((c) => c.args.investigator)).toEqual(['Min-Gul Kim', 'Mingul Kim']);   // 0건 표기는 열지 않는다
+    expect(calls.filter((c) => c.cmd === 'search' && (c.args.registry as string[])[0] === 'ctgov').map((c) => c.args.investigator)).toEqual(['Min-Gul Kim', 'Mingul Kim']);   // 0건 표기는 열지 않는다
+    /**
+     * **CRIS 도 나와야 한다.** CRIS 는 이름으로 못 거르지만 ctgov 시험 장소가 소속을 말해 준다
+     * (실측: Chonbuk National University Hospital 27건). 그 기관을 좁힐 말로 국문·영문 둘 다
+     * 물어 연구책임자를 대조한다 — 사용자: "결과물에 CRIS 꺼는 안 보이는데?"
+     */
+    const cris = calls.filter((c) => (c.args.registry as string[])[0] === 'cris');
+    expect(cris.map((c) => c.args.term).sort()).toEqual(['Chonbuk National University Hospital', '전북대학교병원']);
+    expect(cris.every((c) => c.args.investigator === '김민걸')).toBe(true);
+    expect(b.envelope.registries.map((r) => r.registry)).toEqual(['ctgov', 'cris']);
+    const a = b.envelope.warnings.find((x) => x.code === 'name_affiliation_guess');
+    expect(a?.message).toMatch(/전북대학교병원/);
+    expect(b.envelope.warnings.some((x) => x.code === 'investigator_checked_by_detail')).toBe(true);   // CRIS 의 경고를 버리지 않는다
   });
 
   /** 실측(2026-09-10): 모델 후보 여섯에 `Mingul Kim`(17건)이 없었다. 붙임·띄움은 규칙이라 서버가 만든다. */
@@ -118,6 +135,9 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(b.envelope.data).toEqual([]);
     expect(b.envelope.warnings[0]?.message).toMatch(/Gil-Dong Hong/);
     expect(b.envelope.warnings[0]?.message).toMatch(/소속|기관/);
+    // 소속을 알아낼 ctgov 시험이 없으니 CRIS 는 '그렇게 물어볼 수 없음' — 0건이 아니다
+    const cris = (b.envelope as unknown as { registries: { registry: string; status: string }[] }).registries.find((r) => r.registry === 'cris');
+    expect(cris?.status).toBe('unsupported');
   });
 
   it('모델이 JSON 이 아닌 것을 내면 502 다', async () => {
