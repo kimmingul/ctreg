@@ -30,9 +30,14 @@ primary_region = "nrt"     # 도쿄. CRIS·한국 사용자와 가깝다. 서울
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"   # 아무도 안 쓰면 멈춘다 — 비용이 0 에 가까워진다
-  auto_start_machines = true    # 요청이 오면 깬다. 첫 응답이 몇 초 늦는 것이 대가다
-  min_machines_running = 0
+  # **항상 하나는 켜 둔다.** 처음엔 min 0 으로 뒀는데(아무도 안 쓰면 멈춤, 비용 ≈ 0) 멈춘
+  # 머신에 온 첫 요청이 Node 기동 ~4초를 기다렸고, Fly 의 프록시가 그 안에 포기하면 502 였다
+  # (2026-09-10 실측: 부팅 1.1초 + 앱 기동 4초 = 5.4초 뒤에 reachable). Fly Doctor 가
+  # "포트를 안 듣는다" 고 경고한 것이 그 5초다. 다른 사람이 쓰는 서버가 첫인상이 502 면 안 되고,
+  # shared-cpu-1x 256MB 하나는 월 $2 안팎이다. 그 값어치가 있다.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
   [http_service.concurrency]
     type = "requests"
     soft_limit = 20
