@@ -124,6 +124,52 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(asked).toContain('Mingul Kim');
   });
 
+  /**
+   * **사본이 있으면 소속을 추측하지 않는다.** CRIS 사본은 이름이 목록 축이라 한국어 이름으로 바로
+   * 묻고, 거기서 읽은 **등록된** 영문 표기로 ctgov 를 묻는다 — 모델의 로마자 추측은 보조일 뿐이다.
+   * 사용자가 CRIS 전체 DB 를 만든 이유가 이것이다(2026-09-11).
+   */
+  it('CRIS 사본이 있으면 — 한국어 이름으로 CRIS 를 바로 묻고, 등록된 표기로 ctgov 를 묻는다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"김민걸"}}'))
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim","Minkul Kim"]'));   // 추측 — Minkul 은 등록에 없다
+    const calls: { cmd: string; args: Record<string, unknown> }[] = [];
+    const pi = (en: string) => [{ name: '김민걸', role: '연구책임자' }, { name: en, role: '연구책임자' }];
+    const call = (async (cmd: string, args: Record<string, unknown>) => {
+      calls.push({ cmd, args });
+      const reg = (args.registry as string[])[0];
+      if (reg === 'cris') {
+        // 사본: 이름만으로 43건 중 셋 — 등록된 표기 둘(Min-Gul Kim, Min Gul KIm 오타)
+        return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'cris', status: 'ok', total: 3 }], warnings: [{ code: 'cris_mirror_copy', message: '사본', registry: 'cris' }],
+          data: [{ id: 'CRIS:K1', contacts: pi('Min-Gul Kim') }, { id: 'CRIS:K2', contacts: pi('Min-Gul Kim') }, { id: 'CRIS:K3', contacts: pi('Min Gul KIm') }] } } };
+      }
+      const v = args.investigator as string;
+      const totals: Record<string, number> = { 'Min-Gul Kim': 2, 'Min Gul KIm': 1, 'Minkul Kim': 0, 'Mingul Kim': 0 };
+      const total = totals[v] ?? 0;
+      const data = cmd === 'count' ? { total } : total === 0 ? [] : v === 'Min-Gul Kim' ? [{ id: 'CTGOV:A' }, { id: 'CTGOV:B' }] : [{ id: 'CTGOV:C' }];
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total }], warnings: [], data } } };
+    }) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '김민걸 교수의 임상시험 리스트', intent: 'search' }, { ...withKey(), CTREG_CRIS_MIRROR_URL: 'https://kctis.example.test' }, f as unknown as typeof fetch, call);
+    const b = r.body as { exitCode: number; resolved: { args: Record<string, unknown> }; envelope: { registries: { registry: string; status: string; total?: number }[]; data: { id: string }[]; warnings: { code: string; message: string }[] } };
+    expect(b.exitCode).toBe(0);
+    // CRIS 는 한국어 이름으로, term 없이, 소속 추측 없이
+    const cris = calls.filter((c) => (c.args.registry as string[])[0] === 'cris');
+    expect(cris).toHaveLength(1);
+    expect(cris[0]!.args).toMatchObject({ investigator: '김민걸' });
+    expect(cris[0]!.args).not.toHaveProperty('term');
+    expect(b.envelope.warnings.some((w) => w.code === 'name_affiliation_guess')).toBe(false);
+    // ctgov 는 등록된 표기(오타 포함)와 추측 표기 모두를 묻고, 걸린 것만 연다
+    const counted = calls.filter((c) => c.cmd === 'count').map((c) => c.args.investigator as string);
+    expect(counted).toEqual(expect.arrayContaining(['Min-Gul Kim', 'Min Gul KIm', 'Minkul Kim']));
+    expect(b.envelope.data.map((x) => x.id).sort()).toEqual(['CRIS:K1', 'CRIS:K2', 'CRIS:K3', 'CTGOV:A', 'CTGOV:B', 'CTGOV:C']);
+    expect(b.envelope.registries.map((x) => [x.registry, x.total])).toEqual([['ctgov', 3], ['cris', 3]]);
+    // 등록된 표기와 추측 표기를 구별해 말한다
+    const w = b.envelope.warnings.find((x) => x.code === 'name_romanized_guess');
+    expect(w?.message).toMatch(/등록된 표기/);
+    expect(w?.message).toMatch(/Min Gul KIm/);
+    expect(b.envelope.warnings.some((x) => x.code === 'cris_mirror_copy')).toBe(true);   // 사본 경고를 버리지 않는다
+  });
+
   it('이름만 있는데 어느 표기도 안 걸리면 0건이되 그 표기들을 밝힌다', async () => {
     const f = vi.fn()
       .mockResolvedValueOnce(llmRes('{"tool":"names","args":{"korean_name":"홍길동"}}'))
