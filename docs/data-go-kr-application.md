@@ -18,7 +18,7 @@ ctreg — 임상시험 레지스트리 통합 조회 MCP 서버
 연구 · 보건의료
 
 **서비스 URL**
-`https://<서버>/mcp` ← 띄운 뒤 채운다
+`https://ctreg-mcp.fly.dev/mcp` (2026-09-10 배포)
 
 **소스 코드**
 https://github.com/kimmingul/ctreg (Apache-2.0)
@@ -71,8 +71,8 @@ https://github.com/kimmingul/ctreg (Apache-2.0)
 
 ## 채우기 전 확인
 
-- [ ] 서버가 실제로 떠 있고 `https://<서버>/mcp` 가 `initialize` 에 답한다
+- [x] 서버가 실제로 떠 있고 `https://ctreg-mcp.fly.dev/mcp` 가 `initialize` 에 답한다 (2026-09-10 확인)
 - [ ] 앞단에 인증과 요청률 제한이 걸려 있다 (README 「공개 서버로 띄우기」)
 - [ ] 첫 2주 `/stats` 의 `byDay`·`byRegistry.cris` 를 받아 적었다 — 지어낸 수를 적지 않는다
-- [ ] 이 문서의 URL 과 트래픽 칸을 채웠다
+- [x] URL 채움 · [ ] 트래픽 칸 — 2주 뒤
 - [ ] 인프라 비용 부담 주체가 문안과 실제로 같다 — Fly org 가 바뀌면 문안도 바꾼다

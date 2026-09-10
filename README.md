@@ -153,6 +153,15 @@ CTREG_MCP_PORT=3000 CTREG_MCP_HOST=0.0.0.0 ctreg-mcp-http
 
 stateless 라 요청마다 독립이고, 여러 대로 늘려도 된다. `/mcp` 하나만 서빙하고 나머지는 404 다.
 
+**띄워져 있다 — `https://ctreg-mcp.fly.dev/mcp`** (2026-09-10, 도쿄). 인증 없이 누구나 쓴다:
+
+```json
+{ "mcpServers": { "ctreg": { "url": "https://ctreg-mcp.fly.dev/mcp" } } }
+```
+
+호출 통계는 `https://ctreg-mcp.fly.dev/stats`. 아무도 안 쓰면 멈추고 첫 요청이 깨우므로
+그 첫 응답은 몇 초 늦다.
+
 **Fly.io 로 띄우는 파일이 `deploy/fly/` 에 있다.** 순서는 `fly.toml` 머리에 적혀 있다 —
 앱 만들기 → 볼륨 → CRIS 키를 secret 으로 → deploy. 이미지는 저장소가 아니라 **npm 에서 받는다**
 (`CTREG_VERSION` 고정) — 컨테이너가 도는 코드가 `npm i -g` 로 받는 사용자와 같은 벌이어야

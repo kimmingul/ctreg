@@ -1,13 +1,14 @@
 # ctreg-mcp-http — Fly.io 설정.
 #
-# 띄우는 법(저장소 루트에서):
-#   fly launch --config deploy/fly/fly.toml --dockerfile deploy/fly/Dockerfile --no-deploy --org nanum-space-co-ltd
-#   fly volumes create ctreg_data --region nrt --size 1
-#   fly secrets set CTREG_CRIS_SERVICE_KEY=<공공데이터포털 Decoding 키>
-#   fly deploy --config deploy/fly/fly.toml --dockerfile deploy/fly/Dockerfile
+# 띄우는 법(저장소 루트에서). **`fly launch` 대신 `apps create` 를 쓴다** — launch 는 대화형이고
+# org 를 fly.toml 에서 읽지 않는다. 2026-09-10 에 실제로 이 순서로 띄웠다:
+#   fly apps create ctreg-mcp --org nanum-space-co-ltd
+#   fly volumes create ctreg_data --app ctreg-mcp --region nrt --size 1 --yes
+#   fly secrets set --app ctreg-mcp CTREG_CRIS_SERVICE_KEY=<공공데이터포털 Decoding 키>
+#   fly deploy --app ctreg-mcp --config deploy/fly/fly.toml --dockerfile deploy/fly/Dockerfile --remote-only --ha=false
 #
 # 확인:
-#   curl https://<app>.fly.dev/stats
+#   curl https://ctreg-mcp.fly.dev/stats
 #
 # 인증이 없다 — URL 을 아는 누구나 쓴다. 그렇게 정했다(2026-09-10). 요청률은 이 프로세스의
 # 자체 버킷(레지스트리별 1 req/s)이 지키므로 **인스턴스는 하나여야 한다** — 둘이면 버킷도
