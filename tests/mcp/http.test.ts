@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { COMMANDS } from '../../src/cli/args.js';
+import { TOOL_NAME } from '../../src/mcp/server.js';
 
 /**
  * HTTP 진입점은 **네 번째 껍데기** 다(bin · 플러그인 스킬 · stdio MCP · HTTP MCP).
@@ -73,12 +74,12 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
   it('도구 다섯을 광고한다', async () => {
     const r = await rpc({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
     const tools = (r.json as { result: { tools: { name: string }[] } }).result.tools.map((t) => t.name).sort();
-    expect(tools).toEqual([...COMMANDS].sort());
+    expect(tools).toEqual(COMMANDS.map((c) => TOOL_NAME[c]).sort());
   });
 
   /** 종료 코드 계약이 HTTP 를 건너 살아남는가 — exit 3 은 오류가 아니다. */
   it('exit 3 을 본문에 싣고 isError 로 내지 않는다', async () => {
-    const r = await rpc({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'search', arguments: { registry: ['ctis'], condition: 'x', phase: ['phase_3'] } } });
+    const r = await rpc({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: TOOL_NAME.search, arguments: { registry: ['ctis'], condition: 'x', phase: ['phase_3'] } } });
     const result = (r.json as { result: { isError?: boolean; content: { text: string }[] } }).result;
     expect(result.isError).toBeFalsy();
     expect((JSON.parse(result.content[0]!.text) as { exitCode: number }).exitCode).toBe(3);
@@ -86,7 +87,7 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
 
   /** 진입점이 loadEnvFiles 를 부르는가 — stdio 에서 두 번 겪은 구멍. */
   it('사용자 설정 파일의 키를 읽는다', async () => {
-    const r = await rpc({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'count', arguments: { registry: ['cris'], term: 'x', 'no-cache': true } } });
+    const r = await rpc({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: TOOL_NAME.count, arguments: { registry: ['cris'], term: 'x', 'no-cache': true } } });
     const result = (r.json as { result: { content: { text: string }[] } }).result;
     const body = JSON.parse(result.content[0]!.text) as { envelope: { registries: { error?: { message: string } }[] } };
     expect(body.envelope.registries[0]!.error?.message ?? '').not.toContain('인증키가 없습니다');

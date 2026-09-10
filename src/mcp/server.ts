@@ -29,6 +29,26 @@ type Command = (typeof COMMANDS)[number];
 type ToolArgs = Record<string, unknown>;
 
 /**
+ * **CLI 커맨드 → MCP 도구 이름.** 의도적으로 가른 자리다.
+ *
+ * 셸에서는 `ctreg search` 로 충분하다 — `ctreg` 가 앞에 있으니까. MCP 에서는 여러 서버의
+ * 도구가 한 목록에 섞이고, `search` 는 무엇을 검색하는지 말하지 않는다. Anthropic 의
+ * Clinical Trials 서버(`search_trials`·`get_trial_details`…)와 겹치면 더 나쁘다 — 두 서버가
+ * 함께 붙으면 모델이 둘을 섞는다. 그래서 목적어와 **이 서버만의 표지** 를 붙인다:
+ * `multi_registry`(레지스트리 다섯), `korean`(한국어 대조).
+ *
+ * `Record<Command, string>` 이라 커맨드가 늘면 이름도 반드시 정해야 컴파일이 된다.
+ */
+export const TOOL_NAME = {
+  search: 'search_trials_multi_registry',
+  get: 'get_trial_by_id',
+  count: 'count_trials',
+  results: 'get_trial_results',
+  registries: 'list_registries_and_capabilities',
+  names: 'resolve_korean_investigator_name',
+} as const satisfies Record<Command, string>;
+
+/**
  * MCP 표면에서 접는 옵션.
  *
  * `format`·`help`·`version` 은 프로세스 경계의 물건이다(출력은 항상 JSON 봉투).
@@ -71,8 +91,9 @@ function fieldFor(name: keyof typeof OPTIONS): ZodTypeAny {
  * 거절(`assertCommandAccepts`)과 안내(`helpFor`)를 함께 먹이는 정본이고, MCP 도 같은
  * 표를 먹어야 세 곳이 같은 말을 한다.
  */
-export function toolSchemas(): Record<Command, z.ZodObject<Record<string, ZodTypeAny>>> {
-  const out = {} as Record<Command, z.ZodObject<Record<string, ZodTypeAny>>>;
+export type ToolName = (typeof TOOL_NAME)[Command];
+export function toolSchemas(): Record<ToolName, z.ZodObject<Record<string, ZodTypeAny>>> {
+  const out = {} as Record<ToolName, z.ZodObject<Record<string, ZodTypeAny>>>;
   for (const cmd of COMMANDS) {
     const shape: Record<string, ZodTypeAny> = {};
     if (cmd === 'get') shape.ids = z.array(z.string()).min(1).describe('접두사 붙은 ID 들 (예: CTGOV:NCT01234567)');
@@ -83,8 +104,64 @@ export function toolSchemas(): Record<Command, z.ZodObject<Record<string, ZodTyp
       if (EXCLUDED.has(opt)) continue;
       shape[opt] = fieldFor(opt);
     }
-    out[cmd] = z.object(shape);
+    out[TOOL_NAME[cmd]] = z.object(shape);
   }
+  return out;
+}
+
+/**
+ * **여섯 도구는 전부 읽기 전용이다.** 레지스트리를 조회만 하고 무엇도 바꾸지 않는다.
+ * 설명 문장이 아니라 어노테이션으로 표시해야 호스트가 기계적으로 안다 — "확인 없이 실행해도
+ * 된다" 는 판단의 근거가 된다. 외부 API 를 부르므로 `openWorldHint` 는 참이고, `registries`
+ * 만 정적 선언 덤프라 거짓이다. 같은 입력에 같은 결과이므로(캐시·레지스트리 갱신을 빼면)
+ * `idempotentHint` 도 참이다.
+ */
+export function toolAnnotations(): Record<Command, { title: string; readOnlyHint: true; destructiveHint: false; idempotentHint: true; openWorldHint: boolean }> {
+  const TITLE: Record<Command, string> = {
+    search: '임상시험 검색 (레지스트리 다섯)',
+    get: '등록번호로 시험 조회',
+    count: '임상시험 건수',
+    results: '시험 결과 데이터',
+    registries: '레지스트리와 능력 목록',
+    names: '한국어 연구자 이름 → 등록된 로마자 표기',
+  };
+  const out = {} as ReturnType<typeof toolAnnotations>;
+  for (const cmd of COMMANDS) {
+    out[cmd] = { title: TITLE[cmd], readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: cmd !== 'registries' };
+  }
+  return out;
+}
+
+/**
+ * **결과의 구조를 선언한다.** 모델이 `exitCode`·`envelope.registries`·`envelope.data` 같은
+ * 필드 이름을 추측하지 않고 안정적으로 읽게 하려는 것이다. 봉투 안쪽(`data`)은 커맨드마다
+ * 다르고 레지스트리마다 필드가 갈리므로 여기서 다 그리지 않는다 — 그건 `TrialRecordSchema`
+ * 가 정본이고, 여기서는 **바깥 틀** 만 못 박는다.
+ *
+ * 선언하면 SDK 가 결과에 `structuredContent` 를 요구한다. `callTool` 이 text 와 함께 싣는다.
+ */
+export function toolOutputSchemas(): Record<Command, z.ZodObject<Record<string, ZodTypeAny>>> {
+  const registryStatus = z.object({
+    registry: z.string(),
+    status: z.enum(['ok', 'unsupported', 'error']),
+    total: z.number().optional(),
+    error: z.object({ code: z.string(), message: z.string(), hint: z.string().optional() }).optional(),
+  }).passthrough();
+  const envelope = z.object({
+    query: z.unknown(),
+    registries: z.array(registryStatus).describe('레지스트리별 상태. 하나가 unsupported 여도 나머지는 ok 일 수 있다'),
+    warnings: z.array(z.object({ code: z.string(), message: z.string() }).passthrough()).describe('반드시 읽어라 — 잘렸거나 이어받을 수 없는 것을 말한다'),
+    data: z.unknown().describe('커맨드별 본문. search/get 은 TrialRecord[], count 는 {total}, names 는 {korean, variants[]}'),
+    error: z.object({ code: z.string(), message: z.string(), hint: z.string().optional() }).optional(),
+  }).passthrough();
+  const base = {
+    exitCode: z.number().describe('0 정상(0건 포함) · 2 사용법 · 3 그 레지스트리가 그렇게 물어볼 수 없음 · 4 업스트림 · 5 일부만 성공'),
+    exit: z.enum(['ok', 'usage', 'unsupported', 'upstream', 'partial']),
+    envelope,
+    stderr: z.string().optional(),
+  };
+  const out = {} as Record<Command, z.ZodObject<Record<string, ZodTypeAny>>>;
+  for (const cmd of COMMANDS) out[cmd] = z.object(base);
   return out;
 }
 
@@ -123,7 +200,7 @@ const registriesOf = (args: ToolArgs): string[] => {
   return Array.isArray(r) ? r.map(String) : typeof r === 'string' ? [r] : [];
 };
 
-export type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
+export type ToolResult = { content: { type: 'text'; text: string }[]; structuredContent?: Record<string, unknown>; isError?: boolean };
 
 /**
  * 도구 하나를 실행하고 결과를 MCP 모양으로 만든다.
@@ -165,6 +242,8 @@ export async function callTool(cmd: Command, args: ToolArgs, env: NodeJS.Process
   const body = { exitCode, exit: EXIT_NAME[exitCode], envelope, ...(err.length ? { stderr: err.join('') } : {}) };
   return {
     content: [{ type: 'text', text: JSON.stringify(body, null, 2) }],
+    // outputSchema 를 선언했으므로 구조화된 사본도 싣는다 — text 와 같은 내용이다.
+    structuredContent: body as unknown as Record<string, unknown>,
     ...(exitCode === EXIT.USAGE ? { isError: true } : {}),
   };
 }
@@ -191,10 +270,10 @@ const DESCRIPTION: Record<Command, string> = {
 - 여러 나라 레지스트리를 한 번에 볼 때 → registry: ["all"]
 
 다른 도구를 쓸 때:
-- 등록번호를 이미 알면 → get
-- 몇 건인지만 필요하면 → count (빠르다)
-- 한 시험의 결과 데이터(평가변수·이상반응)는 → results
-- 어느 레지스트리가 어느 축을 받는지 모르면 → registries 를 먼저
+- 등록번호를 이미 알면 → get_trial_by_id
+- 몇 건인지만 필요하면 → count_trials (빠르다)
+- 한 시험의 결과 데이터(평가변수·이상반응)는 → get_trial_results
+- 어느 레지스트리가 어느 축을 받는지 모르면 → list_registries_and_capabilities 를 먼저
 
 결과 읽는 법 — 본문의 exitCode:
 - 0: 정상. **0건도 0이다** — "그런 시험이 없다"는 정상 답이다
@@ -202,10 +281,16 @@ const DESCRIPTION: Record<Command, string> = {
 - 5: 여러 레지스트리 중 일부만 성공. registries[] 에 어느 곳이 왜 안 됐는지 있다
 - warnings 를 반드시 읽어라 — 잘렸거나 이어받을 수 없는 것을 거기서 말한다
 
+사용자에게 답할 때 — 시험마다 이 순서로, 한 줄에 하나:
+  등록번호(접두사 포함) · 제목 · 상태 · 단계 · 의뢰기관 · 나라 · 링크(url 필드)
+그 앞에 한 줄로: 어느 레지스트리에서 몇 건이었고 어느 곳이 왜 안 됐는지(registries[]).
+그 뒤에 warnings 가 있으면 그대로. 목록이 잘렸으면(locations_truncated·no_pagination) 잘렸다고 말하라.
+**적격 판정처럼 쓰지 마라** — 레지스트리 기재사항은 스크리닝을 대체하지 않는다.
+
 팁:
-- 한국어 연구자 이름은 **names 도구를 먼저** — 등록된 로마자 표기를 전부 알려준다. 표기가 다르면 다른 사람으로 취급된다
+- 한국어 연구자 이름은 **resolve_korean_investigator_name 을 먼저** — 등록된 로마자 표기를 전부 알려준다. 표기가 다르면 다른 사람으로 취급된다
 - cris 는 term 축 하나뿐이다 — condition 을 주면 exit 3 이다
-- 레지스트리마다 status·phase 가 실제로 걸리는지 다르다 — registries 의 scope 가 말한다`,
+- 레지스트리마다 status·phase 가 실제로 걸리는지 다르다 — list_registries_and_capabilities 의 scope 가 말한다`,
 
   count: `search 와 같은 축·필터로 개수만 센다.
 
@@ -214,7 +299,9 @@ const DESCRIPTION: Record<Command, string> = {
 - 검색어를 좁히기 전에 규모를 볼 때
 
 다른 도구를 쓸 때:
-- 레코드가 필요하면 → search
+- 레코드가 필요하면 → search_trials_multi_registry
+
+사용자에게 답할 때: 레지스트리별 건수를 각각 적고, 합계는 적지 마라 — 같은 시험이 여러 곳에 등록될 수 있다.
 
 레지스트리별 수는 registries[] 에 따로 있다. 합치지 마라 — 같은 시험이 여러 곳에 등록될 수 있다.`,
 
@@ -227,9 +314,11 @@ const DESCRIPTION: Record<Command, string> = {
 접두사가 필요하다: CTGOV: · ISRCTN: · CTIS: · CRIS: · ICTRP:. 같은 시험이 두 레지스트리에 있으면 각각 다른 사본이다.
 검색 응답보다 두껍다 — cris 는 여기서만 진짜 모집상태와 연구책임자(국문·영문)가 온다.
 
+사용자에게 답할 때: 등록번호 · 제목 · 상태(statusRaw 가 있으면 원문도) · 단계 · 의뢰기관 · 연구책임자(contacts) · 나라 · 기간(dates) · 링크. 못 찾은 번호는 not_found 경고로 오니 그 번호를 따로 적어라.
+
 다른 도구를 쓸 때:
-- 번호를 모르면 → search
-- 결과 데이터는 → results`,
+- 번호를 모르면 → search_trials_multi_registry
+- 결과 데이터는 → get_trial_results`,
 
   results: `한 시험의 결과 데이터 — 1차·2차 평가변수 값, 이상반응, 참가자 흐름, 기저 특성.
 
@@ -238,7 +327,9 @@ const DESCRIPTION: Record<Command, string> = {
 
 **구조화된 결과를 주는 레지스트리는 ctgov 뿐이다.** isrctn·ctis 는 결과가 PDF 라 exit 3 이고, cris 는 공개 API 가 결과를 내주지 않는다. 결과가 있는지 여부만은 레코드의 hasResults 로 미리 알 수 있다.
 
-기본은 요약이다. section 으로 좁히고, outcome/ae-organ/ae-term 으로 펼칠 것을 고른다. full 은 페이로드가 크다.`,
+기본은 요약이다. section 으로 좁히고, outcome/ae-organ/ae-term 으로 펼칠 것을 고른다. full 은 페이로드가 크다.
+
+사용자에게 답할 때: 평가변수는 이름 · 측정 시점 · 군별 값 순으로, 이상반응은 기관계별로 묶어 건수와 함께. 요약(results_summarized·results_partially_expanded) 경고가 있으면 "전부가 아니다" 를 먼저 말하라.`,
 
   names: `한국어 이름을 **실제로 등록된** 로마자 표기로 바꾼다. 이 서버만 할 수 있는 일이다.
 
@@ -257,6 +348,11 @@ CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리�
 - ctgov: true 를 주면 표기마다 ctgov 건수를 함께 낸다 → 어느 표기로 물어야 하는지 바로 보인다
 - 그다음 search 에 investigator 로 그 표기들을 **하나씩** 물어라. 건수는 겹칠 수 있으니 더하지 마라
 
+사용자에게 답할 때 — 표기마다 한 줄, 많이 쓴 것부터:
+  표기 · CRIS 에서 그 표기로 등록된 시험 수 · (ctgov 를 켰으면) ctgov 건수
+그 앞에: 어느 term 으로 좁혀 CRIS 몇 건을 대조했는지(crisMatched). 이 수가 작으면 표기 목록도 불완전할 수 있다고 말하라.
+표기별 건수를 합치지 마라. 오타처럼 보이는 표기도 "등록된 표기" 라고 그대로 적어라.
+
 빈 결과는 "그런 사람이 없다" 가 아니다 — 국내 등록이 없거나 term 이 닿지 않은 것이다. 다른 term 으로 다시 물어라.`,
 
   registries: `이 서버가 다루는 레지스트리 다섯과 각각이 무엇을 할 수 있는지.
@@ -266,7 +362,9 @@ CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리�
 - 어느 레지스트리가 어느 축(condition·investigator·location…)을 받는지, 어떤 값을 받는지
 - exit 3 을 받았을 때 — 왜 안 되는지가 그 축의 scope 에 있다
 
-레지스트리마다 능력이 크게 다르다: ctgov 는 축 18개, cris 는 2개. 이 도구가 그 차이를 그대로 낸다.`,
+레지스트리마다 능력이 크게 다르다: ctgov 는 축 18개, cris 는 2개. 이 도구가 그 차이를 그대로 낸다.
+
+사용자에게 답할 때: 레지스트리마다 한 줄 — 키 · 이름 · 나라/권역 · 지원 축 수 · 접근 조건(키 필요·기본 꺼짐). 사용자가 특정 축을 물었으면 그 축의 scope 를 레지스트리별로 인용하라.`,
 };
 
 export const toolDescriptions = (): Record<Command, string> => DESCRIPTION;
@@ -288,10 +386,19 @@ export function createServer(env: NodeJS.ProcessEnv = process.env): McpServer {
     },
   );
   const schemas = toolSchemas();
+  const annotations = toolAnnotations();
+  const outputs = toolOutputSchemas();
   for (const cmd of COMMANDS) {
+    const name = TOOL_NAME[cmd];
     server.registerTool(
-      cmd,
-      { description: DESCRIPTION[cmd], inputSchema: schemas[cmd].shape },
+      name,
+      {
+        title: annotations[cmd].title,
+        description: DESCRIPTION[cmd],
+        inputSchema: schemas[name].shape,
+        outputSchema: outputs[cmd].shape,
+        annotations: annotations[cmd],
+      },
       async (args: ToolArgs) => callTool(cmd, args, env),
     );
   }

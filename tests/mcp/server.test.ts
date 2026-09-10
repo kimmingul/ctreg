@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { COMMAND_OPTIONS, COMMANDS, OPTIONS } from '../../src/cli/args.js';
 import { EXIT } from '../../src/cli/exit-codes.js';
-import { argvFor, callTool, toolDescriptions, toolSchemas } from '../../src/mcp/server.js';
+import { argvFor, callTool, TOOL_NAME, toolAnnotations, toolDescriptions, toolOutputSchemas, toolSchemas } from '../../src/mcp/server.js';
 
 const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-mcp-')), CTREG_RATE_PER_SEC: '1000' });
 
@@ -16,7 +16,7 @@ const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-mcp-')),
  */
 describe('MCP 도구 표면은 CLI 에서 파생된다', () => {
   it('커맨드마다 도구가 하나씩 있고 더는 없다', () => {
-    expect(new Set(Object.keys(toolSchemas()))).toEqual(new Set(COMMANDS));
+    expect(new Set(Object.keys(toolSchemas()))).toEqual(new Set(COMMANDS.map((c) => TOOL_NAME[c])));
   });
 
   /**
@@ -34,7 +34,7 @@ describe('MCP 도구 표면은 CLI 에서 파생된다', () => {
     const positional = new Set(['ids', 'trial_id', 'korean_name']);
     for (const cmd of COMMANDS) {
       const want = COMMAND_OPTIONS[cmd].filter((o) => !excluded.has(o)).sort();
-      const got = Object.keys(toolSchemas()[cmd].shape).filter((k) => !positional.has(k)).sort();
+      const got = Object.keys(toolSchemas()[TOOL_NAME[cmd]].shape).filter((k) => !positional.has(k)).sort();
       expect(got, cmd).toEqual(want);
     }
   });
@@ -49,8 +49,8 @@ describe('MCP 도구 표면은 CLI 에서 파생된다', () => {
   });
 
   it('get 과 results 는 위치 인자를 받는다', () => {
-    expect(toolSchemas().get.shape).toHaveProperty('ids');
-    expect(toolSchemas().results.shape).toHaveProperty('trial_id');
+    expect(toolSchemas()[TOOL_NAME.get].shape).toHaveProperty('ids');
+    expect(toolSchemas()[TOOL_NAME.results].shape).toHaveProperty('trial_id');
   });
 });
 
@@ -67,7 +67,7 @@ describe('MCP 스키마는 모델이 읽을 것을 준다', () => {
   /** 1층: 노출되는 모든 인자에 설명이 있다. 빈 문자열도 안 된다. */
   it('노출된 인자 전부에 설명이 있다', () => {
     for (const cmd of COMMANDS) {
-      const shape = toolSchemas()[cmd].shape;
+      const shape = toolSchemas()[TOOL_NAME[cmd]].shape;
       for (const [name, field] of Object.entries(shape)) {
         expect(field.description?.trim() ?? '', `${cmd}.${name}`).not.toBe('');
       }
@@ -76,7 +76,7 @@ describe('MCP 스키마는 모델이 읽을 것을 준다', () => {
 
   /** 1층: 닫힌 어휘는 값 하나하나에 뜻이 붙는다 — `phase_3` 만 보고 모델이 고를 수 없다. */
   it('status·phase 의 설명이 값마다의 뜻을 담는다', () => {
-    const search = toolSchemas().search.shape;
+    const search = toolSchemas()[TOOL_NAME.search].shape;
     for (const v of ['recruiting', 'completed', 'terminated']) expect(search.status!.description).toContain(v);
     for (const v of ['phase_1', 'phase_3', 'na']) expect(search.phase!.description).toContain(v);
   });
@@ -89,7 +89,7 @@ describe('MCP 스키마는 모델이 읽을 것을 준다', () => {
   it('운영 옵션은 MCP 표면에 없다', () => {
     const hidden = ['no-cache', 'refresh', 'raw', 'page-token', 'eligibility-chars'];
     for (const cmd of COMMANDS) {
-      const keys = Object.keys(toolSchemas()[cmd].shape);
+      const keys = Object.keys(toolSchemas()[TOOL_NAME[cmd]].shape);
       for (const h of hidden) expect(keys, `${cmd} 에 ${h}`).not.toContain(h);
     }
   });
@@ -108,6 +108,87 @@ describe('MCP 스키마는 모델이 읽을 것을 준다', () => {
     expect(d.search).toMatch(/exit\s*3|exitCode.*3/);  // 이 서버의 핵심 계약
     expect(d.search).toMatch(/all/);                   // 다중 레지스트리
     expect(d.search).toMatch(/cris|CRIS/);             // 한국어 대조
+  });
+});
+
+/**
+ * **MCP 도구 이름은 CLI 커맨드 이름과 의도적으로 갈린다.** 셸에서는 `ctreg search` 로 충분하지만
+ * 여러 MCP 서버가 함께 붙은 환경에서 `search` 는 무엇을 검색하는지 말하지 않는다. Anthropic 의
+ * Clinical Trials 서버(`search_trials`)와도 겹치면 안 된다 — 두 서버가 같이 붙으면 모델이 둘을
+ * 섞는다. 그래서 목적어와 이 서버만의 표지(multi_registry·korean)를 붙인다.
+ *
+ * 정본 하나를 지켜 온 저장소에서 여기는 **의도적으로 가른 자리** 다. 대응표(`TOOL_NAME`)가
+ * 코드에 있고 이 테스트가 그것을 못 박는다 — 커맨드가 늘면 이름도 반드시 정해야 한다.
+ */
+describe('MCP 도구 이름', () => {
+  it('커맨드마다 MCP 이름이 하나씩 있고 전부 다르다', () => {
+    const names = COMMANDS.map((c) => TOOL_NAME[c]);
+    expect(new Set(names).size).toBe(COMMANDS.length);
+    for (const n of names) expect(n).toMatch(/^[a-z][a-z0-9_]+$/);
+  });
+
+  it('이름이 목적어를 담는다 — 동사 하나가 아니다', () => {
+    for (const c of COMMANDS) expect(TOOL_NAME[c].split('_').length, TOOL_NAME[c]).toBeGreaterThanOrEqual(2);
+  });
+
+  it('Clinical Trials 서버의 이름과 겹치지 않는다', () => {
+    const theirs = ['search_trials', 'get_trial_details', 'search_by_sponsor', 'search_investigators', 'analyze_endpoints', 'search_by_eligibility'];
+    for (const c of COMMANDS) expect(theirs, TOOL_NAME[c]).not.toContain(TOOL_NAME[c]);
+  });
+
+  it('스키마 목록도 MCP 이름으로 키가 잡힌다', () => {
+    expect(new Set(Object.keys(toolSchemas()))).toEqual(new Set(COMMANDS.map((c) => TOOL_NAME[c])));
+  });
+});
+
+/**
+ * **여섯 도구는 전부 읽기 전용이다.** 레지스트리를 조회만 하고 무엇도 바꾸지 않는다. 설명
+ * 문장이 아니라 `annotations` 로 표시해야 호스트가 기계적으로 안다 — "확인 없이 실행해도
+ * 된다" 는 판단의 근거가 된다. 외부 API 를 부르므로 `openWorldHint` 는 참이다.
+ */
+describe('도구 어노테이션', () => {
+  it('전부 readOnlyHint 이고 destructive 가 아니다', () => {
+    for (const c of COMMANDS) {
+      const a = toolAnnotations()[c];
+      expect(a.readOnlyHint, c).toBe(true);
+      expect(a.destructiveHint, c).toBe(false);
+    }
+  });
+
+  it('네트워크를 타는 것은 openWorld, registries 만 아니다', () => {
+    for (const c of COMMANDS) expect(toolAnnotations()[c].openWorldHint, c).toBe(c !== 'registries');
+  });
+});
+
+/**
+ * **결과의 구조를 선언한다.** 모델이 필드 이름을 추측하지 않고 안정적으로 읽게 하려는
+ * 것이다((b)). 최종 문장의 모양은 설명이 지시한다((c)). 서버가 표를 만들어 주는 (a) 는
+ * 택하지 않았다 — 이 도구의 출력은 재료지 답이 아니다.
+ *
+ * outputSchema 를 선언하면 SDK 가 결과에 structuredContent 를 요구한다. 텍스트만 던지던
+ * 것을 둘 다 실어야 한다.
+ */
+describe('출력 스키마와 structuredContent', () => {
+  it('커맨드마다 outputSchema 가 있고 exitCode 를 담는다', () => {
+    for (const c of COMMANDS) {
+      const shape = toolOutputSchemas()[c].shape;
+      expect(shape, c).toHaveProperty('exitCode');
+      expect(shape, c).toHaveProperty('envelope');
+    }
+  });
+
+  it('결과에 structuredContent 가 실리고 text 와 같은 내용이다', async () => {
+    const r = await callTool('registries', {}, env());
+    expect(r.structuredContent).toBeDefined();
+    expect(r.structuredContent).toEqual(JSON.parse(r.content[0]!.text));
+    expect((r.structuredContent as { exitCode: number }).exitCode).toBe(0);
+  });
+
+  /** (c): 설명이 사용자에게 답할 때의 형식을 지시한다. */
+  it('search 와 names 의 설명이 답 형식을 지시한다', () => {
+    const d = toolDescriptions();
+    expect(d.search).toMatch(/답할 때|형식|순서로/);
+    expect(d.names).toMatch(/답할 때|형식|순서로/);
   });
 });
 
@@ -228,7 +309,7 @@ describe('ctreg-mcp 진입점 (실제 프로세스)', () => {
     mkdirSync(join(xdg, 'ctreg'), { recursive: true });
     writeFileSync(join(xdg, 'ctreg', '.env'), 'CTREG_CRIS_SERVICE_KEY=dummy-from-user-config\n');
     const res = await rpc(
-      [...handshake, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'count', arguments: { registry: ['cris'], term: 'x', 'no-cache': true } } }],
+      [...handshake, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: TOOL_NAME.count, arguments: { registry: ['cris'], term: 'x', 'no-cache': true } } }],
       { XDG_CONFIG_HOME: xdg, CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-mcp-')), CTREG_RATE_PER_SEC: '1000' },
     );
     const r = res.get(3) as { content: { text: string }[] };
@@ -241,6 +322,6 @@ describe('ctreg-mcp 진입점 (실제 프로세스)', () => {
   it('도구 다섯을 광고한다', async () => {
     const res = await rpc([...handshake, { jsonrpc: '2.0', id: 2, method: 'tools/list' }], {});
     const tools = (res.get(2) as { tools: { name: string }[] }).tools.map((t) => t.name).sort();
-    expect(tools).toEqual([...COMMANDS].sort());
+    expect(tools).toEqual(COMMANDS.map((c) => TOOL_NAME[c]).sort());
   }, 30_000);
 });
