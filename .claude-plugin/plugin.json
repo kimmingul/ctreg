@@ -1,6 +1,6 @@
 {
   "name": "ctreg",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Query clinical trial registries through one normalized schema.",
   "license": "Apache-2.0"
 }
