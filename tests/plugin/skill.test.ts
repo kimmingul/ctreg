@@ -72,7 +72,7 @@ describe('플러그인 배포 매니페스트', () => {
   /** 패키지 이름이 바뀌어도 **명령어는 `ctreg`** 다. 문서의 모든 예시가 이것에 달려 있다. */
   it('명령어 이름은 패키지 이름과 무관하게 ctreg 다', () => {
     // MCP 진입점이 하나 더 있다. 둘 다 같은 코어를 감싸고, 이름은 ctreg 접두사를 공유한다.
-    expect(Object.keys(PKG.bin)).toEqual(['ctreg', 'ctreg-mcp']);
+    expect(Object.keys(PKG.bin)).toEqual(['ctreg', 'ctreg-mcp', 'ctreg-mcp-http']);
   });
 });
 

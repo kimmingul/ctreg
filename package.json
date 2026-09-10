@@ -38,7 +38,8 @@
   },
   "bin": {
     "ctreg": "dist/cli/bin.js",
-    "ctreg-mcp": "dist/mcp/bin.js"
+    "ctreg-mcp": "dist/mcp/bin.js",
+    "ctreg-mcp-http": "dist/mcp/http.js"
   },
   "files": [
     "dist",
