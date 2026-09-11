@@ -77,7 +77,8 @@ ${tools}
  * 문장에서 한국어 사람 이름을 잡는다 — **모델을 거치지 않고.** "김민걸 교수의", "이순신박사가",
  * "홍길동 연구자" 처럼 호칭이 붙은 2~4자 한글. 모델은 회차마다 이름을 로마자로 옮기거나 term 에
  * 넣는다(실측 2026-09-11: 3회 중 1회 0건). 호칭이 있는 이름만 잡는다 — "당뇨병" 도 세 글자다.
- * 기관명("전북대학교병원 교수")은 길이가 5 를 넘어 걸리지 않는다.
+ * 기관명("전북대학교병원 교수")은 길이가 5 를 넘어 걸리지 않는다. **그래도 거칠다** — "우수한
+ * 연구자" 가 걸렸다. 그래서 이 결과는 모델이 사람을 봤을 때만 쓴다(ask 안의 modelSawPerson).
  */
 const TITLE = '(교수|박사|선생님?|연구자|연구원|원장|과장|팀장|대표|님)';
 export function koreanPersonInQuery(q: string): string | undefined {
@@ -415,8 +416,13 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
    * 을 그대로 물어 0건 → 빈 화면). 분류가 흔들려도 결과는 흔들리면 안 된다. 한글이 있으면 nameOnly.
    * (영문 investigator 는 등록된 표기이므로 그대로 둔다 — 다시 로마자로 풀 이유가 없다.)
    */
+  // 모델이 사람을 봤나 — korean_name 이나 investigator 를 냈는가. 문장 패턴은 그때만 쓴다:
+  // "우수한 연구자 5명" 이 "우수한 + 연구자" 로 잡혀 이름 경로로 간 적이 있다(2026-09-11).
+  const modelSawPerson =
+    (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string') ||
+    ((resolved.tool === 'search' || resolved.tool === 'count') && typeof resolved.args.investigator === 'string' && resolved.args.investigator.trim() !== '');
   const koreanName =
-    koreanPersonInQuery(q) ??
+    (modelSawPerson ? koreanPersonInQuery(q) : undefined) ??
     (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term
       ? resolved.args.korean_name
       : (resolved.tool === 'search' || resolved.tool === 'count') && typeof resolved.args.investigator === 'string' && /[가-힣]/.test(resolved.args.investigator)
