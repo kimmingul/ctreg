@@ -141,26 +141,27 @@ describe('어댑터 선택', () => {
   });
 });
 
-describe('CRIS 미러 — 연구책임자 집계', () => {
-  it('/api/cris/investigators 를 부르고 순위·모수·사본 경고를 낸다', async () => {
-    const { fetchImpl, urls, sleep } = stub(() => ({ body: { matched: 276, q: ['당뇨', 'diabetes'], items: [
-      { name_kr: '김난희', name_en: 'Nan Hee Kim', affiliations: ['고려대'], trials: 10, latest: '2025/11/01', sample_ids: ['KCT0011737'] },
-    ], meta: { ...meta, basis: '등록 건수' } } }));
+describe('CRIS 미러 — 축별 집계', () => {
+  it('/api/cris/aggregate 를 부르고 순위·모수·근거·사본 경고를 낸다', async () => {
+    const { fetchImpl, urls, sleep } = stub(() => ({ body: { by: 'sponsor', q: ['당뇨', 'diabetes'], matched: 276, items: [
+      { key: 'S1', name: '서울아산병원', name_en: 'Asan Medical Center', trials: 16, mapped: true, extra: { sponsor_type: 'Academic' } },
+    ], meta: { ...meta, provenance: '마스터로 묶음', mapped: 0.74, basis: '등록 건수' } } }));
     const a = createCrisMirrorAdapter(cfg(), { fetchImpl, sleep });
-    const r = await a.investigators!({ terms: ['당뇨', 'diabetes'], status: ['recruiting'], limit: 10 }, fetchOpts);
+    const r = await a.aggregate!({ by: 'sponsor', terms: ['당뇨', 'diabetes'], status: ['recruiting'], limit: 10 }, fetchOpts);
     const u = decodeURIComponent(urls[0]!).replace(/\+/g, ' ');
-    expect(u).toContain('/api/cris/investigators?');
+    expect(u).toContain('/api/cris/aggregate?');
+    expect(u).toContain('by=sponsor');
     expect(u).toContain('q=당뇨,diabetes');
     expect(u).toContain('status=Recruiting');
-    expect(u).toContain('limit=10');
-    expect(r.data.matched).toBe(276);
-    expect(r.data.items[0]).toMatchObject({ name: '김난희', nameEn: 'Nan Hee Kim', trials: 10, sampleIds: ['CRIS:KCT0011737'] });
+    expect(r.data).toMatchObject({ by: 'sponsor', matched: 276, mapped: 0.74, provenance: '마스터로 묶음' });
+    expect(r.data.items[0]).toMatchObject({ name: '서울아산병원', nameEn: 'Asan Medical Center', trials: 16, mapped: true, extra: { sponsor_type: 'Academic' } });
     expect(r.warnings.map((w) => w.code)).toContain('cris_mirror_copy');
-    expect(a.capability().investigators?.supported).toBe(true);
+    expect(a.capability().aggregate?.supported).toBe(true);
+    expect(a.capability().aggregate?.axes).toContain('drug');
   });
 
-  it('공식 API 문은 이 축을 신고하지 않는다 — 없거나 false', async () => {
+  it('공식 API 문은 이 축을 신고하지 않는다', async () => {
     const { CRIS_CAPABILITY } = await import('../../../src/adapters/cris/adapter.js');
-    expect(CRIS_CAPABILITY.investigators?.supported ?? false).toBe(false);
+    expect(CRIS_CAPABILITY.aggregate?.supported ?? false).toBe(false);
   });
 });
