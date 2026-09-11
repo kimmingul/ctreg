@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util';
 import { CAPS, resolvePageSize, type FetchOpts, type IncludeSection, type NormalizedQuery, type ResultsOpts } from '../core/query.js';
+import { AGGREGATE_AXES, type AggregateAxis } from '../core/capability.js';
 import { DEFAULT_REGISTRY, REGISTRY_KEYS, type RegistryKey, isRegistryKey } from '../core/registry.js';
 import {
   FILTERABLE_PHASE, FILTERABLE_STATUS, FILTERABLE_STUDY_TYPE,
@@ -8,7 +9,7 @@ import {
 } from '../core/vocab.js';
 import { usageError } from '../runtime/errors.js';
 
-export const COMMANDS = ['search', 'get', 'results', 'count', 'registries', 'names', 'investigators'] as const;
+export const COMMANDS = ['search', 'get', 'results', 'count', 'registries', 'names', 'aggregate'] as const;
 
 // FILTERABLE_STATUS 는 8개라 한 줄에 다 넣으면 80컬럼에서 단어 중간이 잘린다.
 // 3/5로 나눠 두 줄에 걸치되, 나누는 지점(3)은 순전히 줄바꿈용 상수이지 값이
@@ -21,7 +22,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
   ctreg results <ID> [--section s] [--outcome q] [--ae-organ q] [--ae-term q] [--full]
   ctreg count   [search 와 동일한 필터]
   ctreg names   <한국어 이름> [--term <좁힐 말>] [--ctgov] 한국어 이름 → CRIS 에 등록된 로마자 표기
-  ctreg investigators --term <검색어[,검색어]>       검색어에 걸린 CRIS 시험을 연구책임자로 묶어 건수순
+  ctreg aggregate --by <축> --term <검색어[,검색어]>  검색어에 걸린 CRIS 시험을 한 축으로 묶어 건수순
   ctreg registries
 
 검색 축   --condition --intervention --term --title --location --outcome-query
@@ -69,6 +70,8 @@ export type ParsedArgs = {
   version: boolean;
   /** `names --ctgov`. 표기마다 ctgov 건수를 함께 센다. */
   namesCtgov: boolean;
+  /** aggregate 의 축. 파서가 정본 목록으로 검증한다. */
+  aggregateBy?: AggregateAxis;
 };
 
 const str = { type: 'string' } as const;
@@ -84,7 +87,7 @@ export const OPTIONS = {
   condition: str, intervention: str, term: str, title: str, location: str,
   'outcome-query': str, sponsor: str, lead: str, id: str, patient: str,
   investigator: str,
-  status: multi, phase: multi, 'study-type': str,
+  status: multi, phase: multi, 'study-type': str, by: str,
   near: str, radius: str,
   'updated-since': str, 'updated-before': str,
   'start-after': str, 'start-before': str,
@@ -130,6 +133,7 @@ export const OPTION_HELP: Record<keyof typeof OPTIONS, string> = {
   id: '등록번호나 보조 식별자로 거른다 (예: "NCT01234567"). 한 건을 정확히 가져오려면 get 을 써라',
   patient: '환자 상황을 한 문구로 (예: "EGFR positive"). 긴 서술은 0건이 나기 쉽다 — 짧은 핵심 문구가 낫다. ctgov 전용',
   investigator: '연구책임자 이름. ctgov 와 cris 만 지원. 한국어 이름은 cris 에 먼저 물어 등록된 영문 표기를 읽은 뒤 ctgov 에 그 표기로 물어라 — 로마자 표기가 다르면 다른 사람으로 취급된다',
+  by: '집계 축(aggregate 전용): investigator=연구책임자 · sponsor=의뢰사(표준명) · site=실시기관(표준명) · year=등록 연도 · intervention_type=중재 종류 · drug=의약품(성분·ATC, 문자열 매칭) · condition=질환(ICD-10 범주명, 문자열 매칭)',
   status: '모집 상태. 여러 개 가능. recruiting=모집 중(환자가 참여 가능) · not_yet_recruiting=승인됐으나 시작 전 · enrolling_by_invitation=초대 등록 · active_not_recruiting=진행 중이나 모집 종료 · suspended=일시 중단 · terminated=조기 종료 · completed=완료 · withdrawn=시작 전 철회',
   phase: '임상 단계. 여러 개 가능. early_phase_1=탐색적 초기 · phase_1=안전성·용량 · phase_2=유효성·부작용 · phase_3=대규모 유효성 확인 · phase_4=시판 후 · na=해당 없음(관찰연구 등)',
   'study-type': '연구 유형. interventional=중재(약물시험 대부분) · observational=관찰 · expanded_access=확대 접근(시험 밖 치료 제공)',
@@ -210,9 +214,9 @@ export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof 
   // --registry 를 받지 않는다 — 받으면 "cris 가 아닌 곳에서 한국어 이름을 찾는다" 는 뜻이 없는
   // 요청이 성립한다.
   names: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'term', 'page-size', 'ctgov'],
-  // investigators 는 검색어(쉼표로 여럿, OR)에 걸린 시험 전체를 연구책임자로 묶어 건수순으로 낸다.
-  // 레지스트리는 cris 로 고정 — 이 집계를 할 수 있는 문이 CRIS 사본뿐이다. 순위 질문은 도구가 센다.
-  investigators: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'term', 'status', 'page-size'],
+  // aggregate 는 검색어(쉼표로 여럿, OR)에 걸린 시험 전체를 한 축(--by)으로 묶어 건수순으로 낸다.
+  // 레지스트리는 cris 로 고정 — 이 집계를 할 수 있는 문이 CRIS 사본뿐이다. 순위·현황 질문은 도구가 센다.
+  aggregate: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'by', 'term', 'status', 'page-size'],
 };
 
 /** 커맨드 한 줄 요약. `--help` 가 이것과 옵션 표를 함께 낸다. */
@@ -223,7 +227,7 @@ const COMMAND_SUMMARY: Record<(typeof COMMANDS)[number], string> = {
   results: 'ID 하나의 결과(평가변수·이상반응·흐름·기저)를 낸다. 기본은 요약이다.',
   registries: '이 빌드가 다루는 레지스트리와 각 축이 무엇을 보는지 낸다. 네트워크를 타지 않는다.',
   names: '한국어 이름을 CRIS 에 등록된 로마자 표기로. 표기가 여럿이면 전부, 빈도와 함께.',
-  investigators: '검색어에 걸린 CRIS 시험 전체를 연구책임자로 묶어 등록 건수순으로. 순위·비교 질문은 이것으로 — 우수성 판정이 아니다.',
+  aggregate: '검색어에 걸린 CRIS 시험 전체를 한 축(연구자·의뢰사·실시기관·연도·중재종류·의약품·질환)으로 묶어 등록 건수순으로. 순위·현황·비교 질문은 이것으로 — 우수성 판정이 아니다.',
 };
 
 /**
@@ -243,7 +247,7 @@ export function helpFor(command: (typeof COMMANDS)[number]): string {
     .map((o) => `  --${o.padEnd(width)}${OPTION_HELP[o].split('. ')[0]}`)
     .join('\n');
   const positional =
-    command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : command === 'names' ? ' <한국어 이름>' : command === 'investigators' ? ' --term <검색어[,검색어]>' : '';
+    command === 'get' ? ' <ID...>' : command === 'results' ? ' <ID>' : command === 'names' ? ' <한국어 이름>' : command === 'aggregate' ? ' --by <축> --term <검색어[,검색어]>' : '';
   /**
    * 닫힌 어휘 축을 받는 커맨드면 **값도 적는다.** F5·F9 를 닫은 것이 "`--help` 가 값
    * 어휘를 적는다" 였는데, 서브커맨드별 사용법이 값을 빼면 사용자가 가장 자주 밟는
@@ -408,10 +412,16 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  if (command === 'investigators') {
-    // 전체 순위는 이 커맨드의 일이 아니다 — 주제(검색어)가 있어야 모수가 정해진다.
+  if (command === 'aggregate') {
+    // 축이 있어야 하고 정본 목록 안이어야 한다. 전체 순위는 이 커맨드의 일이 아니다 — 주제(검색어)가 모수를 정한다.
+    if (!v.by || v.by.trim() === '') {
+      throw usageError('aggregate 에는 --by 가 필요합니다', `축 하나: ${AGGREGATE_AXES.join(' | ')}. 예: ctreg aggregate --by sponsor --term 당뇨,diabetes`);
+    }
+    if (!(AGGREGATE_AXES as readonly string[]).includes(v.by.trim())) {
+      throw usageError(`모르는 축입니다: ${v.by}`, `받는 축: ${AGGREGATE_AXES.join(' | ')}`);
+    }
     if (!v.term || v.term.trim() === '') {
-      throw usageError('investigators 에는 --term 이 필요합니다', '검색어에 걸린 시험 안에서 연구책임자를 세는 커맨드입니다. 쉼표로 여럿(OR): --term "당뇨,diabetes"');
+      throw usageError('aggregate 에는 --term 이 필요합니다', '검색어에 걸린 시험 안에서 세는 커맨드입니다. 쉼표로 여럿(OR): --term "당뇨,diabetes"');
     }
   }
 
@@ -441,8 +451,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     command === 'registries' ? REGISTRY_KEYS
     // names 는 CRIS 가 대조표다 — 국문·영문을 나란히 싣는 레지스트리가 그곳뿐이다.
     : command === 'names' ? ['cris']
-    // investigators 도 CRIS 뿐 — 연구책임자 집계는 사본 문만 할 수 있다.
-    : command === 'investigators' ? ['cris']
+    // aggregate 도 CRIS 뿐 — 축별 집계는 사본 문만 할 수 있다.
+    : command === 'aggregate' ? ['cris']
     : [DEFAULT_REGISTRY];
   /**
    * **`all` 은 선언된 전부로 풀린다.** 사용자가 다섯을 손으로 나열하게 두면 여섯 번째
@@ -610,6 +620,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     help: false,
     version: false,
     namesCtgov: v.ctgov ?? false,
+    ...(command === 'aggregate' && v.by ? { aggregateBy: v.by.trim() as AggregateAxis } : {}),
   };
 }
 

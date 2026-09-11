@@ -46,7 +46,7 @@ export const TOOL_NAME = {
   results: 'get_trial_results',
   registries: 'list_registries_and_capabilities',
   names: 'resolve_korean_investigator_name',
-  investigators: 'rank_investigators',
+  aggregate: 'aggregate_trials',
 } as const satisfies Record<Command, string>;
 
 /**
@@ -125,7 +125,7 @@ export function toolAnnotations(): Record<Command, { title: string; readOnlyHint
     results: '시험 결과 데이터',
     registries: '레지스트리와 능력 목록',
     names: '한국어 연구자 이름 → 등록된 로마자 표기',
-    investigators: '검색어 안에서 연구책임자를 등록 건수순으로',
+    aggregate: '검색어 안의 시험을 한 축으로 묶어 등록 건수순으로',
   };
   const out = {} as ReturnType<typeof toolAnnotations>;
   for (const cmd of COMMANDS) {
@@ -153,7 +153,7 @@ export function toolOutputSchemas(): Record<Command, z.ZodObject<Record<string, 
     query: z.unknown(),
     registries: z.array(registryStatus).describe('레지스트리별 상태. 하나가 unsupported 여도 나머지는 ok 일 수 있다'),
     warnings: z.array(z.object({ code: z.string(), message: z.string() }).passthrough()).describe('반드시 읽어라 — 잘렸거나 이어받을 수 없는 것을 말한다'),
-    data: z.unknown().describe('커맨드별 본문. search/get 은 TrialRecord[], count 는 {total}, names 는 {korean, variants[]}, investigators 는 {matched, items[{name, trials, affiliations}], basis}'),
+    data: z.unknown().describe('커맨드별 본문. search/get 은 TrialRecord[], count 는 {total}, names 는 {korean, variants[]}, aggregate 는 {by, matched, items[{name, trials, extra}], provenance, mapped, basis}'),
     error: z.object({ code: z.string(), message: z.string(), hint: z.string().optional() }).optional(),
   }).passthrough();
   const base = {
@@ -368,18 +368,20 @@ CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리�
 
 사용자에게 답할 때: 레지스트리마다 한 줄 — 키 · 이름 · 나라/권역 · 지원 축 수 · 접근 조건(키 필요·기본 꺼짐). 사용자가 특정 축을 물었으면 그 축의 scope 를 레지스트리별로 인용하라.`,
 
-  investigators: `검색어에 걸린 CRIS 시험 **전체**를 연구책임자로 묶어 등록 건수순으로 낸다. 순위·비교 질문은 이것으로.
+  aggregate: `검색어에 걸린 CRIS 시험 **전체**를 한 축으로 묶어 등록 건수순으로 낸다. 순위·현황·비교 질문은 이것으로.
+
+축(by): investigator=연구책임자 · sponsor=의뢰사(표준명) · site=실시기관(표준명) · year=등록 연도 · intervention_type=중재 종류 · drug=의약품(성분·ATC) · condition=질환(ICD-10 범주)
 
 언제 쓰나:
-- "○○ 분야에서 가장 많이 하는 연구자", "상위 5명", "우수한 연구자", "가장 활발한 기관의 책임자"
+- "○○ 분야에서 가장 많이 하는 연구자/의뢰사/병원", "상위 5", "우수한", "연도별 추이", "어떤 약이 많이 쓰이나", "어떤 질환이 많나"
 - 검색 목록을 읽고 후보를 뽑아 하나씩 세지 마라 — 후보가 빠지고 판단이 끼고 겹침을 못 본다. 이 도구가 전수로 센다.
 
 쓰는 법:
 - term 에 검색어. 쉼표로 여럿이면 OR — 국문·영문을 같이("당뇨,diabetes"). 시험은 등록번호로 한 번만 센다.
-- status 로 모집상태를 거를 수 있다. page-size 가 상위 몇 명인지다(기본 20).
+- status 로 모집상태를 거를 수 있다. page-size 가 상위 몇 개인지다(기본 20).
 - CRIS 사본(CTREG_CRIS_MIRROR_URL)이 있는 서버만 할 수 있다. 없으면 exit 3 — 그때는 목록을 읽어 세되 전수가 아님을 밝혀라.
 
-사용자에게 답할 때: **우수성이 아니라 등록 건수**라고 첫 줄에 말하라. 모수(matched)를 함께. 소속이 여럿인 이름은 동명이인이 섞였을 수 있다고. 사본 수집 시각(cris_mirror_copy)을 한계로.`,
+사용자에게 답할 때: **우수성이 아니라 등록 건수**라고 첫 줄에. 모수(matched)를 함께. 결과의 provenance(근거와 한계)와 mapped(표준명 매핑 비율)를 그대로 옮겨라 — 의약품·질환은 문자열 매칭이라 사전에 없는 것은 빠진다. 소속이 여럿인 이름은 동명이인이 섞였을 수 있다. 사본 수집 시각(cris_mirror_copy)을 한계로.`,
 };
 
 export const toolDescriptions = (): Record<Command, string> => DESCRIPTION;

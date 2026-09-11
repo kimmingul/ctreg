@@ -118,11 +118,12 @@ export const CapabilitySchema = z.strictObject({
    */
   sort: FeatureSchema,
   /**
-   * **연구책임자 집계** — 검색어에 걸린 시험 전체를 연구책임자로 묶어 건수순으로 낼 수 있는가.
-   * 선택 항목이다: 사본 문(CRIS 미러)만 할 수 있고, 목록에 연구책임자가 없는 공식 API 문과 다른
-   * 레지스트리는 신고하지 않는다(= 못 한다). 순위 질문은 모델이 목록을 읽고 세는 대신 이것으로.
+   * **축별 집계** — 검색어에 걸린 시험 전체를 한 축(연구자·의뢰사·실시기관·연도·중재종류·의약품·질환)으로
+   * 묶어 건수순으로 낼 수 있는가. 선택 항목: 사본 문(CRIS 미러)만 할 수 있고, 목록에 그 축이 없는 공식
+   * API 문과 다른 레지스트리는 신고하지 않는다(= 못 한다). 순위·현황 질문은 모델이 목록을 읽고 세는
+   * 대신 이것으로. `axes` 가 그 문이 받는 축이다.
    */
-  investigators: FeatureSchema.optional(),
+  aggregate: FeatureSchema.extend({ axes: z.array(z.string()) }).optional(),
   limits: z.strictObject({
     maxPageSize: z.number(),
     ratePerSec: z.number(),
@@ -163,20 +164,32 @@ export interface RegistryAdapter {
   /** `id` 는 `get` 과 같은 접두사 포함 형태다. 위 주석 참고. */
   results(id: string, o: ResultsOpts): Promise<AdapterResult<TrialResults>>;
   count(q: NormalizedQuery, o: FetchOpts): Promise<AdapterResult<number>>;
-  /** 연구책임자 집계 — `capability().investigators.supported` 가 참인 어댑터만 구현한다. */
-  investigators?(q: InvestigatorRankQuery, o: FetchOpts): Promise<AdapterResult<InvestigatorRank>>;
+  /** 축별 집계 — `capability().aggregate.supported` 가 참인 어댑터만 구현한다. */
+  aggregate?(q: AggregateQuery, o: FetchOpts): Promise<AdapterResult<AggregateData>>;
 }
 
-/** 연구책임자 집계의 물음. `terms` 는 OR — 국문·영문을 같이 준다. */
-export type InvestigatorRankQuery = { terms: string[]; status?: TrialStatus[]; limit: number };
-export type InvestigatorRankItem = {
+/** 집계 축 — 파서·도구 설명·능력 신고가 이 하나를 본다. */
+export const AGGREGATE_AXES = ['investigator', 'sponsor', 'site', 'year', 'intervention_type', 'drug', 'condition'] as const;
+export type AggregateAxis = (typeof AGGREGATE_AXES)[number];
+/** 축별 집계의 물음. `terms` 는 OR — 국문·영문을 같이 준다. */
+export type AggregateQuery = { by: AggregateAxis; terms: string[]; status?: TrialStatus[]; limit: number };
+export type AggregateItem = {
+  key: string;
   name: string;
   nameEn?: string;
-  /** 이 이름으로 등록된 소속들 — 여럿이면 동명이인이 섞였을 수 있다. */
-  affiliations: string[];
   trials: number;
-  latest?: string;
-  /** 확인용 등록번호 앞 몇 건(접두사 포함). */
-  sampleIds: string[];
+  /** 정규화 마스터에 맞았는가(의뢰사·기관). 아니면 원문이다. */
+  mapped: boolean;
+  /** 축별 부가 정보 — 소속(연구자)·유형(의뢰사)·지역(기관)·ATC(의약품)·장(질환). */
+  extra?: Record<string, string>;
 };
-export type InvestigatorRank = { matched: number; items: InvestigatorRankItem[] };
+export type AggregateData = {
+  by: AggregateAxis;
+  /** 검색어에 걸린 시험 수(중복 제거) — 모수. */
+  matched: number;
+  items: AggregateItem[];
+  /** 마스터에 맞은 비율(건수 가중). 의뢰사·기관에서 뜻이 있다. */
+  mapped: number;
+  /** 이 축의 근거와 한계 — 답에 그대로 밝힌다. */
+  provenance: string;
+};

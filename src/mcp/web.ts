@@ -45,7 +45,7 @@ export function schema(): {
     results: '한 시험의 결과 데이터',
     registries: '레지스트리 다섯과 각각의 능력',
     names: '한국어 이름 → CRIS 에 등록된 로마자 표기',
-    investigators: '검색어 안의 연구책임자를 등록 건수순으로',
+    aggregate: '검색어 안의 시험을 한 축으로 묶어 등록 건수순으로',
   };
   const commands = {} as ReturnType<typeof schema>['commands'];
   for (const cmd of COMMANDS) {

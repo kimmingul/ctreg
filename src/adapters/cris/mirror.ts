@@ -1,4 +1,4 @@
-import type { AdapterResult, Capability, InvestigatorRank, InvestigatorRankQuery, RegistryAdapter, SearchAxis, Warning } from '../../core/capability.js';
+import { AGGREGATE_AXES, type AdapterResult, type AggregateData, type AggregateQuery, type Capability, type RegistryAdapter, type SearchAxis, type Warning } from '../../core/capability.js';
 import { resolvePageSize, type FetchOpts, type NormalizedQuery, type ResultsOpts } from '../../core/query.js';
 import type { TrialRecord, TrialResults } from '../../core/record.js';
 import { parseTrialId } from '../../core/registry.js';
@@ -79,8 +79,8 @@ export const CRIS_MIRROR_CAPABILITY: Capability = {
   results: { supported: false, scope: '구조화된 결과 데이터를 내주지 않는다' },
   count: { supported: true, scope: '조건에 걸린 사본의 등록 수' },
   sort: { supported: false, scope: '등록일 내림차순 고정' },
-  /** 순위 질문은 도구가 센다 — 사본 전체를 연구책임자로 묶는다. 이 문만 할 수 있다. */
-  investigators: { supported: true, scope: '검색어(OR)에 걸린 시험 전체를 연구책임자로 묶어 등록 건수순. 동명이인은 갈라내지 않는다' },
+  /** 순위·현황 질문은 도구가 센다 — 사본 전체를 한 축으로 묶는다. 이 문만 할 수 있다. */
+  aggregate: { supported: true, scope: '검색어(OR)에 걸린 시험 전체를 한 축으로 묶어 등록 건수순. 의뢰사·기관은 KCTIS 마스터로, 의약품·질환은 사전 문자열 매칭', axes: [...AGGREGATE_AXES] },
   /** 우리 서버다 — 공공데이터포털의 한도와 무관하다. 그래도 같은 org 의 작은 머신이라 예의를 지킨다. */
   limits: { maxPageSize: CRIS_MIRROR_MAX_PAGE_SIZE, ratePerSec: 20, maxBatchIds: 50 },
 };
@@ -197,24 +197,28 @@ export function createCrisMirrorAdapter(cfg: Config, deps: HttpDeps = {}): Regis
       return { data: value.total ?? 0, warnings: [...warnings, copyWarning(value.meta?.collected_at)] };
     },
 
-    async investigators(q: InvestigatorRankQuery, o: FetchOpts): Promise<AdapterResult<InvestigatorRank>> {
-      const p: Record<string, string | number> = { q: q.terms.join(','), limit: q.limit };
+    async aggregate(q: AggregateQuery, o: FetchOpts): Promise<AdapterResult<AggregateData>> {
+      const p: Record<string, string | number> = { by: q.by, q: q.terms.join(','), limit: q.limit };
       if (q.status && q.status.length > 0) {
         const en = q.status.map((s) => STATUS_EN[s]).filter((s): s is string => s !== undefined);
         if (en.length !== q.status.length) throw unsupportedError(`${CRIS_MIRROR_CAPABILITY.name}: 이 모집상태 값으로는 거를 수 없습니다`, `받는 값: ${STATUS_VALUES.join(', ')}`);
         p.status = en.join(',');
       }
-      type Row = { name_kr: string; name_en?: string | null; affiliations?: string[]; trials: number; latest?: string | null; sample_ids?: string[] };
-      const { value, warnings } = await call<{ matched: number; items: Row[]; meta?: { collected_at?: string } }>('/api/cris/investigators', p, o);
+      type Row = { key: string; name: string; name_en?: string | null; trials: number; mapped?: boolean; extra?: Record<string, string> };
+      type Body = { by: string; matched: number; items: Row[]; meta?: { collected_at?: string; provenance?: string; mapped?: number } };
+      const { value, warnings } = await call<Body>('/api/cris/aggregate', p, o);
       const items = (value.items ?? []).map((r) => ({
-        name: r.name_kr,
+        key: r.key,
+        name: r.name,
         ...(r.name_en ? { nameEn: r.name_en } : {}),
-        affiliations: r.affiliations ?? [],
         trials: r.trials,
-        ...(r.latest ? { latest: r.latest } : {}),
-        sampleIds: (r.sample_ids ?? []).map((id) => `CRIS:${id}`),
+        mapped: r.mapped !== false,
+        ...(r.extra ? { extra: r.extra } : {}),
       }));
-      return { data: { matched: value.matched ?? 0, items }, warnings: [...warnings, copyWarning(value.meta?.collected_at)] };
+      return {
+        data: { by: q.by, matched: value.matched ?? 0, items, mapped: value.meta?.mapped ?? 1, provenance: value.meta?.provenance ?? '' },
+        warnings: [...warnings, copyWarning(value.meta?.collected_at)],
+      };
     },
 
     async results(_id: string, _o: ResultsOpts): Promise<AdapterResult<TrialResults>> {

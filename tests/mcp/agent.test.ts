@@ -151,7 +151,7 @@ describe('에이전트 루프', () => {
 
   it('도구 정의는 MCP 와 같은 일곱 + 플레이북 로더이고, 지침은 플러그인 SKILL.md 에서 온다', () => {
     const tools = agentTools();
-    expect(tools.map((t) => t.function.name).sort()).toEqual(['count_trials', 'get_trial_by_id', 'get_trial_results', 'list_registries_and_capabilities', 'load_playbook', 'rank_investigators', 'resolve_korean_investigator_name', 'search_trials_multi_registry']);
+    expect(tools.map((t) => t.function.name).sort()).toEqual(['aggregate_trials', 'count_trials', 'get_trial_by_id', 'get_trial_results', 'list_registries_and_capabilities', 'load_playbook', 'resolve_korean_investigator_name', 'search_trials_multi_registry']);
     expect(tools.find((t) => t.function.name === 'count_trials')!.function.parameters).toMatchObject({ type: 'object' });
     const p = systemPromptForAgent();
     expect(p).toMatch(/경고를 반드시 읽어라/);
@@ -243,10 +243,10 @@ describe('플레이북', () => {
 describe('도구 결과 압축', () => {
   it('배열이 아닌 결과는 통째로 모델에게 간다 — investigators 의 items 가 보인다', async () => {
     const f = vi.fn()
-      .mockResolvedValueOnce(reply({ tool_calls: [tc('r', 'rank_investigators', { term: '당뇨,diabetes', 'page-size': 5 })] }))
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('r', 'aggregate_trials', { by: 'investigator', term: '당뇨,diabetes', 'page-size': 5 })] }))
       .mockResolvedValueOnce(reply({ content: '끝' }));
     const t = fakeTools(() => ({ exitCode: 0, exit: 'ok', envelope: { registries: [{ registry: 'cris', status: 'ok', total: 276 }], warnings: [],
-      data: { matched: 276, terms: ['당뇨', 'diabetes'], basis: '등록 건수', items: [{ name: '김난희', affiliations: ['고려대'], trials: 10, sampleIds: ['CRIS:KCT0011737'] }] } } }));
+      data: { by: 'investigator', matched: 276, terms: ['당뇨', 'diabetes'], basis: '등록 건수', provenance: 'x', mapped: 1, items: [{ key: 'k', name: '김난희', trials: 10, mapped: true, extra: { affiliations: '고려대' } }] } } }));
     await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
     const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; content?: string }[] };
     const toolMsg = second.messages.find((m) => m.role === 'tool')!.content!;

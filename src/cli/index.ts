@@ -10,7 +10,7 @@ import { runCount } from './commands/count.js';
 import { IdRoutingError, runGet } from './commands/get.js';
 import { runRegistries } from './commands/registries.js';
 import { runNames } from './commands/names.js';
-import { runInvestigators } from './commands/investigators.js';
+import { runAggregate } from './commands/aggregate.js';
 import { runResults } from './commands/results.js';
 import { runSearch } from './commands/search.js';
 import { EXIT, type ExitCode } from './exit-codes.js';
@@ -65,7 +65,7 @@ export async function run(
       case 'get': envelope = await runGet(args, adapters); break;
       case 'results': envelope = await runResults(args, adapters); break;
       case 'names': envelope = await runNames(args, adapters); break;
-      case 'investigators': envelope = await runInvestigators(args, adapters); break;
+      case 'aggregate': envelope = await runAggregate(args, adapters); break;
     }
 
     io.stdout(render(envelope, format));
