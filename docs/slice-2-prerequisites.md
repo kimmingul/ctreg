@@ -275,6 +275,13 @@ CTIS 는 네 표기 전부 0. 0.10.1 부터 이름만 경로가 ISRCTN 을 표�
 한글이면 모델이 뭐라 했든 그 이름으로 이름 경로. 호칭이 없는 한글 2~4자는 잡지 않는다("당뇨병"
 도 세 글자다). 사보타주 2/2(문장 잡기 제거·호칭 조건 제거).
 
+배포 경로를 갈랐다(0.11.4). 사용자: "웹앱 부분 고치는데요 npm publish 가 필요한가요?" — 필요했다,
+Docker 이미지가 npm 에서 고정 버전을 받았으니까. 그 선택("컨테이너 = npm 사용자와 같은 벌")은
+웹페이지 한 줄마다 버전·publish·2FA 를 치르게 했다. 이제 이미지는 **저장소 소스에서 빌드**하고
+(`deploy/fly/deploy.sh`, bun 으로 설치·tsc 로 빌드·production 만 남김) git 커밋을 `CTREG_BUILD` 로
+실어 `/stats` 가 `version`·`build` 를 낸다. npm 은 CLI·플러그인 채널로만. `fly.toml` 의
+`CTREG_VERSION` 은 없어졌다.
+
 첫 화면 손질(0.11.1): 사용자 피드백 여섯 — 로고 아래 한 줄, 예시 칩, 운영 주체(TrialInsight ·
 나눔스페이스) 표기, 모바일, **푸터가 결과 화면에서 화면 중간에 뜨는 것**(fixed → static 전환이
 원인; body 를 세로 flex 로 바꿔 `margin-top: auto`), 그리고 **AI 사용량**. Ollama Cloud 는 문서에
