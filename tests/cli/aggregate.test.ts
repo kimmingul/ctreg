@@ -94,7 +94,8 @@ describe('aggregate — 집계 API 가 없는 레지스트리는 검색을 걸�
       conditions: [(n - 1) * size + i < total / 2 ? 'Diabetes' : 'Obesity'], sponsor: { lead: i % 2 ? 'Pfizer' : 'Novo' }, fetchedAt: 'x',
     }));
     const adapter = {
-      key: 'ctgov', capability: () => ({ ...CRIS_CAPABILITY, key: 'ctgov', limits: { maxPageSize: 200, ratePerSec: 1, maxBatchIds: 50 } }),
+      // ctgov 처럼: 집계 신고가 아예 없고(= 못 한다고 신고하지도 않음) 검색어 축은 있다 → 검색을 걸어 센다
+      key: 'ctgov', capability: () => { const { aggregate: _a, ...rest } = CRIS_CAPABILITY; void _a; return { ...rest, key: 'ctgov', limits: { maxPageSize: 200, ratePerSec: 1, maxBatchIds: 50 } }; },
       search: vi.fn(async (q: { pageToken?: string; pageSize?: number }) => {
         calls.push(q);
         const n = q.pageToken ? Number(q.pageToken) : 1; const size = q.pageSize ?? 20;
@@ -132,7 +133,7 @@ describe('aggregate — 집계 API 가 없는 레지스트리는 검색을 걸�
 
   it('검색 축이 없는 레지스트리(예: ctis 의 investigator)는 exit 3', async () => {
     const { adapter } = ctgov(10);
-    (adapter as { capability: () => unknown }).capability = () => ({ ...CRIS_CAPABILITY, key: 'ctis', search: { ...CRIS_CAPABILITY.search, term: { supported: false, values: null, exhaustive: null, scope: 'x' } } });
+    (adapter as { capability: () => unknown }).capability = () => { const { aggregate: _a, ...rest } = CRIS_CAPABILITY; void _a; return { ...rest, key: 'ctis', search: { ...CRIS_CAPABILITY.search, term: { supported: false, values: null, exhaustive: null, scope: 'x' } } }; };
     const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', 'x', '--registry', 'ctis']), { ctis: adapter });
     expect(env.registries[0]).toMatchObject({ registry: 'ctis', status: 'unsupported' });
   });

@@ -22,7 +22,7 @@ export const USAGE = `ctreg — 임상시험 레지스트리를 하나의 스키
   ctreg results <ID> [--section s] [--outcome q] [--ae-organ q] [--ae-term q] [--full]
   ctreg count   [search 와 동일한 필터]
   ctreg names   <한국어 이름> [--term <좁힐 말>] [--ctgov] 한국어 이름 → CRIS 에 등록된 로마자 표기
-  ctreg aggregate --by <축> --term <검색어[,검색어]>  검색어에 걸린 CRIS 시험을 한 축으로 묶어 건수순
+  ctreg aggregate --by <축> --term <검색어[,검색어]>  검색어에 걸린 시험을 한 축으로 묶어 건수순(기본 cris)
   ctreg registries
 
 검색 축   --condition --intervention --term --title --location --outcome-query
@@ -215,8 +215,8 @@ export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof 
   // 요청이 성립한다.
   names: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'term', 'page-size', 'ctgov'],
   // aggregate 는 검색어(쉼표로 여럿, OR)에 걸린 시험 전체를 한 축(--by)으로 묶어 건수순으로 낸다.
-  // 레지스트리는 cris 로 고정 — 이 집계를 할 수 있는 문이 CRIS 사본뿐이다. 순위·현황 질문은 도구가 센다.
-  aggregate: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'by', 'term', 'status', 'page-size'],
+  // 기본은 cris(사본이 SQL 로 센다). 다른 레지스트리는 검색을 상한까지 걸어 서버가 센다. 순위·현황 질문은 도구가 센다.
+  aggregate: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'by', 'term', 'status', 'page-size', 'registry'],
 };
 
 /** 커맨드 한 줄 요약. `--help` 가 이것과 옵션 표를 함께 낸다. */
@@ -451,7 +451,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     command === 'registries' ? REGISTRY_KEYS
     // names 는 CRIS 가 대조표다 — 국문·영문을 나란히 싣는 레지스트리가 그곳뿐이다.
     : command === 'names' ? ['cris']
-    // aggregate 도 CRIS 뿐 — 축별 집계는 사본 문만 할 수 있다.
+    // aggregate 의 기본은 CRIS — 사본이 전수를 SQL 로 센다. 다른 곳은 검색을 걸어 센다(상한 있음).
     : command === 'aggregate' ? ['cris']
     : [DEFAULT_REGISTRY];
   /**

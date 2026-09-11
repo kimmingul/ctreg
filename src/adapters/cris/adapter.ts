@@ -97,6 +97,12 @@ export const CRIS_CAPABILITY: Capability = {
    * 50초였다. 문서의 3분의 1인 10/s 로 둔다: 남의 예산을 다 쓰지 않으면서도 쓸 만하다.
    * 개발계정 일일 상한은 10,000 콜이고, 그것을 무엇이 먹었는지는 경고가 말한다.
    */
+  /**
+   * 축별 집계는 이 문으로는 못 한다 — 목록 16항목에 연구책임자·실시기관·질환이 없고, 검색을 걸어 세어도
+   * 의뢰기관·제목·연도뿐이다. 사본 문(mirror.ts)이 한다. 신고를 두는 이유: 신고가 없으면 커맨드가 검색을
+   * 걸어 세려 들고, 그 결과는 축의 절반이 빈 채 "0건" 으로 보인다.
+   */
+  aggregate: { supported: false, scope: '공식 API 목록에는 연구책임자·실시기관·질환 항목이 없다. CRIS 사본(CTREG_CRIS_MIRROR_URL)을 붙이면 전수를 SQL 로 센다', axes: [] },
   limits: { maxPageSize: CRIS_MAX_PAGE_SIZE, ratePerSec: 10, maxBatchIds: 1 },
 };
 

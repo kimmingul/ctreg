@@ -1,4 +1,7 @@
 import { AGGREGATE_AXES, type AggregateData, type AggregateQuery, type RegistryAdapter, type Warning } from '../../core/capability.js';
+import { aggregateRecords } from '../../core/aggregate.js';
+import type { NormalizedQuery } from '../../core/query.js';
+import type { TrialRecord } from '../../core/record.js';
 import type { RegistryKey } from '../../core/registry.js';
 import { CtregError } from '../../runtime/errors.js';
 import type { ParsedArgs } from '../args.js';
@@ -26,44 +29,86 @@ export type AggregateResult = AggregateData & { terms: string[]; basis: string }
 
 export const AGGREGATE_BASIS = '등록 건수 기준. 우수성·순위 판정이 아니다. 한 시험이 여러 항목(의뢰사·기관·약물)에 속할 수 있어 축 안의 합이 모수보다 클 수 있다. 동명이인·동일기관 표기 차이는 완전히 갈라내지 못한다.';
 
+/**
+ * 집계 API 가 없는 레지스트리에서 걸어 받는 레코드 상한. ctgov 는 쪽당 200건이라 다섯 번이다. 잰 수가
+ * 아니라 정한 정책이다 — 요청률 1/s 인 레지스트리에서 5초쯤. 넘으면 그만큼만 세고 **잘렸다고 말한다.**
+ */
+export const AGGREGATE_WALK_CAP = 1000;
+
 export async function runAggregate(
   args: ParsedArgs,
   adapters: Partial<Record<RegistryKey, RegistryAdapter>>,
 ): Promise<Envelope> {
   const terms = (args.query.term ?? '').split(',').map((t) => t.trim()).filter(Boolean);
   const by = args.aggregateBy!;
-  const q: AggregateQuery = { by, terms, limit: args.query.pageSize ?? 20, ...(args.query.status ? { status: args.query.status } : {}) };
+  const limit = args.query.pageSize ?? 20;
+  const q: AggregateQuery = { by, terms, limit, ...(args.query.status ? { status: args.query.status } : {}) };
   const warnings: Warning[] = [];
   const registries: RegistryStatus[] = [];
-  const cris = adapters.cris;
-  if (!cris) throw missingAdapterError('cris');
+  const key = args.registries[0]!;
+  const adapter = adapters[key];
+  if (!adapter) throw missingAdapterError(key);
+  const cap = adapter.capability();
 
-  const feature = cris.capability().aggregate;
-  if (!feature?.supported || !cris.aggregate) {
-    registries.push({
-      registry: 'cris', status: 'unsupported',
-      error: {
-        code: 'unsupported',
-        message: `CRIS (한국 임상연구정보서비스): 축별 집계(${by})를 지원하지 않습니다 — 이 문(공식 API)은 목록에 그 축을 싣지 않습니다`,
-        hint: feature?.scope ?? 'CRIS 사본(CTREG_CRIS_MIRROR_URL)을 붙이면 됩니다. 공식 API 로는 목록을 읽어 세야 하고 그것은 전수가 아닙니다.',
-      },
-    });
+  // 1) 집계를 자기가 하는 문(CRIS 사본) — 신고가 계약이다. 신고 없이 메서드만 있어도 부르지 않는다.
+  const feature = cap.aggregate;
+  if (feature?.supported && adapter.aggregate) {
+    if (!feature.axes.includes(by)) {
+      registries.push({ registry: key, status: 'unsupported', error: { code: 'unsupported', message: `${cap.name}: 축 '${by}' 를 받지 않습니다`, hint: `받는 축: ${feature.axes.join(', ')}` } });
+      return { query: { aggregate: by, terms }, registries, warnings, data: null };
+    }
+    try {
+      const r = await adapter.aggregate(q, args.fetch);
+      warnings.push(...r.warnings);
+      registries.push({ registry: key, status: 'ok', total: r.data.matched });
+      const data: AggregateResult = { ...r.data, terms, basis: AGGREGATE_BASIS };
+      return { query: { aggregate: by, terms, status: q.status, limit, registry: key }, registries, warnings, data };
+    } catch (e) {
+      if (!(e instanceof CtregError)) throw e;
+      registries.push({ registry: key, status: e.code === 'unsupported' ? 'unsupported' : 'error', error: { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) } });
+      return { query: { aggregate: by, terms }, registries, warnings, data: null };
+    }
+  }
+
+  // 2) 집계가 없는 문 — 검색을 상한까지 걸어 서버가 센다. 검색어 축(term)이 없으면 그것도 못 한다.
+  if (feature && !feature.supported) {
+    registries.push({ registry: key, status: 'unsupported', error: { code: 'unsupported', message: `${cap.name}: 축별 집계(${by})를 지원하지 않습니다 — 이 문은 목록에 그 축을 싣지 않습니다`, hint: feature.scope } });
     return { query: { aggregate: by, terms }, registries, warnings, data: null };
   }
-  if (!feature.axes.includes(by)) {
-    registries.push({ registry: 'cris', status: 'unsupported', error: { code: 'unsupported', message: `이 문은 축 '${by}' 를 받지 않습니다`, hint: `받는 축: ${feature.axes.join(', ')}` } });
+  if (!cap.search.term.supported) {
+    registries.push({ registry: key, status: 'unsupported', error: { code: 'unsupported', message: `${cap.name}: 검색어 축이 없어 집계의 모수를 만들 수 없습니다`, hint: cap.search.term.scope } });
     return { query: { aggregate: by, terms }, registries, warnings, data: null };
   }
-
   try {
-    const r = await cris.aggregate(q, args.fetch);
-    warnings.push(...r.warnings);
-    registries.push({ registry: 'cris', status: 'ok', total: r.data.matched });
-    const data: AggregateResult = { ...r.data, terms, basis: AGGREGATE_BASIS };
-    return { query: { aggregate: by, terms, status: q.status, limit: q.limit }, registries, warnings, data };
+    const pageSize = Math.min(cap.limits.maxPageSize, AGGREGATE_WALK_CAP);
+    const base: NormalizedQuery = { ...args.query, term: terms.join(','), pageSize };
+    // 연구책임자 축은 연락처가 실려야 센다 — include 를 넓힌다.
+    const fetch = by === 'investigator' ? { ...args.fetch, include: [...new Set([...args.fetch.include, 'contacts' as const])] } : args.fetch;
+    const records: TrialRecord[] = [];
+    let token: string | undefined;
+    let total = 0;
+    for (;;) {
+      const r = await adapter.search({ ...base, ...(token ? { pageToken: token } : {}) }, fetch);
+      for (const w of r.warnings) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
+      records.push(...r.data);
+      total = r.total ?? records.length;
+      token = r.nextPageToken;
+      if (!token || records.length >= AGGREGATE_WALK_CAP) break;
+    }
+    if (records.length < total) {
+      warnings.push({
+        code: 'aggregate_truncated',
+        message: `모수 ${total.toLocaleString()}건 중 ${records.length.toLocaleString()}건까지만 받아 셌습니다 — 이 레지스트리에는 집계 API 가 없어 레코드를 받아 세는데, 상한이 ${AGGREGATE_WALK_CAP.toLocaleString()}건입니다. 순위·비율은 그 안의 것입니다. 검색어를 좁혀 모수를 줄이세요.`,
+        registry: key,
+      });
+    }
+    const agg = aggregateRecords(records, by, limit);
+    registries.push({ registry: key, status: 'ok', total });
+    const data: AggregateResult = { ...agg, matched: total, terms, basis: AGGREGATE_BASIS };
+    return { query: { aggregate: by, terms, status: q.status, limit, registry: key }, registries, warnings, data };
   } catch (e) {
     if (!(e instanceof CtregError)) throw e;
-    registries.push({ registry: 'cris', status: e.code === 'unsupported' ? 'unsupported' : 'error', error: { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) } });
+    registries.push({ registry: key, status: e.code === 'unsupported' ? 'unsupported' : 'error', error: { code: e.code, message: e.message, ...(e.hint ? { hint: e.hint } : {}) } });
     return { query: { aggregate: by, terms }, registries, warnings, data: null };
   }
 }
