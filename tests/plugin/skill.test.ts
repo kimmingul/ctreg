@@ -18,6 +18,18 @@ const BODY = (() => {
   return m[1]!;
 })();
 
+/**
+ * 에이전트(`src/mcp/agent.ts`)가 런타임에 SKILL.md 를 읽는다. npm 패키지와 Docker 이미지 둘 다 그
+ * 파일을 실어야 한다 — 공개 서버가 첫 /api/agent 호출에서 "Cannot find module skills/ctreg/SKILL.md"
+ * 로 죽은 적이 있다(2026-09-11). 패키지의 files 에 skills 가 있는지 여기서 본다(Dockerfile 은 배포로 확인).
+ */
+describe('배포물이 지침 파일을 싣는다', () => {
+  it('package.json files 에 skills 가 있다', () => {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')) as { files: string[] };
+    expect(pkg.files).toContain('skills');
+  });
+});
+
 describe('플러그인 매니페스트', () => {
   /**
    * **플러그인은 MCP 서버를 싣지 않는다 — MCP 서버가 없어서가 아니다.** `ctreg-mcp` 는

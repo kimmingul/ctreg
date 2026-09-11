@@ -17,6 +17,7 @@ COPY package.json bun.lock tsconfig.json ./
 RUN bun install --frozen-lockfile
 COPY src ./src
 COPY web ./web
+COPY skills ./skills
 RUN npm run build
 # 실행에 필요한 것만 남긴다 — devDependencies 를 뺀다.
 RUN rm -rf node_modules && bun install --frozen-lockfile --production
@@ -27,6 +28,8 @@ COPY --from=build /src/package.json ./
 COPY --from=build /src/node_modules ./node_modules
 COPY --from=build /src/dist ./dist
 COPY --from=build /src/web ./web
+# 에이전트의 지침 — 플러그인 SKILL.md 를 런타임에 읽는다. 빠뜨리면 /api/agent 가 첫 호출에서 죽는다(2026-09-11 에 겪었다).
+COPY --from=build /src/skills ./skills
 
 ARG CTREG_BUILD=unknown
 ENV CTREG_BUILD=$CTREG_BUILD
