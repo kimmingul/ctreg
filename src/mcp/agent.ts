@@ -152,11 +152,16 @@ function compactForModel(body: Record<string, unknown>, capRecords = 40): { text
   const data = env?.data;
   const list = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
   const records = list.filter((r) => typeof r.id === 'string');
-  const shown = (Array.isArray(data) ? list.slice(0, capRecords) : data === undefined ? [] : [data as Record<string, unknown>]).map((r) => {
-    const o: Record<string, unknown> = {};
-    for (const k of RECORD_KEYS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k];
-    return o;
-  });
+  // 배열(레코드 목록)만 앞 N 건을 레코드 키로 압축한다. 배열이 아닌 결과 — count 의 {total}, names 의
+  // {variants}, investigators 의 {matched, items}, registries — 는 이미 작고 모양이 제각각이라 통째로 넘긴다.
+  // 허용목록으로 걸렀다가 investigators 가 `{}` 로 가서 모델이 "데이터가 비었다" 고 답했다(실측 2026-09-12).
+  const shown = Array.isArray(data)
+    ? list.slice(0, capRecords).map((r) => {
+        const o: Record<string, unknown> = {};
+        for (const k of RECORD_KEYS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k];
+        return o;
+      })
+    : data === undefined || data === null ? [] : [data as Record<string, unknown>];
   const out = {
     exitCode: body.exitCode,
     exit: body.exit,
