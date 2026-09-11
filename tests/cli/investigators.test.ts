@@ -55,6 +55,17 @@ describe('investigators 커맨드', () => {
     expect(env.data).toBeNull();
   });
 
+  /** 사보타주에서 살아남은 자리 — 신고가 false 인데 메서드가 있으면 그냥 불렀다. 신고가 계약이다. */
+  it('능력 신고가 false 면 메서드가 있어도 부르지 않는다', async () => {
+    const rank = vi.fn(async () => ({ data: sample, warnings: [] }));
+    const a = adapters(rank);
+    (a.cris as { capability: () => unknown }).capability = () => ({ ...CRIS_CAPABILITY, investigators: { supported: false, scope: '이 문은 못 한다' } });
+    const env = await runInvestigators(parseCliArgs(['investigators', '--term', '당뇨']), a);
+    expect(rank).not.toHaveBeenCalled();
+    expect(env.registries[0]).toMatchObject({ registry: 'cris', status: 'unsupported' });
+    expect(env.registries[0]!.error?.hint).toContain('이 문은 못 한다');
+  });
+
   it('--term 이 없으면 사용법 오류다 — 전체 순위는 이 커맨드의 일이 아니다', () => {
     expect(() => parseCliArgs(['investigators'])).toThrow(/--term/);
   });
