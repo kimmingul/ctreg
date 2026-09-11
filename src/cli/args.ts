@@ -216,7 +216,9 @@ export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof 
   names: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'term', 'page-size', 'ctgov'],
   // aggregate 는 검색어(쉼표로 여럿, OR)에 걸린 시험 전체를 한 축(--by)으로 묶어 건수순으로 낸다.
   // 기본은 cris(사본이 SQL 로 센다). 다른 레지스트리는 검색을 상한까지 걸어 서버가 센다. 순위·현황 질문은 도구가 센다.
-  aggregate: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'by', 'term', 'status', 'page-size', 'registry'],
+  // 걷는 경로(ctgov 등)는 검색이므로 검색의 질의 축을 다 받는다 — location 이 없어 모델이 의뢰사 34곳을 count 로
+  // 하나씩 센 실측(2026-09-12)이 있다. 사본 경로(cris)는 term·status 만 적용하고 다른 축은 exit 3 으로 거절한다.
+  aggregate: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, ...QUERY_OPTIONS, 'by', 'page-size'],
 };
 
 /** 커맨드 한 줄 요약. `--help` 가 이것과 옵션 표를 함께 낸다. */

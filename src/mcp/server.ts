@@ -378,7 +378,7 @@ CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리�
 
 쓰는 법:
 - term 에 검색어. 쉼표로 여럿이면 OR — 국문·영문을 같이("당뇨,diabetes"). 시험은 등록번호로 한 번만 센다.
-- status 로 모집상태를 거를 수 있다. page-size 가 상위 몇 개인지다(기본 20).
+- status 로 모집상태를 거를 수 있다. page-size 가 상위 몇 개인지다(기본 20). registry ctgov 면 검색의 다른 축(location·condition·intervention·phase·sponsor …)도 그대로 받는다 — "미국에서" 는 location "United States". cris 사본은 term·status 만 받고 다른 축은 exit 3 이다.
 - registry 기본은 cris — 사본이 **전수**를 SQL 로 센다(의뢰사·기관은 표준명). registry ["ctgov"] 로도 된다: 집계 API 가 없어 검색을 **1,000건까지** 받아 세고, 모수가 그보다 크면 aggregate_truncated 경고와 함께 그 안의 순위다 — 검색어·status 로 모수를 좁혀라. ctgov 의 이름은 원문이라 표기가 다르면 갈린다(mapped 0).
 - CRIS 사본이 없는 서버는 cris 에 exit 3 — 그때는 목록을 읽어 세되 전수가 아님을 밝혀라.
 

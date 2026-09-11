@@ -53,6 +53,15 @@ export async function runAggregate(
   // 1) 집계를 자기가 하는 문(CRIS 사본) — 신고가 계약이다. 신고 없이 메서드만 있어도 부르지 않는다.
   const feature = cap.aggregate;
   if (feature?.supported && adapter.aggregate) {
+    // 사본은 term·status 만 적용한다. 다른 축(location·condition·phase …)을 조용히 버리면 "미국 의뢰사 순위" 가
+    // 세계 순위로 둔갑한다 — 받지 못하는 축이 오면 그렇게 말한다.
+    const extra = Object.entries(args.query)
+      .filter(([k, v]) => v !== undefined && !['term', 'status', 'pageSize', 'pageToken'].includes(k))
+      .map(([k]) => k);
+    if (extra.length > 0) {
+      registries.push({ registry: key, status: 'unsupported', error: { code: 'unsupported', message: `${cap.name}: 집계에 ${extra.join(', ')} 축을 적용할 수 없습니다 — 사본은 term(쉼표 OR)과 status 만 받습니다`, hint: '그 조건을 검색어에 담거나(예: 기관명을 term 에), 다른 레지스트리(registry ctgov)로 물으세요.' } });
+      return { query: { aggregate: by, terms }, registries, warnings, data: null };
+    }
     if (!feature.axes.includes(by)) {
       registries.push({ registry: key, status: 'unsupported', error: { code: 'unsupported', message: `${cap.name}: 축 '${by}' 를 받지 않습니다`, hint: `받는 축: ${feature.axes.join(', ')}` } });
       return { query: { aggregate: by, terms }, registries, warnings, data: null };
