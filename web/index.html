@@ -353,7 +353,12 @@
     if (mode === 'names' && !$('q2').value.trim()) { askForTerm(q); return; }
     busy = true;
     document.body.classList.add('searched', 'busy');
-    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 하나씩 열어 확인하는 중 — 1~3분 걸릴 수 있다…' : ai ? 'AI 가 조건을 고르는 중… (이름만 쳤거나 설명을 물었으면 30초쯤 걸린다)' : '조회 중…'}</p>`;
+    // 답변·이름 질의는 오래 걸린다(모델이 결과를 읽고 쓴다). 경과 초를 보여 죽은 것처럼 보이지 않게 한다.
+    const slow = ai || mode === 'names';
+    const t0 = Date.now();
+    const tick = () => { const el = $('elapsed'); if (el) el.textContent = Math.round((Date.now() - t0) / 1000) + '초'; };
+    $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 열어 확인하는 중' : ai ? 'AI 가 결과를 읽고 정리하는 중' : '조회 중'}… ${slow ? '설명·이름 질의는 1~2분 걸릴 수 있다. ' : ''}<span id="elapsed" style="font-variant-numeric:tabular-nums">0초</span></p>`;
+    const timer = slow ? setInterval(tick, 1000) : 0;
     try {
       // AI 모드: 자연어를 서버의 /api/ask 가 도구·인자로 바꾼다. 아니면 검색창 문법 그대로.
       const url = ai && (mode === 'search' || mode === 'count') ? '/api/ask' : `/api/${mode}`;
@@ -365,7 +370,7 @@
       render(data);
     } catch (err) {
       $('out').innerHTML = `<div class="warn bad">서버에 닿지 못했다: ${esc(String(err))}</div>`;
-    } finally { busy = false; document.body.classList.remove('busy'); if (ai) refreshUsage(); }
+    } finally { if (timer) clearInterval(timer); busy = false; document.body.classList.remove('busy'); if (ai) refreshUsage(); }
   }
 
   function render(body) {

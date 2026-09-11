@@ -397,8 +397,20 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
     const body = res.body as { envelope?: Env; resolved?: Record<string, unknown> };
     return { ...res, body: { ...body, resolved: { ...body.resolved, wants: 'answer' }, answer: await answerFrom(q, body.envelope, llm, fetchImpl) } };
   };
-  if (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term) {
-    return withAnswer(await nameOnly(resolved.args.korean_name, intent, llm, env, fetchImpl, call));
+  /**
+   * **한국어 이름은 어느 도구로 왔든 이름 경로로.** 모델이 `names` 로 고르면 여기, 하지만 `search`·
+   * `count` 에 한국어 investigator 를 그대로 넣는 회차도 있다(실측 2026-09-11: 그러면 ctgov 에 "김민걸"
+   * 을 그대로 물어 0건 → 빈 화면). 분류가 흔들려도 결과는 흔들리면 안 된다. 한글이 있으면 nameOnly.
+   * (영문 investigator 는 등록된 표기이므로 그대로 둔다 — 다시 로마자로 풀 이유가 없다.)
+   */
+  const koreanName =
+    resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term
+      ? resolved.args.korean_name
+      : (resolved.tool === 'search' || resolved.tool === 'count') && typeof resolved.args.investigator === 'string' && /[가-힣]/.test(resolved.args.investigator)
+        ? resolved.args.investigator
+        : undefined;
+  if (koreanName !== undefined) {
+    return withAnswer(await nameOnly(koreanName, intent, llm, env, fetchImpl, call));
   }
   const r = await call(resolved.tool, resolved.args, env);
   const out = r.structuredContent as { exitCode: number };
