@@ -217,9 +217,9 @@ MCP 가 아니라 HTML 을 받아 실패한다. 실제로 그렇게 걸렸다(�
 호출 통계는 `https://ctreg.trialinsight.ai/stats`. 머신 하나가 항상 켜져 있어 첫 요청도 바로 답한다.
 
 **Fly.io 로 띄우는 파일이 `deploy/fly/` 에 있다.** 순서는 `fly.toml` 머리에 적혀 있다 —
-앱 만들기 → 볼륨 → CRIS 키를 secret 으로 → deploy. 이미지는 저장소가 아니라 **npm 에서 받는다**
-(`CTREG_VERSION` 고정) — 컨테이너가 도는 코드가 `npm i -g` 로 받는 사용자와 같은 벌이어야
-해서다. 새 버전을 내면 `fly.toml` 의 그 값도 올린다.
+앱 만들기 → 볼륨 → CRIS 키를 secret 으로 → `deploy/fly/deploy.sh`. 이미지는 **저장소 소스에서
+빌드**한다 — npm publish 없이 `fly deploy` 만으로 서버가 바뀐다. 무엇이 도는지는 `/stats` 의
+`version`·`build`(git 커밋)로 본다. npm 패키지는 CLI·플러그인 사용자를 위한 채널이다.
 
 **인스턴스는 하나여야 한다.** 요청률 버킷이 프로세스 안에 있어서, 둘이면 레지스트리에 두 배로
 나간다. 그 하나는 **항상 켜 둔다** — 처음엔 놀면 멈추게 뒀는데, 멈춘 머신에 온 첫 요청이 Node
