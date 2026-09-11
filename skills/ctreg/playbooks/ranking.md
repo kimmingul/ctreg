@@ -19,7 +19,9 @@ when: 순위·비교·상위·"우수한"·"등수"·"가장 많이" 를 물을 
    답에 옮겨라. 소속(extra)이 여럿인 이름은 동명이인이 섞였을 수 있다. 의약품·질환은 사전 문자열 매칭이다.
 4. 상위 몇의 대표 시험을 보이고 싶으면 `search_trials_multi_registry`(registry cris, investigator 나 term 에
    그 이름, page-size 3)를 **한 턴에** 불러라.
-5. `aggregate_trials` 가 "그렇게 물어볼 수 없음"(exit 3)이면 — 이 서버가 CRIS 사본을 쓰지 않는 것이다.
+5. 미국·세계 범위면 registry `["ctgov"]` — 검색을 1,000건까지 받아 센다. `aggregate_truncated` 가 있으면 그 안의
+   순위라고 밝히고 검색어·status 로 좁혀라. ctgov 이름은 원문이라 표기가 갈린다(mapped 0).
+6. `aggregate_trials` 가 "그렇게 물어볼 수 없음"(exit 3)이면 — 이 서버가 CRIS 사본을 쓰지 않는 것이다.
    그때만 검색 목록(page-size 100)에서 세되, "앞 100건 안의 순위" 라고 밝혀라.
 
 ## 절차 — 한 사람의 "등수"

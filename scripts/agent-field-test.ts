@@ -49,6 +49,8 @@ const CASES: Case[] = [
     mustCall: ['aggregate_trials'], answerMust: [/metformin|메트포르민|glucose|포도당/i, /매칭|사전|한계/] },
   { name: '실시기관', q: '당뇨병 임상시험을 가장 많이 실시한 병원은', playbook: undefined,
     mustCall: ['aggregate_trials'], answerMust: [/병원/, /건/] },
+  { name: 'ctgov-의뢰사', q: '미국에서 모집 중인 당뇨병 시험은 어느 의뢰사가 많이 하나', playbook: undefined,
+    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/의뢰|스폰서|sponsor/i, /1,?000|상한|잘|모수/] },
   { name: '조건-검색', q: '모집 중인 당뇨병 3상 시험', playbook: 'condition-drug',
     mustCall: ['search_trials_multi_registry'], mustNotCall: ['aggregate_trials'], answerMust: [/모집|recruiting/, /건/] },
 ];
