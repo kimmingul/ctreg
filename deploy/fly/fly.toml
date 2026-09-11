@@ -7,7 +7,7 @@
 #   fly secrets set --app ctreg-mcp CTREG_CRIS_SERVICE_KEY=<공공데이터포털 Decoding 키>
 #   fly secrets set --app ctreg-mcp CTREG_CRIS_MIRROR_URL=http://kctis-web.internal:3000   # CRIS 사본(KCTIS), 같은 org 의 사설망. 있으면 위 키 대신 이 문.
 #     (KCTIS 의 Next 가 HOSTNAME="::" 여야 한다 — 6PN 은 IPv6 뿐이라 0.0.0.0 이면 ECONNREFUSED)
-#   fly deploy --app ctreg-mcp --config deploy/fly/fly.toml --dockerfile deploy/fly/Dockerfile --remote-only --ha=false
+#   deploy/fly/deploy.sh      # = fly deploy … --build-arg CTREG_BUILD=<git 커밋>. 저장소 루트에서.
 #
 # 확인:
 #   curl https://ctreg-mcp.fly.dev/stats
@@ -26,8 +26,8 @@ primary_region = "nrt"     # 도쿄. CRIS·한국 사용자와 가깝다. 서울
 
 [build]
   dockerfile = "Dockerfile"
-  [build.args]
-    CTREG_VERSION = "0.11.4"   # 새 버전을 낼 때 여기도 올린다 — 그래야 재배포가 새 코드를 받는다
+  # 저장소 소스에서 빌드한다(0.11.4~). npm publish 없이 `fly deploy` 만으로 서버가 바뀐다.
+  # 무엇이 올라갔는지는 `deploy/fly/deploy.sh` 가 git 커밋을 CTREG_BUILD 에 실어 남긴다.
 
 [http_service]
   internal_port = 8080

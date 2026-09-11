@@ -110,6 +110,12 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
     expect(a.byExit['3']).toBeGreaterThan(0); // 위 exit 3 테스트가 남긴 것
   });
 
+  it('/stats 가 무엇이 도는지 말한다 — version 과 build', async () => {
+    const a = (await (await fetch(new URL('/stats', base))).json()) as { version: string; build: string | null };
+    expect(a.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(a).toHaveProperty('build');   // 배포 스크립트가 git 커밋을 싣는다; 로컬은 null
+  });
+
   it('/stats 는 검색어를 담지 않는다', async () => {
     const text = await (await fetch(new URL('/stats', base))).text();
     expect(text).not.toContain('phase_3');

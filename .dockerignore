@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.claude
+.codex
+.cache
+clinicaltrialsgov-mcp-server
+ctreg
+ctreg-*
+.*.bun-build
+*.log

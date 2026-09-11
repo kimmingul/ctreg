@@ -5,6 +5,7 @@ import { loadConfig, loadEnvFiles } from '../runtime/config.js';
 import { aggregate, readAll } from './stats.js';
 import { ask, type AskBody } from './ask.js';
 import { usage } from './usage.js';
+import { readVersion } from '../cli/version.js';
 import { api, page, schema } from './web.js';
 import { createServer } from './server.js';
 
@@ -72,7 +73,8 @@ const httpServer = createHttpServer(async (req, res) => {
   }
   if (url.pathname === '/stats') {
     // 개인정보가 없으므로 인증 없이 낸다 — 도구·레지스트리·종료코드·소요시간 집계뿐이다.
-    const body = JSON.stringify(aggregate(readAll(loadConfig().cacheDir)), null, 2);
+    // version 은 package.json, build 는 배포 스크립트가 실은 git 커밋 — 무엇이 도는지 밖에서 확인하는 자리.
+    const body = JSON.stringify({ version: readVersion(), build: process.env.CTREG_BUILD ?? null, ...aggregate(readAll(loadConfig().cacheDir)) }, null, 2);
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' }).end(`${body}\n`);
     return;
   }
