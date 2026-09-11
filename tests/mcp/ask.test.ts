@@ -232,7 +232,8 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
       .mockResolvedValueOnce(llmRes('주로 건강인 대상 약동학 시험이다 [CTGOV:A].'));
     const call = (async () => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total: 2 }], warnings: [],
       data: [{ id: 'CTGOV:A', title: 'PK of X in healthy adults', status: 'completed', phase: ['phase_1'], studyType: 'interventional', conditions: ['Healthy'], sponsor: { lead: 'CKD' } }, { id: 'CTGOV:B', title: 'BE of Y', status: 'completed', phase: ['phase_1'] }] } } })) as unknown as Parameters<typeof ask>[3];
-    const r = await ask({ q: '김민걸 교수의 임상시험 특징 설명', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    // 영문 이름으로 묻는다 — 한국어 이름은 이제 문장에서 잡혀 이름 경로로 가므로(별도 테스트) 이 테스트의 관심사가 아니다.
+    const r = await ask({ q: 'Min-Gul Kim 이 한 임상시험 특징 설명', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
     expect(r.status).toBe(200);
     const b = r.body as { answer?: { text: string; basedOn: number; model: string }; envelope: { data: unknown[] } };
     expect(b.answer?.text).toMatch(/약동학/);
@@ -245,7 +246,7 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(all).toContain('CTGOV:A');
     expect(all).toContain('PK of X in healthy adults');
     expect(all).toMatch(/없다|모른다/);
-    expect(all).toContain('김민걸 교수의 임상시험 특징 설명');
+    expect(all).toContain('Min-Gul Kim 이 한 임상시험 특징 설명');
   });
 
   it('wants 가 list 거나 없으면 요약하지 않는다 — LLM 은 한 번만', async () => {

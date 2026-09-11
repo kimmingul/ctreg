@@ -73,6 +73,18 @@ ${tools}
 7. 모르는 것은 넣지 마라. 값을 지어내지 마라.`;
 }
 
+/**
+ * 문장에서 한국어 사람 이름을 잡는다 — **모델을 거치지 않고.** "김민걸 교수의", "이순신박사가",
+ * "홍길동 연구자" 처럼 호칭이 붙은 2~4자 한글. 모델은 회차마다 이름을 로마자로 옮기거나 term 에
+ * 넣는다(실측 2026-09-11: 3회 중 1회 0건). 호칭이 있는 이름만 잡는다 — "당뇨병" 도 세 글자다.
+ * 기관명("전북대학교병원 교수")은 길이가 5 를 넘어 걸리지 않는다.
+ */
+const TITLE = '(교수|박사|선생님?|연구자|연구원|원장|과장|팀장|대표|님)';
+export function koreanPersonInQuery(q: string): string | undefined {
+  const m = new RegExp(`(?:^|[^가-힣])([가-힣]{2,4})\\s*${TITLE}`).exec(q);   // 호칭 뒤 조사(의·가·는)는 허용
+  return m?.[1];
+}
+
 /** 모델 출력에서 JSON 을 꺼낸다. 작은 모델은 코드 펜스나 앞뒤 말을 자주 붙인다. */
 export function parseResolution(text: string): Resolution | undefined {
   const cleaned = text.replace(/```(?:json)?/gi, '').trim();
@@ -404,11 +416,12 @@ export async function ask(body: AskBody, env: NodeJS.ProcessEnv = process.env, f
    * (영문 investigator 는 등록된 표기이므로 그대로 둔다 — 다시 로마자로 풀 이유가 없다.)
    */
   const koreanName =
-    resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term
+    koreanPersonInQuery(q) ??
+    (resolved.tool === 'names' && typeof resolved.args.korean_name === 'string' && !resolved.args.term
       ? resolved.args.korean_name
       : (resolved.tool === 'search' || resolved.tool === 'count') && typeof resolved.args.investigator === 'string' && /[가-힣]/.test(resolved.args.investigator)
         ? resolved.args.investigator
-        : undefined;
+        : undefined);
   if (koreanName !== undefined) {
     return withAnswer(await nameOnly(koreanName, intent, llm, env, fetchImpl, call));
   }
