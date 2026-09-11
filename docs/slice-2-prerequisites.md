@@ -16,7 +16,7 @@
 **껍데기 다섯, 코어 하나.** CLI(`ctreg`) · Claude Code 플러그인(스킬 + 슬래시 커맨드) · stdio MCP(`ctreg-mcp`) ·
 HTTP MCP(`ctreg-mcp-http`, `/mcp`) · 검색 웹(`/`). 공개 서버 **`https://ctreg.trialinsight.ai/`**(Fly.io nrt,
 항상 켜짐, 인증 없음, 비영리). 웹의 AI 모드는 **에이전트**다 — 모델(glm-5.3-flash, Ollama Cloud)에게 MCP 와
-같은 도구 여섯 + `load_playbook` 을 주고 루프를 돌린다(「에이전트」·「플레이북」 절). CRIS 는 공개
+같은 도구 일곱 + `load_playbook` 을 주고 루프를 돌린다(「에이전트」·「플레이북」 절). CRIS 는 공개
 서버에서 **KCTIS 사본**(같은 org 사설망)으로 들어간다 — 연구책임자가 목록 축(「CRIS 의 두 번째 문」 절).
 서버는 저장소 소스에서 빌드한다(`deploy/fly/deploy.sh`); npm 은 CLI·플러그인 채널.
 
@@ -30,7 +30,7 @@ HTTP MCP(`ctreg-mcp-http`, `/mcp`) · 검색 웹(`/`). 공개 서버 **`https://
 | `cris` | CRIS (한국) | 2 / 사본 6 | 키 필요(무료·자동승인) **또는** `CTREG_CRIS_MIRROR_URL` | 「어댑터 #4」·「CRIS 의 두 번째 문」 절 · `cris-field-test-*.md` |
 | `ctis` | EU CTIS | 5 | 공개 API, 조건 없음 | 「어댑터 #5」 절 · `ctis-field-test-*.md` |
 
-테스트 **939 통과 / 11 skipped**. 타입체크·빌드 클린.
+테스트 **951 통과 / 11 skipped**. 타입체크·빌드 클린.
 
 **배포됐다(2026-09-01).** `npm i -g @kimmingul/ctreg` · `/plugin marketplace add kimmingul/ctreg`.
 이름은 스코프가 붙지만 **명령어는 `ctreg`** 다 — npm 이 `ctreg` 를 기존 패키지(`stres`)와
@@ -316,6 +316,17 @@ count-compare). 플러그인 SKILL.md 가 같은 폴더를 가리키므로 **Cla
 까지 이어 읽었으며, 조건 검색은 CRIS·CTIS 가 상·상태 조합을 거절하자 능력을 확인해 각각이 받는 축으로
 다시 물었다. SKILL.md 의 "얇아야 한다" 규율(한 페이지·고정 절·라틴 허용목록)에 걸려 가리키는 한 줄만
 넣었다 — 그 규율이 맞다, 절차는 플레이북에 산다.
+
+**순위는 도구가 센다 (2026-09-12).** 사용자가 답의 "도구 호출 상한으로 못 본 것" 을 짚었다. 세 한계
+(273건 중 40건만 봄·후보 선정에 판단 개입·국문영문 겹침 미확인)는 "목록을 읽고 후보를 뽑아 하나씩
+센다" 는 방식 자체의 한계라 상한을 늘려도 안 풀린다. KCTIS 에 `/api/cris/investigators`(검색어 OR
+전체를 연구책임자로 GROUP BY, 등록번호로 중복 제거, 소속 목록·표본 번호), ctreg 에 `investigators`
+커맨드 / MCP `rank_investigators` / `/ctreg:investigators`. 능력 신고 `investigators`(선택 항목)는 사본
+문만 참 — 공식 문은 exit 3. 상한은 **턴 8 · 턴당 병렬 20 · 4분**으로(도구 10번은 병렬 14개를 14로 세어
+잘랐다). 실측: 전에는 17스텝 147초에 한계만 남았고, 지금은 `ranking` → `rank_investigators` → `get` 3스텝
+16초에 276건 전수 순위. 도중에 잡은 것: 도구 결과 압축이 레코드 키 허용목록으로 걸러 `{matched, items}`
+가 `{}` 로 가서 모델이 "데이터가 비었다" 고 답했다 — 배열이 아닌 결과는 통째로. 사보타주 4/4 + 구멍
+하나(능력 신고 false 인데 메서드 있으면 호출)를 테스트로 덮음.
 
 `/api/ask`(분류기 경로)는 남아 있지만 페이지가 쓰지 않는다 — 다음 정리에서 지운다.
 
