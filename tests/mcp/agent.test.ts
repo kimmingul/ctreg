@@ -235,6 +235,40 @@ describe('플레이북', () => {
   });
 });
 
+/**
+ * 실측(2026-09-12): rank_investigators 가 276건을 냈는데 모델은 "데이터가 비었다" 고 답했다 — 도구 결과를
+ * 압축하는 자리가 레코드 키 허용목록으로 걸러 `{matched, items}` 가 `{}` 가 됐다. 배열이 아닌 결과
+ * (count·names·investigators·registries)는 이미 작다 — 통째로 넘긴다.
+ */
+describe('도구 결과 압축', () => {
+  it('배열이 아닌 결과는 통째로 모델에게 간다 — investigators 의 items 가 보인다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('r', 'rank_investigators', { term: '당뇨,diabetes', 'page-size': 5 })] }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ({ exitCode: 0, exit: 'ok', envelope: { registries: [{ registry: 'cris', status: 'ok', total: 276 }], warnings: [],
+      data: { matched: 276, terms: ['당뇨', 'diabetes'], basis: '등록 건수', items: [{ name: '김난희', affiliations: ['고려대'], trials: 10, sampleIds: ['CRIS:KCT0011737'] }] } } }));
+    await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; content?: string }[] };
+    const toolMsg = second.messages.find((m) => m.role === 'tool')!.content!;
+    expect(toolMsg).toContain('김난희');
+    expect(toolMsg).toContain('"matched":276');
+    expect(toolMsg).toContain('등록 건수');
+  });
+
+  it('배열 결과는 앞 N 건을 레코드 키로 압축한다 — 크기를 지킨다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('s', 'search_trials_multi_registry', { registry: ['ctgov'], term: 'x' })] }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ok('ctgov', Array.from({ length: 60 }, (_, i) => ({ id: 'CTGOV:' + i, title: 't' + i, hugeField: 'x'.repeat(500) }))));
+    await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; content?: string }[] };
+    const toolMsg = second.messages.find((m) => m.role === 'tool')!.content!;
+    expect(toolMsg).not.toContain('hugeField');
+    expect(toolMsg).toContain('"returned":60');
+    expect(toolMsg).toContain('"shown":40');
+  });
+});
+
 describe('턴당 병렬 상한', () => {
   it('한 턴에 20개를 넘는 호출은 앞 20개만 돌리고 나머지는 그렇다고 돌려준다', async () => {
     const f = vi.fn()
