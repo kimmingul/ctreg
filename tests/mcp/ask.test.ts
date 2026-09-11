@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { ask, parseResolution, systemPrompt } from '../../src/mcp/ask.js';
+import { ask, koreanPersonInQuery, parseResolution, systemPrompt } from '../../src/mcp/ask.js';
 
 const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-ask-')), CTREG_RATE_PER_SEC: '1000' });
 const withKey = () => ({ ...env(), CTREG_LLM_API_KEY: 'test-key', CTREG_LLM_BASE_URL: 'https://llm.example/v1', CTREG_LLM_MODEL: 'test-model' });
@@ -299,6 +299,38 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(calls.some((c) => c.args.investigator === '김민걸' && (c.args.registry as string[])[0] === 'ctgov')).toBe(false);
     expect(b.resolved.via).toMatch(/name_only/);
     expect(b.envelope.data.map((x) => x.id).sort()).toEqual(['CRIS:K1', 'CTGOV:A']);
+  });
+
+  /**
+   * **문장에서 직접 잡는다.** 0.11.2 의 investigator 검사로도 3회 중 1회가 0건이었다(실측, 공개 서버) —
+   * 모델이 이름을 로마자로 옮기거나 term 에 넣는 회차가 있다. 모델 출력을 좇아 막는 건 끝이 없다.
+   * "○○○ 교수/박사/연구자/선생" 이 문장에 있으면 모델이 뭐라 했든 그 이름으로 이름 경로.
+   */
+  it('문장에 "○○○ 교수" 가 있으면 모델이 로마자로 옮겨도 이름 경로다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"search","args":{"investigator":"Kim Min-Gul","registry":["ctgov"]},"wants":"answer"}'))
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim"]'))
+      .mockResolvedValueOnce(llmRes('요약'));
+    const calls: { cmd: string; args: Record<string, unknown> }[] = [];
+    const call = (async (cmd: string, args: Record<string, unknown>) => { calls.push({ cmd, args });
+      const reg = (args.registry as string[])[0];
+      const total = reg === 'cris' || args.investigator === 'Min-Gul Kim' ? 1 : 0;
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: reg, status: 'ok', total }], warnings: [], data: cmd === 'count' ? { total } : total ? [{ id: reg + ':X', contacts: [{ name: 'Min-Gul Kim', role: '연구책임자' }] }] : [] } } }; }) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '김민걸 교수의 임상시험 특징 설명', intent: 'search' }, { ...withKey(), CTREG_CRIS_MIRROR_URL: 'https://kctis.example.test' }, f as unknown as typeof fetch, call);
+    const b = r.body as { resolved: { via?: string; args: Record<string, unknown> }; envelope: { data: unknown[] }; answer?: unknown };
+    expect(b.resolved.via).toMatch(/name_only/);
+    expect(b.resolved.args.korean_name).toBe('김민걸');
+    expect(calls.some((c) => c.args.investigator === 'Kim Min-Gul')).toBe(false);   // 모델의 로마자는 버렸다
+    expect(b.envelope.data.length).toBeGreaterThan(0);
+    expect(b.answer).toBeDefined();   // wants=answer 는 그대로 존중한다
+  });
+
+  it('문장의 이름 잡기 — 교수·박사·연구자·선생, 조사가 붙어도', () => {
+    expect(koreanPersonInQuery('김민걸 교수의 임상시험')).toBe('김민걸');
+    expect(koreanPersonInQuery('이순신박사가 한 연구')).toBe('이순신');
+    expect(koreanPersonInQuery('홍길동 연구자')).toBe('홍길동');
+    expect(koreanPersonInQuery('당뇨병 3상 시험')).toBeUndefined();
+    expect(koreanPersonInQuery('전북대학교병원 교수 연구')).toBeUndefined();   // 기관은 이름이 아니다
   });
 
   it('count 에 한국어 이름이 와도 nameOnly 로', async () => {
