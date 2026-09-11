@@ -158,6 +158,12 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
    * **페이지의 고급 검색 칸은 손으로 안 적는다.** `/api/schema` 가 OPTION_HELP 를 그대로
    * 낸다 — MCP 스키마와 --help 가 읽는 그 표다. 옵션이 늘면 페이지가 따라온다.
    */
+  /** 에이전트 라우트 — SSE. 키 없는 서버는 501 (라우트가 묶여 있어야 이 답이 나온다). */
+  it('/api/agent — 키 없는 서버는 501', async () => {
+    const res = await fetch(new URL('/api/agent', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ q: '김민걸' }) });
+    expect(res.status).toBe(501);
+  });
+
   it('/api/usage — 키 없는 서버는 501 (라우트가 묶여 있어야 이 답이 나온다)', async () => {
     const res = await fetch(new URL('/api/usage', base));
     expect(res.status).toBe(501);

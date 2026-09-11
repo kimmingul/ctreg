@@ -86,7 +86,7 @@ ${skill.replace(/`ctreg registries`/g, '`list_registries_and_capabilities`').rep
 }
 
 /** 모델이 낸 인자를 그 도구가 받는 모양으로. 대문자 레지스트리·모르는 키·빈 값. */
-function normalizeArgs(cmd: Command, raw: Record<string, unknown>): Record<string, unknown> {
+function normalizeArgs(cmd: Command, raw: Record<string, unknown>, mirror = false): Record<string, unknown> {
   const allowed = new Set<string>([...COMMAND_OPTIONS[cmd], 'ids', 'trial_id', 'korean_name']);
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(raw)) {
@@ -100,6 +100,8 @@ function normalizeArgs(cmd: Command, raw: Record<string, unknown>): Record<strin
   }
   // 이름 대조의 term 은 후보를 좁힐 기관·주제다 — 이름 자체를 넣으면 0건이 된다(실측 2026-09-11).
   if (cmd === 'names' && typeof out.term === 'string' && typeof out.korean_name === 'string' && out.term.replace(/\s/g, '') === out.korean_name.replace(/\s/g, '')) delete out.term;
+  // 사본이면 이름이 목록 축이다 — term 은 후보를 좁힐 뿐 늘릴 수 없고, 사본의 자유검색이 의뢰기관 항목표를 안 봐 잃기만 한다(실측: 전북대학교병원 → 0건).
+  if (cmd === 'names' && mirror) delete out.term;
   return out;
 }
 
@@ -225,7 +227,7 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
       if (!cmd) {
         return { tcall, text: JSON.stringify({ error: `없는 도구다: ${name}. 쓸 수 있는 도구: ${Object.values(TOOL_NAME).join(', ')}` }), step: undefined };
       }
-      const args = normalizeArgs(cmd, raw);
+      const args = normalizeArgs(cmd, raw, cfg.crisMirrorUrl !== undefined);
       emit({ type: 'call', step, tool: name, args });
       const t0 = Date.now();
       const out = await call(cmd, args, env);

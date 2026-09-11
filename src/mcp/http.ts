@@ -2,9 +2,10 @@
 import { createServer as createHttpServer } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { loadConfig, loadEnvFiles } from '../runtime/config.js';
-import { aggregate, readAll } from './stats.js';
+import { aggregate, readAll, record } from './stats.js';
 import { ask, type AskBody } from './ask.js';
 import { usage } from './usage.js';
+import { agent } from './agent.js';
 import { readVersion } from '../cli/version.js';
 import { api, page, schema } from './web.js';
 import { createServer } from './server.js';
@@ -44,6 +45,37 @@ const httpServer = createHttpServer(async (req, res) => {
   // 검색 페이지와 그 API — web.ts 가 정본이다. 여기는 라우팅뿐이다.
   if (url.pathname === '/' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(page());
+    return;
+  }
+  /**
+   * 에이전트 — Claude Code 가 MCP 로 하는 그대로를 서버가 돈다. 진행을 SSE 로 흘린다: 페이지가
+   * 도구 호출 하나하나를 실시간으로 그리고(오래 걸리는 질의가 죽은 것처럼 보이지 않게), 마지막
+   * `final` 에 답·스텝·근거 레코드가 실린다. 키가 없으면 501.
+   */
+  if (url.pathname === '/api/agent' && req.method === 'POST') {
+    if (!loadConfig().llmApiKey) {
+      res.writeHead(501, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'ai_mode_off', message: 'AI 모드가 아직 켜져 있지 않다 — 서버에 LLM 키가 없다.' }));
+      return;
+    }
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    let q = '';
+    try { q = String((JSON.parse(raw || '{}') as { q?: unknown }).q ?? '').trim(); } catch { /* 아래 400 */ }
+    if (q === '') { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'empty' })); return; }
+    res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache', connection: 'keep-alive', 'x-accel-buffering': 'no' });
+    const send = (type: string, data: unknown) => { res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`); };
+    const keepalive = setInterval(() => res.write(': ping\n\n'), 15_000);   // 프록시가 놀고 있는 연결을 끊지 않게
+    const started = Date.now();
+    try {
+      const r = await agent({ q, onEvent: (e) => { if (e.type !== 'final') send(e.type, e); } });
+      record(loadConfig().cacheDir, { at: new Date().toISOString(), tool: 'agent', exitCode: r.error ? 4 : 0, ms: Date.now() - started, registries: [] });
+      send('final', r);
+    } catch (e) {
+      send('error', { message: (e as Error).message });
+    } finally {
+      clearInterval(keepalive);
+      res.end();
+    }
     return;
   }
   if (url.pathname === '/api/usage' && req.method === 'GET') {

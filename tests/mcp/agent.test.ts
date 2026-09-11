@@ -88,6 +88,15 @@ describe('에이전트 루프', () => {
     expect(t.calls[0]!.args).toEqual({ korean_name: '김민걸', ctgov: true });
   });
 
+  it('CRIS 사본이 있으면 names 의 term 은 어떤 값이든 버린다 — 이름이 축이라 좁히면 잃기만 한다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('a', 'resolve_korean_investigator_name', { korean_name: '김민걸', term: '전북대학교병원' })] }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ok('cris', { korean: '김민걸', crisMatched: 0, variants: [] }));
+    await agent({ q: 'x', env: { ...env(), CTREG_CRIS_MIRROR_URL: 'https://kctis.example.test' }, fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    expect(t.calls[0]!.args).toEqual({ korean_name: '김민걸' });
+  });
+
   it('지침이 페이지의 역할을 말한다 — 레코드 나열은 페이지가, 답은 요약만; ISRCTN 본문 검색', () => {
     const p = systemPromptForAgent();
     expect(p).toMatch(/나열하지 마라|표로 나열/);

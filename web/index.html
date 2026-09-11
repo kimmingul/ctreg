@@ -122,6 +122,18 @@
   body.searched .results { flex: 1; }
   .mode { font-size: 12px; color: var(--ink-2); margin: 0 0 10px; }
   /* 답변 층 — 결과 위에, 결과와 다른 면으로. 요약이지 원본이 아니라는 것이 한눈에 보여야 한다. */
+  .trace { margin: 0 0 18px; }
+  .trace .label { font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+  .trace ol { margin: 0; padding-left: 22px; font-size: 13px; }
+  .trace .step { margin: 2px 0; }
+  .trace .step b { font-weight: 500; }
+  .trace .args { color: var(--ink-2); font-family: var(--mono); font-size: 12px; }
+  .trace .res { color: var(--ink); }
+  .trace .res small { color: var(--ink-2); font-family: var(--mono); }
+  .answer h4 { margin: 6px 0 4px; font: 500 15px/1.4 var(--sans); }
+  .answer ul { margin: 0 0 8px; padding-left: 20px; }
+  .answer li { margin: 2px 0; }
+  .answer pre { margin: 0 0 8px; font-size: 12px; }
   .answer { max-width: none; margin: 0 0 22px; padding: 14px 18px; border-radius: 12px; background: var(--well); border: 1px solid var(--rule); }
   .answer .label { font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
   .answer .label code { font-family: var(--mono); }
@@ -197,7 +209,7 @@
     .logo { transition: font-size var(--slow) var(--ease); }
     .btns { transition: opacity var(--fast) var(--ease); }
     /* 결과 항목 — 위에서 순서대로 fade-in. 8개까지만 지연을 준다; 그 뒤는 바로. */
-    .item, .stat, .warn, .tablewrap, .mode, .answer, .examples { animation: rise var(--slow) var(--ease) both; }
+    .item, .stat, .warn, .tablewrap, .mode, .answer, .examples, .trace .step { animation: rise var(--slow) var(--ease) both; }
     .item:nth-child(2) { animation-delay: 30ms; } .item:nth-child(3) { animation-delay: 60ms; } .item:nth-child(4) { animation-delay: 90ms; }
     .item:nth-child(5) { animation-delay: 120ms; } .item:nth-child(6) { animation-delay: 150ms; } .item:nth-child(7) { animation-delay: 180ms; } .item:nth-child(8) { animation-delay: 210ms; }
     @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -361,9 +373,10 @@
     $('out').innerHTML = `<p class="empty">${mode === 'names' ? '후보를 열어 확인하는 중' : ai ? 'AI 가 결과를 읽고 정리하는 중' : '조회 중'}… ${slow ? '설명·이름 질의는 1~2분 걸릴 수 있다. ' : ''}<span id="elapsed" style="font-variant-numeric:tabular-nums">0초</span></p>`;
     const timer = slow ? setInterval(tick, 1000) : 0;
     try {
-      // AI 모드: 자연어를 서버의 /api/ask 가 도구·인자로 바꾼다. 아니면 검색창 문법 그대로.
-      const url = ai && (mode === 'search' || mode === 'count') ? '/api/ask' : `/api/${mode}`;
-      const body = ai && (mode === 'search' || mode === 'count') ? { q, intent: mode } : parse(q);
+      // AI 모드: 에이전트 — Claude Code 가 MCP 로 하듯 도구를 여러 번 부르며 답한다. 진행을 실시간으로 그린다.
+      if (ai && (mode === 'search' || mode === 'count')) { await runAgent(mode === 'count' ? q + ' (건수만)' : q, t0); return; }
+      const url = `/api/${mode}`;
+      const body = parse(q);
       const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (res.status === 429) { $('out').innerHTML = `<div class="warn">${esc(data.message || '지금은 받을 수 없다.')}</div>`; return; }
@@ -372,6 +385,60 @@
     } catch (err) {
       $('out').innerHTML = `<div class="warn bad">서버에 닿지 못했다: ${esc(String(err))}</div>`;
     } finally { if (timer) clearInterval(timer); busy = false; document.body.classList.remove('busy'); if (ai) refreshUsage(); }
+  }
+
+  const TOOL_KO = { search_trials_multi_registry: '시험 검색', get_trial_by_id: '등록번호로', count_trials: '건수', get_trial_results: '결과 데이터', list_registries_and_capabilities: '레지스트리 능력', resolve_korean_investigator_name: '이름 대조' };
+  const argsLine = (a) => Object.entries(a || {}).filter(([k]) => k !== 'page-size').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(',') : v}`).join(' · ');
+
+  /**
+   * 에이전트 스트림. 서버가 SSE 로 call/result/final 을 흘린다. 도구 호출 하나하나를 그 자리에서
+   * 그린다 — Claude Code 의 도구 추적처럼. 끝나면 답 상자, 그 아래 모인 레코드.
+   */
+  async function runAgent(q, t0) {
+    $('out').innerHTML = `<section class="trace" id="trace"><div class="label">AI 가 도구를 부르는 중 — Claude Code 와 같은 방식으로 여러 번 묻고 읽는다. <span id="elapsed" style="font-variant-numeric:tabular-nums">0초</span></div><ol id="steps"></ol></section>`;
+    const res = await fetch('/api/agent', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ q }) });
+    if (res.status === 501 || res.status === 400) { const d = await res.json(); $('out').innerHTML = `<div class="warn">${esc(d.message || d.error || '')}</div>`; return; }
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    let final = null;
+    const onEvent = (type, data) => {
+      if (type === 'call') {
+        const li = document.createElement('li'); li.id = 'step-' + data.step; li.className = 'step';
+        li.innerHTML = `<b>${esc(TOOL_KO[data.tool] || data.tool)}</b> <span class="args">${esc(argsLine(data.args))}</span> <span class="res">…</span>`;
+        $('steps').appendChild(li);
+      } else if (type === 'result') {
+        const li = $('step-' + data.step); if (li) li.querySelector('.res').innerHTML = `→ ${esc(data.summary)} <small>${data.ms}ms</small>`;
+      } else if (type === 'final') final = data;
+      else if (type === 'error') final = { error: data.message };
+    };
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i; while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const ev = /^event: (\S+)/m.exec(chunk); const dt = /^data: (.*)$/m.exec(chunk);
+        if (ev && dt) { try { onEvent(ev[1], JSON.parse(dt[1])); } catch {} }
+      }
+    }
+    const el = $('elapsed'); if (el) el.textContent = Math.round((Date.now() - t0) / 1000) + '초';
+    $('trace').querySelector('.label').innerHTML = `AI 가 도구를 ${final && final.steps ? final.steps.length : 0}번 불렀다 — ${Math.round((Date.now() - t0) / 1000)}초${final && final.truncated ? ' · <b>상한에 닿아 멈췄다</b>' : ''}`;
+    if (!final) { $('out').insertAdjacentHTML('beforeend', '<div class="warn bad">답을 받지 못했다.</div>'); return; }
+    if (final.error) { $('out').insertAdjacentHTML('beforeend', `<div class="warn bad">${esc(final.error)}</div>`); }
+    if (final.answer) {
+      $('out').insertAdjacentHTML('beforeend', `<section class="answer"><div class="label">AI 의 답 — 도구 결과 ${final.records.length}건을 읽고 <code>${esc(final.model)}</code> 이 쓴 것. <strong>근거 레코드는 아래.</strong> 틀릴 수 있다.</div>${md(final.answer)}</section>`);
+    }
+    if (final.records && final.records.length) {
+      $('out').insertAdjacentHTML('beforeend', `<p class="stat">근거 레코드 ${final.records.length}건 — 도구가 실제로 돌려준 것</p>` + items(final.records));
+    }
+  }
+  // 아주 작은 마크다운 — 굵게·제목·목록·근거 번호. 표는 그대로 pre 로.
+  function md(t) {
+    const esc1 = (x) => esc(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[(CTGOV|CRIS|ISRCTN|CTIS):([A-Za-z0-9-]+)\]/g, '<code>$1:$2</code>');
+    return t.split(/\n{2,}/).map((p) => {
+      if (/^#{1,3}\s/.test(p)) return `<h4>${esc1(p.replace(/^#+\s*/, ''))}</h4>`;
+      if (/^(\s*([-*]|\d+\.)\s)/m.test(p) && !/\|/.test(p)) return `<ul>${p.split('\n').map((l) => `<li>${esc1(l.replace(/^\s*([-*]|\d+\.)\s*/, ''))}</li>`).join('')}</ul>`;
+      if (/\|/.test(p)) return `<pre>${esc(p)}</pre>`;
+      return `<p>${esc1(p).replace(/\n/g, '<br>')}</p>`;
+    }).join('');
   }
 
   function render(body) {
