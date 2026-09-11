@@ -74,5 +74,5 @@ https://github.com/kimmingul/ctreg (Apache-2.0)
 - [x] 서버가 실제로 떠 있고 `https://ctreg-mcp.fly.dev/mcp` 가 `initialize` 에 답한다 (2026-09-10 확인)
 - [ ] 앞단에 인증과 요청률 제한이 걸려 있다 (README 「공개 서버로 띄우기」)
 - [ ] 첫 2주 `/stats` 의 `byDay`·`byRegistry.cris` 를 받아 적었다 — 지어낸 수를 적지 않는다
-- [x] URL 채움 · [ ] 트래픽 칸 — 2주 뒤
+- [x] URL 채움 · [ ] 트래픽 칸 — 2026-09-24 무렵. **주의(2026-09-11):** 공개 서버의 CRIS 조회는 KCTIS 사본(같은 org)으로 가므로 공식 API 트래픽은 CLI·플러그인 사용자분과 KCTIS 의 수집분이다. `/stats` 의 `byRegistry.cris` 는 사본 조회까지 세므로 그대로 적으면 과대다 — 사본 도입 전(2026-09-10 이전) 구간과 KCTIS 의 수집 호출 수로 나눠 적는다
 - [ ] 인프라 비용 부담 주체가 문안과 실제로 같다 — Fly org 가 바뀌면 문안도 바꾼다

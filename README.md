@@ -4,7 +4,8 @@
 
 ClinicalTrials.gov, ISRCTN, WHO ICTRP, CRIS(한국), EU CTIS — 다섯 곳은 필드 이름도,
 상태 표기도, 검색 방법도 제각각이다. `ctreg` 는 그 차이를 흡수해 **같은 모양의 결과**로
-돌려준다. 사람이 터미널에서 쓸 수도 있고, Claude Code 플러그인으로 붙여 AI 에게 시킬 수도 있다.
+돌려준다. 사람이 터미널에서 쓸 수도 있고, Claude Code 플러그인이나 MCP 로 붙여 AI 에게 시킬 수도 있고,
+설치 없이 `https://ctreg.trialinsight.ai/` 에서 자연어로 물을 수도 있다.
 
 ```bash
 ctreg search --condition melanoma --status recruiting --page-size 3
@@ -110,7 +111,7 @@ bun 이 필요하고 만든 컴퓨터의 플랫폼 전용이다.
 
 ### MCP 서버로 쓰기
 
-Claude Desktop, Cursor 등 **MCP 를 말하는 어떤 호스트**에서든 같은 도구 다섯을 쓸 수 있다.
+Claude Desktop, Cursor 등 **MCP 를 말하는 어떤 호스트**에서든 같은 도구 여섯을 쓸 수 있다.
 같은 패키지에 `ctreg-mcp` 명령이 들어 있다 — CLI 와 코어가 하나라 버전도 하나다.
 
 ```json
@@ -188,7 +189,7 @@ CTREG_LLM_MODEL=glm-5.3-flash             # 기본값
 
 ### 공개 서버로 띄우기
 
-`ctreg-mcp-http` 가 같은 도구 다섯을 **Streamable HTTP** 로 낸다. 클라우드에 띄우면 사용자는
+`ctreg-mcp-http` 가 같은 도구 여섯을 **Streamable HTTP** 로 낸다. 클라우드에 띄우면 사용자는
 설치 없이 URL 하나로 붙는다:
 
 ```bash
@@ -603,6 +604,9 @@ ctreg search --condition melanoma --page-size 5 --format json 2>/dev/null | jq '
 | :-- | :-- | :-- |
 | `CTREG_CRIS_SERVICE_KEY` | (없음) | **CRIS 인증키.** Decoding 키를 넣는다 |
 | `CTREG_CRIS_MIRROR_URL` | (없음) | **CRIS 사본(KCTIS) URL.** 있으면 인증키 대신 이 문을 쓴다 — 이름이 목록 축 |
+| `CTREG_LLM_API_KEY` | (없음) | **웹 AI 모드의 LLM 키.** 없으면 AI 모드만 꺼지고 나머지는 그대로 |
+| `CTREG_LLM_BASE_URL` | `https://ollama.com/v1` | OpenAI 호환 `chat/completions` 를 내는 곳 |
+| `CTREG_LLM_MODEL` | `glm-5.3-flash` | 도구 호출을 지원하는 모델이어야 한다 |
 | `CTREG_ICTRP_ACKNOWLEDGED` | (없음 = **꺼짐**) | **ICTRP 를 켠다.** 합의가 있을 때만 |
 | `CTREG_CACHE_DIR` | `~/.cache/ctreg` | 캐시와 프로세스 간 요청률 버킷이 사는 곳 |
 | `CTREG_CACHE_TTL_SEC` | `3600` | 캐시 유효 시간(초) |
