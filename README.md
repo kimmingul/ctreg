@@ -177,8 +177,8 @@ CRIS 키는 CLI 와 같은 자리(`~/.config/ctreg/.env` 등)에서 읽는다.
 없어 1,000건까지 받아 세고, 모수가 그보다 크면 잘렸다고 말한다.
 자주 오는 물음에는 **플레이북**(`skills/ctreg/playbooks/`)이 있다 — 시나리오별 절차를 모델이 먼저
 읽고 따른다(한국어 연구자 이름·연구자 특징·순위와 비교·조건 검색·등록번호·건수 비교). Claude Code
-플러그인도 같은 파일을 읽으므로 어디서 물어도 같은 절차, 같은 한계 표시가 나온다. 상한은 턴 8·
-턴당 병렬 20·4분 — 넘으면 넘었다고 말한다. AI 모드를 끄면(칩을 누르면, 브라우저가 기억한다)
+플러그인도 같은 파일을 읽으므로 어디서 물어도 같은 절차, 같은 한계 표시가 나온다. 상한은 턴 12·
+턴당 병렬 30·6분(`CTREG_AGENT_MAX_*` 로 조정) — 넘으면 넘었다고 말한다. AI 모드를 끄면(칩을 누르면, 브라우저가 기억한다)
 검색창의 말이 조건으로 바로 간다 — 빠르고 공짜다. 결과는 레코드 그대로이고, "그렇게 물어볼 수 없음"
 은 빈 표와 다르게 표시된다. 같은 프로세스에서 MCP 와 요청률 버킷을 공유한다.
 
@@ -610,6 +610,7 @@ ctreg search --condition melanoma --page-size 5 --format json 2>/dev/null | jq '
 | `CTREG_LLM_API_KEY` | (없음) | **웹 AI 모드의 LLM 키.** 없으면 AI 모드만 꺼지고 나머지는 그대로 |
 | `CTREG_LLM_BASE_URL` | `https://ollama.com/v1` | OpenAI 호환 `chat/completions` 를 내는 곳 |
 | `CTREG_LLM_MODEL` | `glm-5.3-flash` | 도구 호출을 지원하는 모델이어야 한다 |
+| `CTREG_AGENT_MAX_TURNS` · `_MAX_PARALLEL` · `_MAX_MS` · `_LLM_TIMEOUT_MS` | `12` · `30` · `360000` · `150000` | AI 모드(에이전트)의 상한 — 턴(모델 호출)·턴당 병렬 도구·전체 시간·LLM 호출 하나 |
 | `CTREG_ICTRP_ACKNOWLEDGED` | (없음 = **꺼짐**) | **ICTRP 를 켠다.** 합의가 있을 때만 |
 | `CTREG_CACHE_DIR` | `~/.cache/ctreg` | 캐시와 프로세스 간 요청률 버킷이 사는 곳 |
 | `CTREG_CACHE_TTL_SEC` | `3600` | 캐시 유효 시간(초) |
