@@ -81,3 +81,59 @@ describe('aggregate 커맨드', () => {
     expect(AXES).toEqual(['investigator', 'sponsor', 'site', 'year', 'intervention_type', 'drug', 'condition']);
   });
 });
+
+/**
+ * 집계 API 가 없는 레지스트리 — **검색을 끝까지 받아 서버가 센다.** ctgov 는 쪽당 200건, 상한 1,000건.
+ * 모수가 상한을 넘으면 그만큼만 세고 잘렸다고 말한다. 조용히 앞 200건으로 답하지 않는다.
+ */
+describe('aggregate — 집계 API 가 없는 레지스트리는 검색을 걸어 센다', () => {
+  function ctgov(total: number): { adapter: RegistryAdapter; calls: unknown[] } {
+    const calls: unknown[] = [];
+    const page = (n: number, size: number) => Array.from({ length: Math.min(size, total - (n - 1) * size) }, (_, i) => ({
+      id: `CTGOV:NCT${String((n - 1) * size + i).padStart(8, '0')}`, registry: 'ctgov', registryId: 'x', url: '', title: 't', status: 'completed', phase: [], studyType: 'interventional',
+      conditions: [(n - 1) * size + i < total / 2 ? 'Diabetes' : 'Obesity'], sponsor: { lead: i % 2 ? 'Pfizer' : 'Novo' }, fetchedAt: 'x',
+    }));
+    const adapter = {
+      key: 'ctgov', capability: () => ({ ...CRIS_CAPABILITY, key: 'ctgov', limits: { maxPageSize: 200, ratePerSec: 1, maxBatchIds: 50 } }),
+      search: vi.fn(async (q: { pageToken?: string; pageSize?: number }) => {
+        calls.push(q);
+        const n = q.pageToken ? Number(q.pageToken) : 1; const size = q.pageSize ?? 20;
+        const data = page(n, size);
+        return { data, warnings: [], total, ...(n * size < total ? { nextPageToken: String(n + 1) } : {}) };
+      }),
+      get: vi.fn(), results: vi.fn(), count: vi.fn(),
+    } as unknown as RegistryAdapter;
+    return { adapter, calls };
+  }
+
+  it('쪽을 끝까지 걸어 전체를 센다 — 모수 350 이면 두 쪽', async () => {
+    const { adapter, calls } = ctgov(350);
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'condition', '--term', 'diabetes', '--registry', 'ctgov']), { ctgov: adapter });
+    expect(calls).toHaveLength(2);
+    expect((calls[0] as { pageSize: number }).pageSize).toBe(200);
+    const d = env.data as AggregateResult;
+    expect(d.matched).toBe(350);
+    expect(d.items.map((x) => [x.name, x.trials])).toEqual([['Diabetes', 175], ['Obesity', 175]]);
+    expect(env.registries[0]).toMatchObject({ registry: 'ctgov', status: 'ok', total: 350 });
+    expect(env.warnings.some((w) => w.code === 'aggregate_truncated')).toBe(false);
+  });
+
+  it('상한(1,000)을 넘으면 그만큼만 세고 잘렸다고 말한다', async () => {
+    const { adapter, calls } = ctgov(2500);
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', 'diabetes', '--registry', 'ctgov']), { ctgov: adapter });
+    expect(calls).toHaveLength(5);
+    const d = env.data as AggregateResult;
+    expect(d.matched).toBe(2500);
+    expect(d.items.reduce((a, x) => a + x.trials, 0)).toBe(1000);
+    const w = env.warnings.find((x) => x.code === 'aggregate_truncated');
+    expect(w?.message).toMatch(/1,?000/);
+    expect(w?.message).toMatch(/2,?500/);
+  });
+
+  it('검색 축이 없는 레지스트리(예: ctis 의 investigator)는 exit 3', async () => {
+    const { adapter } = ctgov(10);
+    (adapter as { capability: () => unknown }).capability = () => ({ ...CRIS_CAPABILITY, key: 'ctis', search: { ...CRIS_CAPABILITY.search, term: { supported: false, values: null, exhaustive: null, scope: 'x' } } });
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', 'x', '--registry', 'ctis']), { ctis: adapter });
+    expect(env.registries[0]).toMatchObject({ registry: 'ctis', status: 'unsupported' });
+  });
+});
