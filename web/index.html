@@ -240,6 +240,7 @@
       <button type="button" data-cmd="get">등록번호로<small>CTGOV:NCT… CRIS:KCT… 여러 개 가능</small></button>
       <button type="button" data-cmd="results">결과 데이터<small>평가변수·이상반응 — ClinicalTrials.gov 만</small></button>
       <button type="button" data-cmd="names">이름 대조<small>한국어 이름 → 등록된 로마자 표기</small></button>
+      <button type="button" data-cmd="investigators">연구자 순위<small>검색어 안에서 연구책임자를 등록 건수순으로 (CRIS)</small></button>
       <button type="button" data-cmd="registries">레지스트리 다섯<small>각각 무엇을 할 수 있는지</small></button>
       <hr>
       <div class="syntax">검색창 문법 — <code>status:recruiting</code> <code>phase:phase_3</code> <code>registry:cris</code> <code>condition:…</code></div>
@@ -273,7 +274,7 @@
   const $ = (id) => document.getElementById(id);
   const REG_LABEL = { ctgov: 'ClinicalTrials.gov', isrctn: 'ISRCTN', ctis: 'EU CTIS', cris: 'CRIS', ictrp: 'WHO ICTRP' };
   const REG_DEFAULT = ['ctgov', 'isrctn', 'ctis', 'cris']; // 고르는 칸이 없으니 넓게 본다. ictrp 는 꺼져 있다.
-  const PRIMARY = { search: 'term', count: 'term', get: 'ids', results: 'trial_id', names: 'korean_name', registries: null };
+  const PRIMARY = { search: 'term', count: 'term', get: 'ids', results: 'trial_id', names: 'korean_name', investigators: 'term', registries: null };
   let schema = null, mode = 'search', ai = true, busy = false;
   // 기본은 AI 모드 — 구글처럼 그냥 자연어로 친다. 끈 선택은 브라우저가 기억한다.
   try { if (localStorage.getItem('ctreg.ai') === 'off') ai = false; } catch {}
@@ -471,11 +472,17 @@
     if (cmd === 'search' || cmd === 'get') out.push(items(d || []));
     else if (cmd === 'count') out.push(d && d.total != null ? `<p class="empty">합계 <strong>${d.total.toLocaleString()}</strong>건 — 레지스트리별 수는 위에. 같은 시험이 여러 곳에 등록될 수 있어 합은 참고만.</p>` : '<p class="empty">세지 못했다.</p>');
     else if (cmd === 'names') out.push(names(d));
+    else if (cmd === 'investigators') out.push(investigators(d));
     else if (cmd === 'registries') out.push(registries(d || []));
     else out.push(`<pre>${esc(JSON.stringify(d, null, 2))}</pre>`);
     $('out').innerHTML = out.join('');
   }
 
+  function investigators(d) {
+    if (!d || !d.items) return '<p class="empty">세지 못했다.</p>';
+    return `<p class="empty">검색어 ${esc((d.terms || []).join(', '))} 에 걸린 <strong>${d.matched.toLocaleString()}</strong>건 안의 연구책임자. ${esc(d.basis || '')}</p>
+<div class="tablewrap"><table><thead><tr><th>#</th><th>연구책임자</th><th>소속</th><th>건수</th><th>최근 등록</th><th>예</th></tr></thead><tbody>${d.items.map((x, i) => `<tr><td class="num">${i + 1}</td><td>${esc(x.name)}${x.nameEn ? ` <small>${esc(x.nameEn)}</small>` : ''}</td><td>${esc((x.affiliations || []).join(' · '))}</td><td class="num">${x.trials}</td><td class="mono">${esc(x.latest || '')}</td><td class="mono">${(x.sampleIds || []).slice(0, 2).map((id) => `<code>${esc(id)}</code>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>`;
+  }
   function items(list) {
     if (!list.length) return '<p class="empty">0건. 위에 "그렇게 물어볼 수 없음" 이 있으면 빈 것이 아니라 못 물은 것이다.</p>';
     const attributions = [...new Set(list.map((r) => r.attribution).filter(Boolean))];

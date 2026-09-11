@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TrialStatus } from './vocab.js';
 import type { NormalizedQuery, FetchOpts, ResultsOpts } from './query.js';
 import type { TrialRecord, TrialResults } from './record.js';
 import { REGISTRY_KEYS, type RegistryKey } from './registry.js';
@@ -116,6 +117,12 @@ export const CapabilitySchema = z.strictObject({
    * 400 으로 되돌린다(exit 4, "Unknown sort field"). **소리는 나므로 조용한 실패가 아니다.**
    */
   sort: FeatureSchema,
+  /**
+   * **연구책임자 집계** — 검색어에 걸린 시험 전체를 연구책임자로 묶어 건수순으로 낼 수 있는가.
+   * 선택 항목이다: 사본 문(CRIS 미러)만 할 수 있고, 목록에 연구책임자가 없는 공식 API 문과 다른
+   * 레지스트리는 신고하지 않는다(= 못 한다). 순위 질문은 모델이 목록을 읽고 세는 대신 이것으로.
+   */
+  investigators: FeatureSchema.optional(),
   limits: z.strictObject({
     maxPageSize: z.number(),
     ratePerSec: z.number(),
@@ -156,4 +163,20 @@ export interface RegistryAdapter {
   /** `id` 는 `get` 과 같은 접두사 포함 형태다. 위 주석 참고. */
   results(id: string, o: ResultsOpts): Promise<AdapterResult<TrialResults>>;
   count(q: NormalizedQuery, o: FetchOpts): Promise<AdapterResult<number>>;
+  /** 연구책임자 집계 — `capability().investigators.supported` 가 참인 어댑터만 구현한다. */
+  investigators?(q: InvestigatorRankQuery, o: FetchOpts): Promise<AdapterResult<InvestigatorRank>>;
 }
+
+/** 연구책임자 집계의 물음. `terms` 는 OR — 국문·영문을 같이 준다. */
+export type InvestigatorRankQuery = { terms: string[]; status?: TrialStatus[]; limit: number };
+export type InvestigatorRankItem = {
+  name: string;
+  nameEn?: string;
+  /** 이 이름으로 등록된 소속들 — 여럿이면 동명이인이 섞였을 수 있다. */
+  affiliations: string[];
+  trials: number;
+  latest?: string;
+  /** 확인용 등록번호 앞 몇 건(접두사 포함). */
+  sampleIds: string[];
+};
+export type InvestigatorRank = { matched: number; items: InvestigatorRankItem[] };

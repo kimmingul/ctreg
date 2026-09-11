@@ -21,7 +21,9 @@ import { callTool, TOOL_NAME, toolDescriptions, toolSchemas, type ToolName } fro
  * - 한 턴의 도구 호출 여럿은 **동시에** 돈다(모델이 병렬을 정한다).
  * - 모델이 낸 인자는 정규화·필터링한다(대문자 레지스트리, 모르는 키). 모르는 도구는 실행하지
  *   않고 그렇다고 돌려준다. 도구 실패(exit 2·3·4)는 봉투 그대로 모델에게 — 0건으로 둔갑하지 않는다.
- * - 상한: 스텝 수·시간. 닿으면 도구 없이 답만 받고 `truncated` 로 말한다.
+ * - 상한: **턴(모델 호출)** 수·시간. 도구 호출 수가 아니다 — 처음엔 도구 10번이었고 한 턴의 병렬 14개가
+ *   14 스텝으로 세어져 잘렸다(실측 2026-09-12); 병렬을 권하면서 벌점 주던 것. 닿으면 도구 없이 답만
+ *   받고 `truncated` 로 말한다. 턴당 병렬은 20 까지.
  * - 진행 이벤트를 밖으로 낸다 — 페이지가 Claude Code 의 도구 추적처럼 실시간으로 그린다.
  */
 
@@ -180,7 +182,10 @@ export type AgentOpts = {
   fetchImpl?: typeof fetch;
   call?: Call;
   onEvent?: (e: AgentEvent) => void;
-  maxSteps?: number;
+  /** 모델 호출(턴) 상한. 도구 호출 수가 아니다 — 한 턴의 병렬 호출은 한 턴치다. */
+  maxTurns?: number;
+  /** 한 턴에 동시에 돌리는 도구 호출 상한. 넘는 것은 돌리지 않고 그렇다고 돌려준다. */
+  maxParallel?: number;
   maxMs?: number;
   maxRecords?: number;
   /** LLM 호출 하나의 상한. 실측: 호출이 300초 매달린 적이 있다. */
@@ -192,7 +197,8 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
   const fetchImpl = o.fetchImpl ?? fetch;
   const call = o.call ?? callTool;
   const emit = o.onEvent ?? (() => {});
-  const maxSteps = o.maxSteps ?? 10;
+  const maxTurns = o.maxTurns ?? 8;
+  const maxParallel = o.maxParallel ?? 20;
   const maxMs = o.maxMs ?? 240_000;
   const maxRecords = o.maxRecords ?? 200;
   const llmTimeoutMs = o.llmTimeoutMs ?? 150_000;
@@ -236,13 +242,15 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
   };
 
   let truncated = false;
+  let turns = 0;
   for (;;) {
-    const overBudget = steps.length >= maxSteps || Date.now() - started > maxMs;
+    const overBudget = turns >= maxTurns || Date.now() - started > maxMs;
     if (overBudget) {
       truncated = true;
       messages.push({ role: 'user', content: '도구 호출 상한에 닿았다. 지금까지의 결과만으로, 무엇을 더 못 봤는지 밝히며 답하라.' });
     }
     const r = await complete(!overBudget);
+    turns += 1;
     if ('error' in r) {
       emit({ type: 'error', message: r.error });
       return { ...base, records: [...byId.values()], truncated, error: r.error, ms: Date.now() - started };
@@ -259,6 +267,9 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
     const results = await Promise.all(r.tool_calls.map(async (tcall, i) => {
       const step = first + i;
       const name = tcall.function.name as AgentToolName;
+      if (i >= maxParallel) {
+        return { tcall, text: JSON.stringify({ error: `한 턴의 병렬 호출 상한(${maxParallel})을 넘어 실행하지 않았다. 다음 턴에 다시 불러라.` }), step: undefined };
+      }
       let raw: Record<string, unknown> = {};
       try { raw = JSON.parse(tcall.function.arguments || '{}') as Record<string, unknown>; } catch { /* 빈 인자로 */ }
       if (name === PLAYBOOK_TOOL) {
