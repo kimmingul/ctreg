@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { agent, agentTools, systemPromptForAgent, type AgentEvent } from '../../src/mcp/agent.js';
+import { agent, agentTools, loadPlaybook, playbooks, systemPromptForAgent, type AgentEvent } from '../../src/mcp/agent.js';
 
 const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-agent-')), CTREG_RATE_PER_SEC: '1000', CTREG_LLM_API_KEY: 'k', CTREG_LLM_BASE_URL: 'https://llm.example/v1', CTREG_LLM_MODEL: 'm' });
 
@@ -164,5 +164,52 @@ describe('에이전트 루프', () => {
     const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
     expect(r.error).toMatch(/500/);
     expect(r.answer).toBeUndefined();
+  });
+});
+
+/**
+ * 플레이북 — **시나리오별 절차를 스킬처럼 준다.** 사용자: "모델에게 skill 형태로 절차를 제공하는 건
+ * 가능한가요? … 사전에 skill 을 만들어서 process 를 통일시키면 좋을 것 같은데요"(2026-09-11).
+ * Claude Code 가 스킬을 다루듯: 프롬프트에는 목록(이름·언제)만, 절차는 모델이 `load_playbook` 으로
+ * 불러 읽는다. 어느 절차를 썼는지가 도구 추적에 보인다. 파일은 `skills/ctreg/playbooks/*.md` —
+ * Claude Code 플러그인의 SKILL.md 도 같은 파일을 가리켜 두 표면의 절차가 하나다.
+ */
+describe('플레이북', () => {
+  it('파일마다 이름·언제·절차가 있고, 목록이 그것에서 나온다', () => {
+    const list = playbooks();
+    expect(list.map((p) => p.name).sort()).toEqual(['by-id', 'condition-drug', 'count-compare', 'investigator-korean', 'investigator-profile', 'ranking']);
+    for (const p of list) { expect(p.when).toMatch(/\S/); expect(p.body).toMatch(/절차|순서|단계/); }
+  });
+
+  it('프롬프트에는 목록만 — 절차 본문은 실리지 않는다', () => {
+    const p = systemPromptForAgent();
+    expect(p).toMatch(/load_playbook/);
+    expect(p).toMatch(/investigator-korean/);
+    expect(p).not.toMatch(/ctgov 건수가 있는 표기 전부를 각각/);   // 이건 플레이북 본문에만 (지침 본문에서 옮긴다)
+  });
+
+  it('load_playbook 은 일곱 번째 도구이고, 부르면 절차 본문이 모델에게 돌아간다', async () => {
+    expect(agentTools().map((t) => t.function.name)).toContain('load_playbook');
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('p', 'load_playbook', { name: 'investigator-korean' })] }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ok('ctgov', []));
+    const events: AgentEvent[] = [];
+    const r = await agent({ q: '김민걸 교수 연구', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: (e) => events.push(e) });
+    expect(t.calls).toHaveLength(0);   // 플레이북은 레지스트리를 치지 않는다
+    const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; tool_call_id?: string; content?: string }[] };
+    expect(second.messages.find((m) => m.tool_call_id === 'p')?.content).toContain(loadPlaybook('investigator-korean')!.body.slice(0, 40));
+    expect(r.steps[0]).toMatchObject({ tool: 'load_playbook', args: { name: 'investigator-korean' } });   // 추적에 보인다
+    expect(events.some((e) => e.type === 'result' && e.summary.includes('절차'))).toBe(true);
+  });
+
+  it('없는 플레이북은 목록과 함께 그렇다고 돌려준다', () => {
+    expect(loadPlaybook('nope')).toBeUndefined();
+  });
+
+  it('플러그인 SKILL.md 가 같은 플레이북을 가리킨다 — 두 표면의 절차가 하나다', () => {
+    const { readFileSync } = require('node:fs') as typeof import('node:fs');
+    const skill = readFileSync(new URL('../../skills/ctreg/SKILL.md', import.meta.url), 'utf8');
+    expect(skill).toMatch(/playbooks\//);
   });
 });
