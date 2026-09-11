@@ -299,6 +299,17 @@ ctgov 두 표기 동시 → (ISRCTN 본문) → 105건, 84~116초. "등수": "�
 정규화 우회·상한 무시·레코드 미수집). 배포 첫 호출이 "SKILL.md 없음" 으로 죽었다 — 이미지와 npm
 files 에 skills 를 실었고 테스트로 묶었다.
 
+**플레이북 (2026-09-12).** 사용자: "모델에게 skill 형태로 절차를 제공하는 건 가능한가요? … 사전에
+skill 을 만들어서 process 를 통일시키면 좋을 것 같은데요." Claude Code 가 스킬을 다루는 방식 그대로
+했다: 프롬프트에는 목록(이름·언제)만, 절차 본문은 모델이 `load_playbook` 도구로 불러 읽는다 — 어느
+절차를 썼는지가 도구 추적에 보인다. 파일은 `skills/ctreg/playbooks/*.md` 여섯(이 세션에서 부딪힌
+시나리오들: investigator-korean · investigator-profile · ranking · condition-drug · by-id ·
+count-compare). 플러그인 SKILL.md 가 같은 폴더를 가리키므로 **Claude Code 와 웹의 절차가 하나**다.
+실측: 세 문장 모두 플레이북을 먼저 집었고, "등수" 는 `ranking` 이 시키는 대로 `investigator-korean`
+까지 이어 읽었으며, 조건 검색은 CRIS·CTIS 가 상·상태 조합을 거절하자 능력을 확인해 각각이 받는 축으로
+다시 물었다. SKILL.md 의 "얇아야 한다" 규율(한 페이지·고정 절·라틴 허용목록)에 걸려 가리키는 한 줄만
+넣었다 — 그 규율이 맞다, 절차는 플레이북에 산다.
+
 `/api/ask`(분류기 경로)는 남아 있지만 페이지가 쓰지 않는다 — 다음 정리에서 지운다.
 
 배포 경로를 갈랐다(0.11.4). 사용자: "웹앱 부분 고치는데요 npm publish 가 필요한가요?" — 필요했다,
