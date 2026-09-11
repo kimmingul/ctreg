@@ -129,6 +129,26 @@ describe('에이전트 루프', () => {
     expect(p).toMatch(/범주별 건수를 더하지 마라/);
   });
 
+  /** 실측(2026-09-11): 첫 LLM 호출이 300초 매달리다 fetch failed. 호출마다 상한을 두고 한 번은 다시 한다. */
+  it('LLM 호출이 매달리면 상한에서 끊고 한 번 다시 한다', async () => {
+    let n = 0;
+    const f = vi.fn(async (_u: string, init: RequestInit) => {
+      n += 1;
+      if (n === 1) return new Promise<Response>((_, rej) => { init.signal?.addEventListener('abort', () => rej(new Error('aborted'))); });
+      return reply({ content: '두 번째에 됐다' });
+    });
+    const t = fakeTools(() => ok('ctgov', []));
+    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, llmTimeoutMs: 50 });
+    expect(n).toBe(2);
+    expect(r.answer).toBe('두 번째에 됐다');
+  });
+
+  it('지침이 표기 전부 검색·CRIS 한국어 검색을 말한다', () => {
+    const p = systemPromptForAgent();
+    expect(p).toMatch(/표기[^\n]*각각/);
+    expect(p).toMatch(/CRIS[^\n]*한국어 이름/);
+  });
+
   it('LLM 이 죽으면 그때까지의 스텝과 함께 오류를 낸다', async () => {
     const f = vi.fn(async () => new Response('x', { status: 500 }));
     const t = fakeTools(() => ok('ctgov', []));

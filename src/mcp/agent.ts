@@ -78,6 +78,7 @@ export function systemPromptForAgent(): string {
 - **레코드를 표로 나열하지 마라.** 페이지가 네가 받은 레코드를 아래에 그대로 보여준다. 너의 답은 요약·경향·한계와 근거 번호 몇 개다 — 문단 2~4개, 간결하게.
 - 도구 이름과 인자는 아래 정의를 정확히 따르라. 레지스트리 키는 소문자다: ${REGISTRY_KEYS.join(', ')}.
 - 이름 대조(resolve_korean_investigator_name)의 term 은 후보를 좁힐 **기관·주제**다 — 이름을 넣지 마라. CRIS 사본이 있으면 term 없이 된다.
+- 한국어 이름을 찾을 때: 먼저 이름 대조로 등록된 표기를 읽고, **ctgov 건수가 있는 표기 전부를 각각** 검색해 합쳐라(표기가 다르면 다른 사람으로 걸린다 — 하나만 검색하면 나머지 표기의 시험을 놓친다). **CRIS 는 한국어 이름 그대로** 검색하라 — 등록된 영문 표기 전부가 한 번에 걸린다.
 - ISRCTN 은 연구자 이름 축이 없지만 term(본문 자유검색)이 이름에 닿는다 — 쓰되, 본문 검색이라 연구책임자가 아닐 수 있다고 밝혀라. EU CTIS 는 이름으로 물을 수 없다.
 
 ## 도구를 쓰는 규율 (Claude Code 플러그인의 지침 그대로)
@@ -142,6 +143,8 @@ export type AgentOpts = {
   maxSteps?: number;
   maxMs?: number;
   maxRecords?: number;
+  /** LLM 호출 하나의 상한. 실측: 호출이 300초 매달린 적이 있다. */
+  llmTimeoutMs?: number;
 };
 
 export async function agent(o: AgentOpts): Promise<AgentResult> {
@@ -152,6 +155,7 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
   const maxSteps = o.maxSteps ?? 10;
   const maxMs = o.maxMs ?? 240_000;
   const maxRecords = o.maxRecords ?? 200;
+  const llmTimeoutMs = o.llmTimeoutMs ?? 150_000;
   const cfg = loadConfig(env);
   const model = cfg.llmModel ?? 'glm-5.3-flash';
   const started = Date.now();
@@ -167,21 +171,28 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
     { role: 'user', content: o.q },
   ];
 
-  const complete = async (withTools: boolean): Promise<{ content: string | null; tool_calls?: ToolCall[] } | { error: string }> => {
+  const once = async (withTools: boolean): Promise<{ content: string | null; tool_calls?: ToolCall[] } | { error: string; retryable: boolean }> => {
     try {
       const res = await fetchImpl(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.llmApiKey}` },
         body: JSON.stringify({ model, temperature: 0, messages, ...(withTools ? { tools } : {}) }),
+        signal: AbortSignal.timeout(llmTimeoutMs),
       });
-      if (!res.ok) return { error: `LLM 이 ${res.status} 를 냈다.` };
+      if (!res.ok) return { error: `LLM 이 ${res.status} 를 냈다.`, retryable: res.status >= 500 || res.status === 429 };
       const j = (await res.json()) as { choices?: { message?: { content?: string | null; tool_calls?: ToolCall[] } }[] };
       const m = j.choices?.[0]?.message;
-      if (!m) return { error: 'LLM 응답에 message 가 없다.' };
+      if (!m) return { error: 'LLM 응답에 message 가 없다.', retryable: false };
       return { content: m.content ?? null, ...(m.tool_calls?.length ? { tool_calls: m.tool_calls } : {}) };
     } catch (e) {
-      return { error: `LLM 에 닿지 못했다: ${(e as Error).message}` };
+      return { error: `LLM 에 닿지 못했다: ${(e as Error).message}`, retryable: true };
     }
+  };
+  // 매달리거나 5xx 면 한 번 더 — 실측에서 첫 호출이 300초 매달린 적이 있다. 두 번째도 실패면 그대로 낸다.
+  const complete = async (withTools: boolean) => {
+    const a = await once(withTools);
+    if ('error' in a && a.retryable && Date.now() - started < maxMs) return once(withTools);
+    return a;
   };
 
   let truncated = false;
