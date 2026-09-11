@@ -147,12 +147,14 @@ describe('CRIS 미러 — 축별 집계', () => {
       { key: 'S1', name: '서울아산병원', name_en: 'Asan Medical Center', trials: 16, mapped: true, extra: { sponsor_type: 'Academic' } },
     ], meta: { ...meta, provenance: '마스터로 묶음', mapped: 0.74, basis: '등록 건수' } } }));
     const a = createCrisMirrorAdapter(cfg(), { fetchImpl, sleep });
-    const r = await a.aggregate!({ by: 'sponsor', terms: ['당뇨', 'diabetes'], status: ['recruiting'], limit: 10 }, fetchOpts);
+    const r = await a.aggregate!({ by: 'sponsor', terms: ['당뇨', 'diabetes'], status: ['recruiting'], limit: 10, site: '전북대학교병원', sponsor: '종근당' }, fetchOpts);
     const u = decodeURIComponent(urls[0]!).replace(/\+/g, ' ');
     expect(u).toContain('/api/cris/aggregate?');
     expect(u).toContain('by=sponsor');
     expect(u).toContain('q=당뇨,diabetes');
     expect(u).toContain('status=Recruiting');
+    expect(u).toContain('site=전북대학교병원');   // 기관으로 모수를 좁힌다 — '전북대학교병원 연구자들' 이 0건이던 실측
+    expect(u).toContain('sponsor=종근당');
     expect(r.data).toMatchObject({ by: 'sponsor', matched: 276, mapped: 0.74, provenance: '마스터로 묶음' });
     expect(r.data.items[0]).toMatchObject({ name: '서울아산병원', nameEn: 'Asan Medical Center', trials: 16, mapped: true, extra: { sponsor_type: 'Academic' } });
     expect(r.warnings.map((w) => w.code)).toContain('cris_mirror_copy');

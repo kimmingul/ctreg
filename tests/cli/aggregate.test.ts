@@ -170,11 +170,17 @@ describe('aggregate 의 필터 축', () => {
     expect(calls[0]).toMatchObject({ location: 'United States', condition: 'diabetes', phase: ['phase_3'] });
   });
 
+  it('사본 경로는 location→site, sponsor 를 넘긴다 — 기관 안의 연구자 순위가 이것으로 된다', async () => {
+    const agg = vi.fn(async () => ({ data: sample, warnings: [] }));
+    await runAggregate(parseCliArgs(['aggregate', '--by', 'investigator', '--term', '전북대학교병원', '--location', '전북대학교병원', '--sponsor', '종근당']), adapters(agg));
+    expect(agg).toHaveBeenCalledWith(expect.objectContaining({ site: '전북대학교병원', sponsor: '종근당' }), expect.anything());
+  });
+
   it('사본 경로는 term·status 밖의 축이 오면 exit 3 — 조용히 무시하지 않는다', async () => {
     const agg = vi.fn(async () => ({ data: sample, warnings: [] }));
-    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--location', 'Seoul']), adapters(agg));
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--phase', 'phase_3']), adapters(agg));
     expect(agg).not.toHaveBeenCalled();
     expect(env.registries[0]).toMatchObject({ registry: 'cris', status: 'unsupported' });
-    expect(env.registries[0]!.error?.message).toMatch(/location/);
+    expect(env.registries[0]!.error?.message).toMatch(/phase/);
   });
 });
