@@ -48,7 +48,7 @@ export const CRIS_MIRROR_CAPABILITY: Capability = {
   name: 'CRIS (한국 임상연구정보서비스)',
   region: 'KR',
   search: {
-    term: free('국문·영문 제목, 의뢰기관, 등록번호를 훑는다 — 공식 API 의 srchWord 와 같은 범위. 쉼표로 여럿이면 OR("당뇨,diabetes")'),
+    term: free('국문·영문 제목, 등록번호, 의뢰기관·연구비지원기관·실시기관(항목표), 연구책임자 소속을 훑는다 — 공식 API 의 srchWord 보다 넓다(실시기관·소속). 쉼표로 여럿이면 OR("당뇨,diabetes")'),
     condition: off('사본에 질환 축이 따로 없다 — 질환명을 --term 에 담으면 제목에 걸리는 만큼 걸린다'),
     intervention: off('중재 축이 없다'),
     title: off('제목만 따로 거는 자리가 없다 — --term 이 제목도 함께 훑는다'),
@@ -199,6 +199,8 @@ export function createCrisMirrorAdapter(cfg: Config, deps: HttpDeps = {}): Regis
 
     async aggregate(q: AggregateQuery, o: FetchOpts): Promise<AdapterResult<AggregateData>> {
       const p: Record<string, string | number> = { by: q.by, q: q.terms.join(','), limit: q.limit };
+      if (q.site) p.site = q.site;
+      if (q.sponsor) p.sponsor = q.sponsor;
       if (q.status && q.status.length > 0) {
         const en = q.status.map((s) => STATUS_EN[s]).filter((s): s is string => s !== undefined);
         if (en.length !== q.status.length) throw unsupportedError(`${CRIS_MIRROR_CAPABILITY.name}: 이 모집상태 값으로는 거를 수 없습니다`, `받는 값: ${STATUS_VALUES.join(', ')}`);

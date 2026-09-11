@@ -172,7 +172,7 @@ export interface RegistryAdapter {
 export const AGGREGATE_AXES = ['investigator', 'sponsor', 'site', 'year', 'intervention_type', 'drug', 'condition'] as const;
 export type AggregateAxis = (typeof AGGREGATE_AXES)[number];
 /** 축별 집계의 물음. `terms` 는 OR — 국문·영문을 같이 준다. */
-export type AggregateQuery = { by: AggregateAxis; terms: string[]; status?: TrialStatus[]; limit: number };
+export type AggregateQuery = { by: AggregateAxis; terms: string[]; status?: TrialStatus[]; limit: number; /** 실시기관·연구책임자 소속으로 모수를 좁힌다. */ site?: string; sponsor?: string };
 export type AggregateItem = {
   key: string;
   name: string;

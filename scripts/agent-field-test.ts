@@ -51,6 +51,8 @@ const CASES: Case[] = [
     mustCall: ['aggregate_trials'], answerMust: [/병원/, /건/] },
   { name: 'ctgov-의뢰사', q: '미국에서 모집 중인 당뇨병 시험은 어느 의뢰사가 많이 하나', playbook: undefined,
     mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/의뢰|스폰서|sponsor/i, /1,?000|상한|잘|모수/] },
+  { name: '기관-연구자-순위', q: '전북대학교병원 연구자들의 임상시험 건수에 대한 등수', playbook: 'ranking',
+    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/김민걸/, /전북대학교병원/, /건/], maxTurns: 4 },
   { name: '조건-검색', q: '모집 중인 당뇨병 3상 시험', playbook: 'condition-drug',
     mustCall: ['search_trials_multi_registry'], mustNotCall: ['aggregate_trials'], answerMust: [/모집|recruiting/, /건/] },
 ];
