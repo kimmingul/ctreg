@@ -111,7 +111,7 @@ describe('슬래시 커맨드', () => {
    * 따라오고, 후자는 여기 목록에 이름을 대야 한다 — 그래야 워크플로 커맨드가 조용히 늘거나
    * 사라지지 않는다.
    */
-  const WORKFLOW_COMMANDS = ['names'];
+  const WORKFLOW_COMMANDS = ['names', 'investigators'];
   it('레지스트리마다 커맨드가 있고, all 과 워크플로 커맨드가 있다', () => {
     expect(new Set(files)).toEqual(new Set([...REGISTRY_KEYS.map((k) => `${k}.md`), 'all.md', ...WORKFLOW_COMMANDS.map((c) => `${c}.md`)]));
   });

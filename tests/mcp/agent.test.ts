@@ -53,7 +53,7 @@ describe('에이전트 루프', () => {
     const last = JSON.parse((f.mock.calls[2]![1] as RequestInit).body as string) as { messages: { role: string; tool_call_id?: string; content?: string }[]; tools: unknown[] };
     expect(last.messages.filter((m) => m.role === 'tool').map((m) => m.tool_call_id)).toEqual(['c1', 'c2']);
     expect(last.messages.find((m) => m.tool_call_id === 'c1')?.content).toContain('Min-Gul Kim');
-    expect(last.tools).toHaveLength(7);   // MCP 여섯 + load_playbook
+    expect(last.tools).toHaveLength(8);   // MCP 일곱 + load_playbook
   });
 
   it('한 턴의 도구 호출 여럿은 동시에 돈다', async () => {
@@ -104,13 +104,33 @@ describe('에이전트 루프', () => {
     expect(loadPlaybook('investigator-korean')!.body).toMatch(/ISRCTN[^\n]*본문/);
   });
 
-  it('스텝 상한에 닿으면 멈추고 그때까지의 결과로 답하게 한다 — 조용히 무한히 돌지 않는다', async () => {
+  /**
+   * **상한은 턴(모델 호출)으로 센다, 도구 호출 수가 아니라.** 처음엔 도구 호출 10번이었고, 한 턴에 14개를
+   * 동시에 부르면 3 → 17 로 넘어가 다음 턴에 잘렸다(실측 2026-09-12) — 병렬을 권하면서 병렬을 벌점으로
+   * 센 것. 이제 턴 8 · 턴당 병렬 20 · 4분. 병렬 호출은 비용도 시간도 한 턴치다.
+   */
+  it('한 턴의 병렬 호출은 상한을 한 턴만 먹는다', async () => {
+    let turn = 0;
+    const f = vi.fn(async (_u: string, init: RequestInit) => {
+      const withTools = Boolean((JSON.parse(init.body as string) as { tools?: unknown }).tools);
+      turn += 1;
+      if (withTools && turn === 1) return reply({ tool_calls: Array.from({ length: 14 }, (_, i) => tc('c' + i, 'count_trials', { registry: ['cris'], investigator: '이름' + i })) });
+      if (withTools && turn === 2) return reply({ tool_calls: [tc('s', 'search_trials_multi_registry', { registry: ['cris'], term: 'x' })] });
+      return reply({ content: '답' });
+    });
+    const t = fakeTools(() => ok('cris', { total: 1 }, 1));
+    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, maxTurns: 3 });
+    expect(t.calls).toHaveLength(15);   // 14 + 1 — 둘째 턴이 잘리지 않았다
+    expect(r.truncated).toBe(false);
+  });
+
+  it('턴 상한에 닿으면 멈추고 그때까지의 결과로 답하게 한다 — 조용히 무한히 돌지 않는다', async () => {
     // 도구를 주는 동안은 늘 도구를 부르고, 도구를 빼면(상한) 답을 낸다
     const f = vi.fn(async (_u: string, init: RequestInit) => (JSON.parse(init.body as string) as { tools?: unknown }).tools
       ? reply({ tool_calls: [tc('z', 'count_trials', { registry: ['ctgov'], condition: 'x' })] })
       : reply({ content: '상한까지 본 것: 3건' }));
     const t = fakeTools(() => ok('ctgov', { total: 1 }, 1));
-    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, maxSteps: 3 });
+    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, maxTurns: 3 });
     expect(t.calls).toHaveLength(3);
     expect(r.truncated).toBe(true);
     expect(r.answer).toMatch(/상한/);
@@ -129,9 +149,9 @@ describe('에이전트 루프', () => {
     expect(second.messages.find((m) => m.role === 'tool')?.content).toMatch(/unsupported|지원하지 않습니다/);
   });
 
-  it('도구 정의는 MCP 와 같은 여섯 + 플레이북 로더이고, 지침은 플러그인 SKILL.md 에서 온다', () => {
+  it('도구 정의는 MCP 와 같은 일곱 + 플레이북 로더이고, 지침은 플러그인 SKILL.md 에서 온다', () => {
     const tools = agentTools();
-    expect(tools.map((t) => t.function.name).sort()).toEqual(['count_trials', 'get_trial_by_id', 'get_trial_results', 'list_registries_and_capabilities', 'load_playbook', 'resolve_korean_investigator_name', 'search_trials_multi_registry']);
+    expect(tools.map((t) => t.function.name).sort()).toEqual(['count_trials', 'get_trial_by_id', 'get_trial_results', 'list_registries_and_capabilities', 'load_playbook', 'rank_investigators', 'resolve_korean_investigator_name', 'search_trials_multi_registry']);
     expect(tools.find((t) => t.function.name === 'count_trials')!.function.parameters).toMatchObject({ type: 'object' });
     const p = systemPromptForAgent();
     expect(p).toMatch(/경고를 반드시 읽어라/);
@@ -212,5 +232,19 @@ describe('플레이북', () => {
     const { readFileSync } = require('node:fs') as typeof import('node:fs');
     const skill = readFileSync(new URL('../../skills/ctreg/SKILL.md', import.meta.url), 'utf8');
     expect(skill).toMatch(/playbooks\//);
+  });
+});
+
+describe('턴당 병렬 상한', () => {
+  it('한 턴에 20개를 넘는 호출은 앞 20개만 돌리고 나머지는 그렇다고 돌려준다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: Array.from({ length: 25 }, (_, i) => tc('c' + i, 'count_trials', { registry: ['cris'], investigator: 'n' + i })) }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ok('cris', { total: 1 }, 1));
+    await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    expect(t.calls).toHaveLength(20);
+    const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; tool_call_id?: string; content?: string }[] };
+    expect(second.messages.filter((m) => m.role === 'tool')).toHaveLength(25);   // 모든 호출에 답은 간다
+    expect(second.messages.find((m) => m.tool_call_id === 'c24')?.content).toMatch(/상한|넘/);
   });
 });

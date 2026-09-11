@@ -11,7 +11,9 @@ import type { RegistryKey } from '../../src/core/registry.js';
  * 제외, 국문·영문 겹침 미확인, 17스텝 147초. 여기서는 어댑터(사본)가 전체를 연구책임자로 묶어 한
  * 번에 낸다. 공식 API 문에서는 불가능하다 — 목록에 연구책임자가 없다 — 그래서 exit 3 이다.
  */
-function adapters(rank?: RegistryAdapter['investigators'], cap = CRIS_CAPABILITY): Partial<Record<RegistryKey, RegistryAdapter>> {
+/** rank 를 주면 사본 문(집계 지원)으로, 안 주면 공식 API 문(미지원)으로 흉내낸다. */
+function adapters(rank?: RegistryAdapter['investigators']): Partial<Record<RegistryKey, RegistryAdapter>> {
+  const cap = rank ? { ...CRIS_CAPABILITY, investigators: { supported: true, scope: '사본' } } : CRIS_CAPABILITY;
   return {
     cris: {
       key: 'cris', capability: () => cap,
@@ -30,7 +32,7 @@ const sample = {
 
 describe('investigators 커맨드', () => {
   it('--term 은 쉼표로 여럿 — 어댑터에 배열로 넘기고, 순위와 모수를 낸다', async () => {
-    const rank = vi.fn(async () => ({ data: sample, warnings: [{ code: 'cris_mirror_copy', message: '사본', registry: 'cris' }] }));
+    const rank = vi.fn(async () => ({ data: sample, warnings: [{ code: 'cris_mirror_copy', message: '사본', registry: 'cris' as const }] }));
     const env = await runInvestigators(parseCliArgs(['investigators', '--term', '당뇨, diabetes', '--page-size', '5']), adapters(rank));
     expect(rank).toHaveBeenCalledWith(expect.objectContaining({ terms: ['당뇨', 'diabetes'], limit: 5 }), expect.anything());
     expect(env.registries).toEqual([{ registry: 'cris', status: 'ok', total: 276 }]);
