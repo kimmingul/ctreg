@@ -270,16 +270,16 @@ describe('도구 결과 압축', () => {
 });
 
 describe('턴당 병렬 상한', () => {
-  it('한 턴에 20개를 넘는 호출은 앞 20개만 돌리고 나머지는 그렇다고 돌려준다', async () => {
+  it('한 턴에 상한(기본 30)을 넘는 호출은 앞 30개만 돌리고 나머지는 그렇다고 돌려준다', async () => {
     const f = vi.fn()
-      .mockResolvedValueOnce(reply({ tool_calls: Array.from({ length: 25 }, (_, i) => tc('c' + i, 'count_trials', { registry: ['cris'], investigator: 'n' + i })) }))
+      .mockResolvedValueOnce(reply({ tool_calls: Array.from({ length: 35 }, (_, i) => tc('c' + i, 'count_trials', { registry: ['cris'], investigator: 'n' + i })) }))
       .mockResolvedValueOnce(reply({ content: '끝' }));
     const t = fakeTools(() => ok('cris', { total: 1 }, 1));
     await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
-    expect(t.calls).toHaveLength(20);
+    expect(t.calls).toHaveLength(30);
     const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; tool_call_id?: string; content?: string }[] };
-    expect(second.messages.filter((m) => m.role === 'tool')).toHaveLength(25);   // 모든 호출에 답은 간다
-    expect(second.messages.find((m) => m.tool_call_id === 'c24')?.content).toMatch(/상한|넘/);
+    expect(second.messages.filter((m) => m.role === 'tool')).toHaveLength(35);   // 모든 호출에 답은 간다
+    expect(second.messages.find((m) => m.tool_call_id === 'c34')?.content).toMatch(/상한|넘/);
   });
 });
 

@@ -23,7 +23,7 @@ import { callTool, TOOL_NAME, toolDescriptions, toolSchemas, type ToolName } fro
  *   않고 그렇다고 돌려준다. 도구 실패(exit 2·3·4)는 봉투 그대로 모델에게 — 0건으로 둔갑하지 않는다.
  * - 상한: **턴(모델 호출)** 수·시간. 도구 호출 수가 아니다 — 처음엔 도구 10번이었고 한 턴의 병렬 14개가
  *   14 스텝으로 세어져 잘렸다(실측 2026-09-12); 병렬을 권하면서 벌점 주던 것. 닿으면 도구 없이 답만
- *   받고 `truncated` 로 말한다. 턴당 병렬은 20 까지.
+ *   받고 `truncated` 로 말한다. 값은 `agentLimits`(환경변수) — 기본 턴 12 · 병렬 30 · 6분.
  * - 진행 이벤트를 밖으로 낸다 — 페이지가 Claude Code 의 도구 추적처럼 실시간으로 그린다.
  */
 
@@ -181,6 +181,22 @@ function summarize(body: Record<string, unknown>): string {
   return [regs, n].filter(Boolean).join(' — ') || `exit ${String(body.exitCode)}`;
 }
 
+/**
+ * 상한 — 환경변수로. 사용자가 "도구 사용제한의 상한을 올리고 싶다"(2026-09-12) 했고, 코드에 박으면 올릴 때마다
+ * 재배포다. 기본값은 턴 12 · 턴당 병렬 30 · 6분 · LLM 호출 150초. 잘못된 값(음수·문자)은 기본값으로 — 조용히
+ * 0 이 되어 첫 턴에 잘리는 것보다 낫다.
+ */
+export type AgentLimits = { maxTurns: number; maxParallel: number; maxMs: number; llmTimeoutMs: number };
+export function agentLimits(env: NodeJS.ProcessEnv): AgentLimits {
+  const num = (k: string, d: number): number => { const n = Number(env[k]); return Number.isFinite(n) && n > 0 ? n : d; };
+  return {
+    maxTurns: num('CTREG_AGENT_MAX_TURNS', 12),
+    maxParallel: num('CTREG_AGENT_MAX_PARALLEL', 30),
+    maxMs: num('CTREG_AGENT_MAX_MS', 360_000),
+    llmTimeoutMs: num('CTREG_AGENT_LLM_TIMEOUT_MS', 150_000),
+  };
+}
+
 export type AgentOpts = {
   q: string;
   env?: NodeJS.ProcessEnv;
@@ -202,11 +218,12 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
   const fetchImpl = o.fetchImpl ?? fetch;
   const call = o.call ?? callTool;
   const emit = o.onEvent ?? (() => {});
-  const maxTurns = o.maxTurns ?? 8;
-  const maxParallel = o.maxParallel ?? 20;
-  const maxMs = o.maxMs ?? 240_000;
+  const limits = agentLimits(env);
+  const maxTurns = o.maxTurns ?? limits.maxTurns;
+  const maxParallel = o.maxParallel ?? limits.maxParallel;
+  const maxMs = o.maxMs ?? limits.maxMs;
   const maxRecords = o.maxRecords ?? 200;
-  const llmTimeoutMs = o.llmTimeoutMs ?? 150_000;
+  const llmTimeoutMs = o.llmTimeoutMs ?? limits.llmTimeoutMs;
   const cfg = loadConfig(env);
   const model = cfg.llmModel ?? 'glm-5.3-flash';
   const started = Date.now();
