@@ -198,7 +198,7 @@ describe('에이전트 루프', () => {
 describe('플레이북', () => {
   it('파일마다 이름·언제·절차가 있고, 목록이 그것에서 나온다', () => {
     const list = playbooks();
-    expect(list.map((p) => p.name).sort()).toEqual(['by-id', 'condition-drug', 'count-compare', 'investigator-korean', 'investigator-profile', 'ranking']);
+    expect(list.map((p) => p.name).sort()).toEqual(['by-axis-analysis', 'by-id', 'condition-drug', 'count-compare', 'investigator-korean', 'investigator-profile', 'ranking']);
     for (const p of list) { expect(p.when).toMatch(/\S/); expect(p.body).toMatch(/절차|순서|단계/); }
   });
 
