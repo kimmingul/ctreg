@@ -6,7 +6,7 @@ import { agent, agentTools, systemPromptForAgent, type AgentEvent } from '../../
 
 const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-agent-')), CTREG_RATE_PER_SEC: '1000', CTREG_LLM_API_KEY: 'k', CTREG_LLM_BASE_URL: 'https://llm.example/v1', CTREG_LLM_MODEL: 'm' });
 
-type Msg = { role: string; content?: string | null; tool_calls?: { id: string; type: 'function'; function: { name: string; arguments: string } }[] };
+type Msg = { role?: string; content?: string | null; tool_calls?: { id: string; type: 'function'; function: { name: string; arguments: string } }[] };
 const reply = (m: Msg, finish = m.tool_calls ? 'tool_calls' : 'stop') =>
   new Response(JSON.stringify({ choices: [{ finish_reason: finish, message: { role: 'assistant', content: m.content ?? null, ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}) } }] }), { status: 200, headers: { 'content-type': 'application/json' } });
 const tc = (id: string, name: string, args: Record<string, unknown>) => ({ id, type: 'function' as const, function: { name, arguments: JSON.stringify(args) } });
@@ -80,12 +80,18 @@ describe('에이전트 루프', () => {
   });
 
   it('스텝 상한에 닿으면 멈추고 그때까지의 결과로 답하게 한다 — 조용히 무한히 돌지 않는다', async () => {
-    const f = vi.fn(async () => reply({ tool_calls: [tc('z', 'count_trials', { registry: ['ctgov'], condition: 'x' })] }));
+    // 도구를 주는 동안은 늘 도구를 부르고, 도구를 빼면(상한) 답을 낸다
+    const f = vi.fn(async (_u: string, init: RequestInit) => (JSON.parse(init.body as string) as { tools?: unknown }).tools
+      ? reply({ tool_calls: [tc('z', 'count_trials', { registry: ['ctgov'], condition: 'x' })] })
+      : reply({ content: '상한까지 본 것: 3건' }));
     const t = fakeTools(() => ok('ctgov', { total: 1 }, 1));
     const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, maxSteps: 3 });
-    expect(t.calls.length).toBeLessThanOrEqual(3);
+    expect(t.calls).toHaveLength(3);
     expect(r.truncated).toBe(true);
-    expect(r.answer).toBeTruthy();   // 마지막 호출은 도구 없이 답만 받는다
+    expect(r.answer).toMatch(/상한/);
+    const last = JSON.parse((f.mock.calls.at(-1)![1] as RequestInit).body as string) as { tools?: unknown; messages: { role: string; content?: string }[] };
+    expect(last.tools).toBeUndefined();   // 마지막 호출은 도구 없이
+    expect(last.messages.at(-1)?.content).toMatch(/상한/);
   });
 
   it('도구 실패(exit 2·3·4)는 모델에게 그대로 돌아간다 — 0건으로 둔갑하지 않는다', async () => {
