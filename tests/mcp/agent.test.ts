@@ -53,7 +53,7 @@ describe('에이전트 루프', () => {
     const last = JSON.parse((f.mock.calls[2]![1] as RequestInit).body as string) as { messages: { role: string; tool_call_id?: string; content?: string }[]; tools: unknown[] };
     expect(last.messages.filter((m) => m.role === 'tool').map((m) => m.tool_call_id)).toEqual(['c1', 'c2']);
     expect(last.messages.find((m) => m.tool_call_id === 'c1')?.content).toContain('Min-Gul Kim');
-    expect(last.tools).toHaveLength(6);
+    expect(last.tools).toHaveLength(7);   // MCP 여섯 + load_playbook
   });
 
   it('한 턴의 도구 호출 여럿은 동시에 돈다', async () => {
@@ -100,7 +100,8 @@ describe('에이전트 루프', () => {
   it('지침이 페이지의 역할을 말한다 — 레코드 나열은 페이지가, 답은 요약만; ISRCTN 본문 검색', () => {
     const p = systemPromptForAgent();
     expect(p).toMatch(/나열하지 마라|표로 나열/);
-    expect(p).toMatch(/ISRCTN[^\n]*본문/);
+    // ISRCTN 본문검색 같은 시나리오 지식은 프롬프트가 아니라 플레이북에 산다
+    expect(loadPlaybook('investigator-korean')!.body).toMatch(/ISRCTN[^\n]*본문/);
   });
 
   it('스텝 상한에 닿으면 멈추고 그때까지의 결과로 답하게 한다 — 조용히 무한히 돌지 않는다', async () => {
@@ -128,9 +129,9 @@ describe('에이전트 루프', () => {
     expect(second.messages.find((m) => m.role === 'tool')?.content).toMatch(/unsupported|지원하지 않습니다/);
   });
 
-  it('도구 정의는 MCP 와 같은 여섯이고, 지침은 플러그인 SKILL.md 에서 온다', () => {
+  it('도구 정의는 MCP 와 같은 여섯 + 플레이북 로더이고, 지침은 플러그인 SKILL.md 에서 온다', () => {
     const tools = agentTools();
-    expect(tools.map((t) => t.function.name).sort()).toEqual(['count_trials', 'get_trial_by_id', 'get_trial_results', 'list_registries_and_capabilities', 'resolve_korean_investigator_name', 'search_trials_multi_registry']);
+    expect(tools.map((t) => t.function.name).sort()).toEqual(['count_trials', 'get_trial_by_id', 'get_trial_results', 'list_registries_and_capabilities', 'load_playbook', 'resolve_korean_investigator_name', 'search_trials_multi_registry']);
     expect(tools.find((t) => t.function.name === 'count_trials')!.function.parameters).toMatchObject({ type: 'object' });
     const p = systemPromptForAgent();
     expect(p).toMatch(/경고를 반드시 읽어라/);
@@ -152,10 +153,10 @@ describe('에이전트 루프', () => {
     expect(r.answer).toBe('두 번째에 됐다');
   });
 
-  it('지침이 표기 전부 검색·CRIS 한국어 검색을 말한다', () => {
-    const p = systemPromptForAgent();
-    expect(p).toMatch(/표기[^\n]*각각/);
-    expect(p).toMatch(/CRIS[^\n]*한국어 이름/);
+  it('플레이북이 표기 전부 검색·CRIS 한국어 검색을 말한다', () => {
+    const p = loadPlaybook('investigator-korean')!.body;
+    expect(p).toMatch(/표기[^\n]*따로|표기[^\n]*각각/);
+    expect(p).toMatch(/한국어 이름 그대로/);
   });
 
   it('LLM 이 죽으면 그때까지의 스텝과 함께 오류를 낸다', async () => {

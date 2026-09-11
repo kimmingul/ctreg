@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
 import { z } from 'zod';
 import { COMMAND_OPTIONS, COMMANDS } from '../cli/args.js';
@@ -25,12 +26,12 @@ import { callTool, TOOL_NAME, toolDescriptions, toolSchemas, type ToolName } fro
  */
 
 export type AgentEvent =
-  | { type: 'call'; step: number; tool: ToolName; args: Record<string, unknown> }
-  | { type: 'result'; step: number; tool: ToolName; exit: number; ms: number; summary: string }
+  | { type: 'call'; step: number; tool: AgentToolName; args: Record<string, unknown> }
+  | { type: 'result'; step: number; tool: AgentToolName; exit: number; ms: number; summary: string }
   | { type: 'final'; answer: string }
   | { type: 'error'; message: string };
 
-export type AgentStep = { step: number; tool: ToolName; args: Record<string, unknown>; exit: number; ms: number; summary: string };
+export type AgentStep = { step: number; tool: AgentToolName; args: Record<string, unknown>; exit: number; ms: number; summary: string };
 export type AgentResult = {
   answer?: string;
   error?: string;
@@ -52,15 +53,51 @@ type Message =
 
 const CMD_OF: Record<string, Command> = Object.fromEntries((Object.entries(TOOL_NAME) as [Command, ToolName][]).map(([c, t]) => [t, c])) as Record<string, Command>;
 
-/** OpenAI 호환 `tools` — MCP 가 등록하는 것과 같은 zod 스키마를 JSON Schema 로. */
-export function agentTools(): { type: 'function'; function: { name: ToolName; description: string; parameters: Record<string, unknown> } }[] {
+/**
+ * 플레이북 — **시나리오별 절차를 스킬처럼.** `skills/ctreg/playbooks/*.md` 하나가 시나리오 하나다.
+ * 프롬프트에는 목록(이름·언제)만 싣고, 절차 본문은 모델이 `load_playbook` 으로 불러 읽는다 — Claude
+ * Code 가 스킬을 다루는 방식 그대로. 어느 절차를 썼는지가 도구 추적에 보이고, 같은 파일을 플러그인
+ * SKILL.md 가 가리켜 두 표면의 절차가 하나다. 사용자: "사전에 skill 을 만들어서 process 를 통일"(2026-09-11).
+ */
+export type Playbook = { name: string; when: string; body: string };
+export const PLAYBOOK_TOOL = 'load_playbook' as const;
+function playbookDir(): string {
+  const require = createRequire(import.meta.url);
+  return join(dirname(require.resolve('../../skills/ctreg/SKILL.md')), 'playbooks');
+}
+export function playbooks(): Playbook[] {
+  const dir = playbookDir();
+  return readdirSync(dir).filter((f) => f.endsWith('.md')).sort().map((f) => {
+    const raw = readFileSync(join(dir, f), 'utf8');
+    const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(raw);
+    const head = Object.fromEntries((m?.[1] ?? '').split('\n').map((l) => { const i = l.indexOf(':'); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; }));
+    return { name: head.name ?? f.replace(/\.md$/, ''), when: head.when ?? '', body: (m?.[2] ?? raw).trim() };
+  });
+}
+export function loadPlaybook(name: string): Playbook | undefined {
+  return playbooks().find((p) => p.name === name);
+}
+
+/** OpenAI 호환 `tools` — MCP 가 등록하는 것과 같은 zod 스키마를 JSON Schema 로, 그리고 플레이북 로더 하나. */
+export function agentTools(): { type: 'function'; function: { name: AgentToolName; description: string; parameters: Record<string, unknown> } }[] {
   const schemas = toolSchemas();
   const desc = toolDescriptions();
-  return (Object.entries(TOOL_NAME) as [Command, ToolName][]).map(([cmd, name]) => ({
+  const mcp = (Object.entries(TOOL_NAME) as [Command, ToolName][]).map(([cmd, name]) => ({
     type: 'function' as const,
-    function: { name, description: desc[cmd], parameters: z.toJSONSchema(schemas[name], { target: 'draft-7' }) as Record<string, unknown> },
+    function: { name: name as AgentToolName, description: desc[cmd], parameters: z.toJSONSchema(schemas[name], { target: 'draft-7' }) as Record<string, unknown> },
   }));
+  const names = playbooks().map((p) => p.name);
+  const loader = {
+    type: 'function' as const,
+    function: {
+      name: PLAYBOOK_TOOL as AgentToolName,
+      description: `시나리오별 절차(플레이북)를 읽는다. 물음이 아래 중 하나에 맞으면 **다른 도구보다 먼저** 불러 절차를 읽고 그대로 따르라.\n${playbooks().map((p) => `- ${p.name}: ${p.when}`).join('\n')}`,
+      parameters: { type: 'object', properties: { name: { type: 'string', enum: names, description: '플레이북 이름' } }, required: ['name'] } as Record<string, unknown>,
+    },
+  };
+  return [loader, ...mcp];
 }
+export type AgentToolName = ToolName | typeof PLAYBOOK_TOOL;
 
 /** 플러그인 SKILL.md 본문 + 답의 규칙. 같은 문서를 읽는다 — 손으로 다시 적으면 둘이 갈린다. */
 export function systemPromptForAgent(): string {
@@ -77,9 +114,10 @@ export function systemPromptForAgent(): string {
 - 의학적 판단·적격 판정을 하지 마라.
 - **레코드를 표로 나열하지 마라.** 페이지가 네가 받은 레코드를 아래에 그대로 보여준다. 너의 답은 요약·경향·한계와 근거 번호 몇 개다 — 문단 2~4개, 간결하게.
 - 도구 이름과 인자는 아래 정의를 정확히 따르라. 레지스트리 키는 소문자다: ${REGISTRY_KEYS.join(', ')}.
-- 이름 대조(resolve_korean_investigator_name)의 term 은 후보를 좁힐 **기관·주제**다 — 이름을 넣지 마라. CRIS 사본이 있으면 term 없이 된다.
-- 한국어 이름을 찾을 때: 먼저 이름 대조로 등록된 표기를 읽고, **ctgov 건수가 있는 표기 전부를 각각** 검색해 합쳐라(표기가 다르면 다른 사람으로 걸린다 — 하나만 검색하면 나머지 표기의 시험을 놓친다). **CRIS 는 한국어 이름 그대로** 검색하라 — 등록된 영문 표기 전부가 한 번에 걸린다.
-- ISRCTN 은 연구자 이름 축이 없지만 term(본문 자유검색)이 이름에 닿는다 — 쓰되, 본문 검색이라 연구책임자가 아닐 수 있다고 밝혀라. EU CTIS 는 이름으로 물을 수 없다.
+
+## 플레이북 — 시나리오별 절차
+자주 오는 물음에는 정해 둔 절차가 있다. **물음이 아래 중 하나에 맞으면 다른 도구보다 먼저 \`${PLAYBOOK_TOOL}\` 로 그 절차를 읽고 그대로 따르라.** 맞는 것이 없으면 도구 정의와 아래 규율로 판단하라.
+${playbooks().map((p) => `- ${p.name}: ${p.when}`).join('\n')}
 
 ## 도구를 쓰는 규율 (Claude Code 플러그인의 지침 그대로)
 ${skill.replace(/`ctreg registries`/g, '`list_registries_and_capabilities`').replace(/`--help`/g, '도구 정의').replace(/ctreg 는 임상시험/g, '이 도구 모음은 임상시험')}`;
@@ -220,10 +258,20 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
     const first = steps.length + 1;
     const results = await Promise.all(r.tool_calls.map(async (tcall, i) => {
       const step = first + i;
-      const name = tcall.function.name as ToolName;
-      const cmd = CMD_OF[name];
+      const name = tcall.function.name as AgentToolName;
       let raw: Record<string, unknown> = {};
       try { raw = JSON.parse(tcall.function.arguments || '{}') as Record<string, unknown>; } catch { /* 빈 인자로 */ }
+      if (name === PLAYBOOK_TOOL) {
+        // 플레이북은 레지스트리를 치지 않는다 — 파일을 읽어 돌려줄 뿐. 추적에는 남긴다: 어느 절차를 썼는지 보여야 한다.
+        const pname = String(raw.name ?? '');
+        const pb = loadPlaybook(pname);
+        emit({ type: 'call', step, tool: name, args: { name: pname } });
+        const text = pb ? `절차 「${pb.name}」 — ${pb.when}\n\n${pb.body}` : JSON.stringify({ error: `없는 플레이북이다: ${pname}. 있는 것: ${playbooks().map((p) => p.name).join(', ')}` });
+        const s: AgentStep = { step, tool: name, args: { name: pname }, exit: pb ? 0 : 2, ms: 0, summary: pb ? `절차를 읽었다 — ${pb.when}` : '없는 플레이북' };
+        emit({ type: 'result', step, tool: name, exit: s.exit, ms: 0, summary: s.summary });
+        return { tcall, text, step: s };
+      }
+      const cmd = CMD_OF[name];
       if (!cmd) {
         return { tcall, text: JSON.stringify({ error: `없는 도구다: ${name}. 쓸 수 있는 도구: ${Object.values(TOOL_NAME).join(', ')}` }), step: undefined };
       }
