@@ -131,6 +131,21 @@ describe('aggregate — 집계 API 가 없는 레지스트리는 검색을 걸�
     expect(w?.message).toMatch(/2,?500/);
   });
 
+  /**
+   * 실측(ctgov, 2026-09-12): total 은 첫 쪽에만 실린다(countTotal 은 첫 요청만). 쪽마다 `total = r.total ??
+   * records.length` 로 덮어써서 모수 3,361 이 1,199 로 보고됐다 — 잘림 경고도 안 났다. 조용히 틀린 모수.
+   */
+  it('total 이 첫 쪽에만 와도 모수는 첫 쪽의 것이다 — 마지막 쪽의 undefined 로 덮이지 않는다', async () => {
+    const { adapter } = ctgov(2500);
+    const orig = adapter.search;
+    let n = 0;
+    (adapter as { search: unknown }).search = async (q: unknown, o: unknown) => { const r = await (orig as (q: unknown, o: unknown) => Promise<{ total?: number }>)(q, o); n += 1; if (n > 1) delete r.total; return r; };
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', 'x', '--registry', 'ctgov']), { ctgov: adapter });
+    expect((env.data as AggregateResult).matched).toBe(2500);
+    expect(env.registries[0]!.total).toBe(2500);
+    expect(env.warnings.some((w) => w.code === 'aggregate_truncated')).toBe(true);
+  });
+
   it('검색 축이 없는 레지스트리(예: ctis 의 investigator)는 exit 3', async () => {
     const { adapter } = ctgov(10);
     (adapter as { capability: () => unknown }).capability = () => { const { aggregate: _a, ...rest } = CRIS_CAPABILITY; void _a; return { ...rest, key: 'ctis', search: { ...CRIS_CAPABILITY.search, term: { supported: false, values: null, exhaustive: null, scope: 'x' } } }; };

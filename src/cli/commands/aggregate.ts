@@ -86,25 +86,27 @@ export async function runAggregate(
     const fetch = by === 'investigator' ? { ...args.fetch, include: [...new Set([...args.fetch.include, 'contacts' as const])] } : args.fetch;
     const records: TrialRecord[] = [];
     let token: string | undefined;
-    let total = 0;
+    let total: number | undefined;
     for (;;) {
       const r = await adapter.search({ ...base, ...(token ? { pageToken: token } : {}) }, fetch);
       for (const w of r.warnings) if (!warnings.some((x) => x.code === w.code && x.message === w.message)) warnings.push(w);
       records.push(...r.data);
-      total = r.total ?? records.length;
+      // total 은 첫 쪽에만 올 수 있다(ctgov 의 countTotal). 뒤 쪽의 undefined 로 덮으면 모수가 레코드 수로 둔갑한다 — 실측 3,361 → 1,199.
+      total ??= r.total;
       token = r.nextPageToken;
       if (!token || records.length >= AGGREGATE_WALK_CAP) break;
     }
-    if (records.length < total) {
+    const matched = total ?? records.length;
+    if (records.length < matched) {
       warnings.push({
         code: 'aggregate_truncated',
-        message: `모수 ${total.toLocaleString()}건 중 ${records.length.toLocaleString()}건까지만 받아 셌습니다 — 이 레지스트리에는 집계 API 가 없어 레코드를 받아 세는데, 상한이 ${AGGREGATE_WALK_CAP.toLocaleString()}건입니다. 순위·비율은 그 안의 것입니다. 검색어를 좁혀 모수를 줄이세요.`,
+        message: `모수 ${matched.toLocaleString()}건 중 ${records.length.toLocaleString()}건까지만 받아 셌습니다 — 이 레지스트리에는 집계 API 가 없어 레코드를 받아 세는데, 상한이 ${AGGREGATE_WALK_CAP.toLocaleString()}건입니다. 순위·비율은 그 안의 것입니다. 검색어를 좁혀 모수를 줄이세요.`,
         registry: key,
       });
     }
     const agg = aggregateRecords(records, by, limit);
-    registries.push({ registry: key, status: 'ok', total });
-    const data: AggregateResult = { ...agg, matched: total, terms, basis: AGGREGATE_BASIS };
+    registries.push({ registry: key, status: 'ok', total: matched });
+    const data: AggregateResult = { ...agg, matched, terms, basis: AGGREGATE_BASIS };
     return { query: { aggregate: by, terms, status: q.status, limit, registry: key }, registries, warnings, data };
   } catch (e) {
     if (!(e instanceof CtregError)) throw e;
