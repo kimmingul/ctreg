@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { agent, agentTools, loadPlaybook, playbooks, systemPromptForAgent, type AgentEvent } from '../../src/mcp/agent.js';
+import { agent, agentLimits, agentTools, loadPlaybook, playbooks, systemPromptForAgent, type AgentEvent } from '../../src/mcp/agent.js';
 
 const env = () => ({ CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-agent-')), CTREG_RATE_PER_SEC: '1000', CTREG_LLM_API_KEY: 'k', CTREG_LLM_BASE_URL: 'https://llm.example/v1', CTREG_LLM_MODEL: 'm' });
 
@@ -280,5 +280,33 @@ describe('턴당 병렬 상한', () => {
     const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; tool_call_id?: string; content?: string }[] };
     expect(second.messages.filter((m) => m.role === 'tool')).toHaveLength(25);   // 모든 호출에 답은 간다
     expect(second.messages.find((m) => m.tool_call_id === 'c24')?.content).toMatch(/상한|넘/);
+  });
+});
+
+/**
+ * 상한은 환경변수로 — 사용자가 "도구 사용제한의 상한을 올리고 싶다"(2026-09-12). 코드에 박으면 올릴 때마다
+ * 재배포다. 기본값은 턴 12 · 병렬 30 · 6분 · LLM 호출 150초. 잘못된 값(음수·문자)은 기본값이다.
+ */
+describe('상한은 환경변수로', () => {
+  it('CTREG_AGENT_MAX_TURNS 가 턴 상한을 정한다', async () => {
+    const f = vi.fn(async (_u: string, init: RequestInit) => (JSON.parse(init.body as string) as { tools?: unknown }).tools
+      ? reply({ tool_calls: [tc('z', 'count_trials', { registry: ['ctgov'], condition: 'x' })] })
+      : reply({ content: '끝' }));
+    const t = fakeTools(() => ok('ctgov', { total: 1 }, 1));
+    await agent({ q: 'x', env: { ...env(), CTREG_AGENT_MAX_TURNS: '2' }, fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    expect(t.calls).toHaveLength(2);
+  });
+  it('CTREG_AGENT_MAX_PARALLEL 가 턴당 병렬 상한을 정한다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: Array.from({ length: 5 }, (_, i) => tc('c' + i, 'count_trials', { registry: ['cris'], investigator: 'n' + i })) }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ok('cris', { total: 1 }, 1));
+    await agent({ q: 'x', env: { ...env(), CTREG_AGENT_MAX_PARALLEL: '3' }, fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    expect(t.calls).toHaveLength(3);
+  });
+  it('기본값 — 턴 12 · 병렬 30 · 6분 · LLM 150초; 잘못된 값은 기본값', () => {
+    expect(agentLimits({})).toEqual({ maxTurns: 12, maxParallel: 30, maxMs: 360_000, llmTimeoutMs: 150_000 });
+    expect(agentLimits({ CTREG_AGENT_MAX_TURNS: '-1', CTREG_AGENT_MAX_MS: 'abc' }).maxTurns).toBe(12);
+    expect(agentLimits({ CTREG_AGENT_MAX_TURNS: '-1', CTREG_AGENT_MAX_MS: 'abc' }).maxMs).toBe(360_000);
   });
 });
