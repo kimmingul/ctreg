@@ -204,6 +204,7 @@ describe('SKILL.md 는 얇다', () => {
     const allowed = new Set([
       'ctreg', 'help', 'registries',
       'npx', 'y', 'kimmingul',
+      'playbooks',   // 시나리오 절차 폴더 — 지식이 아니라 자리 이름. 절차 본문은 그 폴더에, 여기엔 가리키는 한 줄만.
     ]);
     const found = [...BODY.matchAll(/[A-Za-z][A-Za-z0-9_-]*/g)].map((m) => m[0].toLowerCase());
     expect([...new Set(found)].filter((w) => !allowed.has(w))).toEqual([]);
