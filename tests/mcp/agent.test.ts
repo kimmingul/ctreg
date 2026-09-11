@@ -79,6 +79,21 @@ describe('에이전트 루프', () => {
     expect(second.messages.find((m) => m.tool_call_id === 'b')?.content).toMatch(/없는 도구|unknown/i);
   });
 
+  it('names 의 term 이 이름 자체면 버린다 — 이름은 좁힐 말이 아니다 (실측: 0건이 됐다)', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('a', 'resolve_korean_investigator_name', { korean_name: '김민걸', term: '김민걸', ctgov: true })] }))
+      .mockResolvedValueOnce(reply({ content: '끝' }));
+    const t = fakeTools(() => ok('cris', { korean: '김민걸', crisMatched: 0, variants: [] }));
+    await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {} });
+    expect(t.calls[0]!.args).toEqual({ korean_name: '김민걸', ctgov: true });
+  });
+
+  it('지침이 페이지의 역할을 말한다 — 레코드 나열은 페이지가, 답은 요약만; ISRCTN 본문 검색', () => {
+    const p = systemPromptForAgent();
+    expect(p).toMatch(/나열하지 마라|표로 나열/);
+    expect(p).toMatch(/ISRCTN[^\n]*본문/);
+  });
+
   it('스텝 상한에 닿으면 멈추고 그때까지의 결과로 답하게 한다 — 조용히 무한히 돌지 않는다', async () => {
     // 도구를 주는 동안은 늘 도구를 부르고, 도구를 빼면(상한) 답을 낸다
     const f = vi.fn(async (_u: string, init: RequestInit) => (JSON.parse(init.body as string) as { tools?: unknown }).tools

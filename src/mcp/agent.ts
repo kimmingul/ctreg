@@ -75,7 +75,10 @@ export function systemPromptForAgent(): string {
 - 경향은 수를 세어 말하라("N건 중 M건").
 - 레지스트리 상태·경고(그렇게 물어볼 수 없음·사본·추측·잘림)는 답의 한계로 밝혀라.
 - 의학적 판단·적격 판정을 하지 마라.
+- **레코드를 표로 나열하지 마라.** 페이지가 네가 받은 레코드를 아래에 그대로 보여준다. 너의 답은 요약·경향·한계와 근거 번호 몇 개다 — 문단 2~4개, 간결하게.
 - 도구 이름과 인자는 아래 정의를 정확히 따르라. 레지스트리 키는 소문자다: ${REGISTRY_KEYS.join(', ')}.
+- 이름 대조(resolve_korean_investigator_name)의 term 은 후보를 좁힐 **기관·주제**다 — 이름을 넣지 마라. CRIS 사본이 있으면 term 없이 된다.
+- ISRCTN 은 연구자 이름 축이 없지만 term(본문 자유검색)이 이름에 닿는다 — 쓰되, 본문 검색이라 연구책임자가 아닐 수 있다고 밝혀라. EU CTIS 는 이름으로 물을 수 없다.
 
 ## 도구를 쓰는 규율 (Claude Code 플러그인의 지침 그대로)
 ${skill.replace(/`ctreg registries`/g, '`list_registries_and_capabilities`').replace(/`--help`/g, '도구 정의').replace(/ctreg 는 임상시험/g, '이 도구 모음은 임상시험')}`;
@@ -94,6 +97,8 @@ function normalizeArgs(cmd: Command, raw: Record<string, unknown>): Record<strin
     }
     out[k] = v;
   }
+  // 이름 대조의 term 은 후보를 좁힐 기관·주제다 — 이름 자체를 넣으면 0건이 된다(실측 2026-09-11).
+  if (cmd === 'names' && typeof out.term === 'string' && typeof out.korean_name === 'string' && out.term.replace(/\s/g, '') === out.korean_name.replace(/\s/g, '')) delete out.term;
   return out;
 }
 
