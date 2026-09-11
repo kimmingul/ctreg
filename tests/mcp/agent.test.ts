@@ -179,6 +179,15 @@ describe('에이전트 루프', () => {
     expect(p).toMatch(/한국어 이름 그대로/);
   });
 
+  /** 사용자(2026-09-12): 면책 문구("먼저 선을 그어 둡니다 …")가 맨 앞에 오는 것이 싫다 — 결과부터, 한계는 마지막에. */
+  it('지침과 플레이북이 "결과부터, 한계는 마지막" 을 말한다', () => {
+    expect(systemPromptForAgent()).toMatch(/답은 결과부터/);
+    expect(systemPromptForAgent()).toMatch(/마지막 「한계」 문단/);
+    expect(loadPlaybook('ranking')!.body).not.toMatch(/첫 줄에 적어라/);
+    expect(loadPlaybook('ranking')!.body).toMatch(/마지막에 「한계」 문단/);
+    expect(loadPlaybook('by-axis-analysis')!.body).toMatch(/면책·주의로 시작하지 마라/);
+  });
+
   it('LLM 이 죽으면 그때까지의 스텝과 함께 오류를 낸다', async () => {
     const f = vi.fn(async () => new Response('x', { status: 500 }));
     const t = fakeTools(() => ok('ctgov', []));

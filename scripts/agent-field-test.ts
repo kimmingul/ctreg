@@ -84,6 +84,8 @@ async function main(): Promise<void> {
     for (const t of c.mustCall) if (!tools.includes(t as never)) problems.push(`안 부름: ${t}`);
     for (const t of c.mustNotCall ?? []) if (tools.includes(t as never)) problems.push(`부르면 안 되는데 부름: ${t}`);
     for (const re of c.answerMust) if (!re.test(r.answer ?? '')) problems.push(`답에 없음: ${re}`);
+    // 사용자 요청(2026-09-12): 면책·선 긋기로 시작하지 않는다 — 첫 200자에 그 말이 있으면 문제
+    if (/^[\s\S]{0,200}?(먼저 선을|선을 그어|우수성.{0,12}판정)/.test(r.answer ?? '')) problems.push('면책으로 시작함');
     if (c.maxTurns !== undefined && r.steps.length > 0) {
       const turns = new Set(calls.map((e) => e.step)).size; void turns;
     }
