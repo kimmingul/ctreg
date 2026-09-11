@@ -140,3 +140,27 @@ describe('어댑터 선택', () => {
     expect(without.cris!.capability().search.investigator.scope).toMatch(/하나씩/);
   });
 });
+
+describe('CRIS 미러 — 연구책임자 집계', () => {
+  it('/api/cris/investigators 를 부르고 순위·모수·사본 경고를 낸다', async () => {
+    const { fetchImpl, urls, sleep } = stub(() => ({ body: { matched: 276, q: ['당뇨', 'diabetes'], items: [
+      { name_kr: '김난희', name_en: 'Nan Hee Kim', affiliations: ['고려대'], trials: 10, latest: '2025/11/01', sample_ids: ['KCT0011737'] },
+    ], meta: { ...meta, basis: '등록 건수' } } }));
+    const a = createCrisMirrorAdapter(cfg(), { fetchImpl, sleep });
+    const r = await a.investigators!({ terms: ['당뇨', 'diabetes'], status: ['recruiting'], limit: 10 }, fetchOpts);
+    const u = decodeURIComponent(urls[0]!).replace(/\+/g, ' ');
+    expect(u).toContain('/api/cris/investigators?');
+    expect(u).toContain('q=당뇨,diabetes');
+    expect(u).toContain('status=Recruiting');
+    expect(u).toContain('limit=10');
+    expect(r.data.matched).toBe(276);
+    expect(r.data.items[0]).toMatchObject({ name: '김난희', nameEn: 'Nan Hee Kim', trials: 10, sampleIds: ['CRIS:KCT0011737'] });
+    expect(r.warnings.map((w) => w.code)).toContain('cris_mirror_copy');
+    expect(a.capability().investigators?.supported).toBe(true);
+  });
+
+  it('공식 API 문은 이 축을 신고하지 않는다 — 없거나 false', async () => {
+    const { CRIS_CAPABILITY } = await import('../../../src/adapters/cris/adapter.js');
+    expect(CRIS_CAPABILITY.investigators?.supported ?? false).toBe(false);
+  });
+});
