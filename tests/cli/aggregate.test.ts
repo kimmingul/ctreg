@@ -153,3 +153,28 @@ describe('aggregate — 집계 API 가 없는 레지스트리는 검색을 걸�
     expect(env.registries[0]).toMatchObject({ registry: 'ctis', status: 'unsupported' });
   });
 });
+
+/**
+ * 실측(2026-09-12, 공개 서버): "미국에서 모집 중인 당뇨병 시험은 어느 의뢰사가" — aggregate 에 location 축이
+ * 없어 모델이 의뢰사 34곳을 count 로 하나씩 셌다(37회, 202초). 걷는 경로는 검색이므로 검색의 필터 축을
+ * 전부 받는다. 사본 경로는 term·status 뿐이라 다른 축이 오면 "그렇게 물어볼 수 없음".
+ */
+describe('aggregate 의 필터 축', () => {
+  it('걷는 경로(ctgov)는 location·condition·phase 같은 검색 축을 그대로 넘긴다', async () => {
+    const calls: unknown[] = [];
+    const adapter = {
+      key: 'ctgov', capability: () => { const { aggregate: _a, ...rest } = CRIS_CAPABILITY; void _a; return { ...rest, key: 'ctgov', limits: { maxPageSize: 200, ratePerSec: 1, maxBatchIds: 50 } }; },
+      search: vi.fn(async (q: unknown) => { calls.push(q); return { data: [], warnings: [], total: 0 }; }), get: vi.fn(), results: vi.fn(), count: vi.fn(),
+    } as unknown as RegistryAdapter;
+    await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', 'diabetes', '--location', 'United States', '--condition', 'diabetes', '--phase', 'phase_3', '--registry', 'ctgov']), { ctgov: adapter });
+    expect(calls[0]).toMatchObject({ location: 'United States', condition: 'diabetes', phase: ['phase_3'] });
+  });
+
+  it('사본 경로는 term·status 밖의 축이 오면 exit 3 — 조용히 무시하지 않는다', async () => {
+    const agg = vi.fn(async () => ({ data: sample, warnings: [] }));
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--location', 'Seoul']), adapters(agg));
+    expect(agg).not.toHaveBeenCalled();
+    expect(env.registries[0]).toMatchObject({ registry: 'cris', status: 'unsupported' });
+    expect(env.registries[0]!.error?.message).toMatch(/location/);
+  });
+});

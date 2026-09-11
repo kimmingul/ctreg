@@ -40,7 +40,7 @@ const CASES: Case[] = [
   { name: '등수', q: '김민걸 교수가 한국에서 등수', playbook: 'ranking',
     mustCall: ['resolve_korean_investigator_name'], answerMust: [/순위|등수/, /판정|비교 대상|알 수 없/] },
   { name: '우수한-연구자', q: '한국 임상시험에서 당뇨 관련된 우수한 연구자 5명 알려줘', playbook: 'ranking',
-    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/등록 건수|건수/, /우수/, /276|모수|건 안/], maxTurns: 4 },
+    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/건/, /등록/, /우수/, /276|모수|전체/], maxTurns: 4 },
   { name: '의뢰사-분포', q: '국내 당뇨병 임상시험은 어느 의뢰사가 많이 하나', playbook: undefined,
     mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/의뢰|스폰서/, /건/] },
   { name: '연도-추이', q: '한국 당뇨병 임상시험의 연도별 추이', playbook: 'by-axis-analysis',
