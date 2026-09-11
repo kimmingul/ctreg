@@ -326,6 +326,25 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(b.answer).toBeDefined();   // wants=answer 는 그대로 존중한다
   });
 
+  /**
+   * **문장 패턴 하나로 가지 않는다.** "한국 임상시험에서 당뇨 관련된 우수한 연구자 5명 알려줘" 가
+   * "우수한 + 연구자" 로 잡혀 이름 경로로 갔다(실측 2026-09-11, 사용자: "뭔가 엉망이지 않냐?").
+   * 문장 패턴은 모델이 **사람을 봤을 때**(korean_name 이나 investigator 를 냈을 때)만 쓴다 —
+   * 그때 모델이 이름을 로마자로 옮겼거나 term 에 넣었어도 문장의 원문 이름으로 바로잡는 용도다.
+   */
+  it('"우수한 연구자 5명" 은 이름 경로가 아니다 — 모델이 사람을 안 봤으면 문장 패턴을 쓰지 않는다', async () => {
+    const f = llm('{"tool":"search","args":{"condition":"diabetes","registry":["cris"]},"wants":"answer"}');
+    const calls: { cmd: string; args: Record<string, unknown> }[] = [];
+    const call = (async (cmd: string, args: Record<string, unknown>) => { calls.push({ cmd, args });
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'cris', status: 'ok', total: 1 }], warnings: [], data: [{ id: 'CRIS:K1' }] } } }; }) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '한국 임상시험에서 당뇨 관련된 우수한 연구자 5명 알려줘', intent: 'search' }, { ...withKey(), CTREG_CRIS_MIRROR_URL: 'https://kctis.example.test' }, f as unknown as typeof fetch, call);
+    const b = r.body as { resolved: { via?: string; args: Record<string, unknown> } };
+    expect(b.resolved.via).toBeUndefined();
+    expect(b.resolved.args).not.toHaveProperty('korean_name');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.args).toMatchObject({ condition: 'diabetes' });
+  });
+
   it('문장의 이름 잡기 — 교수·박사·연구자·선생, 조사가 붙어도', () => {
     expect(koreanPersonInQuery('김민걸 교수의 임상시험')).toBe('김민걸');
     expect(koreanPersonInQuery('이순신박사가 한 연구')).toBe('이순신');
