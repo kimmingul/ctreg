@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { loadConfig, loadEnvFiles } from '../runtime/config.js';
 import { aggregate, readAll } from './stats.js';
 import { ask, type AskBody } from './ask.js';
+import { usage } from './usage.js';
 import { api, page, schema } from './web.js';
 import { createServer } from './server.js';
 
@@ -42,6 +43,11 @@ const httpServer = createHttpServer(async (req, res) => {
   // 검색 페이지와 그 API — web.ts 가 정본이다. 여기는 라우팅뿐이다.
   if (url.pathname === '/' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(page());
+    return;
+  }
+  if (url.pathname === '/api/usage' && req.method === 'GET') {
+    const r = await usage();
+    res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(r.body));
     return;
   }
   if (url.pathname === '/api/schema' && req.method === 'GET') {

@@ -34,6 +34,9 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
         CTREG_CACHE_DIR: mkdtempSync(join(tmpdir(), 'ctreg-http-')),
         CTREG_RATE_PER_SEC: '1000',
       },
+      // cwd 를 저장소 밖으로 — 안 그러면 진입점이 저장소의 `./.env`(실제 키)를 읽어 테스트가
+      // 실제 키로 남의 서버(Ollama)를 친다. 2026-09-11 에 /api/usage 가 501 대신 200 을 내며 드러났다.
+      cwd: mkdtempSync(join(tmpdir(), 'ctreg-http-cwd-')),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     // 진입점은 뜨자마자 stderr 로 "listening <url>" 한 줄을 낸다 — 테스트가 포트를 알 유일한 길이다.
@@ -149,6 +152,11 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
    * **페이지의 고급 검색 칸은 손으로 안 적는다.** `/api/schema` 가 OPTION_HELP 를 그대로
    * 낸다 — MCP 스키마와 --help 가 읽는 그 표다. 옵션이 늘면 페이지가 따라온다.
    */
+  it('/api/usage — 키 없는 서버는 501 (라우트가 묶여 있어야 이 답이 나온다)', async () => {
+    const res = await fetch(new URL('/api/usage', base));
+    expect(res.status).toBe(501);
+  });
+
   it('/api/schema 가 커맨드별 옵션과 설명을 낸다', async () => {
     const res = await fetch(new URL('/api/schema', base));
     expect(res.status).toBe(200);
