@@ -274,6 +274,50 @@ describe('AI 모드 — 자연어 → 도구·인자', () => {
     expect(systemPrompt('search')).toMatch(/answer/);
   });
 
+  /**
+   * **한국어 이름은 어느 도구로 왔든 이름 경로로.** 실측(2026-09-11, 공개 서버): 같은 문장을 모델이
+   * 회차마다 `names` 로도, `search` 에 한국어 이름을 그대로 넣어서도 분류했다. 후자면 ctgov 에 "김민걸"
+   * 을 그대로 물어 **0건** → 빈 화면. 분류가 흔들려도 결과가 흔들리면 안 된다. investigator 에 한글이
+   * 있으면 nameOnly 로 돌린다.
+   */
+  it('search 에 한국어 이름이 오면 — nameOnly 로 돌린다(0건이 되지 않는다)', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"search","args":{"investigator":"김민걸","registry":["ctgov","isrctn","ctis","cris"]}}'))
+      .mockResolvedValueOnce(llmRes('["Min-Gul Kim"]'));
+    const calls: { cmd: string; args: Record<string, unknown> }[] = [];
+    const call = (async (cmd: string, args: Record<string, unknown>) => {
+      calls.push({ cmd, args });
+      const reg = (args.registry as string[])[0];
+      if (reg === 'cris') return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'cris', status: 'ok', total: 1 }], warnings: [], data: [{ id: 'CRIS:K1', contacts: [{ name: 'Min-Gul Kim', role: '연구책임자' }] }] } } };
+      if (reg === 'isrctn') return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'isrctn', status: 'ok', total: 0 }], warnings: [], data: cmd === 'count' ? { total: 0 } : [] } } };
+      const total = args.investigator === 'Min-Gul Kim' ? 1 : 0;
+      return { content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total }], warnings: [], data: cmd === 'count' ? { total } : total ? [{ id: 'CTGOV:A' }] : [] } } };
+    }) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '김민걸 교수 연구', intent: 'search' }, { ...withKey(), CTREG_CRIS_MIRROR_URL: 'https://kctis.example.test' }, f as unknown as typeof fetch, call);
+    const b = r.body as { exitCode: number; resolved: { via?: string }; envelope: { data: { id: string }[] } };
+    // 모델이 search 라 했어도 이름 경로로 갔다 — ctgov 에 "김민걸" 을 그대로 묻지 않았다
+    expect(calls.some((c) => c.args.investigator === '김민걸' && (c.args.registry as string[])[0] === 'ctgov')).toBe(false);
+    expect(b.resolved.via).toMatch(/name_only/);
+    expect(b.envelope.data.map((x) => x.id).sort()).toEqual(['CRIS:K1', 'CTGOV:A']);
+  });
+
+  it('count 에 한국어 이름이 와도 nameOnly 로', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(llmRes('{"tool":"count","args":{"investigator":"홍길동"}}'))
+      .mockResolvedValueOnce(llmRes('["Gil-Dong Hong"]'));
+    const call = (async (cmd: string, args: Record<string, unknown>) => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: (args.registry as string[])[0], status: 'ok', total: 0 }], warnings: [], data: cmd === 'count' ? { total: 0 } : [] } } })) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: '홍길동 몇 건', intent: 'count' }, withKey(), f as unknown as typeof fetch, call);
+    expect((r.body as { resolved: { via?: string } }).resolved.via).toMatch(/name_only/);
+  });
+
+  it('영문 이름이 investigator 면 nameOnly 로 돌리지 않는다 — 그건 등록된 표기다', async () => {
+    const f = llm('{"tool":"search","args":{"investigator":"Antoni Ribas","registry":["ctgov"]}}');
+    const call = (async () => ({ content: [], structuredContent: { exitCode: 0, envelope: { registries: [{ registry: 'ctgov', status: 'ok', total: 18 }], warnings: [], data: [{ id: 'CTGOV:X' }] } } })) as unknown as Parameters<typeof ask>[3];
+    const r = await ask({ q: 'Antoni Ribas', intent: 'search' }, withKey(), f as unknown as typeof fetch, call);
+    expect((r.body as { resolved: { via?: string } }).resolved.via).toBeUndefined();
+    expect(f).toHaveBeenCalledTimes(1);   // 로마자 후보를 다시 물을 이유가 없다
+  });
+
   it('모델이 JSON 이 아닌 것을 내면 502 다', async () => {
     const f = llm('죄송하지만 그 질문은…');
     const r = await ask({ q: 'x', intent: 'search' }, withKey(), f as unknown as typeof fetch);
