@@ -314,7 +314,7 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
         let out: Record<string, unknown>;
         try { out = await kctis.call(name, raw); } catch (e) { out = { error: (e as Error).message }; }
         const exit = out.error ? 2 : 0;
-        const summary = out.error ? `오류 — ${String(out.error).slice(0, 80)}` : `${String(out.row_count ?? '?')}행${out.truncated ? '(잘림)' : ''} · ${String(out.source_note ?? '').slice(0, 60)}`;
+        const summary = out.error ? `오류 — ${String(out.error).slice(0, 80)}` : out.row_count === undefined ? '스키마와 세는 법을 읽었다' : `${String(out.row_count)}행${out.truncated ? '(잘림)' : ''} · ${String(out.source_note ?? '').slice(0, 60)}`;
         const s: AgentStep = { step, tool: name, args: raw, exit, ms: Date.now() - t0, summary };
         emit({ type: 'result', step, tool: name, exit, ms: s.ms, summary });
         return { tcall, text: JSON.stringify(out), step: s };

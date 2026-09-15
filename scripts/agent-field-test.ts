@@ -15,7 +15,7 @@
  * 결과는 docs/agent-field-test-<날짜>.md 로 남는다. 키가 없으면 **측정하지 않고 그렇게 적는다.**
  * 비용이 든다(문장당 LLM 호출 2~6번) — 프롬프트·플레이북을 바꿨을 때 돌린다.
  *
- *   CTREG_CRIS_MIRROR_URL=https://kctis-web.fly.dev bun run scripts/agent-field-test.ts [--only <이름>]
+ *   bun run scripts/agent-field-test.ts [--only <이름>]   # KCTIS_MCP_URL·KCTIS_MCP_TOKEN 이 .env 에 있어야 kctis 도구가 붙는다
  */
 import { writeFileSync } from 'node:fs';
 import { agent, type AgentEvent } from '../src/mcp/agent.js';
@@ -34,27 +34,32 @@ type Case = {
 
 const CASES: Case[] = [
   { name: '연구자-리스트', q: '김민걸 교수의 임상시험 리스트', playbook: 'investigator-korean',
-    mustCall: ['resolve_korean_investigator_name', 'search_trials_multi_registry'], answerMust: [/CRIS/, /ctgov|ClinicalTrials/, /표기/] },
+    mustCall: ['kctis_query_sql'], answerMust: [/CRIS/, /ctgov|ClinicalTrials|AACT/, /표기/] },
   { name: '연구자-특징', q: '김민걸 교수의 임상시험 특징 설명', playbook: 'investigator-profile',
-    mustCall: ['resolve_korean_investigator_name', 'search_trials_multi_registry'], answerMust: [/1상|phase_1|약동학/, /한계|사본/] },
+    mustCall: ['kctis_query_sql'], answerMust: [/1상|phase|약동학/i, /한계|사본/] },
   { name: '등수', q: '김민걸 교수가 한국에서 등수', playbook: 'ranking',
-    mustCall: ['resolve_korean_investigator_name'], answerMust: [/순위|등수/, /판정|비교 대상|알 수 없/] },
+    mustCall: ['kctis_query_sql'], answerMust: [/순위|등수|번째/, /판정|비교 대상|알 수 없|건수/] },
+  // kctis MCP 가 붙은 서버(공개 웹)의 기대: 세는 물음은 kctis_query_sql 로, ctreg 의 aggregate·count 는 안 부른다.
   { name: '우수한-연구자', q: '한국 임상시험에서 당뇨 관련된 우수한 연구자 5명 알려줘', playbook: 'ranking',
-    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/건/, /등록/, /우수/, /276|모수|전체/], maxTurns: 4 },
+    mustCall: ['kctis_query_sql'], mustNotCall: ['count_trials', 'aggregate_trials'], answerMust: [/건/, /등록/, /우수/, /모수|전체|건 안|중/], maxTurns: 4 },
   { name: '의뢰사-분포', q: '국내 당뇨병 임상시험은 어느 의뢰사가 많이 하나', playbook: undefined,
-    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/의뢰|스폰서/, /건/] },
+    mustCall: ['kctis_query_sql'], mustNotCall: ['count_trials', 'aggregate_trials'], answerMust: [/의뢰|스폰서/, /건/] },
   { name: '연도-추이', q: '한국 당뇨병 임상시험의 연도별 추이', playbook: 'by-axis-analysis',
-    mustCall: ['aggregate_trials'], answerMust: [/20\d\d/, /건/] },
+    mustCall: ['kctis_query_sql'], mustNotCall: ['aggregate_trials'], answerMust: [/20\d\d/, /건/] },
   { name: '의약품', q: '국내 당뇨병 시험에서 많이 쓰인 약물은', playbook: undefined,
-    mustCall: ['aggregate_trials'], answerMust: [/metformin|메트포르민|glucose|포도당/i, /매칭|사전|한계/] },
+    mustCall: ['kctis_query_sql'], answerMust: [/metformin|메트포르민|glucose|포도당|인슐린|insulin/i, /매칭|텍스트|한계/] },
   { name: '실시기관', q: '당뇨병 임상시험을 가장 많이 실시한 병원은', playbook: undefined,
-    mustCall: ['aggregate_trials'], answerMust: [/병원/, /건/] },
+    mustCall: ['kctis_query_sql'], answerMust: [/병원/, /건/] },
   { name: 'ctgov-의뢰사', q: '미국에서 모집 중인 당뇨병 시험은 어느 의뢰사가 많이 하나', playbook: undefined,
-    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/의뢰|스폰서|sponsor/i, /1,?000|상한|잘|모수/] },
+    mustCall: ['kctis_query_sql'], mustNotCall: ['count_trials', 'aggregate_trials'], answerMust: [/의뢰|스폰서|sponsor/i, /AACT|모수|건/] },
   { name: '기관-연구자-순위', q: '전북대학교병원 연구자들의 임상시험 건수에 대한 등수', playbook: 'ranking',
-    mustCall: ['aggregate_trials'], mustNotCall: ['count_trials'], answerMust: [/김민걸/, /전북대학교병원/, /건/], maxTurns: 4 },
+    mustCall: ['kctis_query_sql'], mustNotCall: ['count_trials', 'aggregate_trials'], answerMust: [/김민걸/, /전북대학교병원/, /건/], maxTurns: 4 },
+  { name: '식약처-승인', q: '식약처 승인 기준으로 최근 3년간 당뇨병 임상시험을 가장 많이 승인받은 의뢰사는', playbook: undefined,
+    mustCall: ['kctis_query_sql'], answerMust: [/식약처|승인/, /건/] },
+  { name: '결과-공개', q: '국내 당뇨병 임상시험 중 결과가 공개된 비율은', playbook: undefined,
+    mustCall: ['kctis_query_sql'], answerMust: [/%|비율|건/, /웹|공개/] },
   { name: '조건-검색', q: '모집 중인 당뇨병 3상 시험', playbook: 'condition-drug',
-    mustCall: ['search_trials_multi_registry'], mustNotCall: ['aggregate_trials'], answerMust: [/모집|recruiting/, /건/] },
+    mustCall: ['kctis_query_sql', 'search_trials_multi_registry'], mustNotCall: ['aggregate_trials'], answerMust: [/모집|recruiting/i, /건/] },
 ];
 
 async function main(): Promise<void> {
@@ -95,7 +100,8 @@ async function main(): Promise<void> {
     const secs = Math.round((Date.now() - t0) / 1000);
     console.log(`${ok ? '✅' : '❌'} ${c.name} — ${secs}s, 도구 ${tools.length}회${problems.length ? ' — ' + problems.join(' · ') : ''}`);
     lines.push(`## ${ok ? '✅' : '❌'} ${c.name} — "${c.q}"`, '', `- ${secs}초 · 도구 ${tools.length}회 · 플레이북 ${firstPlaybook ?? '(없음)'} · 레코드 ${r.records.length}${r.truncated ? ' · **잘림**' : ''}`);
-    lines.push(`- 호출: ${calls.map((e) => `${e.tool}${e.tool === 'aggregate_trials' ? `(${String(e.args.by)})` : ''}`).join(' → ')}`);
+    lines.push(`- 호출: ${calls.map((e) => `${e.tool}${e.tool === 'aggregate_trials' ? `(${String(e.args.by)})` : e.tool === 'kctis_query_sql' ? `(${String(e.args.source)})` : ''}`).join(' → ')}`);
+    for (const e of calls) if (e.tool === 'kctis_query_sql') lines.push('  ```sql\n  ' + String(e.args.sql).replace(/\n/g, '\n  ') + '\n  ```');
     if (problems.length) lines.push(`- **문제:** ${problems.join(' · ')}`);
     lines.push('', '> ' + (r.answer ?? r.error ?? '').replace(/\n+/g, '\n> ').slice(0, 1500), '');
   }

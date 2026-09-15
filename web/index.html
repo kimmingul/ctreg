@@ -130,6 +130,7 @@
   .trace .args { color: var(--ink-2); font-family: var(--mono); font-size: 12px; }
   .trace .res { color: var(--ink); }
   .trace .res small { color: var(--ink-2); font-family: var(--mono); }
+  .trace pre.sql { margin: 4px 0 6px; padding: 8px 10px; font-size: 12px; line-height: 1.45; background: var(--well); border-radius: 6px; white-space: pre-wrap; word-break: break-all; }
   .answer h4 { margin: 6px 0 4px; font: 500 15px/1.4 var(--sans); }
   .answer ul { margin: 0 0 8px; padding-left: 20px; }
   .answer li { margin: 2px 0; }
@@ -389,7 +390,7 @@
     } finally { if (timer) clearInterval(timer); busy = false; document.body.classList.remove('busy'); if (ai) refreshUsage(); }
   }
 
-  const TOOL_KO = { search_trials_multi_registry: '시험 검색', get_trial_by_id: '등록번호로', count_trials: '건수', get_trial_results: '결과 데이터', list_registries_and_capabilities: '레지스트리 능력', resolve_korean_investigator_name: '이름 대조' };
+  const TOOL_KO = { search_trials_multi_registry: '시험 검색', get_trial_by_id: '등록번호로', count_trials: '건수', get_trial_results: '결과 데이터', list_registries_and_capabilities: '레지스트리 능력', resolve_korean_investigator_name: '이름 대조', aggregate_trials: '축별 집계', load_playbook: '절차', kctis_describe_schema: 'KCTIS 스키마', kctis_query_sql: 'KCTIS SQL' };
   const argsLine = (a) => Object.entries(a || {}).filter(([k]) => k !== 'page-size').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(',') : v}`).join(' · ');
 
   /**
@@ -405,7 +406,10 @@
     const onEvent = (type, data) => {
       if (type === 'call') {
         const li = document.createElement('li'); li.id = 'step-' + data.step; li.className = 'step';
-        li.innerHTML = `<b>${esc(TOOL_KO[data.tool] || data.tool)}</b> <span class="args">${esc(argsLine(data.args))}</span> <span class="res">…</span>`;
+        // kctis 의 SQL 은 한 줄로 뭉개지 않고 코드로 — 실행한 SQL 이 보여야 틀렸을 때 잡힌다.
+        const sql = data.args && typeof data.args.sql === 'string' ? data.args.sql : null;
+        const rest = sql ? Object.fromEntries(Object.entries(data.args).filter(([k]) => k !== 'sql')) : data.args;
+        li.innerHTML = `<b>${esc(TOOL_KO[data.tool] || data.tool)}</b> <span class="args">${esc(argsLine(rest))}</span> <span class="res">…</span>${sql ? `<pre class="sql">${esc(sql)}</pre>` : ''}`;
         $('steps').appendChild(li);
       } else if (type === 'result') {
         const li = $('step-' + data.step); if (li) li.querySelector('.res').innerHTML = `→ ${esc(data.summary)} <small>${data.ms}ms</small>`;
