@@ -5,52 +5,28 @@ when: 순위·비교·상위·"우수한"·"등수"·"가장 많이" 를 물을 
 
 # 순위·비교를 물었을 때
 
-레지스트리는 우수성·순위를 판정하지 않는다 — 등록된 시험 목록만 있다. 답할 수 있는 것은 **등록 건수**
-같은 객관적 축뿐이다. **답은 결과(순위)부터 시작하라.** 이 선 긋기는 마지막 「한계」 문단에 적는다 —
-사용자가 원하는 것은 순위표이지 면책 문구가 아니다(사용자 요청, 2026-09-12).
+레지스트리는 우수성을 판정하지 않는다 — 답할 수 있는 것은 **등록 건수**다. **답은 순위부터** 시작하고, 이 선
+긋기는 **마지막에 「한계」 문단**으로 둔다.
 
-## 절차 — 주제 안에서 축 하나의 순위 (연구자·의뢰사·실시기관·의약품·질환)
+## 절차 — kctis 도구가 있을 때: SQL 한 번
 
-1. **`aggregate_trials` 한 번.** by 에 축(investigator·sponsor·site·drug·condition), term 에 주제를 국문·영문
-   같이 쉼표로("당뇨,diabetes"), page-size 에 상위 몇 개. 검색어에 걸린 시험 **전체**를 그 축으로 묶어
-   건수순으로 낸다 — 시험은 등록번호로 한 번만 세므로 국문·영문 겹침 문제가 없다.
-2. **목록을 읽고 후보를 뽑아 하나씩 세지 마라.** 후보가 빠지고(목록은 앞 몇십 건), 판단이 끼고, 겹침을
-   못 본다. 실측으로 그렇게 했다가 17번 부르고도 한계만 남았다.
-3. 결과의 `matched`(모수)·`provenance`(근거와 한계)·`mapped`(의뢰사·기관의 표준명 매핑 비율)·`basis` 를
-   답에 옮겨라. 소속(extra)이 여럿인 이름은 동명이인이 섞였을 수 있다. 의약품·질환은 사전 문자열 매칭이다.
-4. 상위 몇의 대표 시험을 보이고 싶으면 `search_trials_multi_registry`(registry cris, investigator 나 term 에
-   그 이름, page-size 3)를 **한 턴에** 불러라.
-5. 미국·세계 범위면 registry `["ctgov"]` — 검색을 1,000건까지 받아 센다. `aggregate_truncated` 가 있으면 그 안의
-   순위라고 밝히고 검색어·status 로 좁혀라. ctgov 이름은 원문이라 표기가 갈린다(mapped 0).
-6. `aggregate_trials` 가 "그렇게 물어볼 수 없음"(exit 3)이면 — 이 서버가 CRIS 사본을 쓰지 않는 것이다.
-   그때만 검색 목록(page-size 100)에서 세되, "앞 100건 안의 순위" 라고 밝혀라.
+`kctis_describe_schema` 를 읽고 `kctis_query_sql` **한 번**. 세는 법은 스키마 문서에 있다 — 의뢰사·기관은
+**표준명 뷰**(`v_cris_sponsor`·`v_cris_site`·`v_mfds_trials.sponsor`·`v_mfds_sites.site`), 시험은
+`COUNT(DISTINCT trial_id)`, 이름은 국문 정확 일치. 예:
+- 주제 안 연구자: `SELECT pi_name_kr, MIN(pi_affiliation_kr) aff, COUNT(*) n FROM v_cris_unified WHERE title_kr LIKE '%당뇨%' OR title_en LIKE '%diabetes%' GROUP BY pi_name_kr ORDER BY n DESC LIMIT 10`
+- 기관 안 연구자: `... WHERE pi_affiliation_kr LIKE '%전북대학교병원%' GROUP BY pi_name_kr ...` (실시기관 기준이면 `v_cris_site` 와 JOIN)
+- 의뢰사: `SELECT s.sponsor, COUNT(DISTINCT s.trial_id) n FROM v_cris_sponsor s JOIN v_cris_unified t ON t.trial_id=s.trial_id WHERE ... GROUP BY s.sponsor ORDER BY n DESC`
+- 세계(ClinicalTrials.gov): source `aact` — `SELECT s.source, COUNT(DISTINCT s.nct_id) n FROM studies s JOIN conditions c ON c.nct_id=s.nct_id WHERE c.downcase_name LIKE '%diabetes%' GROUP BY s.source ORDER BY n DESC`
+모수(WHERE 에 걸린 시험 수)도 같은 턴에 세어 함께 내라. 상위 몇의 대표 시험이 필요하면 다음 턴에 한 번.
 
-## 절차 — 기관 안의 순위 ("○○병원 연구자들의 건수 등수", "○○병원에서 가장 많이 하는 의뢰사")
+## 절차 — kctis 도구가 없을 때: ctreg `aggregate_trials`
+by 에 축, term 에 국문·영문 쉼표, registry cris(사본이 있어야 함) 또는 ctgov(1,000건 상한). 목록을 읽고
+후보를 뽑아 하나씩 세지 마라.
 
-`aggregate_trials` 한 번 — by 에 축(investigator 등), **term 에 기관명, location 에도 기관명**(location 이 모수를
-그 기관이 실시기관이거나 연구책임자 소속인 시험으로 좁힌다). 국문 기관명 하나면 된다 — 사본의 검색은
-소속·실시기관·의뢰·연구비 항목을 다 훑는다. 실측: 전북대학교병원 → 522건, 김민걸 42 · 채수완 37 · 오선영 19.
-결과의 소속(extra)이 다른 기관인 사람은 다기관 시험의 책임자다 — 그렇다고 밝혀라. 표기를 바꿔 가며 여러 번
-검색하지 마라.
+## 한 사람의 "등수"
+비교 대상이 없으면 등수는 성립하지 않는다 — 그렇다고 말하라. 그 사람의 건수·표기 분포와, 그 사람의 주된
+주제 하나로 순위 SQL **한 번** — 거기서 몇 번째인지. 주제를 바꿔 가며 돌리지 마라.
 
-## 절차 — 한 사람의 "등수"
-
-비교 대상이 없으면 등수는 성립하지 않는다 — 그렇다고 먼저 말하라. 절차는 **딱 두 턴**:
-1. `resolve_korean_investigator_name` 으로 그 사람의 건수와 표기 분포.
-2. 사용자가 주제를 안 줬으면, 1 의 결과(시험 제목)에서 **주된 주제 하나**를 고르고(예: 약동학), 그 주제로
-   `aggregate_trials`(by investigator, registry cris, page-size 20) **한 번만** — 그 안에서 몇 번째인지 보여라.
-   주제를 바꿔 가며 여러 번 돌리지 마라. 순위는 그 주제·그 검색어 안의 것이라고 밝혀라.
-"비교 대상(기관·주제)을 주면 같은 방식으로 세어 비교하겠다" 고 답하라.
-
-## 답의 모양
-
-1. 첫 줄부터 순위 — "○○ 에 걸린 CRIS 시험 N 건 안에서 등록 건수 상위:" 하고 바로 목록.
-2. 눈에 띄는 것 한두 줄(동률, 소속이 여럿인 이름).
-3. **마지막에 「한계」 문단** — 아래 것들을 여기에.
-
-## 한계 문단에 반드시 밝힐 것
-
-- "우수함은 레지스트리가 판정하지 않는다 — 등록 건수로 대신했다".
-- 모수: 검색어에 걸린 시험 N 건 안의 순위다. CRIS 만이다 — 다른 레지스트리의 한국 시험은 안 셌다.
-- 동명이인·기관 표기 차이를 완전히 갈라내지 않았다(mapped 비율).
-- 사본 수집 시각(`cris_mirror_copy`).
+## 마지막 「한계」 문단에
+- "우수함은 판정하지 않는다 — 등록 건수다". 모수와 검색어. 동명이인·기관 표기 미분리(표준명 매핑 비율).
+- 사본 수집 시각 / AACT 갱신일. 다른 레지스트리는 안 셌음.

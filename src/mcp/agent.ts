@@ -6,6 +6,7 @@ import { COMMAND_OPTIONS, COMMANDS } from '../cli/args.js';
 import { REGISTRY_KEYS } from '../core/registry.js';
 import { loadConfig } from '../runtime/config.js';
 import { callTool, TOOL_NAME, toolDescriptions, toolSchemas, type ToolName } from './server.js';
+import { connectKctis, KCTIS_PREFIX, type KctisTools } from './kctis-tools.js';
 
 /**
  * 에이전트 루프 — **Claude Code 가 MCP 로 하는 그대로.**
@@ -99,10 +100,10 @@ export function agentTools(): { type: 'function'; function: { name: AgentToolNam
   };
   return [loader, ...mcp];
 }
-export type AgentToolName = ToolName | typeof PLAYBOOK_TOOL;
+export type AgentToolName = ToolName | typeof PLAYBOOK_TOOL | `${typeof KCTIS_PREFIX}${string}`;
 
 /** 플러그인 SKILL.md 본문 + 답의 규칙. 같은 문서를 읽는다 — 손으로 다시 적으면 둘이 갈린다. */
-export function systemPromptForAgent(): string {
+export function systemPromptForAgent(withKctis = false): string {
   const require = createRequire(import.meta.url);
   const skill = readFileSync(require.resolve('../../skills/ctreg/SKILL.md'), 'utf8').replace(/^---[\s\S]*?---\s*/, '');
   return `너는 임상시험 레지스트리 조회 에이전트다. 아래 도구로 사용자의 물음에 답한다. 도구는 여러 번, 필요하면 한 턴에 여러 개 불러도 된다. 결과를 읽고 다음 도구를 정하라. 다 모였으면 도구 없이 한국어로 답하라.
@@ -118,7 +119,12 @@ export function systemPromptForAgent(): string {
 - **레코드를 표로 나열하지 마라.** 페이지가 네가 받은 레코드를 아래에 그대로 보여준다. 너의 답은 요약·경향·한계와 근거 번호 몇 개다 — 문단 2~4개, 간결하게.
 - 도구 이름과 인자는 아래 정의를 정확히 따르라. 레지스트리 키는 소문자다: ${REGISTRY_KEYS.join(', ')}.
 
-## 플레이북 — 시나리오별 절차
+${withKctis ? `## 데이터는 어디서 — 도구 묶음 둘
+- **kctis_* (KCTIS MCP, 읽기 전용 SQL)**: 국내 — CRIS(v_cris_*) 와 식약처 승인현황(v_mfds_*) — 그리고 **ClinicalTrials.gov 전체는 source "aact"**(AACT 사본, 매일 갱신). 순위·분포·추이·연구자·기관·의뢰사·약물 등 **세는 물음은 전부 여기**. SQL 을 쓰기 전에 kctis_describe_schema 를 먼저 읽어라(표준명 뷰, COUNT(DISTINCT), 표기 변형).
+- **ctreg 도구**(search·get·count·results·registries·names): ISRCTN·EU CTIS 처럼 kctis 에 없는 레지스트리, 등록번호로 한 건(get), ClinicalTrials.gov 의 결과 데이터(get_trial_results). CRIS 검색을 ctreg search 로 하지 마라 — kctis 가 더 넓고 빠르다.
+- 결과의 source_note(사본 수집 시각·AACT 갱신일)를 답의 한계에 옮겨라.
+
+` : ''}## 플레이북 — 시나리오별 절차
 자주 오는 물음에는 정해 둔 절차가 있다. **물음이 아래 중 하나에 맞으면 다른 도구보다 먼저 \`${PLAYBOOK_TOOL}\` 로 그 절차를 읽고 그대로 따르라.** 맞는 것이 없으면 도구 정의와 아래 규율로 판단하라.
 ${playbooks().map((p) => `- ${p.name}: ${p.when}`).join('\n')}
 
@@ -212,6 +218,8 @@ export type AgentOpts = {
   maxRecords?: number;
   /** LLM 호출 하나의 상한. 실측: 호출이 300초 매달린 적이 있다. */
   llmTimeoutMs?: number;
+  /** kctis MCP 도구 묶음. 주지 않으면 설정(KCTIS_MCP_URL·TOKEN)으로 붙는다. */
+  kctis?: KctisTools;
 };
 
 export async function agent(o: AgentOpts): Promise<AgentResult> {
@@ -234,9 +242,13 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
 
   if (!cfg.llmApiKey) return { ...base, error: 'AI 모드가 아직 켜져 있지 않다 — 서버에 LLM 키가 없다.', ms: 0 };
   const baseUrl = (cfg.llmBaseUrl ?? 'https://ollama.com/v1').replace(/\/+$/, '');
-  const tools = agentTools();
+  // kctis 도구 — 설정이 있으면 붙는다. 못 붙으면(서버 죽음) ctreg 도구만으로 돌고 그 사실을 답에 밝히게 한다.
+  let kctis = o.kctis;
+  let kctisNote = '';
+  if (!kctis) { try { kctis = await connectKctis(env); } catch (e) { kctisNote = `kctis MCP 에 붙지 못했다(${(e as Error).message}) — 국내·AACT 조회는 이번에 못 한다.`; } }
+  const tools = [...agentTools(), ...(kctis?.tools ?? [])];
   const messages: Message[] = [
-    { role: 'system', content: systemPromptForAgent() },
+    { role: 'system', content: systemPromptForAgent(Boolean(kctis)) + (kctisNote ? `\n\n주의: ${kctisNote}` : '') },
     { role: 'user', content: o.q },
   ];
 
@@ -295,6 +307,18 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
       }
       let raw: Record<string, unknown> = {};
       try { raw = JSON.parse(tcall.function.arguments || '{}') as Record<string, unknown>; } catch { /* 빈 인자로 */ }
+      if (name.startsWith(KCTIS_PREFIX) && kctis) {
+        // kctis MCP — SQL 이 인자에 그대로 있어 추적에 보인다. 결과는 통째로 모델에게(행 ≤200, 서버가 자른다).
+        emit({ type: 'call', step, tool: name, args: raw });
+        const t0 = Date.now();
+        let out: Record<string, unknown>;
+        try { out = await kctis.call(name, raw); } catch (e) { out = { error: (e as Error).message }; }
+        const exit = out.error ? 2 : 0;
+        const summary = out.error ? `오류 — ${String(out.error).slice(0, 80)}` : `${String(out.row_count ?? '?')}행${out.truncated ? '(잘림)' : ''} · ${String(out.source_note ?? '').slice(0, 60)}`;
+        const s: AgentStep = { step, tool: name, args: raw, exit, ms: Date.now() - t0, summary };
+        emit({ type: 'result', step, tool: name, exit, ms: s.ms, summary });
+        return { tcall, text: JSON.stringify(out), step: s };
+      }
       if (name === PLAYBOOK_TOOL) {
         // 플레이북은 레지스트리를 치지 않는다 — 파일을 읽어 돌려줄 뿐. 추적에는 남긴다: 어느 절차를 썼는지 보여야 한다.
         const pname = String(raw.name ?? '');
