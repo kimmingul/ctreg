@@ -164,6 +164,14 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
     expect(res.status).toBe(501);
   });
 
+  /** CSV 전체 내보내기 프록시 — kctis 설정이 없는 서버는 501. 토큰은 서버에만 있다(페이지가 SQL 만 보낸다). */
+  it('/api/export — kctis 설정 없는 서버는 501, 잘못된 몸은 400', async () => {
+    const r = await fetch(new URL('/api/export', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: 'kctis', sql: 'SELECT 1' }) });
+    expect(r.status).toBe(501);
+    const bad = await fetch(new URL('/api/export', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{' });
+    expect(bad.status).toBe(400);
+  });
+
   it('/api/usage — 키 없는 서버는 501 (라우트가 묶여 있어야 이 답이 나온다)', async () => {
     const res = await fetch(new URL('/api/usage', base));
     expect(res.status).toBe(501);
