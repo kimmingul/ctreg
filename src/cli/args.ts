@@ -215,9 +215,9 @@ export const COMMAND_OPTIONS: Record<(typeof COMMANDS)[number], readonly (keyof 
   // 요청이 성립한다.
   names: ['format', 'help', 'version', ...NETWORK_OPTIONS, 'term', 'page-size', 'ctgov'],
   // aggregate 는 검색어(쉼표로 여럿, OR)에 걸린 시험 전체를 한 축(--by)으로 묶어 건수순으로 낸다.
-  // 기본은 cris(사본이 SQL 로 센다). 다른 레지스트리는 검색을 상한까지 걸어 서버가 센다. 순위·현황 질문은 도구가 센다.
+  // 기본은 ctgov — 집계 API 가 없어 검색을 상한까지 걸어 서버가 센다. cris 는 공식 API 목록에 그 축이 없어 exit 3(국내 집계는 KCTIS MCP).
   // 걷는 경로(ctgov 등)는 검색이므로 검색의 질의 축을 다 받는다 — location 이 없어 모델이 의뢰사 34곳을 count 로
-  // 하나씩 센 실측(2026-09-12)이 있다. 사본 경로(cris)는 term·status 만 적용하고 다른 축은 exit 3 으로 거절한다.
+  // 하나씩 센 실측(2026-09-12)이 있다.
   aggregate: [...COMMON_OPTIONS, ...NETWORK_OPTIONS, ...QUERY_OPTIONS, 'by', 'page-size'],
 };
 
@@ -405,7 +405,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
   if (command === 'names') {
     /**
      * 이름은 위치 인자 하나다. `--term` 은 **선택**이다 — 어느 문으로 CRIS 에 들어가느냐에
-     * 달렸다. 사본(CTREG_CRIS_MIRROR_URL)은 이름이 목록 축이라 이름만으로 되고, 공식 API 는
+     * 달렸다. 쪽을 나눠 주는 문에서는 이름만으로 되고, 공식 API 는
      * 사람 이름으로 못 걸러 어댑터가 "그렇게 물어볼 수 없다"(exit 3)를 낸다. 파서가 여기서
      * 막으면(전에는 exit 2 였다) 사본을 쓰는 사용자까지 막는다.
      */
@@ -453,8 +453,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     command === 'registries' ? REGISTRY_KEYS
     // names 는 CRIS 가 대조표다 — 국문·영문을 나란히 싣는 레지스트리가 그곳뿐이다.
     : command === 'names' ? ['cris']
-    // aggregate 의 기본은 CRIS — 사본이 전수를 SQL 로 센다. 다른 곳은 검색을 걸어 센다(상한 있음).
-    : command === 'aggregate' ? ['cris']
+    // aggregate 의 기본은 ctgov — 검색을 걸어 센다(상한 있음). cris 는 공식 API 목록에 그 축이 없다.
+    : command === 'aggregate' ? ['ctgov']
     : [DEFAULT_REGISTRY];
   /**
    * **`all` 은 선언된 전부로 풀린다.** 사용자가 다섯을 손으로 나열하게 두면 여섯 번째

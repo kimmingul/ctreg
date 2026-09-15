@@ -11,13 +11,13 @@
 > **이 파일은 길다(1,500줄+). 아래 「지금 상태」만 읽고 필요한 절로 건너뛰어라.**
 > 나머지는 **날짜순으로 쌓인 기록** 이고, 해소된 항목에는 커밋 해시가 붙어 있다.
 
-## 지금 상태 — 2026-09-12
+## 지금 상태 — 2026-09-15
 
 **껍데기 다섯, 코어 하나.** CLI(`ctreg`) · Claude Code 플러그인(스킬 + 슬래시 커맨드) · stdio MCP(`ctreg-mcp`) ·
 HTTP MCP(`ctreg-mcp-http`, `/mcp`) · 검색 웹(`/`). 공개 서버 **`https://ctreg.trialinsight.ai/`**(Fly.io nrt,
 항상 켜짐, 인증 없음, 비영리). 웹의 AI 모드는 **에이전트**다 — 모델(glm-5.3-flash, Ollama Cloud)에게 MCP 와
-같은 도구 일곱 + `load_playbook` 을 주고 루프를 돌린다(「에이전트」·「플레이북」 절). CRIS 는 공개
-서버에서 **KCTIS 사본**(같은 org 사설망)으로 들어간다 — 연구책임자가 목록 축(「CRIS 의 두 번째 문」 절).
+같은 도구 일곱 + `load_playbook` + **kctis MCP 의 SQL 도구 둘**을 주고 루프를 돌린다(「에이전트」·「플레이북」·
+「경계를 다시 그었다」 절). ctreg 자체는 공식 API 만 두드린다 — 국내(CRIS·식약처)와 AACT 의 집계는 KCTIS 의 MCP 가 한다.
 서버는 저장소 소스에서 빌드한다(`deploy/fly/deploy.sh`); npm 은 CLI·플러그인 채널.
 
 **레지스트리 다섯. 셋만 아무 설정 없이 된다.**
@@ -27,10 +27,10 @@ HTTP MCP(`ctreg-mcp-http`, `/mcp`) · 검색 웹(`/`). 공개 서버 **`https://
 | `ctgov` | ClinicalTrials.gov | 18 | 공개 API | `field-test-*.md` |
 | `isrctn` | ISRCTN | 10 | 공개 API | `isrctn-field-test-*.md` |
 | `ictrp` | WHO ICTRP | 8 | ❌ **기본 꺼짐** — 합의+비용 | 「역공학할 API 가 없다」 절 · `ictrp-field-test-*.md` |
-| `cris` | CRIS (한국) | 2 / 사본 6 | 키 필요(무료·자동승인) **또는** `CTREG_CRIS_MIRROR_URL` | 「어댑터 #4」·「CRIS 의 두 번째 문」 절 · `cris-field-test-*.md` |
+| `cris` | CRIS (한국) | 2 | 키 필요(무료·자동승인) | 「어댑터 #4」 절 · `cris-field-test-*.md` (사본 문은 2026-09-15 에 걷어냈다 — 「경계를 다시 그었다」 절) |
 | `ctis` | EU CTIS | 5 | 공개 API, 조건 없음 | 「어댑터 #5」 절 · `ctis-field-test-*.md` |
 
-테스트 **962 통과 / 11 skipped**. 타입체크·빌드 클린. 에이전트 실측 11/11(`npm run agent-field-test`).
+테스트 **938 통과 / 11 skipped**. 타입체크·빌드 클린. 에이전트 실측 13/13(`npm run agent-field-test`).
 
 **배포됐다(2026-09-01).** `npm i -g @kimmingul/ctreg` · `/plugin marketplace add kimmingul/ctreg`.
 이름은 스코프가 붙지만 **명령어는 `ctreg`** 다 — npm 이 `ctreg` 를 기존 패키지(`stres`)와
@@ -375,7 +375,30 @@ ICD-10 범주명 137개를 제목에 문자열 매칭. 의약품은 `drugs_maste
 **⑤ ctgov 집계**는 ②의 걷는 경로로 됐다. 상한 1,000 은 정책값(요청률 1/s 에서 5초). 더 정확한 세계 순위가
 필요하면 ctgov 의 검색 조건으로 모수를 줄이는 것이 답이지 상한을 올리는 것이 아니다.
 
-`/api/ask`(분류기 경로)는 남아 있지만 페이지가 쓰지 않는다 — 다음 정리에서 지운다.
+### 경계를 다시 그었다 — ctreg 는 클라이언트, KCTIS 는 데이터 서비스 (2026-09-15)
+
+사용자: "ctreg 의 목적 상 KCTIS db 에 접속하는 것이 적절할까요?" 그리고 결정: (1) ctreg CLI·MCP 는 KCTIS 와 무관하게,
+(2) 웹 에이전트는 ctreg MCP + KCTIS, (3)(4) DB 에 직접 쿼리 — 단 SQLite 는 다른 앱이 열 수 없어 **KCTIS 가 자기
+MCP** 를 내고, ClinicalTrials.gov 는 우리가 미러링하지 않고 **AACT**(CTTI 의 공개 PostgreSQL 사본)에 붙는다.
+
+KCTIS 쪽(`~/Projects/KCTIS/src/lib/mcp/`, 스펙 `docs/superpowers/specs/2026-09-15-kctis-mcp.md`): `POST /api/mcp`
+(Streamable HTTP, JSON 응답, Bearer 토큰 필수), 도구 `describe_schema`·`query_sql`(SELECT/WITH 한 문장, 200행, 게이트가
+주 방어). 원시 표는 숨기고 정규화를 녹인 뷰만: `v_cris_trials`·`v_cris_items`·`v_cris_sponsor`(표준명)·`v_cris_site`·
+`v_cris_unified`(api 우선·web 보완 — 연구고유번호·결과 공개 여부·내부 질환코드)·`v_mfds_trials`·`v_mfds_sites`·
+`v_mfds_unified`. AACT 는 `ctgov` 스키마(실측: 접속 2초, 쿼리 0.2~2초, 60만 건, 매일 갱신). 실측이 잡은 것: 응답 반환
+직후 전송을 닫으면 SSE 본문이 빔; Fly 프록시 뒤에서 SSE 가 SDK 클라이언트를 60초 매달리게 함 → JSON 응답 모드; GET 이
+Fly 뒤에서 영원히 매달려 다음 POST 를 막음 → GET·DELETE 즉시 405; DB 갱신 중엔 새 커넥션이 덜 올라온 파일을 열어
+"malformed"(사용자의 deploy-db 가 원자적이어야 한다).
+
+ctreg 쪽: `src/mcp/kctis-tools.ts` 가 kctis 서버의 도구 정의를 그대로(`kctis_` 접두사) 가져와 에이전트 도구에 더한다.
+지침에 "세는 물음은 kctis 로, ISRCTN·CTIS·등록번호·결과 데이터는 ctreg 로". 플레이북 여섯을 "kctis 가 있을 때 /
+없을 때" 두 갈래로 — 플러그인(ctreg CLI 만)이 같은 파일을 읽으니까. 페이지는 SQL 을 코드로 보인다. 실측 13/13
+(공개 서버, 사설망 경유): 기관 순위 5 SQL 32초, 미국 의뢰사(AACT) 22초, 결과 공개 비율 4 SQL 26초 — 모델이 스키마를
+먼저 읽고 `COUNT(DISTINCT)`·표준명 뷰·`has_us_facility` 를 맞게 쓴다.
+
+그리고 **걷어냈다**: `mirror.ts`·`CTREG_CRIS_MIRROR_URL`·`aggregate` 의 cris 경로(기본 registry 는 ctgov)·`ask.ts` 와
+`/api/ask`(0.9 의 분류기). ctreg 는 다시 공식 API 만 두드리는 클라이언트다. KCTIS 저장소의 git 규칙("사람이 한다")을
+한 번 어겼다(`e16cd0a`) — 기록해 둔다.
 
 배포 경로를 갈랐다(0.11.4). 사용자: "웹앱 부분 고치는데요 npm publish 가 필요한가요?" — 필요했다,
 Docker 이미지가 npm 에서 고정 버전을 받았으니까. 그 선택("컨테이너 = npm 사용자와 같은 벌")은

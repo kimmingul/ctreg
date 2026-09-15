@@ -67,7 +67,7 @@ async function main(): Promise<void> {
   const cfg = loadConfig();
   const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : undefined;
   const date = new Date().toISOString().slice(0, 10);
-  const lines: string[] = [`# 에이전트 필드 테스트 — ${date}`, '', `모델 ${cfg.llmModel ?? 'glm-5.3-flash'} · 사본 ${cfg.crisMirrorUrl ?? '(없음)'}`, ''];
+  const lines: string[] = [`# 에이전트 필드 테스트 — ${date}`, '', `모델 ${cfg.llmModel ?? 'glm-5.3-flash'} · kctis MCP ${process.env.KCTIS_MCP_URL ? '있음' : '없음'}`, ''];
   if (!cfg.llmApiKey) {
     lines.push('**측정하지 않았다 — CTREG_LLM_API_KEY 가 없다.** 없는 값을 지어내지 않는다.');
     writeFileSync(`docs/agent-field-test-${date}.md`, lines.join('\n') + '\n');

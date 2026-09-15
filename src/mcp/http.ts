@@ -3,7 +3,6 @@ import { createServer as createHttpServer } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { loadConfig, loadEnvFiles } from '../runtime/config.js';
 import { aggregate, readAll, record } from './stats.js';
-import { ask, type AskBody } from './ask.js';
 import { usage } from './usage.js';
 import { agent } from './agent.js';
 import { readVersion } from '../cli/version.js';
@@ -85,15 +84,6 @@ const httpServer = createHttpServer(async (req, res) => {
   }
   if (url.pathname === '/api/schema' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(schema()));
-    return;
-  }
-  if (url.pathname === '/api/ask' && req.method === 'POST') {
-    let raw = '';
-    for await (const chunk of req) raw += chunk;
-    let body: AskBody;
-    try { body = JSON.parse(raw) as AskBody; } catch { res.writeHead(400).end('{"error":"body must be JSON"}'); return; }
-    const { status, body: out } = await ask(body);
-    res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(out));
     return;
   }
   if (url.pathname.startsWith('/api/') && req.method === 'POST') {

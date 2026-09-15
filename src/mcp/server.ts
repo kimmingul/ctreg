@@ -125,7 +125,7 @@ export function toolAnnotations(): Record<Command, { title: string; readOnlyHint
     results: '시험 결과 데이터',
     registries: '레지스트리와 능력 목록',
     names: '한국어 연구자 이름 → 등록된 로마자 표기',
-    aggregate: '검색어 안의 시험을 한 축으로 묶어 등록 건수순으로',
+    aggregate: '검색어 안의 시험을 한 축으로 묶어 등록 건수순으로 (ctgov)',
   };
   const out = {} as ReturnType<typeof toolAnnotations>;
   for (const cmd of COMMANDS) {
@@ -345,7 +345,7 @@ const DESCRIPTION: Record<Command, string> = {
 CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리라 본인이 등록한 표기를 그대로 읽을 수 있다.
 
 쓰는 법:
-- term 은 후보를 좁힐 말(기관명·연구 주제)이다. 공식 API 문에서는 필수(CRIS 가 사람 이름으로 못 거른다), 사본 문(CTREG_CRIS_MIRROR_URL)에서는 필요 없다 — 넣지 마라
+- term 은 후보를 좁힐 말(기관명·연구 주제)이다 — CRIS 공식 API 가 사람 이름으로 못 걸러 필수다
 - 결과의 variants 가 표기 목록이다. 많이 쓴 것이 먼저. 오타도 별개 표기로 나온다 — 합치지 마라
 - ctgov: true 를 주면 표기마다 ctgov 건수를 함께 낸다 → 어느 표기로 물어야 하는지 바로 보인다
 - 그다음 search 에 investigator 로 그 표기들을 **하나씩** 물어라. 건수는 겹칠 수 있으니 더하지 마라
@@ -378,11 +378,10 @@ CRIS(한국)는 국문·영문을 나란히 싣는 이중언어 레지스트리�
 
 쓰는 법:
 - term 에 검색어. 쉼표로 여럿이면 OR — 국문·영문을 같이("당뇨,diabetes"). 시험은 등록번호로 한 번만 센다.
-- status 로 모집상태를 거를 수 있다. page-size 가 상위 몇 개인지다(기본 20). registry ctgov 면 검색의 다른 축(location·condition·intervention·phase·sponsor …)도 그대로 받는다 — "미국에서" 는 location "United States". cris 사본은 term·status·location(실시기관 또는 연구책임자 소속)·sponsor 를 받고 다른 축은 exit 3 이다. "○○병원 연구자들의 순위" 는 by investigator + term 기관명 + location 기관명.
-- registry 기본은 cris — 사본이 **전수**를 SQL 로 센다(의뢰사·기관은 표준명). registry ["ctgov"] 로도 된다: 집계 API 가 없어 검색을 **1,000건까지** 받아 세고, 모수가 그보다 크면 aggregate_truncated 경고와 함께 그 안의 순위다 — 검색어·status 로 모수를 좁혀라. ctgov 의 이름은 원문이라 표기가 다르면 갈린다(mapped 0).
-- CRIS 사본이 없는 서버는 cris 에 exit 3 — 그때는 목록을 읽어 세되 전수가 아님을 밝혀라.
+- status 로 모집상태를 거를 수 있다. page-size 가 상위 몇 개인지다(기본 20). 검색의 다른 축(location·condition·intervention·phase·sponsor …)도 그대로 받는다 — "미국에서" 는 location "United States".
+- registry 기본은 ctgov. 집계 API 가 없어 검색을 **1,000건까지** 받아 세고, 모수가 그보다 크면 aggregate_truncated 경고와 함께 그 안의 순위다 — 검색어·status 로 모수를 좁혀라. 이름은 원문이라 표기가 다르면 갈린다(mapped 0). cris 는 exit 3 — 공식 API 목록에 그 축이 없다(국내 집계는 KCTIS MCP 의 SQL 로).
 
-사용자에게 답할 때: **결과(순위·분포)부터** — 첫 줄에 모수와 상위 항목. 면책 문구로 시작하지 마라. 마지막 「한계」 문단에: 우수성이 아니라 등록 건수라는 것, 결과의 provenance(근거와 한계)와 mapped(표준명 매핑 비율)를 그대로 옮겨라 — 의약품·질환은 문자열 매칭이라 사전에 없는 것은 빠진다. 소속이 여럿인 이름은 동명이인이 섞였을 수 있다. 사본 수집 시각(cris_mirror_copy)을 한계로.`,
+사용자에게 답할 때: **결과(순위·분포)부터** — 첫 줄에 모수와 상위 항목. 면책 문구로 시작하지 마라. 마지막 「한계」 문단에: 우수성이 아니라 등록 건수라는 것, 결과의 provenance(근거와 한계), 잘림(aggregate_truncated), 이름이 원문이라 표기가 갈린다는 것.`,
 };
 
 export const toolDescriptions = (): Record<Command, string> => DESCRIPTION;

@@ -35,7 +35,7 @@ const sample = {
 describe('aggregate 커맨드', () => {
   it('--by 축과 --term(쉼표 OR)을 어댑터에 넘기고 순위·모수·근거를 낸다', async () => {
     const agg = vi.fn(async () => ({ data: sample, warnings: [{ code: 'cris_mirror_copy', message: '사본', registry: 'cris' as const }] }));
-    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨, diabetes', '--page-size', '5']), adapters(agg));
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨, diabetes', '--page-size', '5', '--registry', 'cris']), adapters(agg));
     expect(agg).toHaveBeenCalledWith(expect.objectContaining({ by: 'sponsor', terms: ['당뇨', 'diabetes'], limit: 5 }), expect.anything());
     expect(env.registries).toEqual([{ registry: 'cris', status: 'ok', total: 276 }]);
     const d = env.data as AggregateResult;
@@ -48,12 +48,12 @@ describe('aggregate 커맨드', () => {
 
   it('--status 도 넘긴다', async () => {
     const agg = vi.fn(async () => ({ data: { ...sample, items: [] }, warnings: [] }));
-    await runAggregate(parseCliArgs(['aggregate', '--by', 'year', '--term', 'x', '--status', 'recruiting']), adapters(agg));
+    await runAggregate(parseCliArgs(['aggregate', '--by', 'year', '--term', 'x', '--status', 'recruiting', '--registry', 'cris']), adapters(agg));
     expect(agg).toHaveBeenCalledWith(expect.objectContaining({ by: 'year', status: ['recruiting'] }), expect.anything());
   });
 
   it('어댑터가 이 축을 못 하면 exit 3 — 0건이 아니라 "그렇게 물어볼 수 없음"', async () => {
-    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨']), adapters(undefined));
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--registry', 'cris']), adapters(undefined));
     expect(env.registries[0]).toMatchObject({ registry: 'cris', status: 'unsupported' });
     expect(env.data).toBeNull();
   });
@@ -62,7 +62,7 @@ describe('aggregate 커맨드', () => {
     const agg = vi.fn(async () => ({ data: sample, warnings: [] }));
     const a = adapters(agg);
     (a.cris as { capability: () => unknown }).capability = () => ({ ...CRIS_CAPABILITY, aggregate: { supported: false, scope: '이 문은 못 한다' } });
-    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨']), a);
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--registry', 'cris']), a);
     expect(agg).not.toHaveBeenCalled();
     expect(env.registries[0]!.error?.hint).toContain('이 문은 못 한다');
   });
@@ -73,8 +73,8 @@ describe('aggregate 커맨드', () => {
     expect(() => parseCliArgs(['aggregate', '--by', 'sponsor'])).toThrow(/--term/);
   });
 
-  it('레지스트리는 cris 로 고정이다', () => {
-    expect(parseCliArgs(['aggregate', '--by', 'year', '--term', 'x']).registries).toEqual(['cris']);
+  it('레지스트리 기본은 ctgov 다 — cris 는 공식 API 목록에 그 축이 없다', () => {
+    expect(parseCliArgs(['aggregate', '--by', 'year', '--term', 'x']).registries).toEqual(['ctgov']);
   });
 
   it('축 목록이 하나의 정본이다 — 파서·도구 설명·능력 신고가 같은 것을 본다', () => {
@@ -170,15 +170,15 @@ describe('aggregate 의 필터 축', () => {
     expect(calls[0]).toMatchObject({ location: 'United States', condition: 'diabetes', phase: ['phase_3'] });
   });
 
-  it('사본 경로는 location→site, sponsor 를 넘긴다 — 기관 안의 연구자 순위가 이것으로 된다', async () => {
+  it('집계를 자기가 하는 어댑터에는 location→site, sponsor 를 넘긴다', async () => {
     const agg = vi.fn(async () => ({ data: sample, warnings: [] }));
-    await runAggregate(parseCliArgs(['aggregate', '--by', 'investigator', '--term', '전북대학교병원', '--location', '전북대학교병원', '--sponsor', '종근당']), adapters(agg));
+    await runAggregate(parseCliArgs(['aggregate', '--by', 'investigator', '--term', '전북대학교병원', '--location', '전북대학교병원', '--sponsor', '종근당', '--registry', 'cris']), adapters(agg));
     expect(agg).toHaveBeenCalledWith(expect.objectContaining({ site: '전북대학교병원', sponsor: '종근당' }), expect.anything());
   });
 
-  it('사본 경로는 term·status 밖의 축이 오면 exit 3 — 조용히 무시하지 않는다', async () => {
+  it('집계를 자기가 하는 어댑터가 못 받는 축이 오면 exit 3 — 조용히 무시하지 않는다', async () => {
     const agg = vi.fn(async () => ({ data: sample, warnings: [] }));
-    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--phase', 'phase_3']), adapters(agg));
+    const env = await runAggregate(parseCliArgs(['aggregate', '--by', 'sponsor', '--term', '당뇨', '--phase', 'phase_3', '--registry', 'cris']), adapters(agg));
     expect(agg).not.toHaveBeenCalled();
     expect(env.registries[0]).toMatchObject({ registry: 'cris', status: 'unsupported' });
     expect(env.registries[0]!.error?.message).toMatch(/phase/);

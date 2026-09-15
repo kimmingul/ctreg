@@ -494,12 +494,11 @@ ctreg results CTGOV:NCT01902173          # 1차·2차 평가변수, 이상반응
 (`.env` 로 줘도 된다 — `.env.example` 참고). Encoding 키를 넣으면 두 번 인코딩돼 인증이
 실패한다. 키가 없으면 이 레지스트리만 exit 4 로 말하고 나머지는 그대로 동작한다.
 
-**두 번째 문 — 사본.** `CTREG_CRIS_MIRROR_URL` 을 주면 CRIS 어댑터가 공식 API 대신
-[KCTIS](https://github.com/kimmingul/KCTIS) 의 CRIS 사본(공식 API 로 받아 둔 12,585건, 상세 포함)을
-본다. 그러면 **연구책임자 이름이 목록 축이 된다** — `ctreg names 김민걸` 이 `--term` 없이 수 초에
-답하고(공식 문은 후보를 하나씩 열어 1~3분), 모집상태로도 거를 수 있다. 사본이므로 응답마다
-수집 시각이 경고(`cris_mirror_copy`)로 붙는다 — 그 뒤 등록된 것은 거기 없다. 공개 서버
-`ctreg.trialinsight.ai` 는 이 문을 쓴다. 아래 신고는 **공식 API 문** 기준이다.
+**국내 데이터의 집계는 ctreg 밖에 있다.** 연구자·의뢰사·기관·연도·약물별 순위와 분포 같은 "세는 물음" 은
+공식 API 로는 못 한다(목록에 그 축이 없다). 공개 웹의 AI 모드는 그런 물음을 **KCTIS 의 MCP**(CRIS 공식 API
+사본과 식약처 승인현황, 그리고 ClinicalTrials.gov 의 AACT 사본 위의 읽기 전용 SQL)로 보낸다 — ctreg CLI·MCP
+자체는 KCTIS 를 모른다. 한때 KCTIS 사본을 CRIS 의 두 번째 문으로 ctreg 에 붙였다가(0.10~0.11) 2026-09-15 에
+걷어냈다: ctreg 는 레지스트리 클라이언트로, 데이터 서비스는 KCTIS 로.
 
 **이 어댑터의 신고는 거의 전부 `false` 다. 그것이 정직한 모습이다.** 공식 API 가 받는 검색
 입력은 자유 텍스트 하나뿐이고 목록이 내주는 항목은 16개다. CRIS 화면에는 질환·중재·연구책임자
@@ -606,7 +605,7 @@ ctreg search --condition melanoma --page-size 5 --format json 2>/dev/null | jq '
 | 변수 | 기본값 | 뜻 |
 | :-- | :-- | :-- |
 | `CTREG_CRIS_SERVICE_KEY` | (없음) | **CRIS 인증키.** Decoding 키를 넣는다 |
-| `CTREG_CRIS_MIRROR_URL` | (없음) | **CRIS 사본(KCTIS) URL.** 있으면 인증키 대신 이 문을 쓴다 — 이름이 목록 축 |
+| `KCTIS_MCP_URL` · `KCTIS_MCP_TOKEN` | (없음) | **웹 AI 모드 전용.** KCTIS 의 MCP(읽기 전용 SQL: CRIS·식약처·AACT). 없으면 에이전트는 ctreg 도구만으로 돈다 |
 | `CTREG_LLM_API_KEY` | (없음) | **웹 AI 모드의 LLM 키.** 없으면 AI 모드만 꺼지고 나머지는 그대로 |
 | `CTREG_LLM_BASE_URL` | `https://ollama.com/v1` | OpenAI 호환 `chat/completions` 를 내는 곳 |
 | `CTREG_LLM_MODEL` | `glm-5.3-flash` | 도구 호출을 지원하는 모델이어야 한다 |

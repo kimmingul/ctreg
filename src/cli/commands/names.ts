@@ -18,7 +18,8 @@ import type { Envelope, RegistryStatus } from '../output.js';
  * 새 API 가 아니다** — `search --investigator` 가 이미 내는 연락처에서 영문 이름을 뽑아
  * 세는 것이다. 코어를 새로 쓰지 않고, CRIS 어댑터의 대조(후보를 하나씩 열어 연구책임자를
  * 맞추는 것)를 그대로 쓴다. 공식 API 문에서는 `--term` 이 있어야 한다(후보를 좁힐 축이 그것뿐)
- * — 없으면 어댑터가 exit 3 을 낸다. 사본 문(CTREG_CRIS_MIRROR_URL)에서는 이름이 목록 축이라 필요 없다.
+ * — 없으면 어댑터가 exit 3 을 낸다. (한때 KCTIS 사본을 두 번째 문으로 붙여 이름이 목록 축이 됐었다 — 2026-09-15 에
+ * 걷어냈다: ctreg 는 공식 API 만 두드리고, 국내 데이터는 KCTIS 의 MCP 가 낸다.)
  *
  * **표기를 합치지 않는다.** `Min Gul KIm`(오타)이 실측에서 실제로 나왔다. 대소문자나
  * 공백을 정규화해 합치면 사용자는 그 오타가 등록돼 있다는 것을 모르고, ctgov 에 그 오타로
@@ -36,7 +37,7 @@ export type NameVariant = {
 
 export type NamesResult = {
   korean: string;
-  /** 후보를 좁힌 말. 있으면 결과가 이 범위에 갇힌다는 것을 소비자가 알아야 한다. 사본이면 없어도 된다. */
+  /** 후보를 좁힌 말. 있으면 결과가 이 범위에 갇힌다는 것을 소비자가 알아야 한다. */
   term?: string;
   /** 대조에 쓴 CRIS 시험 수(이 이름이 연구책임자로 걸린 것). */
   crisMatched: number;
@@ -61,7 +62,7 @@ export async function runNames(
   // 1) CRIS 에서 이 이름이 연구책임자인 시험을 모은다 — 어댑터의 대조를 그대로 쓴다.
   const query: NormalizedQuery = { ...args.query, investigator: korean, ...(term !== undefined ? { term } : {}) };
   /**
-   * **쪽을 끝까지 걷는다.** 공식 API 문은 어댑터가 후보를 끝까지 걸어 한 번에 냈지만, 사본 문은
+   * **쪽을 끝까지 걷는다.** 공식 API 문은 어댑터가 후보를 끝까지 걸어 한 번에 내지만, 쪽을 나눠 주는 문(한때의 사본)은
    * 쪽을 나눠 준다(실측 2026-09-11: 총 43건에 첫 쪽 20건만 세고 있었다). 첫 쪽만 세면 빈도가
    * 틀리고 드문 표기가 통째로 빠진다 — 이 도구의 존재 이유가 그 드문 표기다. 상한은 정책이다.
    */
