@@ -319,3 +319,39 @@ describe('상한은 환경변수로', () => {
     expect(agentLimits({ CTREG_AGENT_MAX_TURNS: '-1', CTREG_AGENT_MAX_MS: 'abc' }).maxMs).toBe(360_000);
   });
 });
+
+/**
+ * 에이전트 + kctis 도구. 설정(KCTIS_MCP_URL·TOKEN)이 있으면 kctis 도구가 목록에 더해지고, 모델이 부르면 MCP 로
+ * 실행된다. 추적에는 SQL 이 그대로 보인다 — 틀린 SQL 은 보여야 잡힌다.
+ */
+describe('에이전트 — kctis 도구', () => {
+  const kctis = {
+    tools: [{ type: 'function' as const, function: { name: 'kctis_query_sql', description: 'SQL', parameters: { type: 'object', properties: { source: { type: 'string' }, sql: { type: 'string' } }, required: ['source', 'sql'] } } }],
+    call: vi.fn(async (_n: string, args: Record<string, unknown>) => ({ columns: ['n'], rows: [{ n: 42 }], row_count: 1, truncated: false, elapsed_ms: 5, source_note: `사본 · ${String(args.source)}` })),
+  };
+  it('kctis 도구가 목록에 실리고, 호출은 MCP 로 가며, 추적에 SQL 이 남는다', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('s', 'kctis_query_sql', { source: 'kctis', sql: "SELECT COUNT(*) n FROM v_cris_unified WHERE pi_name_kr='김민걸'" })] }))
+      .mockResolvedValueOnce(reply({ content: '42건 [CRIS 사본]' }));
+    const t = fakeTools(() => ok('ctgov', []));
+    const events: AgentEvent[] = [];
+    const r = await agent({ q: '김민걸 건수', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: (e) => events.push(e), kctis });
+    expect(kctis.call).toHaveBeenCalledWith('kctis_query_sql', expect.objectContaining({ source: 'kctis' }));
+    expect(t.calls).toHaveLength(0);
+    const first = JSON.parse((f.mock.calls[0]![1] as RequestInit).body as string) as { tools: { function: { name: string } }[] };
+    expect(first.tools.map((x) => x.function.name)).toContain('kctis_query_sql');
+    expect(r.steps[0]).toMatchObject({ tool: 'kctis_query_sql', args: { sql: expect.stringContaining('SELECT') }, exit: 0 });
+    expect(r.steps[0]!.summary).toMatch(/1행|사본/);
+    const second = JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string) as { messages: { role: string; content?: string }[] };
+    expect(second.messages.find((m) => m.role === 'tool')?.content).toContain('"n":42');
+  });
+  it('kctis 결과의 error 는 exit 2 로 추적에 남는다', async () => {
+    const bad = { ...kctis, call: vi.fn(async () => ({ error: '읽기 전용이다' })) };
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('s', 'kctis_query_sql', { source: 'kctis', sql: 'DELETE' })] }))
+      .mockResolvedValueOnce(reply({ content: '못 했다' }));
+    const t = fakeTools(() => ok('ctgov', []));
+    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, kctis: bad });
+    expect(r.steps[0]!.exit).toBe(2);
+  });
+});
