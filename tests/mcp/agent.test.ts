@@ -364,6 +364,8 @@ describe('에이전트 — SQL 결과 표를 final 에 싣는다', () => {
     const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, kctis });
     expect(r.tables).toHaveLength(1);
     expect(r.tables[0]).toMatchObject({ step: 1, source: 'kctis', sql: 'SELECT trial_id, title FROM v_cris_unified', columns: ['trial_id', 'title'], truncated: true, source_note: 'CRIS 사본' });
+    // 내보내기 서명 — 이 SQL 을 에이전트가 돌렸다는 증표. 페이지가 /api/export 에 함께 보낸다.
+    expect(r.tables[0]!.sig).toMatch(/^[0-9a-f]{32,}$/);
     expect(r.tables[0]!.rows).toHaveLength(2);
   });
   it('오류난 SQL 은 표가 되지 않는다', async () => {

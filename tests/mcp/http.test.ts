@@ -164,10 +164,15 @@ describe('ctreg-mcp-http 진입점 (실제 프로세스·실제 포트)', () => 
     expect(res.status).toBe(501);
   });
 
-  /** CSV 전체 내보내기 프록시 — kctis 설정이 없는 서버는 501. 토큰은 서버에만 있다(페이지가 SQL 만 보낸다). */
-  it('/api/export — kctis 설정 없는 서버는 501, 잘못된 몸은 400', async () => {
+  /**
+   * CSV 전체 내보내기 프록시. 보안 리뷰(2026-09-16)가 짚은 것: 누구나 임의 SQL 을 프록시로 보낼 수 있었다 → 에이전트가
+   * 돌린 SQL 만 서명(HMAC)으로 허용. 본문 64KB 상한. kctis 설정이 없는 서버는 501.
+   */
+  it('/api/export — 서명 없는 SQL 은 403, 잘못된 몸은 400, 큰 몸은 413', async () => {
     const r = await fetch(new URL('/api/export', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: 'kctis', sql: 'SELECT 1' }) });
-    expect(r.status).toBe(501);
+    expect(r.status).toBe(403);
+    const big = await fetch(new URL('/api/export', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: 'kctis', sql: 'SELECT ' + 'x'.repeat(70_000), sig: 'a' }) });
+    expect(big.status).toBe(413);
     const bad = await fetch(new URL('/api/export', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{' });
     expect(bad.status).toBe(400);
   });
