@@ -36,6 +36,15 @@ import { createServer } from './server.js';
  */
 loadEnvFiles();
 
+/** 내보내기 요청률 — IP 당 분당 5회. 메모리 창(인스턴스 하나 전제). */
+const exportHits = new Map<string, number[]>();
+function exportAllowed(ip: string): boolean {
+  const now = Date.now();
+  const hits = (exportHits.get(ip) ?? []).filter((t) => now - t < 60_000);
+  if (hits.length >= 5) { exportHits.set(ip, hits); return false; }
+  hits.push(now); exportHits.set(ip, hits); return true;
+}
+
 const port = Number(process.env.CTREG_MCP_PORT ?? '3000');
 const host = process.env.CTREG_MCP_HOST ?? '127.0.0.1';
 
@@ -74,6 +83,34 @@ const httpServer = createHttpServer(async (req, res) => {
     } finally {
       clearInterval(keepalive);
       res.end();
+    }
+    return;
+  }
+  /**
+   * CSV 전체 내보내기 — 페이지가 표의 SQL 을 보내면 KCTIS 의 `/api/export` 로 넘겨 CSV 를 그대로 흘린다. kctis MCP 의
+   * 200행 상한을 넘는 목록을 파일로 받는 길이다. 토큰은 여기(서버)에만 있다 — 페이지는 SQL 만 안다. 같은 읽기 전용
+   * 게이트를 KCTIS 가 건다. 남용은 IP 당 분당 5회로 막는다.
+   */
+  if (url.pathname === '/api/export' && req.method === 'POST') {
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    let body: { source?: unknown; sql?: unknown };
+    try { body = JSON.parse(raw) as { source?: unknown; sql?: unknown }; } catch { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'body must be JSON' })); return; }
+    if (typeof body.sql !== 'string' || typeof body.source !== 'string') { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'source, sql required' })); return; }
+    const base = process.env.KCTIS_MCP_URL;
+    const token = process.env.KCTIS_MCP_TOKEN;
+    if (!base || !token) { res.writeHead(501, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'no_kctis', message: '이 서버에는 KCTIS 가 붙어 있지 않다.' })); return; }
+    const ip = String(req.headers['fly-client-ip'] ?? req.socket.remoteAddress ?? '?');
+    if (!exportAllowed(ip)) { res.writeHead(429, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'rate', message: '내보내기는 분당 5회까지다. 잠시 뒤 다시.' })); return; }
+    const target = new URL(base); target.pathname = target.pathname.replace(/\/api\/mcp\/?$/, '/api/export');
+    try {
+      const up = await fetch(target, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ source: body.source, sql: body.sql }), signal: AbortSignal.timeout(60_000) });
+      if (!up.ok || !up.body) { const text = await up.text(); res.writeHead(up.status === 400 ? 400 : 502, { 'content-type': 'application/json; charset=utf-8' }).end(text || JSON.stringify({ error: 'upstream' })); return; }
+      res.writeHead(200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': up.headers.get('content-disposition') ?? 'attachment; filename="export.csv"' });
+      for await (const chunk of up.body as unknown as AsyncIterable<Uint8Array>) res.write(chunk);
+      res.end();
+    } catch (e) {
+      res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'upstream', message: (e as Error).message }));
     }
     return;
   }

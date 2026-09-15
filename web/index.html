@@ -140,6 +140,11 @@
   .trace .args { font-family: var(--mono); word-break: break-all; }
   .trace .full { margin-top: 4px; white-space: pre-wrap; }
   .trace pre.sql { margin: 4px 0 6px; padding: 8px 10px; font-size: 12px; line-height: 1.45; background: var(--well); border-radius: 6px; white-space: pre-wrap; word-break: break-all; color: var(--ink); }
+  .table { margin: 0 0 18px; }
+  .table .stat { align-items: center; }
+  button.csv { font: 12px var(--sans); padding: 2px 10px; border: 1px solid var(--rule); border-radius: 12px; background: var(--well); color: var(--ink); cursor: pointer; }
+  button.csv:hover { border-color: var(--accent); color: var(--accent); }
+  button.csv:disabled { opacity: .6; cursor: wait; }
   .answer h4 { margin: 6px 0 4px; font: 500 15px/1.4 var(--sans); }
   .answer ul { margin: 0 0 8px; padding-left: 20px; }
   .answer li { margin: 2px 0; }
@@ -407,6 +412,7 @@
    * 그린다 — Claude Code 의 도구 추적처럼. 끝나면 답 상자, 그 아래 모인 레코드.
    */
   async function runAgent(q, t0) {
+    lastQ = q;
     $('out').innerHTML = `<section class="trace" id="trace"><div class="label">AI 가 도구를 부르는 중 — Claude Code 와 같은 방식으로 여러 번 묻고 읽는다. <span id="elapsed" style="font-variant-numeric:tabular-nums">0초</span></div><ol id="steps"></ol></section>`;
     const res = await fetch('/api/agent', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ q }) });
     if (res.status === 501 || res.status === 400) { const d = await res.json(); $('out').innerHTML = `<div class="warn">${esc(d.message || d.error || '')}</div>`; return; }
@@ -443,10 +449,55 @@
     if (final.answer) {
       $('out').insertAdjacentHTML('beforeend', `<section class="answer"><div class="label">AI 의 답 — 도구 결과 ${final.records.length}건을 읽고 <code>${esc(final.model)}</code> 이 쓴 것. <strong>근거 레코드는 아래.</strong> 틀릴 수 있다.</div>${md(final.answer)}</section>`);
     }
-    if (final.records && final.records.length) {
-      $('out').insertAdjacentHTML('beforeend', `<p class="stat">근거 레코드 ${final.records.length}건 — 도구가 실제로 돌려준 것</p>` + items(final.records));
+    // SQL 결과 표 — 표마다 [CSV]. 파일은 페이지가 만든다(모델이 아니라). 200행 상한을 넘는 표는 서버 내보내기(/api/export)로.
+    lastTables = final.tables || [];
+    lastTables.forEach((tb, i) => {
+      const n = tb.rows.length;
+      $('out').insertAdjacentHTML('beforeend', `<section class="table"><div class="stat">${esc(String(i + 1))}. <code>${esc(tb.source)}</code> ${n.toLocaleString()}행${tb.truncated ? ' <b>(상한 200 — 전체는 CSV 로)</b>' : ''} · ${esc(tb.source_note)}
+        <button type="button" class="csv" data-table="${i}">CSV</button></div>
+        <div class="tablewrap"><table><thead><tr>${tb.columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${tb.rows.slice(0, 50).map((r) => `<tr>${tb.columns.map((c) => `<td>${esc(cell(r[c]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${n > 50 ? `<p class="empty">화면엔 앞 50행 — CSV 는 전부.</p>` : ''}</section>`);
+    });
+    lastRecords = final.records || [];
+    if (lastRecords.length) {
+      $('out').insertAdjacentHTML('beforeend', `<p class="stat">근거 레코드 ${lastRecords.length}건 — 도구가 실제로 돌려준 것 <button type="button" class="csv" data-records="1">CSV</button></p>` + items(lastRecords));
     }
   }
+  let lastTables = [], lastRecords = [], lastQ = '';
+  const cell = (v) => v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+  const slug = (t) => (t || '검색').replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40);
+
+  /**
+   * CSV — 브라우저에서 만든다. UTF-8 BOM 을 앞에 붙여야 엑셀이 한글을 안 깨뜨린다. 200행 상한에 걸린 표는 같은 SQL 을
+   * 서버(/api/export)가 상한 없이 다시 돌려 스트리밍한다 — 토큰은 서버에만 있다.
+   */
+  function toCsv(columns, rows) {
+    const q = (v) => { const t = cell(v); return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+    return '\uFEFF' + [columns.map(q).join(','), ...rows.map((r) => columns.map((c) => q(r[c])).join(','))].join('\r\n') + '\r\n';
+  }
+  function download(name, text) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  const RECORD_COLS = [['id', '등록번호'], ['registry', '레지스트리'], ['title', '제목'], ['status', '상태'], ['phase', '상'], ['studyType', '종류'], ['sponsor.lead', '의뢰'], ['enrollment.count', '등록인원'], ['dates.start', '시작일'], ['dates.completion', '종료일'], ['locationsTotal', '장소수'], ['hasResults', '결과공개'], ['url', 'URL']];
+  const dig = (o, path) => path.split('.').reduce((x, k) => (x == null ? undefined : x[k]), o);
+  $('out').addEventListener('click', async (e) => {
+    const b = e.target.closest('button.csv'); if (!b) return;
+    if (b.dataset.records) {
+      const rows = lastRecords.map((r) => Object.fromEntries(RECORD_COLS.map(([p, name]) => [name, Array.isArray(dig(r, p)) ? dig(r, p).join('|') : dig(r, p)])));
+      download(`ctreg_${slug(lastQ)}_records.csv`, toCsv(RECORD_COLS.map(([, n]) => n), rows)); return;
+    }
+    const tb = lastTables[Number(b.dataset.table)]; if (!tb) return;
+    if (!tb.truncated) { download(`ctreg_${slug(lastQ)}_${Number(b.dataset.table) + 1}.csv`, toCsv(tb.columns, tb.rows)); return; }
+    // 상한에 걸린 표 — 서버가 같은 SQL 을 상한 없이 돌려 CSV 로 준다
+    b.disabled = true; b.textContent = '전체 내보내는 중…';
+    try {
+      const r = await fetch('/api/export', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: tb.source, sql: tb.sql }) });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.message || d.error || r.status); }
+      download(`ctreg_${slug(lastQ)}_${Number(b.dataset.table) + 1}_full.csv`, await r.text());
+    } catch (err) { alert('전체 내보내기 실패: ' + err.message); }
+    finally { b.disabled = false; b.textContent = 'CSV'; }
+  });
   // 아주 작은 마크다운 — 굵게·제목·목록·근거 번호. 표는 그대로 pre 로.
   function md(t) {
     const esc1 = (x) => esc(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[(CTGOV|CRIS|ISRCTN|CTIS):([A-Za-z0-9-]+)\]/g, '<code>$1:$2</code>');

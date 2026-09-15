@@ -35,10 +35,13 @@ export type AgentEvent =
   | { type: 'error'; message: string };
 
 export type AgentStep = { step: number; tool: AgentToolName; args: Record<string, unknown>; exit: number; ms: number; summary: string };
+/** SQL 결과 표 — 페이지가 표와 [CSV] 버튼을 그린다. 행은 kctis 의 상한(200) 안이다. */
+export type AgentTable = { step: number; source: string; sql: string; columns: string[]; rows: Record<string, unknown>[]; row_count: number; truncated: boolean; source_note: string };
 export type AgentResult = {
   answer?: string;
   error?: string;
   steps: AgentStep[];
+  tables: AgentTable[];
   /** 모든 스텝에서 모인 레코드 — 근거. 중복 제거, 상한 안. */
   records: Record<string, unknown>[];
   truncated: boolean;
@@ -235,8 +238,9 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
   const model = cfg.llmModel ?? 'glm-5.3-flash';
   const started = Date.now();
   const steps: AgentStep[] = [];
+  const tables: AgentTable[] = [];
   const byId = new Map<string, Record<string, unknown>>();
-  const base = { steps, records: [] as Record<string, unknown>[], truncated: false, model };
+  const base = { steps, tables, records: [] as Record<string, unknown>[], truncated: false, model };
 
   if (!cfg.llmApiKey) return { ...base, error: 'AI 모드가 아직 켜져 있지 않다 — 서버에 LLM 키가 없다.', ms: 0 };
   const baseUrl = (cfg.llmBaseUrl ?? 'https://ollama.com/v1').replace(/\/+$/, '');
@@ -312,6 +316,10 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
         let out: Record<string, unknown>;
         try { out = await kctis.call(name, raw); } catch (e) { out = { error: (e as Error).message }; }
         const exit = out.error ? 2 : 0;
+        // 행이 있는 결과는 표로 모은다 — 페이지가 그리고, CSV 로 내려준다.
+        if (!out.error && Array.isArray(out.rows) && Array.isArray(out.columns)) {
+          tables.push({ step, source: String(raw.source ?? ''), sql: String(raw.sql ?? ''), columns: out.columns as string[], rows: out.rows as Record<string, unknown>[], row_count: Number(out.row_count ?? (out.rows as unknown[]).length), truncated: Boolean(out.truncated), source_note: String(out.source_note ?? '') });
+        }
         const summary = out.error ? `오류 — ${String(out.error).slice(0, 80)}` : out.row_count === undefined ? '스키마와 세는 법을 읽었다' : `${String(out.row_count)}행${out.truncated ? '(잘림)' : ''} · ${String(out.source_note ?? '').slice(0, 60)}`;
         const s: AgentStep = { step, tool: name, args: raw, exit, ms: Date.now() - t0, summary };
         emit({ type: 'result', step, tool: name, exit, ms: s.ms, summary });
