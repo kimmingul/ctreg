@@ -58,6 +58,8 @@ const CASES: Case[] = [
     mustCall: ['kctis_query_sql'], answerMust: [/식약처|승인/, /건/] },
   { name: '결과-공개', q: '국내 당뇨병 임상시험 중 결과가 공개된 비율은', playbook: undefined,
     mustCall: ['kctis_query_sql'], answerMust: [/%|비율|건/, /웹|공개/] },
+  { name: 'csv-기관-목록', q: '전북대학교병원 연구자들의 임상시험 리스트를 csv 로 받고 싶어', playbook: 'export-list',
+    mustCall: ['kctis_query_sql'], answerMust: [/CSV|csv|버튼/, /건/] },
   { name: '조건-검색', q: '모집 중인 당뇨병 3상 시험', playbook: 'condition-drug',
     mustCall: ['kctis_query_sql', 'search_trials_multi_registry'], mustNotCall: ['aggregate_trials'], answerMust: [/모집|recruiting/i, /건/] },
 ];
@@ -100,6 +102,7 @@ async function main(): Promise<void> {
     const secs = Math.round((Date.now() - t0) / 1000);
     console.log(`${ok ? '✅' : '❌'} ${c.name} — ${secs}s, 도구 ${tools.length}회${problems.length ? ' — ' + problems.join(' · ') : ''}`);
     lines.push(`## ${ok ? '✅' : '❌'} ${c.name} — "${c.q}"`, '', `- ${secs}초 · 도구 ${tools.length}회 · 플레이북 ${firstPlaybook ?? '(없음)'} · 레코드 ${r.records.length}${r.truncated ? ' · **잘림**' : ''}`);
+    if (r.tables?.length) lines.push(`- 표 ${r.tables.length}개: ${r.tables.map((t) => `${t.row_count}행${t.truncated ? '(잘림→CSV 전체)' : ''}`).join(', ')}`);
     lines.push(`- 호출: ${calls.map((e) => `${e.tool}${e.tool === 'aggregate_trials' ? `(${String(e.args.by)})` : e.tool === 'kctis_query_sql' ? `(${String(e.args.source)})` : ''}`).join(' → ')}`);
     for (const e of calls) if (e.tool === 'kctis_query_sql') lines.push('  ```sql\n  ' + String(e.args.sql).replace(/\n/g, '\n  ') + '\n  ```');
     if (problems.length) lines.push(`- **문제:** ${problems.join(' · ')}`);
