@@ -7,6 +7,7 @@ import { REGISTRY_KEYS } from '../core/registry.js';
 import { loadConfig } from '../runtime/config.js';
 import { callTool, TOOL_NAME, toolDescriptions, toolSchemas, type ToolName } from './server.js';
 import { connectKctis, KCTIS_PREFIX, type KctisTools } from './kctis-tools.js';
+import { exportSig } from './export-sig.js';
 
 /**
  * 에이전트 루프 — **Claude Code 가 MCP 로 하는 그대로.**
@@ -36,7 +37,7 @@ export type AgentEvent =
 
 export type AgentStep = { step: number; tool: AgentToolName; args: Record<string, unknown>; exit: number; ms: number; summary: string };
 /** SQL 결과 표 — 페이지가 표와 [CSV] 버튼을 그린다. 행은 kctis 의 상한(200) 안이다. */
-export type AgentTable = { step: number; source: string; sql: string; columns: string[]; rows: Record<string, unknown>[]; row_count: number; truncated: boolean; source_note: string };
+export type AgentTable = { step: number; source: string; sql: string; columns: string[]; rows: Record<string, unknown>[]; row_count: number; truncated: boolean; source_note: string; /** /api/export 가 요구하는 서명 — 이 SQL 을 에이전트가 돌렸다는 증표. */ sig: string };
 export type AgentResult = {
   answer?: string;
   error?: string;
@@ -318,7 +319,8 @@ export async function agent(o: AgentOpts): Promise<AgentResult> {
         const exit = out.error ? 2 : 0;
         // 행이 있는 결과는 표로 모은다 — 페이지가 그리고, CSV 로 내려준다.
         if (!out.error && Array.isArray(out.rows) && Array.isArray(out.columns)) {
-          tables.push({ step, source: String(raw.source ?? ''), sql: String(raw.sql ?? ''), columns: out.columns as string[], rows: out.rows as Record<string, unknown>[], row_count: Number(out.row_count ?? (out.rows as unknown[]).length), truncated: Boolean(out.truncated), source_note: String(out.source_note ?? '') });
+          const source = String(raw.source ?? ''); const sql = String(raw.sql ?? '');
+          tables.push({ step, source, sql, columns: out.columns as string[], rows: out.rows as Record<string, unknown>[], row_count: Number(out.row_count ?? (out.rows as unknown[]).length), truncated: Boolean(out.truncated), source_note: String(out.source_note ?? ''), sig: exportSig(source, sql, env) });
         }
         const summary = out.error ? `오류 — ${String(out.error).slice(0, 80)}` : out.row_count === undefined ? '스키마와 세는 법을 읽었다' : `${String(out.row_count)}행${out.truncated ? '(잘림)' : ''} · ${String(out.source_note ?? '').slice(0, 60)}`;
         const s: AgentStep = { step, tool: name, args: raw, exit, ms: Date.now() - t0, summary };

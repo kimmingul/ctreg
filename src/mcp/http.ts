@@ -5,6 +5,7 @@ import { loadConfig, loadEnvFiles } from '../runtime/config.js';
 import { aggregate, readAll, record } from './stats.js';
 import { usage } from './usage.js';
 import { agent } from './agent.js';
+import { verifyExportSig } from './export-sig.js';
 import { readVersion } from '../cli/version.js';
 import { api, page, schema } from './web.js';
 import { createServer } from './server.js';
@@ -36,13 +37,24 @@ import { createServer } from './server.js';
  */
 loadEnvFiles();
 
-/** 내보내기 요청률 — IP 당 분당 5회. 메모리 창(인스턴스 하나 전제). */
+/**
+ * 내보내기 상한 — IP 당 분당 5회, 동시 2건. 메모리 창(인스턴스 하나 전제). 맵은 분마다 비운다(무한히 자라지 않게).
+ * 클라이언트 IP 는 Fly 뒤에서만 `fly-client-ip`(프록시가 덮어쓴다)를 믿고, 아니면 소켓 주소 — 헤더는 위조된다.
+ */
 const exportHits = new Map<string, number[]>();
+let exportInFlight = 0;
+const EXPORT_CONCURRENCY = 2;
+const EXPORT_BODY_MAX = 64_000;
+setInterval(() => { const now = Date.now(); for (const [ip, hits] of exportHits) { const live = hits.filter((t) => now - t < 60_000); if (live.length) exportHits.set(ip, live); else exportHits.delete(ip); } }, 60_000).unref();
 function exportAllowed(ip: string): boolean {
   const now = Date.now();
   const hits = (exportHits.get(ip) ?? []).filter((t) => now - t < 60_000);
   if (hits.length >= 5) { exportHits.set(ip, hits); return false; }
   hits.push(now); exportHits.set(ip, hits); return true;
+}
+function clientIp(req: import('node:http').IncomingMessage): string {
+  const fly = process.env.FLY_APP_NAME ? req.headers['fly-client-ip'] : undefined;
+  return String((Array.isArray(fly) ? fly[0] : fly) ?? req.socket.remoteAddress ?? '?');
 }
 
 const port = Number(process.env.CTREG_MCP_PORT ?? '3000');
@@ -93,16 +105,21 @@ const httpServer = createHttpServer(async (req, res) => {
    */
   if (url.pathname === '/api/export' && req.method === 'POST') {
     let raw = '';
-    for await (const chunk of req) raw += chunk;
-    let body: { source?: unknown; sql?: unknown };
-    try { body = JSON.parse(raw) as { source?: unknown; sql?: unknown }; } catch { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'body must be JSON' })); return; }
+    let tooBig = false;
+    for await (const chunk of req) { raw += chunk; if (raw.length > EXPORT_BODY_MAX) { tooBig = true; break; } }
+    if (tooBig) { res.writeHead(413, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'too_large' })); return; }
+    let body: { source?: unknown; sql?: unknown; sig?: unknown };
+    try { body = JSON.parse(raw) as { source?: unknown; sql?: unknown; sig?: unknown }; } catch { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'body must be JSON' })); return; }
     if (typeof body.sql !== 'string' || typeof body.source !== 'string') { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'source, sql required' })); return; }
+    // 에이전트가 돌린 SQL 만 — 서명이 증표다. 없거나 틀리면 403: 이 프록시로 임의 SQL 을 보낼 수 없다.
+    if (!verifyExportSig(body.source, body.sql, String(body.sig ?? ''))) { res.writeHead(403, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'unsigned', message: '내보내기는 이 페이지의 결과 표에서만 된다.' })); return; }
     const base = process.env.KCTIS_MCP_URL;
     const token = process.env.KCTIS_MCP_TOKEN;
     if (!base || !token) { res.writeHead(501, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'no_kctis', message: '이 서버에는 KCTIS 가 붙어 있지 않다.' })); return; }
-    const ip = String(req.headers['fly-client-ip'] ?? req.socket.remoteAddress ?? '?');
-    if (!exportAllowed(ip)) { res.writeHead(429, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'rate', message: '내보내기는 분당 5회까지다. 잠시 뒤 다시.' })); return; }
+    if (!exportAllowed(clientIp(req))) { res.writeHead(429, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'rate', message: '내보내기는 분당 5회까지다. 잠시 뒤 다시.' })); return; }
+    if (exportInFlight >= EXPORT_CONCURRENCY) { res.writeHead(429, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'busy', message: '내보내기가 진행 중이다. 잠시 뒤 다시.' })); return; }
     const target = new URL(base); target.pathname = target.pathname.replace(/\/api\/mcp\/?$/, '/api/export');
+    exportInFlight += 1;
     try {
       const up = await fetch(target, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ source: body.source, sql: body.sql }), signal: AbortSignal.timeout(60_000) });
       if (!up.ok || !up.body) { const text = await up.text(); res.writeHead(up.status === 400 ? 400 : 502, { 'content-type': 'application/json; charset=utf-8' }).end(text || JSON.stringify({ error: 'upstream' })); return; }
@@ -111,6 +128,8 @@ const httpServer = createHttpServer(async (req, res) => {
       res.end();
     } catch (e) {
       res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'upstream', message: (e as Error).message }));
+    } finally {
+      exportInFlight -= 1;
     }
     return;
   }

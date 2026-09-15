@@ -492,7 +492,7 @@
     // 상한에 걸린 표 — 서버가 같은 SQL 을 상한 없이 돌려 CSV 로 준다
     b.disabled = true; b.textContent = '전체 내보내는 중…';
     try {
-      const r = await fetch('/api/export', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: tb.source, sql: tb.sql }) });
+      const r = await fetch('/api/export', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: tb.source, sql: tb.sql, sig: tb.sig }) });
       if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.message || d.error || r.status); }
       download(`ctreg_${slug(lastQ)}_${Number(b.dataset.table) + 1}_full.csv`, await r.text());
     } catch (err) { alert('전체 내보내기 실패: ' + err.message); }
