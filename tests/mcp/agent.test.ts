@@ -346,3 +346,31 @@ describe('에이전트 — kctis 도구', () => {
     expect(r.steps[0]!.exit).toBe(2);
   });
 });
+
+/**
+ * CSV 내려받기(계획 ①): SQL 결과가 모델에게만 가고 페이지엔 요약만 왔다. final 에 `tables` 로 싣는다 —
+ * 페이지가 표와 [CSV] 버튼을 그린다. 파일은 모델이 아니라 페이지·서버가 만든다(200행 상한·환각을 파일에 넣지 않으려고).
+ */
+describe('에이전트 — SQL 결과 표를 final 에 싣는다', () => {
+  it('kctis_query_sql 의 columns·rows·truncated·source·sql 이 tables 로 온다', async () => {
+    const kctis = {
+      tools: [{ type: 'function' as const, function: { name: 'kctis_query_sql', description: 'SQL', parameters: { type: 'object' } } }],
+      call: vi.fn(async () => ({ columns: ['trial_id', 'title'], rows: [{ trial_id: 'KCT1', title: 'a' }, { trial_id: 'KCT2', title: 'b' }], row_count: 2, truncated: true, elapsed_ms: 3, source_note: 'CRIS 사본' })),
+    };
+    const f = vi.fn()
+      .mockResolvedValueOnce(reply({ tool_calls: [tc('s', 'kctis_query_sql', { source: 'kctis', sql: 'SELECT trial_id, title FROM v_cris_unified' })] }))
+      .mockResolvedValueOnce(reply({ content: '2건' }));
+    const t = fakeTools(() => ok('ctgov', []));
+    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, kctis });
+    expect(r.tables).toHaveLength(1);
+    expect(r.tables[0]).toMatchObject({ step: 1, source: 'kctis', sql: 'SELECT trial_id, title FROM v_cris_unified', columns: ['trial_id', 'title'], truncated: true, source_note: 'CRIS 사본' });
+    expect(r.tables[0]!.rows).toHaveLength(2);
+  });
+  it('오류난 SQL 은 표가 되지 않는다', async () => {
+    const kctis = { tools: [{ type: 'function' as const, function: { name: 'kctis_query_sql', description: 'SQL', parameters: { type: 'object' } } }], call: vi.fn(async () => ({ error: '읽기 전용' })) };
+    const f = vi.fn().mockResolvedValueOnce(reply({ tool_calls: [tc('s', 'kctis_query_sql', { source: 'kctis', sql: 'DELETE' })] })).mockResolvedValueOnce(reply({ content: 'x' }));
+    const t = fakeTools(() => ok('ctgov', []));
+    const r = await agent({ q: 'x', env: env(), fetchImpl: f as unknown as typeof fetch, call: t.call, onEvent: () => {}, kctis });
+    expect(r.tables).toHaveLength(0);
+  });
+});
